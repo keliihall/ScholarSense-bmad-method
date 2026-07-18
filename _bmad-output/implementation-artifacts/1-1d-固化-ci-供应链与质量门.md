@@ -211,12 +211,12 @@ Status: in-progress
   - [x] 对 `@vitejs/plugin-vue`、`@types/node`、npm lifecycle scripts、Maven plugins/Wrapper 做最终来源、checksum、漏洞与许可证裁决，并把结论写入 release evidence，不回写伪造的 1.1c 历史通过项。当前 lock 的三项 `hasInstallScript`（嵌套 `vue-demi` 与两份可选 `fsevents`）继续由 `--ignore-scripts` 禁止执行；未来启用须单独批准。
   - [x] 许可证策略显式裁决当前已见 MIT、Apache-2.0、BSD-2-Clause、BSD-3-Clause、ISC、0BSD、MPL-2.0；不得因 lock 中有 license 字段就自动批准，NOTICE/源码披露义务也须进入发布证据。
 
-- [ ] Task 4：实现分层 BuildManifest、ReleaseManifest 与 EvidenceIndex（AC: RELEASE-MANIFEST, CANONICAL-SCHEMA, EVIDENCE-LIFECYCLE, SECURITY-EVIDENCE-BOUNDARY）
-  - [ ] 新建 BuildManifest/ReleaseManifest/EvidenceIndex schema、checker 与 generator：BuildManifest 仅含可复现构建输入/输出并参与双构建摘要比较；ReleaseManifest 仅在 selected artifact digest 的全部 evidence/artifact signature 已存在后一次性冻结，纳入两次 attempt、source/PAB/FPB/CISB/AAB/UX/VGB/TEST-ENV/toolchain/locks/artifacts/UI-token/品牌资产与 AD-28 全部政策/契约/枚举版本；其外置签名生成后再创建以 manifest digest 为 subject 的 EvidenceIndex。
-  - [ ] 为 baseline approval、runtime evidence pending/passed/not-applicable 分列状态；App N/A 与未来 Story pending 必须保持诚实。
-  - [ ] ReleaseManifest 只保存已存在的 artifact/report/SBOM/provenance/attestation/artifact-signature URI、SHA-256、mediaType、size 与 version；不得保存 manifest 自身签名、EvidenceIndex 或 promotion URI。manifest 外置签名由 EvidenceIndex 关联；promotion URI 只进入 PromotionRecord/Ledger。
-  - [ ] 扩展 `normalized_manifest.py`/release-source inventory，纳入 `.github`、release contracts/policies/ADR、`backend/mvnw`、`backend/.mvn/wrapper/**` 与所有实际构建配置；为漏项/篡改写负例，并扩展污染扫描覆盖新生产面。
-  - [ ] 避免 inventory 自引用：源码树摘要明确排除 inventory 实例本身；不可变 ReleaseManifest 再引用 inventory digest。动态 release output/evidence 同样不得进入被测源码集合。
+- [x] Task 4：实现分层 BuildManifest、ReleaseManifest 与 EvidenceIndex（AC: RELEASE-MANIFEST, CANONICAL-SCHEMA, EVIDENCE-LIFECYCLE, SECURITY-EVIDENCE-BOUNDARY）
+  - [x] 新建 BuildManifest/ReleaseManifest/EvidenceIndex schema、checker 与 generator：BuildManifest 仅含可复现构建输入/输出并参与双构建摘要比较；ReleaseManifest 仅在 selected artifact digest 的全部 evidence/artifact signature 已存在后一次性冻结，纳入两次 attempt、source/PAB/FPB/CISB/AAB/UX/VGB/TEST-ENV/toolchain/locks/artifacts/UI-token/品牌资产与 AD-28 全部政策/契约/枚举版本；其外置签名生成后再创建以 manifest digest 为 subject 的 EvidenceIndex。
+  - [x] 为 baseline approval、runtime evidence pending/passed/not-applicable 分列状态；App N/A 与未来 Story pending 必须保持诚实。
+  - [x] ReleaseManifest 只保存已存在的 artifact/report/SBOM/provenance/attestation/artifact-signature URI、SHA-256、mediaType、size 与 version；不得保存 manifest 自身签名、EvidenceIndex 或 promotion URI。manifest 外置签名由 EvidenceIndex 关联；promotion URI 只进入 PromotionRecord/Ledger。
+  - [x] 扩展 `normalized_manifest.py`/release-source inventory，纳入 `.github`、release contracts/policies/ADR、`backend/mvnw`、`backend/.mvn/wrapper/**` 与所有实际构建配置；为漏项/篡改写负例，并扩展污染扫描覆盖新生产面。
+  - [x] 避免 inventory 自引用：源码树摘要明确排除 inventory 实例本身；不可变 ReleaseManifest 再引用 inventory digest。动态 release output/evidence 同样不得进入被测源码集合。
 
 - [ ] Task 5：建立安全 CI、attestation、签名与证据封存工作流（AC: SOURCE-CI-TRUST, ATTEST-SIGN, EVIDENCE-LIFECYCLE）
   - [ ] 新建只读 PR CI：bootstrap、完整 verify、release contract/schema、依赖/漏洞/许可证和篡改负例；fork PR 不获 secret/OIDC/write token。
@@ -420,6 +420,7 @@ GPT-5 Codex（create-story context）
 - 2026-07-19T06:31:00+08:00—06:34:14+08:00：受保护主线 merge commit `36266b8d2929c442ffa15e8108e2ff0923575ae8` 上 `scripts/build-release.sh release-out/task2-proof` 退出 0。每个 clean root 均通过后端 36/36、审计 145/145、Python 109/109；每个根内两次前端重放各 unit 27/27、Playwright 20 pass/4 skip，最终 JAR `27f059…1303`、前端归档 `811cf7…a5a2` 与 artifact set `9f8488…d8ea` 逐项一致，BuildManifest canonical SHA-256 为 `e961b7…d07a`。
 - 2026-07-19T06:36:00+08:00—07:10:10+08:00：Task 3 按 RED→GREEN 生成后端（42）、前端（156）与聚合（207）组件的 CycloneDX 1.7/SPDX 2.3。Trivy 0.72.0 macOS ARM64 archive `88f208…0016` 与官方 checksums 一致，Cosign 3.1.2 `dec1c3…f10a` 按精确 `reusable-release.yaml@refs/tags/v0.72.0` SAN/GitHub OIDC issuer 验证 bundle `Verified OK`；DB `1b9e58…34c1`。首次 DB 拉取因本机 Docker credential helper 停滞而中止，空临时 Docker config + 官方 GHCR DB 成功；首次 bundle 身份猜为 `.yml` 按预期失败后改用证书精确 `.yaml` 值。
 - 2026-07-19T07:10:10+08:00—07:14:00+08:00：实际 SBOM checker 全绿，三类 subject 的 Critical/High/UNKNOWN finding 均为 0；隔离 `npm ci --offline --ignore-scripts` 后 `npm ls --all` 对账为 installed 126 + platform optional 30 = lock unique 156，无额外组件。`@vitejs/plugin-vue`、`@types/node`、6 个 Maven plugin、Wrapper 与 3 个未执行 lifecycle script 均有来源/checksum/license/vulnerability 决策；205 项第三方 NOTICE/源码义务清单摘要 `474720…3ab5`。完整 `verify-core` 后端 36/36、审计 145/145、Python 117/117、前端两次各 unit 27/27、Playwright 20 pass/4 skip。
+- 2026-07-19T07:45:00+08:00—07:58:00+08:00：Task 4 按 RED→GREEN 固定 ReleaseManifest 一次冻结与外置签名后 EvidenceIndex 时序。23 项针对性测试通过：阻塞门 pending、缺 artifact signature、未知 subject、可变 URI、manifest 后代引用、反向依赖、签名 subject 错误和同版本 digest 重绑均 fail closed；App/WebView 保持 `not-applicable + runtimeEvidenceClaim=none`，未来 7.1/7.x 保持 `pending-story-execution`。PR #3 合并为受保护主线 `8ebc18d711d70d2e3fb9a34b92c67c4baa6a722d`，release-source inventory 回读 298 files、tree `6032c2…2f4`、normalized digest `d99427…5ec4`，inventory 实例与动态 evidence 均不参与源摘要。
 
 ### Completion Notes List
 
@@ -434,6 +435,7 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：Task 1 完成。14 份 release schema、对应正负 fixture、canonical/schema profile、toolchain/policy 实例与统一 Python/Node helper 已落地；原 FPB/PP/AP/TEST-ENV checker 改为复用同一 helper 的历史兼容模式，既有 content digest 未被重算或改写。
 - 2026-07-19：Task 2 完成。后端运行路径已原子切换为中性 JAR，Maven 外部运行依赖/plugin/Wrapper 受 checksum 锁约束；单一 `build-release` 在两个 clean root 复用既有前端双离线重放，固定环境与归档元数据，比较最终制品及候选 BuildManifest canonical digest，并在源码/lock 漂移、秘密/报告/缓存污染或摘要不一致时无半成品失败。
 - 2026-07-19：Task 3 完成。固定并验证 Trivy/Cosign release bundle，按实际归档、frontend lock、`npm ls`、backend runtime/plugin/Wrapper lock 生成三组 subject-bound CycloneDX/SPDX；统一 checker 对 component hash/purl/license、工具/DB/subject/policy/report digest fail closed，并生成机器化敏感依赖裁决与第三方 NOTICE/源码义务证据。
+- 2026-07-19：Task 4 完成。ReleaseManifest 仅在两次 build attempt、全部 AD-28 基线/受控输入、锁、选定制品及其 SBOM/scan/provenance/attestation/artifact-signature/UI/品牌/Web 证据齐备且阻塞门通过后冻结；manifest 外置签名随后生成，EvidenceIndex 以 manifest canonical digest 为 subject。生成器当前会诚实拒绝尚未由 Task 5/7 产生的真实签名与正式 Web 证据，不提交伪造运行清单。
 
 ### File List
 
@@ -504,6 +506,19 @@ GPT-5 Codex（create-story context）
 - `scripts/check_sbom.py`（SBOM/NOTICE/evidence 独立 fail-closed checker）
 - `scripts/release_policy.py`（支持显式允许的复合 SPDX expression）
 - `scripts/tests/test_sbom.py`（purl/hash/subject/tool/DB/npm tree/version/license/adjudication RED）
+- `contracts/release/release-manifest.schema.json`（分列基线批准、运行证据、AD-28 输入、锁、制品及已存在证据）
+- `contracts/release/evidence-index.schema.json`（manifest 外置签名、证据阶段与版本绑定）
+- `contracts/release/fixtures/valid/release-manifest.json`（完整分层生命周期正例）
+- `contracts/release/fixtures/valid/evidence-index.json`（无反向依赖的 manifest-subject 正例）
+- `release/manifests.py`（ReleaseManifest/EvidenceIndex 语义门、一次冻结与依赖图）
+- `release/generate_manifests.py`（canonical manifest/index 生成入口）
+- `scripts/check_release_manifests.py`（冻结字节、schema、subject 与生命周期独立校验）
+- `scripts/check_release_contracts.py`（接入 manifest 生命周期 fixture 语义检查）
+- `scripts/check_release_source.py`（必需源范围、inventory 自排除与动态 evidence 排除）
+- `scripts/normalized_manifest.py`（与 release-source 对齐自排除和动态输出边界）
+- `scripts/check_production_pollution.py`（覆盖新增生产 release scripts）
+- `scripts/tests/test_release_manifests.py`（冻结、证据齐备、N/A/pending、反向图、版本重绑及 tamper RED）
+- `scripts/tests/test_release_source_inventory.py`（workflow/ADR/wrapper/build 配置漏项、自引用及动态输出负例）
 
 ## Change Log
 
@@ -516,3 +531,4 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：完成 Task 1 release 合同内核：新增 14 份 schema/正负 fixture、canonical/schema profiles、工具/安全策略、统一 Python/Node canonical 与 fail-closed semantic checker，并把全部门接入 `verify.sh`。
 - 2026-07-19：完成 Task 2 可复现制品硬门：固定中性 JAR 与 backend lock，新增规范化前端归档、双 clean-root `build-release`/非递归 `verify-core`、BuildManifest lock 绑定及污染/漂移/失败原子性负例；经 PR #1/#2 进入受保护 main 并在 merge commit 上重放通过。
 - 2026-07-19：完成 Task 3 SBOM-SCAN：固定并以 Cosign 验证 Trivy 0.72.0，生成后端/前端/聚合 CycloneDX 1.7 与 SPDX 2.3，严格对账实际制品、npm 实装树、frontend/backend/plugin/Wrapper locks，绑定工具/DB/subject/policy digest 并输出敏感组件、安装脚本和许可证义务证据。
+- 2026-07-19：完成 Task 4 分层 manifest 生命周期：新增 fail-closed ReleaseManifest/EvidenceIndex generator/checker、一次冻结、后置 manifest 签名、证据阶段/subject/版本绑定与诚实 applicability 状态；扩展源清单和污染边界，经 PR #3 进入受保护 main 后更新自排除 inventory。
