@@ -194,15 +194,15 @@ Status: in-progress
   - [x] Schema 不得用一个泛化 `sha` 字段混装身份：分别定义并校验 `actionCommitOid`、`binarySha256`、`ociDigest` 及其来源/解析语义。
   - [x] 负例以临时 fixture/复制目录执行，不改写受控 Story/manifest；所有检查器错误码稳定、非零并保持输出原子性。
 
-- [ ] Task 2：建立确定性后端/前端生产打包与双构建硬门（AC: REPRODUCIBLE-ARTIFACTS）
-  - [ ] Maven Wrapper 的唯一合法路径为 `backend/mvnw`、`backend/mvnw.cmd`、`backend/.mvn/wrapper/**`；所有正式命令从项目根显式调用 `backend/mvnw -f backend/pom.xml ...` 或进入 `backend/` 调用，不得引用不存在的根级 `mvnw/.mvn`。
-  - [ ] 保留现有 Maven 项目坐标 `0.1.0-SNAPSHOT`，在 `backend/pom.xml` 增加 `<finalName>scholarsense-backend</finalName>` 与 reproducible `project.build.outputTimestamp`，将唯一运行制品路径固定为 `backend/target/scholarsense-backend.jar`；发布身份只认 artifact SHA-256 + ReleaseManifest releaseVersion，不认项目 SNAPSHOT 坐标或文件名。
-  - [ ] JAR 路径调整必须作为单一原子变更更新 `backend/pom.xml`、`deploy/base/roles.json` 的 `web-api/worker` 两个 role、`scripts/tests/test_check_contract_seeds.py`、`backend/src/test/**/BuildRootContractTest.java`、`backend/README.md`、release-source inventory/BuildManifest fixtures 与相关 lock/checker；保留“只改一个 role、旧 SNAPSHOT 路径、错误 finalName”的负例，不改写 1.1b 历史 verification。
-  - [ ] 生成并校验含 Maven 外部依赖/plugin/Wrapper 坐标、来源与 checksum 的 backend lock，拒绝外部 SNAPSHOT/动态解析。
-  - [ ] 复用 `verify_frontend.sh` 的两次隔离离线重放与 `check-build-budget.mjs`，不要重写第二套 npm 安装/摘要逻辑；将最终 `dist` 通过规范化归档器生成前端发布包。
-  - [ ] 创建单一 `build-release` 入口，在两个 clean root 中调用非递归 `verify-core`、完成后端 JAR/前端包打包并硬比较最终 artifact 与确定性 BuildManifest digests；固定 locale/timezone/mtime/mode/order/压缩参数。禁止 `build-release → verify.sh → build-release` 递归。
-  - [ ] 验证构建过程不修改源码/lock，原型/缓存/报告/测试 secret 不进入制品，失败不保留半成品。
-  - [ ] 更新 `.gitignore` 排除本地 `release-out`、SBOM、provenance、signature 和正式报告临时物；schema、policy、fixture、工具 lock 和 ADR 必须继续受控。
+- [x] Task 2：建立确定性后端/前端生产打包与双构建硬门（AC: REPRODUCIBLE-ARTIFACTS）
+  - [x] Maven Wrapper 的唯一合法路径为 `backend/mvnw`、`backend/mvnw.cmd`、`backend/.mvn/wrapper/**`；所有正式命令从项目根显式调用 `backend/mvnw -f backend/pom.xml ...` 或进入 `backend/` 调用，不得引用不存在的根级 `mvnw/.mvn`。
+  - [x] 保留现有 Maven 项目坐标 `0.1.0-SNAPSHOT`，在 `backend/pom.xml` 增加 `<finalName>scholarsense-backend</finalName>` 与 reproducible `project.build.outputTimestamp`，将唯一运行制品路径固定为 `backend/target/scholarsense-backend.jar`；发布身份只认 artifact SHA-256 + ReleaseManifest releaseVersion，不认项目 SNAPSHOT 坐标或文件名。
+  - [x] JAR 路径调整必须作为单一原子变更更新 `backend/pom.xml`、`deploy/base/roles.json` 的 `web-api/worker` 两个 role、`scripts/tests/test_check_contract_seeds.py`、`backend/src/test/**/BuildRootContractTest.java`、`backend/README.md`、release-source inventory/BuildManifest fixtures 与相关 lock/checker；保留“只改一个 role、旧 SNAPSHOT 路径、错误 finalName”的负例，不改写 1.1b 历史 verification。
+  - [x] 生成并校验含 Maven 外部依赖/plugin/Wrapper 坐标、来源与 checksum 的 backend lock，拒绝外部 SNAPSHOT/动态解析。
+  - [x] 复用 `verify_frontend.sh` 的两次隔离离线重放与 `check-build-budget.mjs`，不要重写第二套 npm 安装/摘要逻辑；将最终 `dist` 通过规范化归档器生成前端发布包。
+  - [x] 创建单一 `build-release` 入口，在两个 clean root 中调用非递归 `verify-core`、完成后端 JAR/前端包打包并硬比较最终 artifact 与确定性 BuildManifest digests；固定 locale/timezone/mtime/mode/order/压缩参数。禁止 `build-release → verify.sh → build-release` 递归。
+  - [x] 验证构建过程不修改源码/lock，原型/缓存/报告/测试 secret 不进入制品，失败不保留半成品。
+  - [x] 更新 `.gitignore` 排除本地 `release-out`、SBOM、provenance、signature 和正式报告临时物；schema、policy、fixture、工具 lock 和 ADR 必须继续受控。
 
 - [ ] Task 3：生成、对账并扫描 SBOM（AC: SBOM-SCAN）
   - [ ] 用已验证并精确固定的 Trivy 0.72.0（或经 CISB 新版本批准的更安全替代）为每个 artifact 和聚合 release 生成 CycloneDX/SPDX JSON；禁止 v0.69.4 及受影响 Docker v0.69.5/v0.69.6。
@@ -416,6 +416,8 @@ GPT-5 Codex（create-story context）
 - 2026-07-19T05:34:19+08:00—05:34:42+08:00：启用 `promotion-ledger-immutable` ruleset `19154231` 与 `main-source-integrity` ruleset `19154234`；前者禁止 ledger tag 删除/非快进更新，后者要求 main 经 PR 且禁止删除/强推。后续实现切换到 `story/1-1d-supply-chain` 分支。
 - 2026-07-19T05:39:31+08:00—05:40:37+08:00：更新后的 `./scripts/verify.sh` 从头重放退出 0：后端 36/36、审计 145/145、Python 81/81；CISB、workflow security、新 release-source inventory（222 files）均 PASS；两次前端重放各 unit 27/27、Playwright 20 pass/4 skip，source/lock/tree/build digest 一致。首次重放发现隔离目录未复制新增 `.github`/`release` production roots 并正确失败，扩展复制范围后全绿。
 - 2026-07-19T05:42:00+08:00—05:58:00+08:00：Task 1 按 RED→GREEN 建立 `SCHOLARSENSE-CANONICAL-JSON-1.0.0` 与受控 schema subset。Python/Node 对 ASCII、中文、non-BMP 与嵌套 vectors 的 canonical UTF-8 bytes/SHA-256 逐字节一致；99 项 Python 测试全绿，release-contracts、production-pollution、历史 frontend-baseline 均 PASS。负例稳定覆盖 duplicate/BOM/float/-0/unsafe integer/lone surrogate、未知 keyword/format/远程 ref/generic sha、NO_VCS/dirty/ref、workflow pin/权限/镜像、SBOM 对账、漏洞/许可证/例外/install script、签名 identity/issuer/old replay、证据环/顺序/版本重绑及部分/并发提升。
+- 2026-07-19T06:00:00+08:00—06:27:52+08:00：Task 2 按 RED→GREEN 固定中性后端 JAR、41 项 runtime + 6 项 plugin + Maven Wrapper backend lock、规范化前端归档与非递归双 clean-root 构建。首次真实重放正确暴露 `.vite/manifest.json` 误判，收窄为仅允许该生产映射清单；PR #1 合并后重放又暴露 shared clone 未继承真实 `origin/main`，改为复制父工作区已回读 OID，未放宽 source 门，两次失败均无半成品。
+- 2026-07-19T06:31:00+08:00—06:34:14+08:00：受保护主线 merge commit `36266b8d2929c442ffa15e8108e2ff0923575ae8` 上 `scripts/build-release.sh release-out/task2-proof` 退出 0。每个 clean root 均通过后端 36/36、审计 145/145、Python 109/109；每个根内两次前端重放各 unit 27/27、Playwright 20 pass/4 skip，最终 JAR `27f059…1303`、前端归档 `811cf7…a5a2` 与 artifact set `9f8488…d8ea` 逐项一致，BuildManifest canonical SHA-256 为 `e961b7…d07a`。
 
 ### Completion Notes List
 
@@ -428,6 +430,7 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：用户授权后已建立并回读真实远端 source commit，启用 Action SHA pin 并创建受审批的 stage/production environments；下一步以该不可变身份完成 CISB、工作流和 store/promotion 能力门。
 - 2026-07-19：Task 0 完成。`CISB-1.0.0` 已由用户授权的具名职责激活，GitHub.com/GitHub Actions/GHCR/GitHub Artifact Attestations/Cosign/ORAS/Trivy 与 protected environments/ref/ledger 的真实能力均有不可变 run、OCI digest、attestation subject、job 和 ruleset URI；历史 1.1a 漂移证据保留，新 release-source inventory 由统一验证入口自动检查。
 - 2026-07-19：Task 1 完成。14 份 release schema、对应正负 fixture、canonical/schema profile、toolchain/policy 实例与统一 Python/Node helper 已落地；原 FPB/PP/AP/TEST-ENV checker 改为复用同一 helper 的历史兼容模式，既有 content digest 未被重算或改写。
+- 2026-07-19：Task 2 完成。后端运行路径已原子切换为中性 JAR，Maven 外部运行依赖/plugin/Wrapper 受 checksum 锁约束；单一 `build-release` 在两个 clean root 复用既有前端双离线重放，固定环境与归档元数据，比较最终制品及候选 BuildManifest canonical digest，并在源码/lock 漂移、秘密/报告/缓存污染或摘要不一致时无半成品失败。
 
 ### File List
 
@@ -469,6 +472,22 @@ GPT-5 Codex（create-story context）
 - `scripts/check_release_source.py`（复用唯一严格 JSON parser）
 - `scripts/tests/test_release_contracts.py`（canonical/schema/evidence/identity RED 与跨语言 vectors）
 - `scripts/tests/test_release_security_policy.py`（SBOM/漏洞/许可证/install script/签名/source/promotion RED）
+- `backend/pom.xml`（保留 SNAPSHOT 坐标并固定中性 JAR、输出时间与构建 plugin 版本）
+- `backend/README.md`（中性运行制品路径与发布身份说明）
+- `backend/src/test/java/cn/edu/suda/scholarsense/architecture/BuildRootContractTest.java`（JAR/timestamp/Wrapper 构建根合同）
+- `deploy/base/roles.json`（web-api/worker 原子切换到同一中性 JAR）
+- `contracts/release/backend-lock-1.0.0.json`（41 项 runtime、6 项 plugin 与 Wrapper 来源/checksum 锁）
+- `contracts/release/build-manifest.schema.json`（显式绑定 backend/frontend/toolchain locks）
+- `contracts/release/fixtures/valid/build-manifest.json`（中性制品名与 lock digest 正例）
+- `release/archive.py`（固定 mtime/mode/order/gzip 参数的原子归档器）
+- `release/backend_lock.py`（实际 JAR/runtime/plugin/Wrapper lock 生成与漂移门）
+- `release/build_release.py`（双 clean-root 非递归构建、制品/Manifest 对比与内容污染门）
+- `scripts/build-release.sh`（唯一确定性发布构建入口）
+- `scripts/check_backend_lock.py`（backend lock 统一门）
+- `scripts/verify_core.sh`（不回调 build-release 的核心验证入口）
+- `scripts/tests/test_backend_lock.py`（checksum/source/dynamic/SNAPSHOT 负例）
+- `scripts/tests/test_check_contract_seeds.py`（旧路径、单 role、错误 finalName 负例）
+- `scripts/tests/test_release_build.py`（归档、双 attempt、秘密/报告/缓存、无半成品与非递归负例）
 
 ## Change Log
 
@@ -479,3 +498,4 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：依据用户授权初始化并推送 `main`，建立真实 source commit、Action SHA pin 与受审批 stage/production environments。
 - 2026-07-19：完成 Task 0 平台冻结：新增 CISB ADR/机器门、release-source inventory、workflow security/pollution 门与受信 platform probe；保存 GHCR/attestation/Cosign/promotion CAS/独立 verifier 真实证据并保护 main/ledger refs。
 - 2026-07-19：完成 Task 1 release 合同内核：新增 14 份 schema/正负 fixture、canonical/schema profiles、工具/安全策略、统一 Python/Node canonical 与 fail-closed semantic checker，并把全部门接入 `verify.sh`。
+- 2026-07-19：完成 Task 2 可复现制品硬门：固定中性 JAR 与 backend lock，新增规范化前端归档、双 clean-root `build-release`/非递归 `verify-core`、BuildManifest lock 绑定及污染/漂移/失败原子性负例；经 PR #1/#2 进入受保护 main 并在 merge commit 上重放通过。

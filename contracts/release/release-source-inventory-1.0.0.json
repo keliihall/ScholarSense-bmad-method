@@ -2,10 +2,10 @@
   "version": "RELEASE-SOURCE-INVENTORY-1.0.0",
   "repositoryUrl": "https://github.com/keliihall/ScholarSense-bmad-method",
   "repositoryId": 1305224312,
-  "sourceCommit": "b19ab81e8cdb2d730e284d28a6d7fca032cec162",
-  "gitTreeOid": "5660e417e00f2d0cbf02aafa3f88840a18c7c4aa",
+  "sourceCommit": "a5090b43c47ca9acaa0d937ed30f220de0a568c2",
+  "gitTreeOid": "f821f7c887f4a2a4893023943510092ecb80d576",
   "fileCount": 285,
-  "normalizedManifestSha256": "b3021ae6d11eeb1623ad96417735c142007810bbc8313c2f6028976ec3b755b3",
+  "normalizedManifestSha256": "ea0089e04d1323e1c8d9e59b8d4b17c8e49bbb8eb8c816094c4b10b2d6e7d804",
   "normalization": "path-order+utf8-path+nul+sha256+lf-for-controlled-text",
   "includedScopes": [
     ".github/**",
@@ -22,6 +22,6 @@
     "_bmad/scripts/with_pab_toolchain.sh"
   ],
   "inventoryExclusion": "contracts/release/release-source-inventory-1.0.0.json",
-  "createdFrom": "https://github.com/keliihall/ScholarSense-bmad-method/commit/b19ab81e8cdb2d730e284d28a6d7fca032cec162",
+  "createdFrom": "https://github.com/keliihall/ScholarSense-bmad-method/commit/a5090b43c47ca9acaa0d937ed30f220de0a568c2",
   "historicalInventoryDisposition": "1.1a inventory retained unchanged; its check/validate exit 2 records controlled-input drift and is not a green release gate"
 }
