@@ -98,6 +98,22 @@ class ReleaseBuildContractTest(unittest.TestCase):
             self.assertTrue(any("SECRET_FILE" in issue for issue in issues))
             self.assertTrue(any("GENERATED_OR_SECRET_PATH" in issue for issue in issues))
 
+    def test_frontend_allows_only_the_production_vite_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            backend = root / "backend.jar"
+            with zipfile.ZipFile(backend, "w") as archive:
+                archive.writestr("BOOT-INF/classes/application.properties", "server.port=8080")
+            frontend_source = root / "dist"
+            (frontend_source / ".vite").mkdir(parents=True)
+            (frontend_source / ".vite/manifest.json").write_text("{}", encoding="utf-8")
+            frontend = root / "frontend.tar.gz"
+            create_normalized_tar_gz(frontend_source, frontend)
+            self.assertEqual([], artifact_content_issues(backend, frontend))
+            (frontend_source / ".vite/cache.bin").write_bytes(b"forbidden")
+            create_normalized_tar_gz(frontend_source, frontend)
+            self.assertTrue(any("VITE_CACHE_PATH" in issue for issue in artifact_content_issues(backend, frontend)))
+
     def test_dirty_source_failure_leaves_no_partial_release(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             destination = Path(directory) / "release"

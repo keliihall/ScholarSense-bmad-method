@@ -35,7 +35,6 @@ FIXED_BUILD_ENVIRONMENT = {
 }
 FORBIDDEN_ARTIFACT_SEGMENTS = {
     ".git",
-    ".vite",
     "__pycache__",
     "coverage",
     "node_modules",
@@ -74,7 +73,7 @@ def validate_build_manifest(manifest: dict[str, Any]) -> list[str]:
 def artifact_content_issues(backend: Path, frontend: Path) -> list[str]:
     issues: list[str] = []
 
-    def check(name: str, artifact: str) -> None:
+    def check(name: str, artifact: str, directory: bool = False) -> None:
         path = PurePosixPath(name)
         lowered = {part.lower() for part in path.parts}
         filename = path.name.lower()
@@ -82,19 +81,24 @@ def artifact_content_issues(backend: Path, frontend: Path) -> list[str]:
             issues.append(f"ARTIFACT_PATH_UNSAFE: {artifact}: {name}")
         if lowered & FORBIDDEN_ARTIFACT_SEGMENTS:
             issues.append(f"ARTIFACT_GENERATED_OR_SECRET_PATH: {artifact}: {name}")
+        if ".vite" in lowered and not (
+            artifact == FRONTEND_NAME
+            and (path.parts == (".vite", "manifest.json") or (directory and path.parts == (".vite",)))
+        ):
+            issues.append(f"ARTIFACT_VITE_CACHE_PATH_FORBIDDEN: {artifact}: {name}")
         if filename == ".env" or filename.startswith(".env.") or filename.endswith((".key", ".pem")):
             issues.append(f"ARTIFACT_SECRET_FILE_FORBIDDEN: {artifact}: {name}")
 
     try:
         with zipfile.ZipFile(backend) as archive:
-            for name in archive.namelist():
-                check(name, BACKEND_NAME)
+            for info in archive.infolist():
+                check(info.filename, BACKEND_NAME, info.is_dir())
     except (OSError, zipfile.BadZipFile):
         issues.append("BACKEND_ARTIFACT_INVALID_ZIP")
     try:
         with tarfile.open(frontend, "r:gz") as archive:
             for member in archive.getmembers():
-                check(member.name, FRONTEND_NAME)
+                check(member.name, FRONTEND_NAME, member.isdir())
                 if member.issym() or member.islnk():
                     issues.append(f"FRONTEND_ARTIFACT_LINK_FORBIDDEN: {member.name}")
                 elif not member.isfile() and not member.isdir():
