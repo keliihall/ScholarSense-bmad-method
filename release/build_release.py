@@ -187,6 +187,9 @@ def build_release(root: Path, destination: Path) -> dict[str, Any]:
     commit = _git(project_root, "rev-parse", "HEAD")
     if len(commit) != 40:
         raise RuntimeError("SOURCE_COMMIT_INVALID")
+    remote_main = _git(project_root, "rev-parse", "refs/remotes/origin/main")
+    if len(remote_main) != 40:
+        raise RuntimeError("REMOTE_MAIN_COMMIT_INVALID")
     source_manifest_sha256 = build_git_inventory(project_root, commit)["normalizedManifestSha256"]
     toolchain_lock = load_json(project_root / "contracts/release/toolchain-lock-1.0.0.json")
     backend_lock = load_json(project_root / "contracts/release/backend-lock-1.0.0.json")
@@ -209,6 +212,7 @@ def build_release(root: Path, destination: Path) -> dict[str, Any]:
         for number in (1, 2):
             attempt = temporary_root / f"attempt-{number}"
             _run(["git", "clone", "--quiet", "--shared", str(project_root), str(attempt)], project_root)
+            _git(attempt, "update-ref", "refs/remotes/origin/main", remote_main)
             _run(["git", "checkout", "--quiet", "--detach", commit], attempt)
             environment = os.environ.copy()
             environment.update(FIXED_BUILD_ENVIRONMENT)

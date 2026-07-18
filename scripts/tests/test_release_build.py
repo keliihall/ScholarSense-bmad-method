@@ -129,10 +129,12 @@ class ReleaseBuildContractTest(unittest.TestCase):
         self.assertTrue(core.is_file() and os.access(core, os.X_OK))
         content = entry.read_text(encoding="utf-8")
         core_content = core.read_text(encoding="utf-8")
+        implementation = (PROJECT_ROOT / "release/build_release.py").read_text(encoding="utf-8")
         self.assertNotIn("verify.sh", content)
         self.assertNotIn("/mvnw", content.replace("backend/mvnw", ""))
         self.assertNotIn("build-release", core_content)
         self.assertNotIn("verify.sh", core_content)
+        self.assertIn('"update-ref", "refs/remotes/origin/main", remote_main', implementation)
 
 
 if __name__ == "__main__":
