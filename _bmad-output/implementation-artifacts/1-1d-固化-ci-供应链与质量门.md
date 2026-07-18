@@ -204,12 +204,12 @@ Status: in-progress
   - [x] 验证构建过程不修改源码/lock，原型/缓存/报告/测试 secret 不进入制品，失败不保留半成品。
   - [x] 更新 `.gitignore` 排除本地 `release-out`、SBOM、provenance、signature 和正式报告临时物；schema、policy、fixture、工具 lock 和 ADR 必须继续受控。
 
-- [ ] Task 3：生成、对账并扫描 SBOM（AC: SBOM-SCAN）
-  - [ ] 用已验证并精确固定的 Trivy 0.72.0（或经 CISB 新版本批准的更安全替代）为每个 artifact 和聚合 release 生成 CycloneDX/SPDX JSON；禁止 v0.69.4 及受影响 Docker v0.69.5/v0.69.6。
-  - [ ] 对账 SBOM 与 `npm ls --all`、frontend lock、Maven dependency/plugin lock 和实际产物；固定 purl、license expression、component hash、tool/db digest 与 subject artifact digest。
-  - [ ] 发布显式 vulnerability policy/exception schema 和 SPDX license allow/deny policy；Critical/High、UNKNOWN/禁止许可证与过期例外负例全部 fail closed。
-  - [ ] 对 `@vitejs/plugin-vue`、`@types/node`、npm lifecycle scripts、Maven plugins/Wrapper 做最终来源、checksum、漏洞与许可证裁决，并把结论写入 release evidence，不回写伪造的 1.1c 历史通过项。当前 lock 的三项 `hasInstallScript`（嵌套 `vue-demi` 与两份可选 `fsevents`）继续由 `--ignore-scripts` 禁止执行；未来启用须单独批准。
-  - [ ] 许可证策略显式裁决当前已见 MIT、Apache-2.0、BSD-2-Clause、BSD-3-Clause、ISC、0BSD、MPL-2.0；不得因 lock 中有 license 字段就自动批准，NOTICE/源码披露义务也须进入发布证据。
+- [x] Task 3：生成、对账并扫描 SBOM（AC: SBOM-SCAN）
+  - [x] 用已验证并精确固定的 Trivy 0.72.0（或经 CISB 新版本批准的更安全替代）为每个 artifact 和聚合 release 生成 CycloneDX/SPDX JSON；禁止 v0.69.4 及受影响 Docker v0.69.5/v0.69.6。
+  - [x] 对账 SBOM 与 `npm ls --all`、frontend lock、Maven dependency/plugin lock 和实际产物；固定 purl、license expression、component hash、tool/db digest 与 subject artifact digest。
+  - [x] 发布显式 vulnerability policy/exception schema 和 SPDX license allow/deny policy；Critical/High、UNKNOWN/禁止许可证与过期例外负例全部 fail closed。
+  - [x] 对 `@vitejs/plugin-vue`、`@types/node`、npm lifecycle scripts、Maven plugins/Wrapper 做最终来源、checksum、漏洞与许可证裁决，并把结论写入 release evidence，不回写伪造的 1.1c 历史通过项。当前 lock 的三项 `hasInstallScript`（嵌套 `vue-demi` 与两份可选 `fsevents`）继续由 `--ignore-scripts` 禁止执行；未来启用须单独批准。
+  - [x] 许可证策略显式裁决当前已见 MIT、Apache-2.0、BSD-2-Clause、BSD-3-Clause、ISC、0BSD、MPL-2.0；不得因 lock 中有 license 字段就自动批准，NOTICE/源码披露义务也须进入发布证据。
 
 - [ ] Task 4：实现分层 BuildManifest、ReleaseManifest 与 EvidenceIndex（AC: RELEASE-MANIFEST, CANONICAL-SCHEMA, EVIDENCE-LIFECYCLE, SECURITY-EVIDENCE-BOUNDARY）
   - [ ] 新建 BuildManifest/ReleaseManifest/EvidenceIndex schema、checker 与 generator：BuildManifest 仅含可复现构建输入/输出并参与双构建摘要比较；ReleaseManifest 仅在 selected artifact digest 的全部 evidence/artifact signature 已存在后一次性冻结，纳入两次 attempt、source/PAB/FPB/CISB/AAB/UX/VGB/TEST-ENV/toolchain/locks/artifacts/UI-token/品牌资产与 AD-28 全部政策/契约/枚举版本；其外置签名生成后再创建以 manifest digest 为 subject 的 EvidenceIndex。
@@ -418,6 +418,8 @@ GPT-5 Codex（create-story context）
 - 2026-07-19T05:42:00+08:00—05:58:00+08:00：Task 1 按 RED→GREEN 建立 `SCHOLARSENSE-CANONICAL-JSON-1.0.0` 与受控 schema subset。Python/Node 对 ASCII、中文、non-BMP 与嵌套 vectors 的 canonical UTF-8 bytes/SHA-256 逐字节一致；99 项 Python 测试全绿，release-contracts、production-pollution、历史 frontend-baseline 均 PASS。负例稳定覆盖 duplicate/BOM/float/-0/unsafe integer/lone surrogate、未知 keyword/format/远程 ref/generic sha、NO_VCS/dirty/ref、workflow pin/权限/镜像、SBOM 对账、漏洞/许可证/例外/install script、签名 identity/issuer/old replay、证据环/顺序/版本重绑及部分/并发提升。
 - 2026-07-19T06:00:00+08:00—06:27:52+08:00：Task 2 按 RED→GREEN 固定中性后端 JAR、41 项 runtime + 6 项 plugin + Maven Wrapper backend lock、规范化前端归档与非递归双 clean-root 构建。首次真实重放正确暴露 `.vite/manifest.json` 误判，收窄为仅允许该生产映射清单；PR #1 合并后重放又暴露 shared clone 未继承真实 `origin/main`，改为复制父工作区已回读 OID，未放宽 source 门，两次失败均无半成品。
 - 2026-07-19T06:31:00+08:00—06:34:14+08:00：受保护主线 merge commit `36266b8d2929c442ffa15e8108e2ff0923575ae8` 上 `scripts/build-release.sh release-out/task2-proof` 退出 0。每个 clean root 均通过后端 36/36、审计 145/145、Python 109/109；每个根内两次前端重放各 unit 27/27、Playwright 20 pass/4 skip，最终 JAR `27f059…1303`、前端归档 `811cf7…a5a2` 与 artifact set `9f8488…d8ea` 逐项一致，BuildManifest canonical SHA-256 为 `e961b7…d07a`。
+- 2026-07-19T06:36:00+08:00—07:10:10+08:00：Task 3 按 RED→GREEN 生成后端（42）、前端（156）与聚合（207）组件的 CycloneDX 1.7/SPDX 2.3。Trivy 0.72.0 macOS ARM64 archive `88f208…0016` 与官方 checksums 一致，Cosign 3.1.2 `dec1c3…f10a` 按精确 `reusable-release.yaml@refs/tags/v0.72.0` SAN/GitHub OIDC issuer 验证 bundle `Verified OK`；DB `1b9e58…34c1`。首次 DB 拉取因本机 Docker credential helper 停滞而中止，空临时 Docker config + 官方 GHCR DB 成功；首次 bundle 身份猜为 `.yml` 按预期失败后改用证书精确 `.yaml` 值。
+- 2026-07-19T07:10:10+08:00—07:14:00+08:00：实际 SBOM checker 全绿，三类 subject 的 Critical/High/UNKNOWN finding 均为 0；隔离 `npm ci --offline --ignore-scripts` 后 `npm ls --all` 对账为 installed 126 + platform optional 30 = lock unique 156，无额外组件。`@vitejs/plugin-vue`、`@types/node`、6 个 Maven plugin、Wrapper 与 3 个未执行 lifecycle script 均有来源/checksum/license/vulnerability 决策；205 项第三方 NOTICE/源码义务清单摘要 `474720…3ab5`。完整 `verify-core` 后端 36/36、审计 145/145、Python 117/117、前端两次各 unit 27/27、Playwright 20 pass/4 skip。
 
 ### Completion Notes List
 
@@ -431,6 +433,7 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：Task 0 完成。`CISB-1.0.0` 已由用户授权的具名职责激活，GitHub.com/GitHub Actions/GHCR/GitHub Artifact Attestations/Cosign/ORAS/Trivy 与 protected environments/ref/ledger 的真实能力均有不可变 run、OCI digest、attestation subject、job 和 ruleset URI；历史 1.1a 漂移证据保留，新 release-source inventory 由统一验证入口自动检查。
 - 2026-07-19：Task 1 完成。14 份 release schema、对应正负 fixture、canonical/schema profile、toolchain/policy 实例与统一 Python/Node helper 已落地；原 FPB/PP/AP/TEST-ENV checker 改为复用同一 helper 的历史兼容模式，既有 content digest 未被重算或改写。
 - 2026-07-19：Task 2 完成。后端运行路径已原子切换为中性 JAR，Maven 外部运行依赖/plugin/Wrapper 受 checksum 锁约束；单一 `build-release` 在两个 clean root 复用既有前端双离线重放，固定环境与归档元数据，比较最终制品及候选 BuildManifest canonical digest，并在源码/lock 漂移、秘密/报告/缓存污染或摘要不一致时无半成品失败。
+- 2026-07-19：Task 3 完成。固定并验证 Trivy/Cosign release bundle，按实际归档、frontend lock、`npm ls`、backend runtime/plugin/Wrapper lock 生成三组 subject-bound CycloneDX/SPDX；统一 checker 对 component hash/purl/license、工具/DB/subject/policy/report digest fail closed，并生成机器化敏感依赖裁决与第三方 NOTICE/源码义务证据。
 
 ### File List
 
@@ -488,6 +491,19 @@ GPT-5 Codex（create-story context）
 - `scripts/tests/test_backend_lock.py`（checksum/source/dynamic/SNAPSHOT 负例）
 - `scripts/tests/test_check_contract_seeds.py`（旧路径、单 role、错误 finalName 负例）
 - `scripts/tests/test_release_build.py`（归档、双 attempt、秘密/报告/缓存、无半成品与非递归负例）
+- `contracts/release/sbom-evidence.schema.json`（subject/tool/DB/policy/SBOM 文档绑定 schema）
+- `contracts/release/fixtures/valid/sbom-evidence.json`（SBOM evidence 正例）
+- `contracts/release/fixtures/invalid/sbom-evidence.json`（SBOM evidence fail-closed 负例）
+- `contracts/release/license-policy-1.0.0.json`（当前 SPDX expression 与 NOTICE/源码义务裁决）
+- `contracts/release/license-policy.schema.json`（license expression/obligation schema）
+- `contracts/release/toolchain-lock-1.0.0.json`（增加 macOS arm64 Trivy/Cosign 本地 U1 校验入口）
+- `release/sbom.py`（实际 npm/Maven/归档组件对账与确定性 CycloneDX/SPDX 渲染）
+- `release/generate_sbom.py`（Trivy/Cosign/DB 验真、扫描、策略阻断与原子证据生成）
+- `scripts/generate-sbom.sh`（隔离 npm 实装树对账与单一 SBOM 生成入口）
+- `scripts/check_release_tool.py`（release tool/archive checksum lock 门）
+- `scripts/check_sbom.py`（SBOM/NOTICE/evidence 独立 fail-closed checker）
+- `scripts/release_policy.py`（支持显式允许的复合 SPDX expression）
+- `scripts/tests/test_sbom.py`（purl/hash/subject/tool/DB/npm tree/version/license/adjudication RED）
 
 ## Change Log
 
@@ -499,3 +515,4 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：完成 Task 0 平台冻结：新增 CISB ADR/机器门、release-source inventory、workflow security/pollution 门与受信 platform probe；保存 GHCR/attestation/Cosign/promotion CAS/独立 verifier 真实证据并保护 main/ledger refs。
 - 2026-07-19：完成 Task 1 release 合同内核：新增 14 份 schema/正负 fixture、canonical/schema profiles、工具/安全策略、统一 Python/Node canonical 与 fail-closed semantic checker，并把全部门接入 `verify.sh`。
 - 2026-07-19：完成 Task 2 可复现制品硬门：固定中性 JAR 与 backend lock，新增规范化前端归档、双 clean-root `build-release`/非递归 `verify-core`、BuildManifest lock 绑定及污染/漂移/失败原子性负例；经 PR #1/#2 进入受保护 main 并在 merge commit 上重放通过。
+- 2026-07-19：完成 Task 3 SBOM-SCAN：固定并以 Cosign 验证 Trivy 0.72.0，生成后端/前端/聚合 CycloneDX 1.7 与 SPDX 2.3，严格对账实际制品、npm 实装树、frontend/backend/plugin/Wrapper locks，绑定工具/DB/subject/policy digest 并输出敏感组件、安装脚本和许可证义务证据。
