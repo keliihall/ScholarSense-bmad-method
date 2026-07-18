@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/release/evidence-index.schema.json",
+  "type": "object",
+  "properties": {
+    "version": {"const": "EVIDENCE-INDEX-1.0.0"},
+    "subjectManifestSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "manifestSignature": {"$ref": "#/$defs/evidence"},
+    "evidence": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence"}, "uniqueItems": true},
+    "createdAt": {"type": "string", "format": "date-time"}
+  },
+  "required": ["version", "subjectManifestSha256", "manifestSignature", "evidence", "createdAt"],
+  "additionalProperties": false,
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "uri": {"type": "string", "format": "uri"},
+        "binarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "dependsOn": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      },
+      "required": ["id", "uri", "binarySha256", "dependsOn"],
+      "additionalProperties": false
+    }
+  }
+}

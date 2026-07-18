@@ -1,0 +1,19 @@
+{
+  "version": "RELEASE-SCHEMA-FIXTURES-1.0.0",
+  "contracts": [
+    {"id": "toolchain-lock", "schema": "toolchain-lock.schema.json", "valid": "fixtures/valid/toolchain-lock.json", "invalid": "fixtures/invalid/toolchain-lock.json"},
+    {"id": "backend-lock", "schema": "backend-lock.schema.json", "valid": "fixtures/valid/backend-lock.json", "invalid": "fixtures/invalid/backend-lock.json"},
+    {"id": "vulnerability-exception", "schema": "vulnerability-exception.schema.json", "valid": "fixtures/valid/vulnerability-exception.json", "invalid": "fixtures/invalid/vulnerability-exception.json"},
+    {"id": "vulnerability-policy", "schema": "vulnerability-policy.schema.json", "valid": "vulnerability-policy-1.0.0.json", "invalid": "fixtures/invalid/vulnerability-policy.json"},
+    {"id": "license-policy", "schema": "license-policy.schema.json", "valid": "license-policy-1.0.0.json", "invalid": "fixtures/invalid/license-policy.json"},
+    {"id": "build-manifest", "schema": "build-manifest.schema.json", "valid": "fixtures/valid/build-manifest.json", "invalid": "fixtures/invalid/build-manifest.json"},
+    {"id": "release-manifest", "schema": "release-manifest.schema.json", "valid": "fixtures/valid/release-manifest.json", "invalid": "fixtures/invalid/release-manifest.json"},
+    {"id": "evidence-index", "schema": "evidence-index.schema.json", "valid": "fixtures/valid/evidence-index.json", "invalid": "fixtures/invalid/evidence-index.json"},
+    {"id": "promotion-record", "schema": "promotion-record.schema.json", "valid": "fixtures/valid/promotion-record.json", "invalid": "fixtures/invalid/promotion-record.json"},
+    {"id": "release-source-inventory", "schema": "release-source-inventory.schema.json", "valid": "release-source-inventory-1.0.0.json", "invalid": "fixtures/invalid/release-source-inventory.json"},
+    {"id": "formal-web-report", "schema": "formal-web-report.schema.json", "valid": "fixtures/valid/formal-web-report.json", "invalid": "fixtures/invalid/formal-web-report.json"},
+    {"id": "visual-baseline", "schema": "visual-baseline.schema.json", "valid": "fixtures/valid/visual-baseline.json", "invalid": "fixtures/invalid/visual-baseline.json"},
+    {"id": "ui-token-manifest", "schema": "ui-token-manifest.schema.json", "valid": "fixtures/valid/ui-token-manifest.json", "invalid": "fixtures/invalid/ui-token-manifest.json"},
+    {"id": "brand-asset-manifest", "schema": "brand-asset-manifest.schema.json", "valid": "fixtures/valid/brand-asset-manifest.json", "invalid": "fixtures/invalid/brand-asset-manifest.json"}
+  ]
+}

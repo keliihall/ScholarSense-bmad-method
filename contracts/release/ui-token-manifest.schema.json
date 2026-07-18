@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/release/ui-token-manifest.schema.json",
+  "type": "object",
+  "properties": {
+    "version": {"const": "UI-TOKEN-MANIFEST-1.0.0"},
+    "sourceSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "tokens": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/uiToken"}, "uniqueItems": true}
+  },
+  "required": ["version", "sourceSha256", "tokens"],
+  "additionalProperties": false,
+  "$defs": {
+    "uiToken": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string", "pattern": "^--[a-z0-9-]+$"},
+        "value": {"type": "string", "minLength": 1}
+      },
+      "required": ["name", "value"],
+      "additionalProperties": false
+    }
+  }
+}

@@ -34,6 +34,8 @@ class BuildRootContractTest {
         String pom = Files.readString(Path.of("pom.xml"));
         assertTrue(pom.contains("<version>4.1.0</version>"));
         assertTrue(pom.contains("<maven.compiler.release>25</maven.compiler.release>"));
+        assertTrue(pom.contains("<project.build.outputTimestamp>2026-07-19T00:00:00Z</project.build.outputTimestamp>"));
+        assertTrue(pom.contains("<finalName>scholarsense-backend</finalName>"));
         assertTrue(pom.contains("<artifactId>maven-wrapper-plugin</artifactId>"));
         assertTrue(pom.contains("<version>3.3.4</version>"));
     }

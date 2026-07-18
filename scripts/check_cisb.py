@@ -3,13 +3,13 @@
 
 from __future__ import annotations
 
-import json
 import re
 import sys
 from pathlib import Path
 from typing import Any
 
 from check_workflow_security import validate_workflow
+from release_json import load_json
 
 
 PLACEHOLDER = re.compile(r"(?i)(?:^|[^a-z])(?:tbd|todo|unknown|no_vcs|latest|equivalent|placeholder|pending)(?:$|[^a-z])")
@@ -18,26 +18,7 @@ SEMVER = re.compile(r"^v?\d+\.\d+\.\d+$")
 
 
 def load_json_document(path: Path) -> dict[str, Any]:
-    payload = path.read_bytes()
-    if payload.startswith(b"\xef\xbb\xbf"):
-        raise ValueError("JSON_BOM_FORBIDDEN")
-
-    def object_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-        result: dict[str, Any] = {}
-        for key, value in pairs:
-            if key in result:
-                raise ValueError(f"JSON_DUPLICATE_KEY: {key}")
-            result[key] = value
-        return result
-
-    try:
-        document = json.loads(
-            payload.decode("utf-8"),
-            object_pairs_hook=object_pairs,
-            parse_constant=lambda value: (_ for _ in ()).throw(ValueError(f"JSON_NUMBER_FORBIDDEN: {value}")),
-        )
-    except UnicodeError as error:
-        raise ValueError("JSON_UTF8_REQUIRED") from error
+    document = load_json(path)
     if not isinstance(document, dict):
         raise ValueError("JSON_OBJECT_REQUIRED")
     return document

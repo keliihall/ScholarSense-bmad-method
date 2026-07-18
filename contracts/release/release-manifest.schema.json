@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/release/release-manifest.schema.json",
+  "type": "object",
+  "properties": {
+    "version": {"const": "RELEASE-MANIFEST-1.0.0"},
+    "releaseVersion": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "sourceCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "buildManifestSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "canonicalizationProfile": {"const": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"},
+    "cisbVersion": {"const": "CISB-1.0.0"},
+    "testEnvironmentVersion": {"const": "TEST-ENV-1.0.0"},
+    "testEnvironmentSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "appApplicabilityBaselineVersion": {"const": "AAB-1.0.0"},
+    "appDecisionId": {"const": "USER-2026-07-19-SCHOOL-APP-NA"},
+    "artifacts": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/evidence"}, "uniqueItems": true},
+    "evidence": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence"}, "uniqueItems": true},
+    "baselineStatus": {"type": "string", "enum": ["approved", "not-applicable"]},
+    "runtimeEvidenceStatus": {"type": "string", "enum": ["passed", "pending-story-execution", "not-applicable"]},
+    "frozenAt": {"type": "string", "format": "date-time"}
+  },
+  "required": ["version", "releaseVersion", "sourceCommit", "buildManifestSha256", "canonicalizationProfile", "cisbVersion", "testEnvironmentVersion", "testEnvironmentSha256", "appApplicabilityBaselineVersion", "appDecisionId", "artifacts", "evidence", "baselineStatus", "runtimeEvidenceStatus", "frozenAt"],
+  "additionalProperties": false,
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "uri": {"type": "string", "format": "uri"},
+        "mediaType": {"type": "string", "minLength": 3},
+        "size": {"type": "integer", "minimum": 1},
+        "binarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "ociDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      },
+      "required": ["id", "uri", "mediaType", "size", "binarySha256", "ociDigest"],
+      "additionalProperties": false
+    }
+  }
+}

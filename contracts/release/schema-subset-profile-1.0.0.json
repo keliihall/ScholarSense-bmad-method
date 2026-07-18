@@ -1,0 +1,32 @@
+{
+  "profile": "SCHOLARSENSE-JSON-SCHEMA-SUBSET-1.0.0",
+  "dialect": "https://json-schema.org/draft/2020-12/schema",
+  "claim": "controlled-subset-not-full-draft-implementation",
+  "keywords": [
+    "$defs",
+    "$id",
+    "$ref",
+    "$schema",
+    "additionalProperties",
+    "const",
+    "description",
+    "enum",
+    "format",
+    "items",
+    "maxItems",
+    "maxLength",
+    "maximum",
+    "minItems",
+    "minLength",
+    "minimum",
+    "pattern",
+    "properties",
+    "required",
+    "title",
+    "type",
+    "uniqueItems"
+  ],
+  "formats": ["date-time", "uri"],
+  "references": "local-json-pointer-to-$defs-or-properties-only",
+  "unknownKeywordTreatment": "fail-closed"
+}

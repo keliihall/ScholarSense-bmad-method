@@ -4,13 +4,12 @@
 from __future__ import annotations
 
 import hashlib
-import json
-import math
 import re
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from release_json import canonical_bytes, canonical_sha256, load_json, schema_issues
 
 
 EXPECTED_DEPENDENCIES = {
@@ -587,9 +586,7 @@ def _validate_content_digest(name: str, value: dict[str, Any], violations: list[
     expected = value.get("contentSha256")
     payload = dict(value)
     payload.pop("contentSha256", None)
-    actual = hashlib.sha256(
-        json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
+    actual = canonical_sha256(payload, legacy_numbers=True)
     if expected != actual:
         violations.append(f"MANIFEST_CONTENT_DIGEST_DRIFT: {name}")
     if actual != EXPECTED_MANIFEST_CONTENT_SHA256[name]:
@@ -597,9 +594,7 @@ def _validate_content_digest(name: str, value: dict[str, Any], violations: list[
 
 
 def _canonical_json_digest(value: Any) -> str:
-    return hashlib.sha256(
-        json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
+    return canonical_sha256(value, legacy_numbers=True)
 
 
 def _dependency_tree_digest(lock: dict[str, Any]) -> str:
@@ -614,153 +609,12 @@ def _dependency_tree_digest(lock: dict[str, Any]) -> str:
             "resolved": metadata.get("resolved"),
             "integrity": metadata.get("integrity"),
         })
-    payload = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode()
+    payload = canonical_bytes(rows)
     return hashlib.sha256(payload).hexdigest()
 
 
 def _json_schema_issues(instance: Any, schema: dict[str, Any]) -> list[str]:
-    """Validate the Draft 2020-12 keywords used by the checked-in contracts.
-
-    The project intentionally keeps this gate on the Python standard library.  The
-    implementation is deliberately fail-closed: an unsupported keyword in the
-    contract is itself a validation error instead of being silently ignored.
-    """
-
-    issues: list[str] = []
-    _validate_schema_node(instance, schema, "$", issues)
-    return issues
-
-
-def _validate_schema_node(instance: Any, schema: Any, path: str, issues: list[str]) -> None:
-    if isinstance(schema, bool):
-        if not schema:
-            issues.append(f"{path}: rejected by false schema")
-        return
-    if not isinstance(schema, dict):
-        issues.append(f"{path}: schema node is not an object")
-        return
-
-    supported = {
-        "$schema", "$id", "title", "description", "type", "const", "enum",
-        "properties", "required", "additionalProperties", "items", "minItems",
-        "maxItems", "uniqueItems", "minLength", "pattern", "format", "minimum",
-        "maximum",
-    }
-    unsupported = sorted(set(schema) - supported)
-    if unsupported:
-        issues.append(f"{path}: unsupported schema keyword(s): {','.join(unsupported)}")
-        return
-
-    declared_type = schema.get("type")
-    if declared_type is not None and not _schema_type_matches(instance, declared_type):
-        issues.append(f"{path}: expected type {declared_type}")
-        return
-
-    if "const" in schema and not _json_values_equal(instance, schema["const"]):
-        issues.append(f"{path}: value does not match const")
-    if "enum" in schema and not any(_json_values_equal(instance, candidate) for candidate in schema["enum"]):
-        issues.append(f"{path}: value is not in enum")
-
-    if isinstance(instance, dict):
-        required = schema.get("required", [])
-        for key in required:
-            if key not in instance:
-                issues.append(f"{path}.{key}: required property missing")
-        properties = schema.get("properties", {})
-        for key, child in instance.items():
-            child_path = f"{path}.{key}"
-            if key in properties:
-                _validate_schema_node(child, properties[key], child_path, issues)
-            else:
-                additional = schema.get("additionalProperties", True)
-                if additional is False:
-                    issues.append(f"{child_path}: additional property not allowed")
-                elif isinstance(additional, (dict, bool)):
-                    _validate_schema_node(child, additional, child_path, issues)
-
-    if isinstance(instance, list):
-        if len(instance) < schema.get("minItems", 0):
-            issues.append(f"{path}: fewer than minItems")
-        if "maxItems" in schema and len(instance) > schema["maxItems"]:
-            issues.append(f"{path}: more than maxItems")
-        if schema.get("uniqueItems") is True:
-            for index, value in enumerate(instance):
-                if any(_json_values_equal(value, prior) for prior in instance[:index]):
-                    issues.append(f"{path}[{index}]: duplicate item")
-                    break
-        if "items" in schema:
-            for index, value in enumerate(instance):
-                _validate_schema_node(value, schema["items"], f"{path}[{index}]", issues)
-
-    if isinstance(instance, str):
-        if len(instance) < schema.get("minLength", 0):
-            issues.append(f"{path}: shorter than minLength")
-        pattern = schema.get("pattern")
-        if pattern is not None and re.search(pattern, instance) is None:
-            issues.append(f"{path}: string does not match pattern")
-        if schema.get("format") == "date-time" and not _is_rfc3339_datetime(instance):
-            issues.append(f"{path}: invalid date-time")
-
-    if _is_json_number(instance):
-        if not math.isfinite(float(instance)):
-            issues.append(f"{path}: number must be finite")
-        if "minimum" in schema and instance < schema["minimum"]:
-            issues.append(f"{path}: below minimum")
-        if "maximum" in schema and instance > schema["maximum"]:
-            issues.append(f"{path}: above maximum")
-
-
-def _schema_type_matches(value: Any, declared: Any) -> bool:
-    if isinstance(declared, list):
-        return any(_schema_type_matches(value, item) for item in declared)
-    checks = {
-        "object": lambda item: isinstance(item, dict),
-        "array": lambda item: isinstance(item, list),
-        "string": lambda item: isinstance(item, str),
-        "integer": lambda item: isinstance(item, int) and not isinstance(item, bool),
-        "number": _is_json_number,
-        "boolean": lambda item: isinstance(item, bool),
-        "null": lambda item: item is None,
-    }
-    check = checks.get(declared)
-    return check(value) if check is not None else False
-
-
-def _is_json_number(value: Any) -> bool:
-    return isinstance(value, (int, float)) and not isinstance(value, bool)
-
-
-def _json_values_equal(left: Any, right: Any) -> bool:
-    if type(left) is not type(right):
-        return False
-    if isinstance(left, dict):
-        return left.keys() == right.keys() and all(_json_values_equal(left[key], right[key]) for key in left)
-    if isinstance(left, list):
-        return len(left) == len(right) and all(_json_values_equal(a, b) for a, b in zip(left, right))
-    return left == right
-
-
-def _is_rfc3339_datetime(value: str) -> bool:
-    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})", value):
-        return False
-    try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    except ValueError:
-        return False
-    return parsed.tzinfo is not None
-
-
-class _DuplicateJsonKey(ValueError):
-    pass
-
-
-def _reject_duplicate_json_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-    value: dict[str, Any] = {}
-    for key, item in pairs:
-        if key in value:
-            raise _DuplicateJsonKey(key)
-        value[key] = item
-    return value
+    return schema_issues(instance, schema)
 
 
 def _load_json(path: Path, label: str, violations: list[str]) -> dict[str, Any] | None:
@@ -768,11 +622,8 @@ def _load_json(path: Path, label: str, violations: list[str]) -> dict[str, Any] 
         violations.append(f"{label}_REQUIRED: {path.as_posix()}")
         return None
     try:
-        value = json.loads(
-            path.read_text(encoding="utf-8"),
-            object_pairs_hook=_reject_duplicate_json_keys,
-        )
-    except (json.JSONDecodeError, OSError, _DuplicateJsonKey) as error:
+        value = load_json(path, legacy_numbers=True)
+    except (OSError, ValueError) as error:
         violations.append(f"{label}_INVALID: {path.name} -> {error.__class__.__name__}")
         return None
     if not isinstance(value, dict):

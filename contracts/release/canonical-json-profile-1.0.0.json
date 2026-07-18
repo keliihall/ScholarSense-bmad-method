@@ -1,0 +1,11 @@
+{
+  "profile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+  "encoding": "UTF-8-without-BOM",
+  "objectKeyOrder": "ascending-Unicode-code-point",
+  "whitespace": "none-outside-strings",
+  "numbers": "integers-only-within-IEEE-754-safe-range-negative-zero-forbidden",
+  "strings": "valid-Unicode-scalars-only",
+  "duplicateKeys": "rejected-before-canonicalization",
+  "digest": "SHA-256-over-canonical-UTF-8-bytes",
+  "selfDigestRule": "remove-only-the-schema-declared-contentSha256-field-before-digest; never infer exclusions"
+}

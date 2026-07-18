@@ -61,9 +61,10 @@ class ContractSeedTest(unittest.TestCase):
     def test_role_artifact_matches_maven_output_name(self) -> None:
         roles = json.loads((PROJECT_ROOT / "deploy/base/roles.json").read_text(encoding="utf-8"))
         pom = (PROJECT_ROOT / "backend/pom.xml").read_text(encoding="utf-8")
-        artifact_id = re.search(r"<artifactId>(scholarsense-backend)</artifactId>", pom).group(1)
-        version = re.search(r"<version>(0\.1\.0-SNAPSHOT)</version>", pom).group(1)
-        expected = f"backend/target/{artifact_id}-{version}.jar"
+        self.assertIn("<version>0.1.0-SNAPSHOT</version>", pom)
+        self.assertIn("<finalName>scholarsense-backend</finalName>", pom)
+        self.assertIn("<project.build.outputTimestamp>", pom)
+        expected = "backend/target/scholarsense-backend.jar"
 
         self.assertEqual(
             {expected},
@@ -145,6 +146,22 @@ class ContractSeedTest(unittest.TestCase):
             )
             path.write_text(content, encoding="utf-8")
 
+            self.assert_reason(root, "ROLE_ARTIFACT_MISMATCH")
+
+    def test_old_snapshot_path_and_one_role_only_changes_are_rejected(self) -> None:
+        old_path = "backend/target/scholarsense-backend-0.1.0-SNAPSHOT.jar"
+        with self.fixture() as root:
+            roles_path = root / "deploy/base/roles.json"
+            roles = json.loads(roles_path.read_text(encoding="utf-8"))
+            for definition in roles["roles"].values():
+                definition["artifact"] = old_path
+            roles_path.write_text(json.dumps(roles), encoding="utf-8")
+            self.assert_reason(root, "ROLE_ARTIFACT_MISMATCH")
+        with self.fixture() as root:
+            roles_path = root / "deploy/base/roles.json"
+            roles = json.loads(roles_path.read_text(encoding="utf-8"))
+            roles["roles"]["worker"]["artifact"] = old_path
+            roles_path.write_text(json.dumps(roles), encoding="utf-8")
             self.assert_reason(root, "ROLE_ARTIFACT_MISMATCH")
 
     def test_event_property_semantics_are_guarded(self) -> None:

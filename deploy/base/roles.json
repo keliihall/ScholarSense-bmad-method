@@ -10,7 +10,7 @@
   ],
   "roles": {
     "web-api": {
-      "artifact": "backend/target/scholarsense-backend-0.1.0-SNAPSHOT.jar",
+      "artifact": "backend/target/scholarsense-backend.jar",
       "environment": {
         "SCHOLARSENSE_ROLE": "web-api"
       },
@@ -22,7 +22,7 @@
       }
     },
     "worker": {
-      "artifact": "backend/target/scholarsense-backend-0.1.0-SNAPSHOT.jar",
+      "artifact": "backend/target/scholarsense-backend.jar",
       "environment": {
         "SCHOLARSENSE_ROLE": "worker"
       },

@@ -54,6 +54,8 @@ run_replay() {
   cp -R "$ROOT_DIR/backend/src/main" "$replay_root/backend/src/main"
   cp -R "$ROOT_DIR/contracts" "$replay_root/contracts"
   cp -R "$ROOT_DIR/deploy" "$replay_root/deploy"
+  cp -R "$ROOT_DIR/.github" "$replay_root/.github"
+  cp -R "$ROOT_DIR/release" "$replay_root/release"
   cp -R "$ROOT_DIR/docs/architecture/adr" "$replay_root/docs/architecture/adr"
   cd "$replay_root/frontend"
 
@@ -133,6 +135,19 @@ if ! cmp -s "$WORK_DIR/replay-1.summary" "$WORK_DIR/replay-2.summary"; then
   echo "FRONTEND_REPRODUCIBILITY_DRIFT: clean offline replays differ" >&2
   diff -u "$WORK_DIR/replay-1.summary" "$WORK_DIR/replay-2.summary" >&2 || true
   exit 1
+fi
+
+if [[ -n "${FRONTEND_RELEASE_OUTPUT:-}" ]]; then
+  [[ "$FRONTEND_RELEASE_OUTPUT" = /* ]] || {
+    echo "FRONTEND_RELEASE_OUTPUT_MUST_BE_ABSOLUTE" >&2
+    exit 1
+  }
+  [[ ! -e "$FRONTEND_RELEASE_OUTPUT" ]] || {
+    echo "FRONTEND_RELEASE_OUTPUT_ALREADY_EXISTS" >&2
+    exit 1
+  }
+  mkdir -p "$(dirname "$FRONTEND_RELEASE_OUTPUT")"
+  cp -R "$WORK_DIR/replay-1/frontend/dist" "$FRONTEND_RELEASE_OUTPUT"
 fi
 
 echo "[frontend] two clean offline replays match"

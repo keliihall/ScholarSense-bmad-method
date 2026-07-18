@@ -1,0 +1,1 @@
+{"version":"TOOLCHAIN-LOCK-1.0.0","tools":[{"name":"cosign","version":"v3.1.2","binarySha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","sourceUri":"https://github.com/sigstore/cosign/releases/tag/v3.1.2"}],"actions":[{"repository":"actions/checkout","releaseVersion":"v7.0.0","actionCommitOid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}
