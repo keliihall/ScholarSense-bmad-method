@@ -16,7 +16,9 @@ PRODUCTION_ROOTS = (
     "contracts",
     "deploy",
     "release",
+    "scripts",
 )
+SKIPPED_PATH_PREFIXES = ("scripts/tests/",)
 FORBIDDEN_PATH_PARTS = {"node_modules", "dist", "mock", "mocks", "__pycache__"}
 TEXT_SUFFIXES = {
     ".java", ".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs",
@@ -60,6 +62,8 @@ def scan(project_root: Path) -> list[str]:
             continue
         for entry in sorted(production_root.rglob("*")):
             relative = entry.relative_to(root)
+            if any(relative.as_posix().startswith(prefix) for prefix in SKIPPED_PATH_PREFIXES):
+                continue
             if entry.is_symlink():
                 violations.append(f"PRODUCTION_SYMLINK_FORBIDDEN: {relative}")
                 continue

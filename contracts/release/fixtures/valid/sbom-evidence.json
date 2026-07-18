@@ -1,0 +1,88 @@
+{
+  "version": "SBOM-EVIDENCE-1.0.0",
+  "buildManifestSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "artifactSetSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "scanContext": {
+    "trivyVersion": "0.72.0",
+    "trivyArchiveSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "trivyBinarySha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "trivySourceUri": "https://github.com/aquasecurity/trivy/releases/download/v0.72.0/trivy.tar.gz",
+    "trivyBundleSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "databaseRepository": "ghcr.io/aquasecurity/trivy-db:2",
+    "databaseSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "databaseMetadataSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "databaseUpdatedAt": "2026-07-18T18:43:59Z",
+    "databaseNextUpdate": "2026-07-19T18:43:59Z",
+    "trivyCertificateIdentity": "https://github.com/aquasecurity/trivy/.github/workflows/reusable-release.yaml@refs/tags/v0.72.0",
+    "trivyOidcIssuer": "https://token.actions.githubusercontent.com",
+    "cosignBinarySha256": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+    "cosignSourceUri": "https://github.com/sigstore/cosign/releases/download/v3.1.2/cosign-darwin-arm64"
+  },
+  "policies": {
+    "vulnerabilityPolicySha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "licensePolicySha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "blockedSeverities": [
+      "CRITICAL",
+      "HIGH"
+    ],
+    "unknownSeverityTreatment": "block"
+  },
+  "subjects": [
+    {
+      "id": "backend",
+      "subjectBinarySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "componentCount": 1,
+      "vulnerabilityFindingCount": 0,
+      "cycloneDx": {
+        "path": "backend.cdx.json",
+        "binarySha256": "5555555555555555555555555555555555555555555555555555555555555555"
+      },
+      "spdx": {
+        "path": "backend.spdx.json",
+        "binarySha256": "6666666666666666666666666666666666666666666666666666666666666666"
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "frontend",
+      "subjectBinarySha256": "7777777777777777777777777777777777777777777777777777777777777777",
+      "componentCount": 1,
+      "vulnerabilityFindingCount": 0,
+      "cycloneDx": {
+        "path": "frontend.cdx.json",
+        "binarySha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "spdx": {
+        "path": "frontend.spdx.json",
+        "binarySha256": "9999999999999999999999999999999999999999999999999999999999999999"
+      },
+      "result": "PASS"
+    },
+    {
+      "id": "aggregate",
+      "subjectBinarySha256": "abababababababababababababababababababababababababababababababab",
+      "componentCount": 2,
+      "vulnerabilityFindingCount": 0,
+      "cycloneDx": {
+        "path": "aggregate.cdx.json",
+        "binarySha256": "bcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbc"
+      },
+      "spdx": {
+        "path": "aggregate.spdx.json",
+        "binarySha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+      },
+      "result": "PASS"
+    }
+  ],
+  "adjudications": {},
+  "npmTreeReconciliation": {
+    "installedUnique": 1,
+    "omittedOptionalUnique": 0
+  },
+  "licenseNotice": {
+    "path": "third-party-notices.json",
+    "binarySha256": "dededededededededededededededededededededededededededededededede",
+    "componentCount": 1
+  },
+  "result": "PASS"
+}

@@ -43,6 +43,11 @@ EXCLUDED_PARTS = {
     "test-results",
 }
 EXCLUDED_SUFFIXES = {".class", ".jar", ".pyc"}
+EXCLUDED_PREFIXES = (
+    "release-out/",
+    "release/evidence/",
+    "release/generated/",
+)
 TEXT_SUFFIXES = {
     ".cmd", ".css", ".csv", ".example", ".html", ".java", ".js", ".json",
     ".jsx", ".md", ".mjs", ".mts", ".properties", ".sh", ".ts", ".tsx",
@@ -67,11 +72,43 @@ def _included(path: str) -> bool:
     candidate = Path(path)
     if path == INVENTORY_PATH:
         return False
+    if any(path.startswith(prefix) for prefix in EXCLUDED_PREFIXES):
+        return False
     if any(part in EXCLUDED_PARTS for part in candidate.parts):
         return False
     if candidate.suffix in EXCLUDED_SUFFIXES:
         return False
     return path in INCLUDED_FILES or any(path.startswith(prefix) for prefix in INCLUDED_PREFIXES)
+
+
+def source_scope_issues(files: list[dict[str, str]]) -> list[str]:
+    paths = {item.get("path") for item in files if isinstance(item, dict)}
+    required = {
+        ".github/CODEOWNERS",
+        ".github/workflows/platform-probe.yml",
+        "backend/.mvn/wrapper/maven-wrapper.properties",
+        "backend/mvnw",
+        "backend/mvnw.cmd",
+        "backend/pom.xml",
+        "contracts/release/release-manifest.schema.json",
+        "contracts/release/evidence-index.schema.json",
+        "docs/architecture/adr/ci-supply-chain-baseline-cisb-1.0.0.md",
+        "frontend/package-lock.json",
+        "frontend/package.json",
+        "release/build_release.py",
+        "release/manifests.py",
+        "scripts/check_release_manifests.py",
+        "scripts/verify_core.sh",
+    }
+    issues = [f"RELEASE_SOURCE_REQUIRED_PATH_MISSING: {path}" for path in sorted(required - paths)]
+    if INVENTORY_PATH in paths:
+        issues.append("RELEASE_SOURCE_INVENTORY_SELF_REFERENCE")
+    dynamic = sorted(
+        str(path) for path in paths
+        if isinstance(path, str) and any(path.startswith(prefix) for prefix in EXCLUDED_PREFIXES)
+    )
+    issues.extend(f"RELEASE_SOURCE_DYNAMIC_OUTPUT_INCLUDED: {path}" for path in dynamic)
+    return issues
 
 
 def build_git_inventory(project_root: Path, revision: str) -> dict[str, Any]:

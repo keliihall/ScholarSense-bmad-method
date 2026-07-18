@@ -1,8 +1,29 @@
 {
   "version": "LICENSE-POLICY-1.0.0",
   "allowed": ["0BSD", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "MIT", "MPL-2.0"],
+  "allowedExpressions": [
+    "CC0-1.0 OR BSD-2-Clause",
+    "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+    "EPL-2.0 OR LGPL-2.1-only"
+  ],
   "denied": ["AGPL-1.0-only", "AGPL-3.0-only", "SSPL-1.0"],
   "unknownTreatment": "block",
   "noticeRequired": true,
-  "sourceDisclosureRequiredFor": ["MPL-2.0"]
+  "sourceDisclosureRequiredFor": [
+    "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+    "EPL-2.0 OR LGPL-2.1-only",
+    "MPL-2.0"
+  ],
+  "obligations": [
+    {"licenseExpression": "0BSD", "actions": ["retain-license-text"]},
+    {"licenseExpression": "Apache-2.0", "actions": ["retain-license-text", "retain-notice", "state-modifications"]},
+    {"licenseExpression": "BSD-2-Clause", "actions": ["retain-license-text", "retain-copyright"]},
+    {"licenseExpression": "BSD-3-Clause", "actions": ["retain-license-text", "retain-copyright", "no-endorsement"]},
+    {"licenseExpression": "CC0-1.0 OR BSD-2-Clause", "actions": ["retain-selected-license-text"]},
+    {"licenseExpression": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0", "actions": ["retain-selected-license-text", "publish-covered-source-when-modified"]},
+    {"licenseExpression": "EPL-2.0 OR LGPL-2.1-only", "actions": ["retain-selected-license-text", "publish-covered-source-when-modified", "preserve-relinking-rights-if-lgpl-selected"]},
+    {"licenseExpression": "ISC", "actions": ["retain-license-text", "retain-copyright"]},
+    {"licenseExpression": "MIT", "actions": ["retain-license-text", "retain-copyright"]},
+    {"licenseExpression": "MPL-2.0", "actions": ["retain-license-text", "publish-modified-covered-files-source"]}
+  ]
 }

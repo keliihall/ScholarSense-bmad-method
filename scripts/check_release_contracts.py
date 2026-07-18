@@ -6,6 +6,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "release"))
+
+from manifests import evidence_index_issues, release_manifest_issues  # noqa: E402
 from release_json import (
     canonical_bytes,
     canonical_sha256,
@@ -77,6 +81,14 @@ def validate(project_root: Path) -> list[str]:
                 issues.append(f"CANONICAL_VECTOR_DIGEST_MISMATCH: {vector['id']}")
     except (KeyError, OSError, TypeError, ValueError) as error:
         issues.append(f"CANONICAL_VECTOR_INVALID: {error}")
+    try:
+        build_fixture = load_json(contracts / "fixtures/valid/build-manifest.json")
+        release_fixture = load_json(contracts / "fixtures/valid/release-manifest.json")
+        index_fixture = load_json(contracts / "fixtures/valid/evidence-index.json")
+        issues.extend(f"release-manifest fixture: {issue}" for issue in release_manifest_issues(release_fixture, build_fixture))
+        issues.extend(f"evidence-index fixture: {issue}" for issue in evidence_index_issues(index_fixture, release_fixture))
+    except (OSError, TypeError, ValueError) as error:
+        issues.append(f"RELEASE_LIFECYCLE_FIXTURE_INVALID: {error}")
     return sorted(set(issues))
 
 

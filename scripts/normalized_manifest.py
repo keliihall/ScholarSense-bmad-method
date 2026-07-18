@@ -31,6 +31,8 @@ EXCLUDED_PARTS = {
     "test-results",
 }
 EXCLUDED_SUFFIXES = {".pyc", ".class", ".jar"}
+EXCLUDED_FILES = {"contracts/release/release-source-inventory-1.0.0.json"}
+EXCLUDED_PREFIXES = ("release-out/", "release/evidence/", "release/generated/")
 TEXT_SUFFIXES = {
     ".java", ".ts", ".mts", ".cts", ".mjs", ".cjs", ".vue", ".css", ".html",
     ".json", ".yml", ".yaml", ".properties", ".xml", ".md", ".csv", ".example",
@@ -47,6 +49,9 @@ def build_manifest(project_root: Path) -> dict:
         if candidate.is_dir():
             for path in candidate.rglob("*"):
                 relative = path.relative_to(root)
+                name = relative.as_posix()
+                if name in EXCLUDED_FILES or any(name.startswith(prefix) for prefix in EXCLUDED_PREFIXES):
+                    continue
                 if any(part in EXCLUDED_PARTS for part in relative.parts):
                     continue
                 if path.is_symlink():
@@ -65,6 +70,9 @@ def build_manifest(project_root: Path) -> dict:
     combined = hashlib.sha256()
     for path in sorted(paths, key=lambda value: value.relative_to(root).as_posix()):
         relative = path.relative_to(root)
+        name = relative.as_posix()
+        if name in EXCLUDED_FILES or any(name.startswith(prefix) for prefix in EXCLUDED_PREFIXES):
+            continue
         if any(part in EXCLUDED_PARTS for part in relative.parts) or path.suffix in EXCLUDED_SUFFIXES:
             continue
         payload = path.read_bytes()
@@ -73,7 +81,6 @@ def build_manifest(project_root: Path) -> dict:
         }:
             payload = payload.replace(b"\r\n", b"\n")
         digest = hashlib.sha256(payload).hexdigest()
-        name = relative.as_posix()
         files.append({"path": name, "sha256": digest})
         combined.update(name.encode("utf-8") + b"\0" + digest.encode("ascii") + b"\n")
     return {

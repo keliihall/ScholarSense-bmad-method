@@ -6,6 +6,7 @@
     {"id": "vulnerability-exception", "schema": "vulnerability-exception.schema.json", "valid": "fixtures/valid/vulnerability-exception.json", "invalid": "fixtures/invalid/vulnerability-exception.json"},
     {"id": "vulnerability-policy", "schema": "vulnerability-policy.schema.json", "valid": "vulnerability-policy-1.0.0.json", "invalid": "fixtures/invalid/vulnerability-policy.json"},
     {"id": "license-policy", "schema": "license-policy.schema.json", "valid": "license-policy-1.0.0.json", "invalid": "fixtures/invalid/license-policy.json"},
+    {"id": "sbom-evidence", "schema": "sbom-evidence.schema.json", "valid": "fixtures/valid/sbom-evidence.json", "invalid": "fixtures/invalid/sbom-evidence.json"},
     {"id": "build-manifest", "schema": "build-manifest.schema.json", "valid": "fixtures/valid/build-manifest.json", "invalid": "fixtures/invalid/build-manifest.json"},
     {"id": "release-manifest", "schema": "release-manifest.schema.json", "valid": "fixtures/valid/release-manifest.json", "invalid": "fixtures/invalid/release-manifest.json"},
     {"id": "evidence-index", "schema": "evidence-index.schema.json", "valid": "fixtures/valid/evidence-index.json", "invalid": "fixtures/invalid/evidence-index.json"},
