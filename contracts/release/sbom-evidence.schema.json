@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/release/sbom-evidence.schema.json",
+  "type": "object",
+  "properties": {
+    "version": {"const": "SBOM-EVIDENCE-1.0.0"},
+    "buildManifestSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifactSetSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "scanContext": {"$ref": "#/$defs/scanContext"},
+    "policies": {"$ref": "#/$defs/policies"},
+    "subjects": {"type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true, "items": {"$ref": "#/$defs/subject"}},
+    "adjudications": {"type": "object"},
+    "npmTreeReconciliation": {"$ref": "#/$defs/npmTree"},
+    "licenseNotice": {"$ref": "#/$defs/licenseNotice"},
+    "result": {"const": "PASS"}
+  },
+  "required": ["version", "buildManifestSha256", "artifactSetSha256", "scanContext", "policies", "subjects", "adjudications", "npmTreeReconciliation", "licenseNotice", "result"],
+  "additionalProperties": false,
+  "$defs": {
+    "scanContext": {
+      "type": "object",
+      "properties": {
+        "trivyVersion": {"const": "0.72.0"},
+        "trivyArchiveSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "trivyBinarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "trivySourceUri": {"type": "string", "format": "uri"},
+        "trivyBundleSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "trivyCertificateIdentity": {"const": "https://github.com/aquasecurity/trivy/.github/workflows/reusable-release.yaml@refs/tags/v0.72.0"},
+        "trivyOidcIssuer": {"const": "https://token.actions.githubusercontent.com"},
+        "cosignBinarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "cosignSourceUri": {"type": "string", "format": "uri"},
+        "databaseRepository": {"const": "ghcr.io/aquasecurity/trivy-db:2"},
+        "databaseSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "databaseMetadataSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "databaseUpdatedAt": {"type": "string", "format": "date-time"},
+        "databaseNextUpdate": {"type": "string", "format": "date-time"}
+      },
+      "required": ["trivyVersion", "trivyArchiveSha256", "trivyBinarySha256", "trivySourceUri", "trivyBundleSha256", "trivyCertificateIdentity", "trivyOidcIssuer", "cosignBinarySha256", "cosignSourceUri", "databaseRepository", "databaseSha256", "databaseMetadataSha256", "databaseUpdatedAt", "databaseNextUpdate"],
+      "additionalProperties": false
+    },
+    "policies": {
+      "type": "object",
+      "properties": {
+        "vulnerabilityPolicySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "licensePolicySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "blockedSeverities": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "enum": ["CRITICAL", "HIGH"]}},
+        "unknownSeverityTreatment": {"const": "block"}
+      },
+      "required": ["vulnerabilityPolicySha256", "licensePolicySha256", "blockedSeverities", "unknownSeverityTreatment"],
+      "additionalProperties": false
+    },
+    "document": {
+      "type": "object",
+      "properties": {
+        "path": {"type": "string", "minLength": 5},
+        "binarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "required": ["path", "binarySha256"],
+      "additionalProperties": false
+    },
+    "subject": {
+      "type": "object",
+      "properties": {
+        "id": {"type": "string", "enum": ["backend", "frontend", "aggregate"]},
+        "subjectBinarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "componentCount": {"type": "integer", "minimum": 1},
+        "vulnerabilityFindingCount": {"type": "integer", "minimum": 0},
+        "cycloneDx": {"$ref": "#/$defs/document"},
+        "spdx": {"$ref": "#/$defs/document"},
+        "result": {"const": "PASS"}
+      },
+      "required": ["id", "subjectBinarySha256", "componentCount", "vulnerabilityFindingCount", "cycloneDx", "spdx", "result"],
+      "additionalProperties": false
+    },
+    "npmTree": {
+      "type": "object",
+      "properties": {
+        "installedUnique": {"type": "integer", "minimum": 1},
+        "omittedOptionalUnique": {"type": "integer", "minimum": 0}
+      },
+      "required": ["installedUnique", "omittedOptionalUnique"],
+      "additionalProperties": false
+    },
+    "licenseNotice": {
+      "type": "object",
+      "properties": {
+        "path": {"const": "third-party-notices.json"},
+        "binarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "componentCount": {"type": "integer", "minimum": 1}
+      },
+      "required": ["path", "binarySha256", "componentCount"],
+      "additionalProperties": false
+    }
+  }
+}

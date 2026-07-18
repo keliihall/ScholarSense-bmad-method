@@ -58,7 +58,7 @@ def vulnerability_issues(
 
 
 def license_issues(components: list[dict[str, Any]], policy: dict[str, Any]) -> list[str]:
-    allowed = set(policy.get("allowed", []))
+    allowed = set(policy.get("allowed", [])) | set(policy.get("allowedExpressions", []))
     denied = set(policy.get("denied", []))
     issues: list[str] = []
     for component in components:
