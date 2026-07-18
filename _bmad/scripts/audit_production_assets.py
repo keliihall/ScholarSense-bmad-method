@@ -1090,12 +1090,13 @@ def _workspace_asset_candidates(
         if project_root.name in WORKSPACE_DISCOVERY_PRUNED_DIRECTORIES:
             continue
         try:
+            _require_directory_read_and_traverse(mode, project_root.name)
             with os.scandir(project_root) as iterator:
                 children = {
                     entry.name: Path(entry.path)
                     for entry in iterator
                 }
-        except OSError:
+        except (AuditError, OSError):
             # 无法排除其中包含后端、CI 或部署指纹；保守地绑定到三类
             # 负面事实，使后续快照形成可定位的 blocked 交接。
             backend.add(project_root)
