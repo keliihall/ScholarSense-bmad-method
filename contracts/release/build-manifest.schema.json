@@ -7,10 +7,12 @@
     "sourceCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
     "sourceManifestSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "toolchainLockSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "backendLockSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "frontendLockSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "attempts": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/attempt"}},
     "artifacts": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/artifact"}, "uniqueItems": true}
   },
-  "required": ["version", "sourceCommit", "sourceManifestSha256", "toolchainLockSha256", "attempts", "artifacts"],
+  "required": ["version", "sourceCommit", "sourceManifestSha256", "toolchainLockSha256", "backendLockSha256", "frontendLockSha256", "attempts", "artifacts"],
   "additionalProperties": false,
   "$defs": {
     "attempt": {

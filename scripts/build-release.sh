@@ -3,10 +3,6 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TOOLCHAIN="$ROOT_DIR/_bmad/scripts/with_pab_toolchain.sh"
-export PYTHONDONTWRITEBYTECODE=1
+OUTPUT="${1:-$ROOT_DIR/release-out/local-release}"
 
-"$ROOT_DIR/scripts/bootstrap.sh"
-
-"$ROOT_DIR/scripts/verify_core.sh"
-
-echo "[verify] PASS"
+exec "$TOOLCHAIN" python3 "$ROOT_DIR/release/build_release.py" "$ROOT_DIR" "$OUTPUT"

@@ -8,6 +8,8 @@
 _bmad/scripts/with_pab_toolchain.sh backend/mvnw -f backend/pom.xml clean verify
 ```
 
+The Maven coordinates remain `0.1.0-SNAPSHOT`, but the only runnable release artifact is the neutral, reproducible path `backend/target/scholarsense-backend.jar`. Release identity is its SHA-256 plus the signed ReleaseManifest version; the filename and Maven coordinate are not release identities.
+
 `web-api` 与 `worker` 使用同一个 jar。两者都必须通过环境变量提供以下引用型配置：
 `SCHOLARSENSE_ENV`、`SCHOLARSENSE_ROLE`、`SCHOLARSENSE_ACCOUNT_REF`、
 `SCHOLARSENSE_DATABASE_REF`、`SCHOLARSENSE_SECRET_REF`、

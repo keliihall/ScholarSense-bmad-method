@@ -137,6 +137,19 @@ if ! cmp -s "$WORK_DIR/replay-1.summary" "$WORK_DIR/replay-2.summary"; then
   exit 1
 fi
 
+if [[ -n "${FRONTEND_RELEASE_OUTPUT:-}" ]]; then
+  [[ "$FRONTEND_RELEASE_OUTPUT" = /* ]] || {
+    echo "FRONTEND_RELEASE_OUTPUT_MUST_BE_ABSOLUTE" >&2
+    exit 1
+  }
+  [[ ! -e "$FRONTEND_RELEASE_OUTPUT" ]] || {
+    echo "FRONTEND_RELEASE_OUTPUT_ALREADY_EXISTS" >&2
+    exit 1
+  }
+  mkdir -p "$(dirname "$FRONTEND_RELEASE_OUTPUT")"
+  cp -R "$WORK_DIR/replay-1/frontend/dist" "$FRONTEND_RELEASE_OUTPUT"
+fi
+
 echo "[frontend] two clean offline replays match"
 cat "$WORK_DIR/replay-1.summary"
 echo "[frontend] offline verification PASS"
