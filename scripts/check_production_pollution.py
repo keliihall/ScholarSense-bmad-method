@@ -10,10 +10,12 @@ from pathlib import Path
 
 
 PRODUCTION_ROOTS = (
+    ".github",
     "backend/src/main",
     "frontend",
     "contracts",
     "deploy",
+    "release",
 )
 FORBIDDEN_PATH_PARTS = {"node_modules", "dist", "mock", "mocks", "__pycache__"}
 TEXT_SUFFIXES = {

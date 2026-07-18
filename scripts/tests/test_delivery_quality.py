@@ -29,6 +29,20 @@ class DeliveryQualityTest(unittest.TestCase):
     def test_production_tree_is_clean(self) -> None:
         self.assertEqual([], scan(PROJECT_ROOT))
 
+    def test_supply_chain_configuration_is_in_production_pollution_scope(self) -> None:
+        self.assertIn(".github", PRODUCTION_ROOTS)
+        self.assertIn("release", PRODUCTION_ROOTS)
+        cases = (
+            (".github/workflows/leak.yml", "token: do-not-commit\n", "RAW_CREDENTIAL_LITERAL"),
+            ("release/policies/local.json", '{"endpoint":"http://localhost:8080"}\n', "LOCAL_ENDPOINT_LITERAL"),
+        )
+        for relative, content, reason in cases:
+            with self.subTest(relative=relative), self.fixture() as root:
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+                self.assertTrue(any(item.startswith(reason) for item in scan(root)), scan(root))
+
     def test_normalized_manifest_is_deterministic_and_excludes_generated_files(self) -> None:
         first = build_manifest(PROJECT_ROOT)
         second = build_manifest(PROJECT_ROOT)

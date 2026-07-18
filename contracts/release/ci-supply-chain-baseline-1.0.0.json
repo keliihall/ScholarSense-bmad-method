@@ -1,0 +1,95 @@
+{
+  "version": "CISB-1.0.0",
+  "status": "approved-pending-capability-probe",
+  "authority": {
+    "authorization": "USER-2026-07-19-PLATFORM-DELEGATION",
+    "accountable": "Hei",
+    "platformResponsible": "keliihall",
+    "securityResponsible": "keliihall",
+    "releaseResponsible": "keliihall",
+    "effectiveAt": "2026-07-19T05:17:07+08:00"
+  },
+  "repository": {
+    "provider": "GitHub.com",
+    "url": "https://github.com/keliihall/ScholarSense-bmad-method",
+    "apiUrl": "https://api.github.com/repositories/1305224312",
+    "id": 1305224312,
+    "visibility": "public",
+    "defaultBranch": "main",
+    "sourceCommit": "241f922da7ec7e8e92da0ec518bb4fa5aa1f9528"
+  },
+  "ci": {
+    "provider": "GitHub Actions",
+    "workflow": ".github/workflows/platform-probe.yml",
+    "protectedRef": "refs/heads/main",
+    "permissionsDefault": "read"
+  },
+  "runner": {
+    "provider": "GitHub-hosted",
+    "label": "ubuntu-24.04",
+    "imageVersionEvidence": "https://github.com/actions/runner-images/releases"
+  },
+  "identities": {
+    "build": "repo:keliihall/ScholarSense-bmad-method:ref:refs/heads/main#job:contract",
+    "attestation": "repo:keliihall/ScholarSense-bmad-method:ref:refs/heads/main#job:artifact-attestation",
+    "signing": "https://github.com/keliihall/ScholarSense-bmad-method/.github/workflows/platform-probe.yml@refs/heads/main",
+    "promotion": "repo:keliihall/ScholarSense-bmad-method:environment:stage#job:promotion-capability",
+    "verifier": "repo:keliihall/ScholarSense-bmad-method:ref:refs/heads/main#job:independent-verifier"
+  },
+  "artifactStore": {
+    "provider": "GitHub Container Registry OCI distribution",
+    "candidateNamespace": "ghcr.io/keliihall/scholarsense-release-candidate",
+    "stageNamespace": "ghcr.io/keliihall/scholarsense-release-stage",
+    "productionNamespace": "ghcr.io/keliihall/scholarsense-release-production",
+    "addressing": "oci-digest-only-sha256",
+    "transport": "TLS-1.2-or-newer",
+    "encryptionAtRestEvidence": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement#how-github-secures-your-information",
+    "accessControlEvidence": "https://api.github.com/repos/keliihall/ScholarSense-bmad-method/actions/permissions"
+  },
+  "attestation": {
+    "provider": "GitHub Artifact Attestations actions/attest v4",
+    "predicate": "https://slsa.dev/provenance/v1",
+    "subjectQuery": "https://api.github.com/repos/keliihall/ScholarSense-bmad-method/attestations/sha256:{subjectSha256}"
+  },
+  "signing": {
+    "provider": "Sigstore keyless Cosign v3.1.2 bundle",
+    "oidcIssuer": "https://token.actions.githubusercontent.com",
+    "certificateIdentity": "https://github.com/keliihall/ScholarSense-bmad-method/.github/workflows/platform-probe.yml@refs/heads/main",
+    "rekor": "https://rekor.sigstore.dev"
+  },
+  "promotion": {
+    "adapter": "oras-1.3.3+github-git-ref-cas-1.0.0",
+    "stageEnvironmentId": 18374865168,
+    "productionEnvironmentId": 18374865771,
+    "idempotencyKey": "releaseVersion+targetEnvironment",
+    "casMechanism": "create-only Git ref containing the promoted OCI digest; HTTP 422 is conflict",
+    "ledgerUri": "https://api.github.com/repos/keliihall/ScholarSense-bmad-method/git/ref/tags/promotion-ledger/{idempotencyKey}",
+    "reconciliationApi": "https://api.github.com/repos/keliihall/ScholarSense-bmad-method/git/matching-refs/tags/promotion-ledger/",
+    "rollbackApi": "digest-only re-promotion through the protected target environment"
+  },
+  "capabilityEvidence": {
+    "repository": "https://api.github.com/repositories/1305224312",
+    "protectedEnvironments": "https://api.github.com/repos/keliihall/ScholarSense-bmad-method/environments",
+    "artifactCasReadback": "pending-capability-probe",
+    "attestationSubjectQuery": "pending-capability-probe",
+    "signingVerification": "pending-capability-probe",
+    "promotionCas": "pending-capability-probe",
+    "verifier": "pending-capability-probe"
+  },
+  "toolchain": {
+    "trivy": "v0.72.0",
+    "cosign": "v3.1.2",
+    "oras": "v1.3.3",
+    "actions": {
+      "attest": "f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6",
+      "checkout": "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0"
+    },
+    "linuxAmd64": {
+      "cosignBinarySha256": "f7622ed3cf22e55e1ae6377c080979ff77a22da9981c11df222a2e444991e7cf",
+      "cosignBundleSha256": "fdaa1c168d67041cd0d8f5782f8136ac5d148827b6911ba8bb577cbc7e13de2c",
+      "trivyArchiveSha256": "bbb64b9695866ce4a7a8f5c9592002c5961cab378577fa3f8a040df362b9b2ea",
+      "trivyBundleSha256": "fccbe7d4877af44f27e205528626dfeb3ff6efac57c22061f1fccb59e8a80007",
+      "orasArchiveSha256": "9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59"
+    }
+  }
+}

@@ -1,0 +1,252 @@
+name: platform-supply-chain-probe
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  CANDIDATE_REPOSITORY: ghcr.io/keliihall/scholarsense-platform-probe
+  EVIDENCE_REPOSITORY: ghcr.io/keliihall/scholarsense-platform-evidence
+  STAGE_REPOSITORY: ghcr.io/keliihall/scholarsense-platform-stage
+  COSIGN_VERSION: 3.1.2
+  COSIGN_SHA256: f7622ed3cf22e55e1ae6377c080979ff77a22da9981c11df222a2e444991e7cf
+  ORAS_VERSION: 1.3.3
+  ORAS_SHA256: 9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59
+  TRIVY_VERSION: 0.72.0
+  TRIVY_SHA256: bbb64b9695866ce4a7a8f5c9592002c5961cab378577fa3f8a040df362b9b2ea
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Check workflow policy and probe baseline shape
+        run: |
+          python3 scripts/check_workflow_security.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          baseline = json.loads(Path("contracts/release/ci-supply-chain-baseline-1.0.0.json").read_text())
+          assert baseline["version"] == "CISB-1.0.0"
+          assert baseline["repository"]["id"] == 1305224312
+          assert baseline["toolchain"]["cosign"] == "v3.1.2"
+          assert baseline["toolchain"]["trivy"] == "v0.72.0"
+          PY
+
+  artifact-attestation:
+    needs: contract
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    outputs:
+      artifact-digest: ${{ steps.publish.outputs.artifact-digest }}
+      evidence-digest: ${{ steps.publish-evidence.outputs.evidence-digest }}
+      subject-sha256: ${{ steps.payload.outputs.subject-sha256 }}
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Create deterministic probe subject
+        id: payload
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          payload = {
+              "repositoryId": 1305224312,
+              "runAttempt": "${{ github.run_attempt }}",
+              "runId": "${{ github.run_id }}",
+              "sourceCommit": "${{ github.sha }}",
+              "version": "CISB-CAPABILITY-PROBE-1.0.0",
+          }
+          Path("platform-probe.json").write_text(
+              json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          printf 'subject-sha256=%s\n' "$(sha256sum platform-probe.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - name: Install digest-verified release tools
+        run: |
+          curl --fail --location --proto '=https' --tlsv1.2 --output cosign "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64"
+          printf '%s  %s\n' "$COSIGN_SHA256" cosign | sha256sum --check --strict
+          chmod 0755 cosign
+          curl --fail --location --proto '=https' --tlsv1.2 --output oras.tar.gz "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          printf '%s  %s\n' "$ORAS_SHA256" oras.tar.gz | sha256sum --check --strict
+          tar -xzf oras.tar.gz oras
+          chmod 0755 oras
+          curl --fail --location --proto '=https' --tlsv1.2 --output trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          printf '%s  %s\n' "$TRIVY_SHA256" trivy.tar.gz | sha256sum --check --strict
+          tar -xzf trivy.tar.gz trivy
+          chmod 0755 trivy
+          ./cosign version
+          ./oras version
+          ./trivy --version
+      - name: Authenticate to the scoped artifact store
+        env:
+          ORAS_PASSWORD: ${{ github.token }}
+        run: ./oras login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
+      - name: Publish and read back by OCI digest
+        id: publish
+        run: |
+          target="${CANDIDATE_REPOSITORY}:run-${{ github.run_id }}-${{ github.run_attempt }}"
+          ./oras push "$target" \
+            --annotation "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
+            platform-probe.json:application/vnd.scholarsense.platform-probe.v1+json \
+            --format json > push.json
+          digest="$(jq -er '.manifest.digest' push.json)"
+          test "${digest#sha256:}" != "$digest"
+          rm -rf readback
+          mkdir readback
+          ./oras pull "${CANDIDATE_REPOSITORY}@${digest}" --output readback
+          cmp platform-probe.json readback/platform-probe.json
+          printf 'artifact-digest=%s\n' "$digest" >> "$GITHUB_OUTPUT"
+      - name: Create GitHub build provenance attestation
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
+        with:
+          subject-path: platform-probe.json
+      - name: Sign subject with keyless Sigstore bundle and verify identity
+        run: |
+          ./cosign sign-blob --yes --bundle platform-probe.sigstore.json platform-probe.json
+          ./cosign verify-blob \
+            --bundle platform-probe.sigstore.json \
+            --certificate-identity "https://github.com/keliihall/ScholarSense-bmad-method/.github/workflows/platform-probe.yml@refs/heads/main" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            platform-probe.json
+      - name: Query attestation by subject digest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SUBJECT_SHA256: ${{ steps.payload.outputs.subject-sha256 }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/attestations/sha256:${SUBJECT_SHA256}" > attestations.json
+          test "$(jq -er '.attestations | length' attestations.json)" -ge 1
+      - name: Publish signing and query evidence
+        id: publish-evidence
+        run: |
+          target="${EVIDENCE_REPOSITORY}:run-${{ github.run_id }}-${{ github.run_attempt }}"
+          ./oras push "$target" \
+            --annotation "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
+            platform-probe.sigstore.json:application/vnd.dev.sigstore.bundle.v0.3+json \
+            attestations.json:application/vnd.github.attestations.query.v1+json \
+            --format json > evidence-push.json
+          digest="$(jq -er '.manifest.digest' evidence-push.json)"
+          printf 'evidence-digest=%s\n' "$digest" >> "$GITHUB_OUTPUT"
+
+  independent-verifier:
+    needs: artifact-attestation
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout verifier from immutable source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install digest-verified verifier tools
+        run: |
+          curl --fail --location --proto '=https' --tlsv1.2 --output cosign "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64"
+          printf '%s  %s\n' "$COSIGN_SHA256" cosign | sha256sum --check --strict
+          chmod 0755 cosign
+          curl --fail --location --proto '=https' --tlsv1.2 --output oras.tar.gz "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          printf '%s  %s\n' "$ORAS_SHA256" oras.tar.gz | sha256sum --check --strict
+          tar -xzf oras.tar.gz oras
+          chmod 0755 oras
+      - name: Authenticate with read-only package permission
+        env:
+          ORAS_PASSWORD: ${{ github.token }}
+        run: ./oras login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
+      - name: Re-fetch and verify all remote subjects
+        env:
+          ARTIFACT_DIGEST: ${{ needs.artifact-attestation.outputs.artifact-digest }}
+          EVIDENCE_DIGEST: ${{ needs.artifact-attestation.outputs.evidence-digest }}
+          SUBJECT_SHA256: ${{ needs.artifact-attestation.outputs.subject-sha256 }}
+        run: |
+          mkdir artifact evidence
+          ./oras pull "${CANDIDATE_REPOSITORY}@${ARTIFACT_DIGEST}" --output artifact
+          ./oras pull "${EVIDENCE_REPOSITORY}@${EVIDENCE_DIGEST}" --output evidence
+          test "$(sha256sum artifact/platform-probe.json | cut -d' ' -f1)" = "$SUBJECT_SHA256"
+          test "$(jq -er '.attestations | length' evidence/attestations.json)" -ge 1
+          ./cosign verify-blob \
+            --bundle evidence/platform-probe.sigstore.json \
+            --certificate-identity "https://github.com/keliihall/ScholarSense-bmad-method/.github/workflows/platform-probe.yml@refs/heads/main" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            artifact/platform-probe.json
+
+  promotion-capability:
+    needs: [artifact-attestation, independent-verifier]
+    runs-on: ubuntu-24.04
+    environment: stage
+    permissions:
+      contents: write
+      packages: write
+    outputs:
+      ledger-ref: ${{ steps.promote.outputs.ledger-ref }}
+      promoted-digest: ${{ steps.promote.outputs.promoted-digest }}
+    steps:
+      - name: Install digest-verified promotion client
+        run: |
+          curl --fail --location --proto '=https' --tlsv1.2 --output oras.tar.gz "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          printf '%s  %s\n' "$ORAS_SHA256" oras.tar.gz | sha256sum --check --strict
+          tar -xzf oras.tar.gz oras
+          chmod 0755 oras
+      - name: Authenticate to promotion namespaces
+        env:
+          ORAS_PASSWORD: ${{ github.token }}
+        run: ./oras login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
+      - name: Digest-only copy and create-only ledger CAS
+        id: promote
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_DIGEST: ${{ needs.artifact-attestation.outputs.artifact-digest }}
+        run: |
+          ./oras copy "${CANDIDATE_REPOSITORY}@${SOURCE_DIGEST}" "${STAGE_REPOSITORY}:probe-${{ github.run_id }}-${{ github.run_attempt }}"
+          destination_digest="$(./oras manifest fetch "${STAGE_REPOSITORY}:probe-${{ github.run_id }}-${{ github.run_attempt }}" --descriptor | jq -er '.digest')"
+          test "$destination_digest" = "$SOURCE_DIGEST"
+          printf '{"artifactDigest":"%s","environment":"stage","releaseVersion":"probe-%s","runAttempt":"%s","runId":"%s"}\n' \
+            "$SOURCE_DIGEST" "${{ github.run_id }}" "${{ github.run_attempt }}" "${{ github.run_id }}" > promotion-record.json
+          blob="$(base64 < promotion-record.json | tr -d '\n')"
+          blob_sha="$(gh api -X POST "repos/${GITHUB_REPOSITORY}/git/blobs" -f content="$blob" -f encoding=base64 --jq '.sha')"
+          tree_sha="$(gh api -X POST "repos/${GITHUB_REPOSITORY}/git/trees" -f 'tree[][path]=promotion-record.json' -f 'tree[][mode]=100644' -f 'tree[][type]=blob' -f "tree[][sha]=$blob_sha" --jq '.sha')"
+          commit_sha="$(gh api -X POST "repos/${GITHUB_REPOSITORY}/git/commits" -f "message=promotion capability probe ${{ github.run_id }}" -f tree="$tree_sha" --jq '.sha')"
+          ledger_ref="refs/tags/promotion-ledger/probe-${{ github.run_id }}-stage"
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="$ledger_ref" -f sha="$commit_sha" > ledger-create.json
+          if gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="$ledger_ref" -f sha="${{ github.sha }}" >/dev/null 2>&1; then
+            echo "PROMOTION_CAS_ACCEPTED_CONFLICT" >&2
+            exit 1
+          fi
+          test "$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/promotion-ledger/probe-${{ github.run_id }}-stage" --jq '.object.sha')" = "$commit_sha"
+          printf 'ledger-ref=%s\n' "$ledger_ref" >> "$GITHUB_OUTPUT"
+          printf 'promoted-digest=%s\n' "$destination_digest" >> "$GITHUB_OUTPUT"
+
+  promotion-verifier:
+    needs: [artifact-attestation, promotion-capability]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Install digest-verified read-only client
+        run: |
+          curl --fail --location --proto '=https' --tlsv1.2 --output oras.tar.gz "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          printf '%s  %s\n' "$ORAS_SHA256" oras.tar.gz | sha256sum --check --strict
+          tar -xzf oras.tar.gz oras
+          chmod 0755 oras
+      - name: Authenticate with read-only package permission
+        env:
+          ORAS_PASSWORD: ${{ github.token }}
+        run: ./oras login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
+      - name: Reconcile stage digest and immutable ledger
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LEDGER_REF: ${{ needs.promotion-capability.outputs.ledger-ref }}
+          PROMOTED_DIGEST: ${{ needs.promotion-capability.outputs.promoted-digest }}
+        run: |
+          test "$PROMOTED_DIGEST" = "${{ needs.artifact-attestation.outputs.artifact-digest }}"
+          ./oras manifest fetch "${STAGE_REPOSITORY}@${PROMOTED_DIGEST}" >/dev/null
+          ref_path="${LEDGER_REF#refs/}"
+          gh api "repos/${GITHUB_REPOSITORY}/git/ref/${ref_path}" --jq '.object.sha' | grep -Eq '^[0-9a-f]{40}$'

@@ -1,0 +1,6 @@
+/.github/ @keliihall
+/contracts/release/ @keliihall
+/docs/architecture/adr/ @keliihall
+/release/ @keliihall
+/scripts/check_cisb.py @keliihall
+/scripts/check_workflow_security.py @keliihall
