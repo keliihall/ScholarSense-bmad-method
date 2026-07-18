@@ -1,13 +1,13 @@
 {
   "version": "CISB-1.0.0",
-  "status": "approved-pending-capability-probe",
+  "status": "approved",
   "authority": {
     "authorization": "USER-2026-07-19-PLATFORM-DELEGATION",
     "accountable": "Hei",
     "platformResponsible": "keliihall",
     "securityResponsible": "keliihall",
     "releaseResponsible": "keliihall",
-    "effectiveAt": "2026-07-19T05:17:07+08:00"
+    "effectiveAt": "2026-07-19T05:32:52+08:00"
   },
   "repository": {
     "provider": "GitHub.com",
@@ -16,18 +16,20 @@
     "id": 1305224312,
     "visibility": "public",
     "defaultBranch": "main",
-    "sourceCommit": "241f922da7ec7e8e92da0ec518bb4fa5aa1f9528"
+    "sourceCommit": "c19e4e31fa07fd1242c9120cc2a6ef77112938e7"
   },
   "ci": {
     "provider": "GitHub Actions",
     "workflow": ".github/workflows/platform-probe.yml",
     "protectedRef": "refs/heads/main",
+    "protectedRefEvidence": "https://github.com/keliihall/ScholarSense-bmad-method/rules/19154234",
     "permissionsDefault": "read"
   },
   "runner": {
     "provider": "GitHub-hosted",
     "label": "ubuntu-24.04",
-    "imageVersionEvidence": "https://github.com/actions/runner-images/releases"
+    "imageVersion": "20260714.240.1",
+    "imageVersionEvidence": "https://github.com/actions/runner-images/blob/ubuntu24/20260714.240/images/ubuntu/Ubuntu2404-Readme.md"
   },
   "identities": {
     "build": "repo:keliihall/ScholarSense-bmad-method:ref:refs/heads/main#job:contract",
@@ -70,11 +72,13 @@
   "capabilityEvidence": {
     "repository": "https://api.github.com/repositories/1305224312",
     "protectedEnvironments": "https://api.github.com/repos/keliihall/ScholarSense-bmad-method/environments",
-    "artifactCasReadback": "pending-capability-probe",
-    "attestationSubjectQuery": "pending-capability-probe",
-    "signingVerification": "pending-capability-probe",
-    "promotionCas": "pending-capability-probe",
-    "verifier": "pending-capability-probe"
+    "artifactCasReadback": "oci://ghcr.io/keliihall/scholarsense-platform-probe@sha256:864b4ca2860632cdc30e672e40734ec9dd3926fa826d5337a28d4f53d51c1987",
+    "attestationSubjectQuery": "https://api.github.com/repos/keliihall/ScholarSense-bmad-method/attestations/sha256:c221277ad1e6632e9fa15cb55c827ef60c79b9d5ed2c2952ad95f4f346d72d42",
+    "signingVerification": "oci://ghcr.io/keliihall/scholarsense-platform-evidence@sha256:424382f12b571419c7ae91df30f8209f6b3945dfce579272430dac27f39534f6",
+    "promotionCas": "https://api.github.com/repos/keliihall/ScholarSense-bmad-method/git/ref/tags/promotion-ledger/probe-29661725147-stage",
+    "verifier": "https://github.com/keliihall/ScholarSense-bmad-method/actions/runs/29661725147/job/88125617556",
+    "run": "https://github.com/keliihall/ScholarSense-bmad-method/actions/runs/29661725147",
+    "promotionLedgerRuleset": "https://github.com/keliihall/ScholarSense-bmad-method/rules/19154231"
   },
   "toolchain": {
     "trivy": "v0.72.0",

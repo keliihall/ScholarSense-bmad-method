@@ -50,6 +50,19 @@ class DeliveryQualityTest(unittest.TestCase):
         self.assertFalse(any("target/" in item["path"] for item in first["files"]))
         self.assertFalse(any("__pycache__" in item["path"] for item in first["files"]))
 
+    def test_normalized_manifest_covers_release_supply_chain_inputs(self) -> None:
+        paths = {item["path"] for item in build_manifest(PROJECT_ROOT)["files"]}
+        required = {
+            ".github/CODEOWNERS",
+            ".github/workflows/platform-probe.yml",
+            "backend/mvnw",
+            "backend/.mvn/wrapper/maven-wrapper.properties",
+            "contracts/release/ci-supply-chain-baseline-1.0.0.json",
+            "docs/architecture/adr/ci-supply-chain-baseline-cisb-1.0.0.md",
+            "release/README.md",
+        }
+        self.assertEqual(set(), required - paths)
+
     def test_normalized_manifest_includes_frontend_sources_config_and_lock_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

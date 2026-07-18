@@ -9,7 +9,16 @@ import sys
 from pathlib import Path
 
 
-INCLUDED_ROOTS = ("backend", "frontend", "contracts", "deploy", "scripts")
+INCLUDED_ROOTS = (
+    ".github",
+    "backend",
+    "frontend",
+    "contracts",
+    "deploy",
+    "docs/architecture/adr",
+    "release",
+    "scripts",
+)
 INCLUDED_FILES = ("README.md", ".gitignore", ".editorconfig", "_bmad/scripts/with_pab_toolchain.sh")
 EXCLUDED_PARTS = {
     "target",

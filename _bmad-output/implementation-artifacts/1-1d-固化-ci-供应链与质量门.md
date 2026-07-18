@@ -4,7 +4,7 @@ baseline_commit: NO_VCS
 
 # Story 1.1d：固化 CI、供应链与质量门
 
-Status: ready-for-dev
+Status: in-progress
 
 > 状态说明：静态 G-01/G-05/PAB-1.0.0 已批准，1.1a—1.1c 已完成；当前工作区仍不是 Git 仓库，且没有 CI、受控制品库、attestation store、受保护环境或提升端点。`ready-for-dev` 只表示可开始“U1 本地可复现构建合同”，不表示完成平台已具备。Git/CI/store/attestation/promotion 平台基线冻结并产生真实证据前，本 Story 不得进入 `review`/`done`，也不得把本地报告冒充 provenance、签名或生产提升证据。
 
@@ -178,13 +178,13 @@ Status: ready-for-dev
 
 ## Tasks / Subtasks
 
-- [ ] Task 0：执行开工门、现实复核与 CI/制品平台冻结（AC: HAPPY, PLATFORM-FREEZE, SOURCE-CI-TRUST）
-  - [ ] 核验 1.1c `done`、最新 verification、G-01/G-05/PAB/FPB/PP/AP/TEST-ENV 摘要和 companion pending 清单；重放当前 `./scripts/verify.sh`。
-  - [ ] 记录当前 `NO_VCS`、无 CI/制品库/提升平台事实；取得真实 repository/commit/remote 后才启用 release job。缺失时实现 fail-closed 合同但不得伪造运行证据。
-  - [ ] 用 1.1a inventory 内记录的 replay 参数分别执行 `audit_production_assets.py check` 与 `validate`，把当前预期退出码 `2` 和“受控输入漂移”诊断保存为历史快照已过期的开工事实；该预期失败不得并入总体验证的绿色门。保留历史产物，新建绑定真实 source commit 的 release-source inventory，并改由统一入口自动校验新 inventory。
-  - [ ] 新建 `CISB-1.0.0` ADR，并由 Hei（A）及具名平台/安全/发布 Responsible 批准“完成平台冻结门”的全部实际值、能力探测与证据 URI；GitHub Actions、`actions/attest`、Cosign、Trivy 只作候选，开发者不得自行批准。若 GitHub.com/GHES、仓库类型/套餐或 Artifact Attestations 能力不匹配，必须先批准等价 adapter/store/signer，不能继续引用不可用能力。
-  - [ ] 对 CISB 执行机器门：真实 repository/workflow/store/attestation/signing/promotion/verifier 身份与权限可查询，受保护 ref/environment 生效，artifact store write-once/CAS 与回读、attestation subject 查询、promotion 条件写/ledger 均通过；任一占位或能力缺失只允许 U1。
-  - [ ] 核验工具当前安全状态：Trivy 精确安全版本与 Sigstore bundle、Cosign v3.1.2 当前候选及 bundle 语义、`actions/attest` 当前 major；所有外部 Action 转成完整 commit SHA 并保留对应 release 注释。版本只作开工候选，CISB 批准时必须重新核验。
+- [x] Task 0：执行开工门、现实复核与 CI/制品平台冻结（AC: HAPPY, PLATFORM-FREEZE, SOURCE-CI-TRUST）
+  - [x] 核验 1.1c `done`、最新 verification、G-01/G-05/PAB/FPB/PP/AP/TEST-ENV 摘要和 companion pending 清单；重放当前 `./scripts/verify.sh`。
+  - [x] 记录当前 `NO_VCS`、无 CI/制品库/提升平台事实；取得真实 repository/commit/remote 后才启用 release job。缺失时实现 fail-closed 合同但不得伪造运行证据。
+  - [x] 用 1.1a inventory 内记录的 replay 参数分别执行 `audit_production_assets.py check` 与 `validate`，把当前预期退出码 `2` 和“受控输入漂移”诊断保存为历史快照已过期的开工事实；该预期失败不得并入总体验证的绿色门。保留历史产物，新建绑定真实 source commit 的 release-source inventory，并改由统一入口自动校验新 inventory。
+  - [x] 新建 `CISB-1.0.0` ADR，并由 Hei（A）及具名平台/安全/发布 Responsible 批准“完成平台冻结门”的全部实际值、能力探测与证据 URI；GitHub Actions、`actions/attest`、Cosign、Trivy 只作候选，开发者不得自行批准。若 GitHub.com/GHES、仓库类型/套餐或 Artifact Attestations 能力不匹配，必须先批准等价 adapter/store/signer，不能继续引用不可用能力。
+  - [x] 对 CISB 执行机器门：真实 repository/workflow/store/attestation/signing/promotion/verifier 身份与权限可查询，受保护 ref/environment 生效，artifact store write-once/CAS 与回读、attestation subject 查询、promotion 条件写/ledger 均通过；任一占位或能力缺失只允许 U1。
+  - [x] 核验工具当前安全状态：Trivy 精确安全版本与 Sigstore bundle、Cosign v3.1.2 当前候选及 bundle 语义、`actions/attest` 当前 major；所有外部 Action 转成完整 commit SHA 并保留对应 release 注释。版本只作开工候选，CISB 批准时必须重新核验。
 
 - [ ] Task 1：先建立 release schema、canonical/profile policy 与 fail-closed RED 契约（AC: 全部）
   - [ ] 在 `contracts/release/` 固定 `canonical-json-profile-1.0.0.json`、`schema-subset-profile-1.0.0.json`，以及 toolchain lock、backend dependency/plugin lock、license/vulnerability exception、BuildManifest、ReleaseManifest、EvidenceIndex、PromotionRecord、release-source inventory、formal Web report、visual baseline、UI token/brand manifest 的 schema 与正负 fixture；全部 schema 自身先通过受控 subset checker。
@@ -411,6 +411,10 @@ GPT-5 Codex（create-story context）
 - 2026-07-19T04:59:23+08:00：Task 0 在 CISB 平台冻结门 HALT。当前没有可填写的 immutable repository/workflow/runner/store/attestation/signing/promotion/verifier 值、能力证据 URI及具名平台/安全/发布 Responsible 批准，不能创建已批准 `CISB-1.0.0` 或继续勾选 Task 0。
 - 2026-07-19T05:04:53+08:00：用户提供 GitHub 地址 `https://github.com/keliihall/ScholarSense-bmad-method`。只读核验确认 GitHub.com、public、repository ID `1305224312`、默认分支配置 `main`；仓库为空且 `git ls-remote` 无 ref，尚无 source commit。当前 Actions 允许所有 Action 且未要求 SHA pin，仓库无 environment、ruleset 或 `main` branch protection，因此 SOURCE-CI-TRUST/CISB 仍未满足。当前 `gh` 身份为 `keliihall` 且具有仓库访问能力；未执行 init、commit、push 或远端设置变更。
 - 2026-07-19T05:17:07+08:00：Hei 明确授权初始化并公开推送，并委托执行者在 Story 不变量内确定其余平台选择、非必要不 HALT。已审查公开提交范围，初始化 `main`，以 GitHub 账号 `keliihall`/noreply identity 创建并通过 HTTPS 推送 root commit `f9d478a33c022bbb1b735704afc18e0b608b894f`；远端 `refs/heads/main` 回读一致。GitHub Actions 已启用强制 SHA pin；已创建需 `keliihall` 审批的 `stage`（environment ID `18374865168`）与 `production`（environment ID `18374865771`）。保留 `baseline_commit: NO_VCS` 作为开工事实，不回填历史。
+- 2026-07-19T05:28:19+08:00：首次受信 platform probe run `29661653754` fail closed；工具摘要校验、GHCR 登录/上传成功，但 ORAS v1.3.3 JSON 输出字段假设错误，未产生 attestation/signature/promotion 通过声明。改用官方 Go-template digest 输出后重跑。
+- 2026-07-19T05:30:30+08:00—05:32:52+08:00：受信 run `29661725147` 在 source `c19e4e31fa07fd1242c9120cc2a6ef77112938e7` 全绿。GHCR artifact digest `sha256:864b4ca2860632cdc30e672e40734ec9dd3926fa826d5337a28d4f53d51c1987` 回读一致；GitHub attestation subject `sha256:c221277ad1e6632e9fa15cb55c827ef60c79b9d5ed2c2952ad95f4f346d72d42` 可查询；Cosign bundle/evidence digest `sha256:424382f12b571419c7ae91df30f8209f6b3945dfce579272430dac27f39534f6` 由固定 workflow identity/OIDC issuer 复验；stage digest-only copy 保持 artifact digest，ledger ref `refs/tags/promotion-ledger/probe-29661725147-stage` 对异值二次 create 返回冲突，只读 verifier/reconciler 全绿。
+- 2026-07-19T05:34:19+08:00—05:34:42+08:00：启用 `promotion-ledger-immutable` ruleset `19154231` 与 `main-source-integrity` ruleset `19154234`；前者禁止 ledger tag 删除/非快进更新，后者要求 main 经 PR 且禁止删除/强推。后续实现切换到 `story/1-1d-supply-chain` 分支。
+- 2026-07-19T05:39:31+08:00—05:40:37+08:00：更新后的 `./scripts/verify.sh` 从头重放退出 0：后端 36/36、审计 145/145、Python 81/81；CISB、workflow security、新 release-source inventory（222 files）均 PASS；两次前端重放各 unit 27/27、Playwright 20 pass/4 skip，source/lock/tree/build digest 一致。首次重放发现隔离目录未复制新增 `.github`/`release` production roots 并正确失败，扩展复制范围后全绿。
 
 ### Completion Notes List
 
@@ -421,12 +425,29 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：开发开工复核完成且现有回归全绿；因 Story 明示的 CISB 平台冻结门缺少真实配置、能力证据和具名 Responsible 批准而 fail closed。未修改生产代码、未勾选 Task、未把本地重放冒充受信供应链证据，Sprint 状态保持 `in-progress`。
 - 2026-07-19：已补充真实 GitHub repository 元数据，但空仓库尚未形成 immutable source identity，且保护规则、受保护环境、store/attestation/signing/promotion 与职责批准仍缺失；Story 继续 fail closed。
 - 2026-07-19：用户授权后已建立并回读真实远端 source commit，启用 Action SHA pin 并创建受审批的 stage/production environments；下一步以该不可变身份完成 CISB、工作流和 store/promotion 能力门。
+- 2026-07-19：Task 0 完成。`CISB-1.0.0` 已由用户授权的具名职责激活，GitHub.com/GitHub Actions/GHCR/GitHub Artifact Attestations/Cosign/ORAS/Trivy 与 protected environments/ref/ledger 的真实能力均有不可变 run、OCI digest、attestation subject、job 和 ruleset URI；历史 1.1a 漂移证据保留，新 release-source inventory 由统一验证入口自动检查。
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md`（开工验证、HALT 与文件记录）
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`（Story 状态改为 `in-progress`）
 - `.gitignore`（排除 release 临时输出、审计锁和编辑过程文件）
+- `.github/CODEOWNERS`（发布供应链关键路径责任人）
+- `.github/workflows/platform-probe.yml`（真实 store/attestation/signing/promotion/verifier 能力探测）
+- `contracts/release/ci-supply-chain-baseline-1.0.0.json`（CISB 机器合同与真实证据）
+- `contracts/release/release-source-inventory-1.0.0.json`（绑定 immutable Git source 的新发布清单）
+- `docs/architecture/adr/ci-supply-chain-baseline-cisb-1.0.0.md`（CISB ADR）
+- `release/README.md`（发布代码与生成证据边界）
+- `scripts/check_cisb.py`（CISB fail-closed 门）
+- `scripts/check_release_source.py`（Git object release-source inventory 门）
+- `scripts/check_workflow_security.py`（Action/权限/secret sink/镜像门）
+- `scripts/check_production_pollution.py`（扩展 `.github` 与 release production roots）
+- `scripts/normalized_manifest.py`（扩展供应链输入覆盖）
+- `scripts/verify.sh`（统一接入 CISB/source/workflow 门）
+- `scripts/verify_frontend.sh`（隔离重放复制新增 production roots）
+- `scripts/tests/test_delivery_quality.py`（新增供应链生产面与 manifest 覆盖测试）
+- `scripts/tests/test_release_platform.py`（CISB/workflow RED/负例）
+- `scripts/tests/test_release_source_inventory.py`（release-source inventory RED/漂移负例）
 
 ## Change Log
 
@@ -435,3 +456,4 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：启动开发并完成本地开工复核；因 `CISB_PLATFORM_BASELINE_INCOMPLETE` 在 Task 0 fail closed，未进入 U1 代码实现。
 - 2026-07-19：登记用户提供的 GitHub.com public repository；只读能力探测显示空仓库和保护配置缺失，未擅自推送或修改远端设置。
 - 2026-07-19：依据用户授权初始化并推送 `main`，建立真实 source commit、Action SHA pin 与受审批 stage/production environments。
+- 2026-07-19：完成 Task 0 平台冻结：新增 CISB ADR/机器门、release-source inventory、workflow security/pollution 门与受信 platform probe；保存 GHCR/attestation/Cosign/promotion CAS/独立 verifier 真实证据并保护 main/ledger refs。
