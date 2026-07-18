@@ -410,6 +410,7 @@ GPT-5 Codex（create-story context）
 - 2026-07-19T04:58:39+08:00：按 1.1a 清单保存的 replay 参数执行 `audit_production_assets.py check` 与 `validate`，二者均按预期退出 2，稳定诊断为“检测到受控输入漂移：机器清单资产或摘要与当前快照不一致”；历史 1.1a 产物未被覆盖。
 - 2026-07-19T04:59:23+08:00：Task 0 在 CISB 平台冻结门 HALT。当前没有可填写的 immutable repository/workflow/runner/store/attestation/signing/promotion/verifier 值、能力证据 URI及具名平台/安全/发布 Responsible 批准，不能创建已批准 `CISB-1.0.0` 或继续勾选 Task 0。
 - 2026-07-19T05:04:53+08:00：用户提供 GitHub 地址 `https://github.com/keliihall/ScholarSense-bmad-method`。只读核验确认 GitHub.com、public、repository ID `1305224312`、默认分支配置 `main`；仓库为空且 `git ls-remote` 无 ref，尚无 source commit。当前 Actions 允许所有 Action 且未要求 SHA pin，仓库无 environment、ruleset 或 `main` branch protection，因此 SOURCE-CI-TRUST/CISB 仍未满足。当前 `gh` 身份为 `keliihall` 且具有仓库访问能力；未执行 init、commit、push 或远端设置变更。
+- 2026-07-19T05:17:07+08:00：Hei 明确授权初始化并公开推送，并委托执行者在 Story 不变量内确定其余平台选择、非必要不 HALT。已审查公开提交范围，初始化 `main`，以 GitHub 账号 `keliihall`/noreply identity 创建并通过 HTTPS 推送 root commit `f9d478a33c022bbb1b735704afc18e0b608b894f`；远端 `refs/heads/main` 回读一致。GitHub Actions 已启用强制 SHA pin；已创建需 `keliihall` 审批的 `stage`（environment ID `18374865168`）与 `production`（environment ID `18374865771`）。保留 `baseline_commit: NO_VCS` 作为开工事实，不回填历史。
 
 ### Completion Notes List
 
@@ -419,11 +420,13 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：已固定 AAB 规划 companion、CISB 平台完成门、U1—U4 独立验收、无环证据生命周期、冻结制品正式 Web 入口、版本化视觉 golden oracle、唯一 canonical/schema profile、backend Wrapper/中性 JAR 原子更新范围及 schema 落点。
 - 2026-07-19：开发开工复核完成且现有回归全绿；因 Story 明示的 CISB 平台冻结门缺少真实配置、能力证据和具名 Responsible 批准而 fail closed。未修改生产代码、未勾选 Task、未把本地重放冒充受信供应链证据，Sprint 状态保持 `in-progress`。
 - 2026-07-19：已补充真实 GitHub repository 元数据，但空仓库尚未形成 immutable source identity，且保护规则、受保护环境、store/attestation/signing/promotion 与职责批准仍缺失；Story 继续 fail closed。
+- 2026-07-19：用户授权后已建立并回读真实远端 source commit，启用 Action SHA pin 并创建受审批的 stage/production environments；下一步以该不可变身份完成 CISB、工作流和 store/promotion 能力门。
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md`（开工验证、HALT 与文件记录）
 - `_bmad-output/implementation-artifacts/sprint-status.yaml`（Story 状态改为 `in-progress`）
+- `.gitignore`（排除 release 临时输出、审计锁和编辑过程文件）
 
 ## Change Log
 
@@ -431,3 +434,4 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：保持 Story 目标不变，补齐规划适用性、平台、生命周期、浏览器制品、视觉 oracle、canonical/schema 与 Maven/JAR 合同。
 - 2026-07-19：启动开发并完成本地开工复核；因 `CISB_PLATFORM_BASELINE_INCOMPLETE` 在 Task 0 fail closed，未进入 U1 代码实现。
 - 2026-07-19：登记用户提供的 GitHub.com public repository；只读能力探测显示空仓库和保护配置缺失，未擅自推送或修改远端设置。
+- 2026-07-19：依据用户授权初始化并推送 `main`，建立真实 source commit、Action SHA pin 与受审批 stage/production environments。
