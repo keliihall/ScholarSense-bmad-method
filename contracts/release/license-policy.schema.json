@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/release/license-policy.schema.json",
+  "type": "object",
+  "properties": {
+    "version": {"const": "LICENSE-POLICY-1.0.0"},
+    "allowed": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 3}},
+    "denied": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 3}},
+    "unknownTreatment": {"const": "block"},
+    "noticeRequired": {"type": "boolean"},
+    "sourceDisclosureRequiredFor": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 3}}
+  },
+  "required": ["version", "allowed", "denied", "unknownTreatment", "noticeRequired", "sourceDisclosureRequiredFor"],
+  "additionalProperties": false
+}

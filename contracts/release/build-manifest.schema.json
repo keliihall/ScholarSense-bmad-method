@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/release/build-manifest.schema.json",
+  "type": "object",
+  "properties": {
+    "version": {"const": "BUILD-MANIFEST-1.0.0"},
+    "sourceCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "sourceManifestSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "toolchainLockSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "attempts": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/attempt"}},
+    "artifacts": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/artifact"}, "uniqueItems": true}
+  },
+  "required": ["version", "sourceCommit", "sourceManifestSha256", "toolchainLockSha256", "attempts", "artifacts"],
+  "additionalProperties": false,
+  "$defs": {
+    "attempt": {
+      "type": "object",
+      "properties": {
+        "attempt": {"type": "integer", "minimum": 1, "maximum": 2},
+        "buildInputSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "artifactSetSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "required": ["attempt", "buildInputSha256", "artifactSetSha256"],
+      "additionalProperties": false
+    },
+    "artifact": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "mediaType": {"type": "string", "minLength": 3},
+        "size": {"type": "integer", "minimum": 1},
+        "binarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "required": ["name", "mediaType", "size", "binarySha256"],
+      "additionalProperties": false
+    }
+  }
+}

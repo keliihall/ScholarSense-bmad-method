@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/release/promotion-record.schema.json",
+  "type": "object",
+  "properties": {
+    "version": {"const": "PROMOTION-RECORD-1.0.0"},
+    "releaseVersion": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "fromEnvironment": {"type": "string", "enum": ["candidate", "stage", "production"]},
+    "targetEnvironment": {"type": "string", "enum": ["stage", "production"]},
+    "artifactOciDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "manifestSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "evidenceIndexSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "actor": {"type": "string", "minLength": 2},
+    "approver": {"type": "string", "minLength": 2},
+    "runId": {"type": "string", "pattern": "^[0-9]+$"},
+    "runAttempt": {"type": "integer", "minimum": 1},
+    "result": {"type": "string", "enum": ["promoted", "replayed", "conflict", "rejected"]},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "ledgerUri": {"type": "string", "format": "uri"}
+  },
+  "required": ["version", "releaseVersion", "fromEnvironment", "targetEnvironment", "artifactOciDigest", "manifestSha256", "evidenceIndexSha256", "actor", "approver", "runId", "runAttempt", "result", "createdAt", "ledgerUri"],
+  "additionalProperties": false
+}

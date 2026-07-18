@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from check_cisb import load_json_document
+from release_json import load_json
 
 
 INVENTORY_VERSION = "RELEASE-SOURCE-INVENTORY-1.0.0"
@@ -153,7 +153,9 @@ def main(argv: list[str]) -> int:
     root = Path(argv[1]).resolve() if len(argv) >= 2 else Path(".").resolve()
     path = Path(argv[2]) if len(argv) >= 3 else root / INVENTORY_PATH
     try:
-        document = load_json_document(path)
+        document = load_json(path)
+        if not isinstance(document, dict):
+            raise ValueError("JSON_OBJECT_REQUIRED")
         issues = validate_release_source_inventory(document, root)
     except (OSError, ValueError) as error:
         print(error, file=sys.stderr)

@@ -1,0 +1,23 @@
+{
+  "version": "CANONICAL-JSON-VECTORS-1.0.0",
+  "vectors": [
+    {
+      "id": "key-order",
+      "value": {"b": 2, "a": 1},
+      "canonicalUtf8": "{\"a\":1,\"b\":2}",
+      "sha256": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777"
+    },
+    {
+      "id": "chinese-non-bmp-code-point-order",
+      "value": {"😀": "火箭🚀", "私域": "学林知微", "": "边界"},
+      "canonicalUtf8": "{\"私域\":\"学林知微\",\"\":\"边界\",\"😀\":\"火箭🚀\"}",
+      "sha256": "8d474c0924d72b7d73ee7a6e8e6f76d99ffb7e61219f1417ea5562cbd3c1eeca"
+    },
+    {
+      "id": "nested-scalars",
+      "value": {"array": [true, null, 0, -7], "object": {"空": "", "z": []}},
+      "canonicalUtf8": "{\"array\":[true,null,0,-7],\"object\":{\"z\":[],\"空\":\"\"}}",
+      "sha256": "15b1a7984086998cabe4929f74ab323a07a4beeaac59f70b23fb715d50ff8e37"
+    }
+  ]
+}

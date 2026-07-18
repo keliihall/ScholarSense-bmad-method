@@ -33,6 +33,7 @@ echo "[verify] normalized source/output structure"
 "$TOOLCHAIN" python3 "$ROOT_DIR/scripts/check_release_source.py" "$ROOT_DIR"
 "$TOOLCHAIN" python3 "$ROOT_DIR/scripts/check_cisb.py" "$ROOT_DIR"
 "$TOOLCHAIN" python3 "$ROOT_DIR/scripts/check_workflow_security.py"
+"$TOOLCHAIN" python3 "$ROOT_DIR/scripts/check_release_contracts.py" "$ROOT_DIR"
 
 echo "[verify] isolated frontend offline install, type, unit, build, browser and accessibility"
 "$TOOLCHAIN" "$ROOT_DIR/scripts/verify_frontend.sh" --offline

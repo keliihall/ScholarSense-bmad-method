@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/release/backend-lock.schema.json",
+  "type": "object",
+  "properties": {
+    "version": {"const": "BACKEND-LOCK-1.0.0"},
+    "dependencies": {"type": "array", "items": {"$ref": "#/$defs/component"}, "uniqueItems": true},
+    "plugins": {"type": "array", "items": {"$ref": "#/$defs/component"}, "uniqueItems": true},
+    "wrapper": {"$ref": "#/$defs/component"}
+  },
+  "required": ["version", "dependencies", "plugins", "wrapper"],
+  "additionalProperties": false,
+  "$defs": {
+    "component": {
+      "type": "object",
+      "properties": {
+        "coordinate": {"type": "string", "pattern": "^[^:]+:[^:]+:[0-9][^:]*$"},
+        "sourceUri": {"type": "string", "format": "uri"},
+        "binarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "required": ["coordinate", "sourceUri", "binarySha256"],
+      "additionalProperties": false
+    }
+  }
+}
