@@ -1,0 +1,74 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "ScholarSense public envelope seed",
+    "version": "0.0.0",
+    "description": "Envelope conventions only; Story 1.1b defines no business operation."
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "ErrorEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message", "traceId", "fieldErrors"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "message": {
+            "type": "string"
+          },
+          "traceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fieldErrors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            }
+          },
+          "currentVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "latestOperator": {
+            "type": "string",
+            "minLength": 1
+          },
+          "latestChangedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "code": {
+                  "pattern": "_VERSION_CONFLICT$"
+                }
+              },
+              "required": ["code"]
+            },
+            "then": {
+              "required": ["currentVersion", "latestOperator", "latestChangedAt"]
+            }
+          }
+        ]
+      },
+      "FieldError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "code", "message"],
+        "properties": {
+          "field": {"type": "string"},
+          "code": {"type": "string"},
+          "message": {"type": "string"}
+        }
+      }
+    }
+  }
+}

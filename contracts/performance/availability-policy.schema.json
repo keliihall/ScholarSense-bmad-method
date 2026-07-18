@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/performance/availability-policy.schema.json",
+  "title": "ScholarSense availability policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "availabilityPolicyVersion",
+    "timezone",
+    "businessWindow",
+    "probes",
+    "cadenceSeconds",
+    "transaction",
+    "goodMinute",
+    "monthlySli",
+    "missingSampleTreatment",
+    "plannedMaintenance",
+    "externalDependencyFailure",
+    "contentSha256"
+  ],
+  "properties": {
+    "$schema": { "const": "./availability-policy.schema.json" },
+    "schemaVersion": { "const": "1.0.0" },
+    "availabilityPolicyVersion": { "const": "AP-1.0.0" },
+    "timezone": { "const": "Asia/Shanghai" },
+    "businessWindow": { "const": { "start": "07:00", "end": "23:00", "naturalMonthRequired": true } },
+    "probes": {
+      "const": [
+        { "id": "campus-wired", "networkProfile": "campus" },
+        { "id": "campus-wifi", "networkProfile": "campus" },
+        { "id": "external-mobile", "networkProfile": "mobile" }
+      ]
+    },
+    "cadenceSeconds": { "const": 60 },
+    "transaction": {
+      "const": {
+        "orderRequired": true,
+        "anyStepFailureFailsProbeMinute": true,
+        "steps": [
+          { "id": "post-sso-home", "timeoutMs": 5000, "success": "authorized-content-ready" },
+          { "id": "list", "timeoutMs": 5000, "success": "authorized-list-content-ready" },
+          { "id": "detail", "timeoutMs": 5000, "success": "authorized-detail-content-ready" },
+          { "id": "safe-idempotent-command-read-back", "timeoutMs": 8000, "success": "command-accepted-and-read-back-same-or-higher-version" }
+        ]
+      }
+    },
+    "goodMinute": {
+      "const": { "formula": "successfulProbes >= 2 of exactly 3", "minimumSuccessfulProbes": 2 }
+    },
+    "monthlySli": {
+      "const": {
+        "formula": "good eligible minutes / eligible minutes",
+        "targetMinimum": 0.999,
+        "evidenceWindow": "complete-natural-month"
+      }
+    },
+    "missingSampleTreatment": { "const": "bad" },
+    "plannedMaintenance": { "const": "included-in-denominator-and-reported-separately" },
+    "externalDependencyFailure": { "const": "included-in-denominator-and-reported-separately" },
+    "contentSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

@@ -1,0 +1,33 @@
+.DS_Store
+
+# Java/Maven generated output
+backend/target/
+*.class
+*.jar
+
+# Python generated output
+__pycache__/
+*.py[cod]
+.audit-production-assets.lock
+
+# Frontend generated output (Story 1.1c owns the production lock)
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+.vite/
+release-out/
+
+# Local runtime configuration; reserved examples remain versioned
+.env
+.env.*
+*.env
+!*.env.example
+
+# Editors and local logs
+.idea/
+.vscode/
+*.log
+.working/
+**/.memlog.md

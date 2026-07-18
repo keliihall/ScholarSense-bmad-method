@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/performance/frontend-baseline.schema.json",
+  "title": "ScholarSense frontend production baseline",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "baselineVersion",
+    "pabVersion",
+    "toolchain",
+    "registry",
+    "packageLockSha256",
+    "dependencyTreeSha256",
+    "buildBudget",
+    "queryKey",
+    "stateBoundary",
+    "contentSha256"
+  ],
+  "properties": {
+    "$schema": { "const": "./frontend-baseline.schema.json" },
+    "schemaVersion": { "const": "1.0.0" },
+    "baselineVersion": { "const": "FPB-1.0.0" },
+    "pabVersion": { "const": "PAB-1.0.0" },
+    "toolchain": {
+      "const": {
+        "node": "24.18.0",
+        "npm": "11.16.0"
+      }
+    },
+    "registry": { "const": "https://registry.npmjs.org/" },
+    "packageLockSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "dependencyTreeSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "buildBudget": {
+      "const": {
+        "measurement": "vite-minified-bytes-and-gzip-level-9",
+        "initialJavaScriptRawBytesPerFile": 250000,
+        "initialJavaScriptGzipBytesPerFile": 90000,
+        "initialJavaScriptRawBytesTotal": 350000,
+        "asyncJavaScriptRawBytesPerFile": 600000,
+        "asyncJavaScriptGzipBytesPerFile": 200000,
+        "cssRawBytesPerFile": 120000,
+        "cssGzipBytesPerFile": 25000,
+        "failure": "non-zero-exit"
+      }
+    },
+    "queryKey": { "const": ["domain", "resource", "params"] },
+    "stateBoundary": {
+      "const": {
+        "serverState": "volatile-vue-query-memory",
+        "uiState": "volatile-pinia-memory",
+        "forbiddenPersistence": [
+          "localStorage",
+          "sessionStorage",
+          "IndexedDB",
+          "Cache Storage",
+          "Service Worker",
+          "filesystem"
+        ],
+        "lifecycleClear": ["logout", "account-switch", "refresh", "webview-destroyed", "host-session-invalid"],
+        "recovery": ["reauthenticate", "reauthorize", "refresh-aggregateVersion", "explicit-user-retry"]
+      }
+    },
+    "contentSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

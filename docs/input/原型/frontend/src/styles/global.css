@@ -1,0 +1,126 @@
+/* 学林知微 · 全局设计令牌与基础样式
+   主色：沉稳蓝绿（关怀而非监控冷感）。Element Plus 主色随之覆盖。 */
+:root {
+  --ss-primary: #1b8f7a;
+  --ss-primary-dark: #16725f;
+  --ss-primary-soft: #e8f4f1;
+  --ss-accent: #2f6db0;
+  --ss-bg: #f3f6f8;
+  --ss-card: #ffffff;
+  --ss-border: #e6ebef;
+  --ss-text: #1f2d3d;
+  --ss-text-muted: #6b7a8d;
+  --ss-radius: 12px;
+  --ss-shadow: 0 2px 12px rgba(20, 50, 70, 0.06);
+  --ss-shadow-hover: 0 6px 20px rgba(20, 50, 70, 0.1);
+
+  /* 关怀等级配色 */
+  --ss-level-1: #1f9d72;
+  --ss-level-2: #e6a23c;
+  --ss-level-3: #e5523f;
+
+  /* 驾驶舱深色 */
+  --ss-dark-bg: #0a1a2f;
+  --ss-dark-panel: #0f2440;
+  --ss-dark-border: #1d3a5f;
+  --ss-dark-text: #cfe3f7;
+  --ss-dark-cyan: #29d3c2;
+
+  /* Element Plus 主色覆盖 */
+  --el-color-primary: #1b8f7a;
+  --el-color-primary-light-3: #5cb3a4;
+  --el-color-primary-light-5: #8dccc1;
+  --el-color-primary-light-7: #bee0da;
+  --el-color-primary-light-8: #d6ece8;
+  --el-color-primary-light-9: #e8f4f1;
+  --el-color-primary-dark-2: #16725f;
+  --el-border-radius-base: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Roboto,
+    Helvetica, Arial, sans-serif;
+  color: var(--ss-text);
+  background: var(--ss-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 通用工具类 */
+.ss-page {
+  padding: 18px 20px 28px;
+}
+.ss-card {
+  background: var(--ss-card);
+  border: 1px solid var(--ss-border);
+  border-radius: var(--ss-radius);
+  box-shadow: var(--ss-shadow);
+}
+.ss-grid {
+  display: grid;
+  gap: 16px;
+}
+.ss-muted {
+  color: var(--ss-text-muted);
+}
+.ss-flex {
+  display: flex;
+  align-items: center;
+}
+.ss-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ss-gap-8 {
+  gap: 8px;
+}
+.ss-gap-12 {
+  gap: 12px;
+}
+.ss-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ss-section-title::before {
+  content: '';
+  width: 4px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--ss-primary);
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cdd7df;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b3c0ca;
+}
+
+/* 卡片 hover 抬升 */
+.ss-hover:hover {
+  box-shadow: var(--ss-shadow-hover);
+  transform: translateY(-1px);
+  transition: all 0.2s;
+}

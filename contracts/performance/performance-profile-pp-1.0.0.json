@@ -1,0 +1,99 @@
+{
+  "$schema": "./performance-profile.schema.json",
+  "schemaVersion": "1.0.0",
+  "performanceProfileVersion": "PP-1.0.0",
+  "topology": "production-isomorphic",
+  "capacity": {
+    "students": 50000,
+    "eventsPerDay": 5000000,
+    "peakConcurrentActiveSessions": 1000
+  },
+  "hotWindow": {
+    "days": 60,
+    "approximateEvents": 300000000
+  },
+  "scenarioWindow": {
+    "rampMinutes": 15,
+    "warmupMinutes": 15,
+    "steadyMinutes": 60,
+    "peakMinutes": 15
+  },
+  "roleMix": {
+    "counselor": 70,
+    "college": 15,
+    "collaboration": 5,
+    "schoolLeadership": 5,
+    "governanceAndOperations": 5
+  },
+  "requestMix": {
+    "workbenchAndList": 35,
+    "detail": 25,
+    "filterAndDashboard": 15,
+    "stateCommand": 10,
+    "taskAndWorkOrder": 10,
+    "reportAndExportSubmission": 5
+  },
+  "dataDistribution": {
+    "source": "production-isomorphic-synthetic",
+    "requiredDimensions": [
+      "college",
+      "grade",
+      "role",
+      "domain",
+      "event-time",
+      "aggregateVersion",
+      "authorized-projection-shape"
+    ],
+    "piiPolicy": "no-production-plaintext"
+  },
+  "devices": {
+    "desktop": { "cpuCores": 4, "memoryGiB": 8 },
+    "mobile": { "cpuCores": 4, "memoryGiB": 4 }
+  },
+  "networks": {
+    "campus": { "downMbps": 20, "upMbps": 10, "rttMs": 50, "lossPercent": 0.1 },
+    "mobile": { "downMbps": 10, "upMbps": 5, "rttMs": 100, "lossPercent": 1.0 }
+  },
+  "cacheMix": { "coldPercent": 50, "warmPercent": 50 },
+  "clock": { "source": "server-synchronized-ntp", "maximumSkewMs": 100 },
+  "sampling": {
+    "samplePoints": [
+      "user-action",
+      "navigation-start",
+      "gateway-response",
+      "query-complete",
+      "parse-complete",
+      "render-complete",
+      "accessibility-ready",
+      "ui-content-ready",
+      "server-committedAt",
+      "ui-state-observed"
+    ],
+    "failureSamplePolicy": "retain-with-attribution-and-include-in-denominator",
+    "duplicatePolicy": "same-sampleId-is-idempotent",
+    "scenarioWindowsRequired": true
+  },
+  "attributionSegments": [
+    "host/navigation",
+    "gateway",
+    "query",
+    "serialization",
+    "network",
+    "parse",
+    "render/main-thread",
+    "accessibility-ready",
+    "cache-state"
+  ],
+  "targets": {
+    "contentReadyP95Ms": 2000,
+    "filterReadyP95Ms": 3000,
+    "stateObservedP95Ms": 5000
+  },
+  "guardrails": {
+    "percentile": 75,
+    "lcpMs": 2500,
+    "inpMs": 200,
+    "cls": 0.1
+  },
+  "contentSha256": "fd66577ba59bdeb90df2dcb3fdbbc94292fa7fbc359893bdfcafcfa09c4f3529"
+}

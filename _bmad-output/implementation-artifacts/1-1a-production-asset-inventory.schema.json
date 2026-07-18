@@ -1,0 +1,361 @@
+{
+  "$defs": {
+    "asset": {
+      "additionalProperties": false,
+      "properties": {
+        "assetId": {
+          "pattern": "^[a-z0-9][a-z0-9._-]+$",
+          "type": "string"
+        },
+        "checkedPaths": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "classification": {
+          "enum": [
+            "reuse-as-is",
+            "migrate",
+            "reference-only",
+            "replace",
+            "unknown-blocked"
+          ],
+          "type": "string"
+        },
+        "dispositionReason": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "evidenceLinks": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "metrics": {
+          "oneOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "regularFileByteCount": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "regularFileCount": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "scope": {
+                  "const": "recursive-regular-files"
+                }
+              },
+              "required": [
+                "scope",
+                "regularFileCount",
+                "regularFileByteCount"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "scope": {
+                  "const": "top-level-entries"
+                },
+                "topLevelEntryCount": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "topLevelRegularFileByteCount": {
+                  "minimum": 0,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "scope",
+                "topLevelEntryCount",
+                "topLevelRegularFileByteCount"
+              ],
+              "type": "object"
+            }
+          ]
+        },
+        "owner": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "ownerStory": {
+          "enum": [
+            "1.1b",
+            "1.1c",
+            "1.1d"
+          ],
+          "type": "string"
+        },
+        "pathOrSource": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "present": {
+          "type": "boolean"
+        },
+        "readStatus": {
+          "enum": [
+            "readable",
+            "missing",
+            "unreadable"
+          ]
+        },
+        "recommendedDisposition": {
+          "enum": [
+            "reuse-as-is",
+            "migrate",
+            "reference-only",
+            "replace"
+          ],
+          "type": "string"
+        },
+        "risk": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "snapshotOnly": {
+          "type": "boolean"
+        },
+        "type": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "verifiedDate": {
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "type": "string"
+        },
+        "versionOrDigest": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "assetId",
+        "type",
+        "pathOrSource",
+        "owner",
+        "versionOrDigest",
+        "verifiedDate",
+        "evidenceLinks",
+        "classification",
+        "recommendedDisposition",
+        "dispositionReason",
+        "risk",
+        "ownerStory",
+        "present",
+        "readStatus",
+        "snapshotOnly",
+        "checkedPaths"
+      ],
+      "type": "object"
+    },
+    "executionEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptanceEvidenceLocation": {
+          "const": "Story Dev Agent Record"
+        },
+        "generateCommand": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "inputScope": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "replayCommand": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "result": {
+          "enum": [
+            "passed",
+            "failed"
+          ]
+        },
+        "resultScope": {
+          "enum": [
+            "generation-and-in-memory-validation",
+            "input-audit-failed"
+          ]
+        },
+        "scriptSha256": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "scriptVersion": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/executionStep"
+          },
+          "minItems": 3,
+          "type": "array"
+        },
+        "unresolvedCount": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "generateCommand",
+        "replayCommand",
+        "scriptVersion",
+        "scriptSha256",
+        "inputScope",
+        "result",
+        "resultScope",
+        "acceptanceEvidenceLocation",
+        "steps",
+        "unresolvedCount"
+      ],
+      "type": "object"
+    },
+    "executionStep": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "exitCode": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "name": {
+          "enum": [
+            "generate",
+            "schema-validation",
+            "gap-validation"
+          ]
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "failed",
+            "not-run"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "command",
+        "status",
+        "exitCode"
+      ],
+      "type": "object"
+    },
+    "unresolvedItem": {
+      "additionalProperties": false,
+      "properties": {
+        "assetId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "impact": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "issue": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "ownerStory": {
+          "enum": [
+            "1.1b",
+            "1.1c",
+            "1.1d"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "assetId",
+        "issue",
+        "impact",
+        "ownerStory"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:scholarsense:production-asset-inventory:3.2.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assets": {
+      "items": {
+        "$ref": "#/$defs/asset"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "auditVersion": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "controlledInputDigest": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "executionEvidence": {
+      "$ref": "#/$defs/executionEvidence"
+    },
+    "generatedAt": {
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:Z|[+-]\\d{2}:\\d{2})$",
+      "type": "string"
+    },
+    "generationId": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": "3.2.0"
+    },
+    "unresolvedItems": {
+      "items": {
+        "$ref": "#/$defs/unresolvedItem"
+      },
+      "type": "array"
+    },
+    "verificationDate": {
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "auditVersion",
+    "generationId",
+    "generatedAt",
+    "verificationDate",
+    "controlledInputDigest",
+    "assets",
+    "unresolvedItems",
+    "executionEvidence"
+  ],
+  "title": "ScholarSense 生产资产审计清单",
+  "type": "object",
+  "x-generationId": "sha256:08ab3ff93fa9423be45dfd980d70a8047414172314183a8f614599deca743181"
+}

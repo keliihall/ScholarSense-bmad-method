@@ -1,0 +1,44 @@
+{
+  "name": "@scholarsense/frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.16.0",
+  "engines": {
+    "node": "24.18.0",
+    "npm": "11.16.0"
+  },
+  "overrides": {
+    "@typescript/old": "npm:typescript@6.0.2"
+  },
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "node scripts/vue-tsc6.mjs --noEmit -p tsconfig.app.json",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "build": "npm run typecheck && vite build && node scripts/check-build-budget.mjs",
+    "preview": "vite preview",
+    "test:baseline": "playwright test",
+    "preflight:brand": "node scripts/run-brand-preflight.mjs",
+    "check:baseline": "python3 ../scripts/check_frontend_baseline.py .."
+  },
+  "dependencies": {
+    "@tanstack/vue-query": "5.101.2",
+    "echarts": "6.1.0",
+    "element-plus": "2.14.3",
+    "pinia": "3.0.4",
+    "vue": "3.5.40",
+    "vue-echarts": "8.0.1",
+    "vue-router": "4.6.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@types/node": "24.13.3",
+    "@vitejs/plugin-vue": "6.0.8",
+    "axe-core": "4.12.1",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "vite": "8.1.5",
+    "vitest": "4.1.10",
+    "vue-tsc": "3.3.7"
+  }
+}

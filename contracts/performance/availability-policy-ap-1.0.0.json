@@ -1,0 +1,33 @@
+{
+  "$schema": "./availability-policy.schema.json",
+  "schemaVersion": "1.0.0",
+  "availabilityPolicyVersion": "AP-1.0.0",
+  "timezone": "Asia/Shanghai",
+  "businessWindow": { "start": "07:00", "end": "23:00", "naturalMonthRequired": true },
+  "probes": [
+    { "id": "campus-wired", "networkProfile": "campus" },
+    { "id": "campus-wifi", "networkProfile": "campus" },
+    { "id": "external-mobile", "networkProfile": "mobile" }
+  ],
+  "cadenceSeconds": 60,
+  "transaction": {
+    "orderRequired": true,
+    "anyStepFailureFailsProbeMinute": true,
+    "steps": [
+      { "id": "post-sso-home", "timeoutMs": 5000, "success": "authorized-content-ready" },
+      { "id": "list", "timeoutMs": 5000, "success": "authorized-list-content-ready" },
+      { "id": "detail", "timeoutMs": 5000, "success": "authorized-detail-content-ready" },
+      { "id": "safe-idempotent-command-read-back", "timeoutMs": 8000, "success": "command-accepted-and-read-back-same-or-higher-version" }
+    ]
+  },
+  "goodMinute": { "formula": "successfulProbes >= 2 of exactly 3", "minimumSuccessfulProbes": 2 },
+  "monthlySli": {
+    "formula": "good eligible minutes / eligible minutes",
+    "targetMinimum": 0.999,
+    "evidenceWindow": "complete-natural-month"
+  },
+  "missingSampleTreatment": "bad",
+  "plannedMaintenance": "included-in-denominator-and-reported-separately",
+  "externalDependencyFailure": "included-in-denominator-and-reported-separately",
+  "contentSha256": "4b9635ac0747b7a8743a4752064fbbfac19c51d1e2b31c5099c72b7a8642e747"
+}

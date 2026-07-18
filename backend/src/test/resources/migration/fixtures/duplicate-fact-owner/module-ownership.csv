@@ -1,0 +1,3 @@
+module,schema,tablePrefix,factOwners
+identity-access,identity_access,ia_,SharedFact
+subject-registry,subject_registry,sr_,SharedFact

@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/performance/performance-profile.schema.json",
+  "title": "ScholarSense performance profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "performanceProfileVersion",
+    "topology",
+    "capacity",
+    "hotWindow",
+    "scenarioWindow",
+    "roleMix",
+    "requestMix",
+    "dataDistribution",
+    "devices",
+    "networks",
+    "cacheMix",
+    "clock",
+    "sampling",
+    "attributionSegments",
+    "targets",
+    "guardrails",
+    "contentSha256"
+  ],
+  "properties": {
+    "$schema": { "const": "./performance-profile.schema.json" },
+    "schemaVersion": { "const": "1.0.0" },
+    "performanceProfileVersion": { "const": "PP-1.0.0" },
+    "topology": { "const": "production-isomorphic" },
+    "capacity": {
+      "const": { "students": 50000, "eventsPerDay": 5000000, "peakConcurrentActiveSessions": 1000 }
+    },
+    "hotWindow": { "const": { "days": 60, "approximateEvents": 300000000 } },
+    "scenarioWindow": {
+      "const": { "rampMinutes": 15, "warmupMinutes": 15, "steadyMinutes": 60, "peakMinutes": 15 }
+    },
+    "roleMix": {
+      "const": {
+        "counselor": 70,
+        "college": 15,
+        "collaboration": 5,
+        "schoolLeadership": 5,
+        "governanceAndOperations": 5
+      }
+    },
+    "requestMix": {
+      "const": {
+        "workbenchAndList": 35,
+        "detail": 25,
+        "filterAndDashboard": 15,
+        "stateCommand": 10,
+        "taskAndWorkOrder": 10,
+        "reportAndExportSubmission": 5
+      }
+    },
+    "dataDistribution": {
+      "const": {
+        "source": "production-isomorphic-synthetic",
+        "requiredDimensions": [
+          "college",
+          "grade",
+          "role",
+          "domain",
+          "event-time",
+          "aggregateVersion",
+          "authorized-projection-shape"
+        ],
+        "piiPolicy": "no-production-plaintext"
+      }
+    },
+    "devices": {
+      "const": {
+        "desktop": { "cpuCores": 4, "memoryGiB": 8 },
+        "mobile": { "cpuCores": 4, "memoryGiB": 4 }
+      }
+    },
+    "networks": {
+      "const": {
+        "campus": { "downMbps": 20, "upMbps": 10, "rttMs": 50, "lossPercent": 0.1 },
+        "mobile": { "downMbps": 10, "upMbps": 5, "rttMs": 100, "lossPercent": 1.0 }
+      }
+    },
+    "cacheMix": { "const": { "coldPercent": 50, "warmPercent": 50 } },
+    "clock": { "const": { "source": "server-synchronized-ntp", "maximumSkewMs": 100 } },
+    "sampling": {
+      "const": {
+        "samplePoints": [
+          "user-action",
+          "navigation-start",
+          "gateway-response",
+          "query-complete",
+          "parse-complete",
+          "render-complete",
+          "accessibility-ready",
+          "ui-content-ready",
+          "server-committedAt",
+          "ui-state-observed"
+        ],
+        "failureSamplePolicy": "retain-with-attribution-and-include-in-denominator",
+        "duplicatePolicy": "same-sampleId-is-idempotent",
+        "scenarioWindowsRequired": true
+      }
+    },
+    "attributionSegments": {
+      "const": [
+        "host/navigation",
+        "gateway",
+        "query",
+        "serialization",
+        "network",
+        "parse",
+        "render/main-thread",
+        "accessibility-ready",
+        "cache-state"
+      ]
+    },
+    "targets": { "const": { "contentReadyP95Ms": 2000, "filterReadyP95Ms": 3000, "stateObservedP95Ms": 5000 } },
+    "guardrails": { "const": { "percentile": 75, "lcpMs": 2500, "inpMs": 200, "cls": 0.1 } },
+    "contentSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

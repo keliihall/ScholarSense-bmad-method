@@ -1,0 +1,40 @@
+{
+  "$schema": "./frontend-baseline.schema.json",
+  "schemaVersion": "1.0.0",
+  "baselineVersion": "FPB-1.0.0",
+  "pabVersion": "PAB-1.0.0",
+  "toolchain": {
+    "node": "24.18.0",
+    "npm": "11.16.0"
+  },
+  "registry": "https://registry.npmjs.org/",
+  "packageLockSha256": "92a4bd6376de161f75dd48179742135b1f32651a63c4c92c81b4d8a5ede5b667",
+  "dependencyTreeSha256": "ccf4390f11838dcdd58e427ebdf75b2e856951299bbb744931fa3eac9cef60d2",
+  "buildBudget": {
+    "measurement": "vite-minified-bytes-and-gzip-level-9",
+    "initialJavaScriptRawBytesPerFile": 250000,
+    "initialJavaScriptGzipBytesPerFile": 90000,
+    "initialJavaScriptRawBytesTotal": 350000,
+    "asyncJavaScriptRawBytesPerFile": 600000,
+    "asyncJavaScriptGzipBytesPerFile": 200000,
+    "cssRawBytesPerFile": 120000,
+    "cssGzipBytesPerFile": 25000,
+    "failure": "non-zero-exit"
+  },
+  "queryKey": ["domain", "resource", "params"],
+  "stateBoundary": {
+    "serverState": "volatile-vue-query-memory",
+    "uiState": "volatile-pinia-memory",
+    "forbiddenPersistence": [
+      "localStorage",
+      "sessionStorage",
+      "IndexedDB",
+      "Cache Storage",
+      "Service Worker",
+      "filesystem"
+    ],
+    "lifecycleClear": ["logout", "account-switch", "refresh", "webview-destroyed", "host-session-invalid"],
+    "recovery": ["reauthenticate", "reauthorize", "refresh-aggregateVersion", "explicit-user-retry"]
+  },
+  "contentSha256": "aac4378526b4fa2fcb5cdce087808154a3af1ca51d86ee9b48c441b451633180"
+}

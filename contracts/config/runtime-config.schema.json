@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/runtime-config.schema.json",
+  "title": "ScholarSense non-secret runtime configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "SCHOLARSENSE_ENV",
+    "SCHOLARSENSE_ROLE",
+    "SCHOLARSENSE_ACCOUNT_REF",
+    "SCHOLARSENSE_DATABASE_REF",
+    "SCHOLARSENSE_SECRET_REF",
+    "SCHOLARSENSE_STORAGE_NAMESPACE",
+    "SCHOLARSENSE_EXTERNAL_BASE_URI"
+  ],
+  "properties": {
+    "SCHOLARSENSE_ENV": {
+      "type": "string",
+      "enum": ["dev", "test", "stage", "prod"]
+    },
+    "SCHOLARSENSE_ROLE": {
+      "type": "string",
+      "enum": ["web-api", "worker"]
+    },
+    "SCHOLARSENSE_ACCOUNT_REF": {
+      "type": "string",
+      "pattern": "^account://(dev|test|stage|prod)/[a-z0-9-]+$",
+      "description": "Environment-scoped account reference; never an account credential."
+    },
+    "SCHOLARSENSE_DATABASE_REF": {
+      "type": "string",
+      "pattern": "^database://(dev|test|stage|prod)/[a-z0-9-]+$",
+      "description": "Environment-scoped database configuration reference; never a connection credential."
+    },
+    "SCHOLARSENSE_SECRET_REF": {
+      "type": "string",
+      "pattern": "^secret://(dev|test|stage|prod)/[a-z0-9-]+$",
+      "description": "Environment-scoped key reference only; referenced material is never stored in this object."
+    },
+    "SCHOLARSENSE_STORAGE_NAMESPACE": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*-(dev|test|stage|prod)$"
+    },
+    "SCHOLARSENSE_EXTERNAL_BASE_URI": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://(dev|test|stage|prod)(?:\\.[a-z0-9-]+)*\\.invalid(?:/[^#]*)?$"
+    },
+    "SCHOLARSENSE_HTTP_PORT": {
+      "type": "string",
+      "pattern": "^(?:0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$",
+      "default": "8080"
+    }
+  }
+}

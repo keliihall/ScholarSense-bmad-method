@@ -1,0 +1,80 @@
+{
+  "$schema": "./test-environment.schema.json",
+  "schemaVersion": "1.0.0",
+  "environmentVersion": "TEST-ENV-1.0.0",
+  "capturedAt": "2026-07-19T00:00:00+08:00",
+  "os": {
+    "brandMatrixTarget": "macOS 26.5.2 build 25F84 arm64",
+    "deterministicBaseline": "macOS 26.5.2 build 25F84 arm64"
+  },
+  "viewports": [
+    { "id": "desktop-reference", "width": 1440, "height": 900 },
+    { "id": "desktop-minimum", "width": 1366, "height": 768 },
+    { "id": "responsive-mobile", "width": 375, "height": 812 }
+  ],
+  "web": {
+    "chrome": {
+      "current": {
+        "major": 150,
+        "version": "150.0.7871.124",
+        "targetOs": "macOS 26.5.2 build 25F84 arm64",
+        "artifactKind": "chrome-for-testing-mac-arm64-zip",
+        "artifactUrl": "https://storage.googleapis.com/chrome-for-testing-public/150.0.7871.124/mac-arm64/chrome-mac-arm64.zip",
+        "artifactSha256": "36c8b5fe04c08a418a172206bb392600ec1550941bde6af2d4353df21db87a47",
+        "executableSha256": "22ddf33cec88bbfd181588eb3da31250a65ba8ebfdb6efcd2694a36275697284",
+        "releaseRecordUrl": "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json"
+      },
+      "previous": {
+        "major": 149,
+        "version": "149.0.7827.155",
+        "targetOs": "macOS 26.5.2 build 25F84 arm64",
+        "artifactKind": "chrome-for-testing-mac-arm64-zip",
+        "artifactUrl": "https://storage.googleapis.com/chrome-for-testing-public/149.0.7827.155/mac-arm64/chrome-mac-arm64.zip",
+        "artifactSha256": "135b697c49a375025ba6540a9d963d803d0b80b01f497c77ef5fd8296e4f36c7",
+        "executableSha256": "e9c22e6eb15fc062f58202f8fbebbe1e6e2d30211a9d4739a5593e986e7bf01d",
+        "releaseRecordUrl": "https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json"
+      }
+    },
+    "edge": {
+      "current": {
+        "major": 150,
+        "version": "150.0.4078.65",
+        "targetOs": "macOS 26.5.2 build 25F84 arm64",
+        "artifactKind": "microsoft-edge-macos-universal-pkg",
+        "artifactUrl": "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/50ebf58f-2ba1-47fe-8b2d-b717caec1fad/MicrosoftEdge-150.0.4078.65.pkg",
+        "artifactSha256": "68929c051651b056123369874fe5f6bea0a268500e6c506f6922b2d539a2fd86",
+        "executableSha256": "d82cb159d44fecd4e7263b7d20b55e9ca46f0c18485eb0bcdf63b635bd9664bb",
+        "releaseRecordUrl": "https://edgeupdates.microsoft.com/api/products?view=enterprise"
+      },
+      "previous": {
+        "major": 149,
+        "version": "149.0.4022.98",
+        "targetOs": "macOS 26.5.2 build 25F84 arm64",
+        "artifactKind": "microsoft-edge-macos-universal-pkg",
+        "artifactUrl": "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/351963e1-f6ca-4391-a0a5-fb84132a0d98/MicrosoftEdge-149.0.4022.98.pkg",
+        "artifactSha256": "0165f110a529d2ed8ce98ed82ef4b19c39ae6b0485b88ccd5797e710f6b9b9d5",
+        "executableSha256": "e7da6f1bf1824324bcdd44ad75f87fc40d02bd848a10b5020bd52518133648af",
+        "releaseRecordUrl": "https://edgeupdates.microsoft.com/api/products?view=enterprise"
+      }
+    }
+  },
+  "deterministicBaseline": {
+    "runner": "@playwright/test@1.61.1",
+    "browser": "playwright-bundled-chromium",
+    "browserVersion": "149.0.7827.55",
+    "targetOs": "macOS 26.5.2 build 25F84 arm64",
+    "executableSha256": "11e393326c7d20a7c56641a7c65def33ea9c280da3b0b74cf8563b07989a0ee3",
+    "classification": "local-baseline-not-brand-report",
+    "digestScope": "browser-executable-bytes"
+  },
+  "mobile": {
+    "applicability": "not-applicable",
+    "decisionId": "USER-2026-07-19-SCHOOL-APP-NA",
+    "approvedBy": "Hei",
+    "effectiveAt": "2026-07-19T00:00:00+08:00",
+    "reason": "User explicitly directed that the entire school App owner baseline is skipped and not applicable.",
+    "responsiveFixtureViewportCssPx": 375,
+    "runtimeEvidenceClaim": "none"
+  },
+  "contentSha256": "1361a3f0fdeb6e747c5c1f6bfc682863d2a96240cd2136ec23c2370e52593fbb"
+}

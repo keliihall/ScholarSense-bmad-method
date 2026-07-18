@@ -1,0 +1,11 @@
+module,schema,tablePrefix,factOwners
+identity-access,identity_access,ia_,IdentityPolicy|Grant|DelegationGrant
+subject-registry,subject_registry,sr_,StudentRef|SubjectMapping
+ingestion-quality,ingestion_quality,iq_,DataBatch|NormalizedFact|QualitySnapshot
+rule-governance,rule_governance,rg_,RuleDefinition|RuleVersion|Tag|GovernanceApproval|QueuePolicyVersion
+signal-evaluation,signal_evaluation,se_,RuleEvaluation
+clue-care,clue_care,cc_,CandidateAdmissionDecision|Candidate|Clue|EvidenceSnapshot|CareAction|Observation|TaskLink|ExplanationFeedback
+collaboration,collaboration,co_,TransferOrder|TransferEvent
+reporting,reporting,rp_,CrossDomainReadModel|Report|Export|GovernanceAction
+audit-operations,audit_operations,ao_,AuditLedger|ArchiveStatus|RetentionExecution|DeletionReceipt
+

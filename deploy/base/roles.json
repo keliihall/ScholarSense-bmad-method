@@ -1,0 +1,35 @@
+{
+  "artifactContract": "same-backend-jar",
+  "requiredEnvironment": [
+    "SCHOLARSENSE_ENV",
+    "SCHOLARSENSE_ACCOUNT_REF",
+    "SCHOLARSENSE_DATABASE_REF",
+    "SCHOLARSENSE_SECRET_REF",
+    "SCHOLARSENSE_STORAGE_NAMESPACE",
+    "SCHOLARSENSE_EXTERNAL_BASE_URI"
+  ],
+  "roles": {
+    "web-api": {
+      "artifact": "backend/target/scholarsense-backend-0.1.0-SNAPSHOT.jar",
+      "environment": {
+        "SCHOLARSENSE_ROLE": "web-api"
+      },
+      "businessHttp": true,
+      "probe": {
+        "type": "health-http",
+        "livenessPath": "/actuator/health/liveness",
+        "readinessPath": "/actuator/health/readiness"
+      }
+    },
+    "worker": {
+      "artifact": "backend/target/scholarsense-backend-0.1.0-SNAPSHOT.jar",
+      "environment": {
+        "SCHOLARSENSE_ROLE": "worker"
+      },
+      "businessHttp": false,
+      "probe": {
+        "type": "process-alive"
+      }
+    }
+  }
+}

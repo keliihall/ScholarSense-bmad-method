@@ -1,0 +1,161 @@
+# generated: 2026-07-17T20:58:14+0800
+# last_updated: 2026-07-19T04:55:11+0800
+# project: ScholarSense-bmad-method
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: /Users/hei/project/ScholarSense-bmad-method/_bmad-output/implementation-artifacts
+
+# 状态定义：
+# ==========
+# Epic 状态：
+#   - backlog：Epic 尚未开始
+#   - in-progress：Epic 正在实施
+#   - done：Epic 的全部 Story 已完成
+#
+# Epic 状态转换：
+#   - backlog → in-progress：创建第一个 Story 文件时自动转换
+#   - in-progress → done：全部 Story 达到 done 后手动转换
+#
+# Story 状态：
+#   - backlog：Story 仅存在于 Epic 文件中
+#   - ready-for-dev：已在实现产物目录创建 Story 文件
+#   - in-progress：开发人员正在实施
+#   - review：已准备代码审查
+#   - done：Story 已完成
+#
+# 回顾状态：
+#   - optional：可以执行但非必需
+#   - done：回顾已完成
+#
+# 行动项状态：
+#   - open：回顾中承诺但尚未处理
+#   - in-progress：正在处理
+#   - done：已完成
+#
+# 工作流说明：
+# ============
+# - 创建首个 Story 文件时，Epic 自动转为 in-progress
+# - 团队容量允许时，可并行实施多个 Story
+# - 通常在前一个 Story 完成后创建下一个 Story，以吸收实施经验
+# - 开发人员将 Story 移至 review 后，再运行代码审查工作流
+# - 回顾产生的行动项追加到 action_items，sprint-status 会呈现未完成项
+
+generated: 2026-07-17T20:58:14+0800
+last_updated: 2026-07-19T04:55:11+0800
+project: ScholarSense-bmad-method
+project_key: NOKEY
+tracking_system: file-system
+story_location: /Users/hei/project/ScholarSense-bmad-method/_bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: in-progress
+  1-1a-审计生产资产与供应链候选: done
+  1-1b-建立模块化生产工程骨架: done
+  1-1c-批准生产前端与性能-profile-adr: done
+  1-1d-固化-ci-供应链与质量门: in-progress
+  1-2-接入统一门户-sso-与可恢复应用壳: backlog
+  1-3-建立模块内原子审计事实: backlog
+  1-4-归集不可变审计账本并检测篡改: backlog
+  1-5-提供授权审计检索-归档与销毁证明: backlog
+  1-6a-同步权威身份与组织: backlog
+  1-6b-同步责任关系并执行每日对账: backlog
+  1-6c-发布撤权-更正与失效传播事实: backlog
+  1-7-提供角色化首页与组合对象授权: backlog
+  1-8-执行字段级投影与任务期敏感授权: backlog
+  1-9-建立公共任务-消息与回写适配器契约: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-管理-p0-p1-数据源目录与最小课表校历切片: backlog
+  2-2-关联主体-保留历史窗口并受控重算: backlog
+  2-3-封账批次并计算质量快照: backlog
+  2-4-登记规则依赖并发布质量可用性事实: backlog
+  2-5a-判定质量熔断并冻结新产出: backlog
+  2-5b-执行证据化质量恢复: backlog
+  2-5c-执行恢复观察-回退与质量任务收敛: backlog
+  2-6a-贯通全链路-traceid-与技术遥测: backlog
+  2-6b-验收角色隔离运行面板-告警与隐私负例: backlog
+  2-7a-呈现依赖降级与可执行能力边界: backlog
+  2-7b-执行持久重试-幂等与恢复筛选: backlog
+  2-7c-交付对账与生产者契约套件: backlog
+  2-8a-持续计算业务时段自然月可用性-sli: backlog
+  2-8b-在预发布环境演练阶段性恢复: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1a-编辑规则并执行匿名正反测试: backlog
+  3-1b-执行-canary-与-production-发布: backlog
+  3-1c-回退规则并证明历史不改写: backlog
+  3-2-连接生产规则与质量门: backlog
+  3-3a-计算并解释个人基线: backlog
+  3-3b-计算场景排除并治理有期限白名单: backlog
+  3-3c-固化排除与白名单版本化边界样本: backlog
+  3-4-生成住宿安全门禁判定-candidate-与唯一任务: backlog
+  3-5-初审-candidate-并原子创建正式线索: backlog
+  3-6-展示结构化证据-分数-等级与解释: backlog
+  3-7-提供工作台与可解释稳定-top-k: backlog
+  3-8-提交核实结果与关怀行动: backlog
+  3-9a-聚合同类证据并生成唯一观察复查: backlog
+  3-9b-消费权威责任变化并转移未完成事项: backlog
+  3-9c-授予-撤销并执行有期限授权代办: backlog
+  3-9d-完成关怀闭环与-fr-4-待办生命周期: backlog
+  3-10-展示任务最小档案与真实时间线: backlog
+  3-11-提供学院运行总览与授权下钻: backlog
+  3-12-发起并跟踪学院督办闭环: backlog
+  3-13-生成当前事实基础周报: backlog
+  3-14a-提交导出申请-审批与最小范围快照: backlog
+  3-14b-异步生成字段投影文件并呈现作业状态: backlog
+  3-14c-下载重检-撤销-更正失效与全程审计: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1a-完成首期多场景规则资格与发布门禁: backlog
+  4-1b-端到端验收隐性经济压力变化: backlog
+  4-2-识别隐私保护的夜间作息变化: backlog
+  4-3-生成学业成长关怀候选: backlog
+  4-4a-定义版本化专项与参与规则: backlog
+  4-4b-运行毕业季多类信号合证专项: backlog
+  4-4c-运行版本化入学与考试季专项矩阵: backlog
+  4-5a-治理身份等级及其排序用途: backlog
+  4-5b-定义并治理有期限业务标签: backlog
+  4-5c-处理来源冲突-审核-生效与失效: backlog
+  4-6-处理用户争议并暂停或恢复计算: backlog
+  4-7-计算七日跨类别独立线索合证: backlog
+  4-8-提供用途隔离的进宿舍工作纪实: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-从正式线索发起最小必要转介: backlog
+  5-2a-接收并处理授权工单: backlog
+  5-2b-请求补充-接收补充与退回转介: backlog
+  5-2c-回填结果并按守卫关闭业务工单: backlog
+  5-2d-验收通知-投递失败-乱序与对账: backlog
+  5-3-将协同结果返回原线索并由辅导员确认: backlog
+  5-4-对接既有部门工单系统: backlog
+  5-5-验收公共任务全生命周期与关怀结果回写: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-提供只读聚合领导驾驶舱: backlog
+  6-2-记录并复查改进计划与资源调配行动: backlog
+  6-3a-构建规则效果口径与核实真值集: backlog
+  6-3b-计算分群效果与不确定区间: backlog
+  6-3c-创建校准任务并闭环解释反馈: backlog
+  6-4-发布全量周月报与版本化运营指标: backlog
+  6-5-执行发布候选环境全量恢复与回切验收: backlog
+  6-6-验收跨域保留-legal-hold-与销毁回执: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-提供统一-app-在线移动壳与最小摘要: backlog
+  7-2a-移动核实-结果记录与持续观察: backlog
+  7-2b-移动接收-处理-补充与回填协同工单: backlog
+  7-2c-验收跨端幂等-并发-撤权与网络恢复: backlog
+  epic-7-retrospective: optional
+
+  epic-8: backlog
+  8-1-执行策略发布关卡并建立初始-cohort: backlog
+  8-2-灰度提供非强制关怀建议: backlog
+  8-3-安全查询已定义汇总指标: backlog
+  8-4-回退智能策略到稳定规则基线: backlog
+  epic-8-retrospective: optional
