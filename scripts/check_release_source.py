@@ -85,7 +85,9 @@ def source_scope_issues(files: list[dict[str, str]]) -> list[str]:
     paths = {item.get("path") for item in files if isinstance(item, dict)}
     required = {
         ".github/CODEOWNERS",
+        ".github/workflows/ci.yml",
         ".github/workflows/platform-probe.yml",
+        ".github/workflows/release.yml",
         "backend/.mvn/wrapper/maven-wrapper.properties",
         "backend/mvnw",
         "backend/mvnw.cmd",
@@ -97,7 +99,11 @@ def source_scope_issues(files: list[dict[str, str]]) -> list[str]:
         "frontend/package.json",
         "release/build_release.py",
         "release/manifests.py",
+        "release/verifier.py",
         "scripts/check_release_manifests.py",
+        "scripts/check_release_workflows.py",
+        "scripts/install-release-tools.sh",
+        "scripts/verify-release.sh",
         "scripts/verify_core.sh",
     }
     issues = [f"RELEASE_SOURCE_REQUIRED_PATH_MISSING: {path}" for path in sorted(required - paths)]
