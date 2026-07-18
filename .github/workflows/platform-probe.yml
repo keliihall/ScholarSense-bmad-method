@@ -99,8 +99,8 @@ jobs:
           ./oras push "$target" \
             --annotation "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
             platform-probe.json:application/vnd.scholarsense.platform-probe.v1+json \
-            --format json > push.json
-          digest="$(jq -er '.manifest.digest' push.json)"
+            --format go-template='{{.digest}}' > push-digest.txt
+          digest="$(cat push-digest.txt)"
           test "${digest#sha256:}" != "$digest"
           rm -rf readback
           mkdir readback
@@ -134,8 +134,8 @@ jobs:
             --annotation "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
             platform-probe.sigstore.json:application/vnd.dev.sigstore.bundle.v0.3+json \
             attestations.json:application/vnd.github.attestations.query.v1+json \
-            --format json > evidence-push.json
-          digest="$(jq -er '.manifest.digest' evidence-push.json)"
+            --format go-template='{{.digest}}' > evidence-digest.txt
+          digest="$(cat evidence-digest.txt)"
           printf 'evidence-digest=%s\n' "$digest" >> "$GITHUB_OUTPUT"
 
   independent-verifier:
