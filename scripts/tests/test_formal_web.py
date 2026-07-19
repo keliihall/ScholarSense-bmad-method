@@ -9,6 +9,7 @@ import tarfile
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -21,10 +22,11 @@ from formal_web import (  # noqa: E402
     safe_extract_frontend,
     visual_baseline_issues,
 )
+import install_formal_browsers as browser_installer  # noqa: E402
 from release_json import canonical_sha256, load_json  # noqa: E402
 
 
-VGB_PATH = PROJECT_ROOT / "contracts/release/fixtures/valid/visual-baseline.json"
+VGB_PATH = PROJECT_ROOT / "contracts/release/visual-baseline-vgb-1.0.0.json"
 TEST_ENV_PATH = PROJECT_ROOT / "contracts/performance/test-environment-1.0.0.json"
 
 
@@ -130,6 +132,71 @@ class FrozenFrontendExtractionTest(unittest.TestCase):
             self.assertEqual("current-source-B", (workspace / "index.html").read_text())
 
 
+class FormalBrowserInstallTest(unittest.TestCase):
+    def _installed_fixture(self, root: Path) -> tuple[dict, dict[Path, str]]:
+        environment = load_json(TEST_ENV_PATH, legacy_numbers=True)
+        records = []
+        digests: dict[Path, str] = {}
+        for browser in ("chrome", "edge"):
+            for channel in ("current", "previous"):
+                expected = environment["web"][browser][channel]
+                identifier = f"{browser}-{channel}"
+                if browser == "chrome":
+                    relative = Path(identifier) / "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+                else:
+                    relative = Path(identifier) / "package" / f"MicrosoftEdge-{expected['version']}.pkg/Payload/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
+                executable = root / relative
+                executable.parent.mkdir(parents=True, exist_ok=True)
+                executable.write_bytes(identifier.encode("ascii"))
+                executable.chmod(0o555)
+                digests[executable.resolve()] = expected["executableSha256"]
+                records.append(
+                    {
+                        "id": identifier,
+                        "browser": browser,
+                        "channel": channel,
+                        "version": expected["version"],
+                        "major": expected["major"],
+                        "artifactPath": f"/controlled-cache/{identifier}",
+                        "artifactSha256": expected["artifactSha256"],
+                        "executablePath": str(executable.resolve()),
+                        "executableSha256": expected["executableSha256"],
+                    }
+                )
+        manifest = {
+            "version": "FORMAL-BROWSER-INSTALL-1.0.0",
+            "os": "macOS 26.5.2 build 25F84 arm64",
+            "browsers": records,
+        }
+        (root / "browsers.json").write_text(json.dumps(manifest), encoding="utf-8")
+        return manifest, digests
+
+    def test_existing_exact_install_is_revalidated_and_reused(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "browsers"
+            destination.mkdir()
+            manifest, _ = self._installed_fixture(destination)
+            with mock.patch.object(browser_installer, "validate_install", return_value=manifest) as validate:
+                with mock.patch.object(browser_installer, "install") as install:
+                    self.assertEqual(manifest, browser_installer.ensure_install(destination, Path(directory) / "cache"))
+            validate.assert_called_once_with(destination.resolve())
+            install.assert_not_called()
+
+    def test_existing_install_rejects_executable_digest_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "browsers"
+            destination.mkdir()
+            _, digests = self._installed_fixture(destination)
+            first = next(iter(digests))
+
+            def observed(path: Path) -> str:
+                return "0" * 64 if path.resolve() == first else digests[path.resolve()]
+
+            with mock.patch.object(browser_installer, "_sha256", side_effect=observed):
+                with self.assertRaisesRegex(browser_installer.BrowserInstallError, "FORMAL_BROWSER_EXECUTABLE_DIGEST_MISMATCH"):
+                    browser_installer.validate_install(destination)
+
+
 class FormalWebContractTest(unittest.TestCase):
     def setUp(self) -> None:
         self.vgb = load_json(VGB_PATH)
@@ -215,12 +282,15 @@ class FormalWebContractTest(unittest.TestCase):
     def test_release_entrypoint_cannot_build_or_update_the_oracle(self) -> None:
         shell = (PROJECT_ROOT / "scripts/run-formal-web-evidence.sh").read_text(encoding="utf-8")
         harness = (PROJECT_ROOT / "frontend/scripts/run-formal-web-evidence.mjs").read_text(encoding="utf-8")
-        combined = shell + harness
+        workflow = (PROJECT_ROOT / ".github/workflows/golden-approval.yml").read_text(encoding="utf-8")
+        combined = shell + harness + workflow
         for forbidden in ("npm run build", "vite build", "frontend/dist", "update-snapshots", "--update-snapshots"):
             self.assertNotIn(forbidden, combined)
         self.assertIn("safe_extract_frontend", combined)
         self.assertIn("visual-baseline-vgb-1.0.0.json", combined)
         self.assertIn("browsers.json", combined)
+        self.assertIn("FORMAL_BROWSER_INSTALL_ROOT", combined)
+        self.assertNotIn("$RUNNER_TEMP/golden-browsers", workflow)
         self.assertNotIn("formal-browser-install.json", combined)
 
 

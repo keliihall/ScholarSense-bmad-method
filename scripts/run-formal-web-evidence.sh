@@ -62,11 +62,12 @@ mkdir "$WORK_DIR/golden"
 "$TOOLS/oras" --registry-config "$REGISTRY_CONFIG" pull "$GOLDEN_URI" --output "$WORK_DIR/golden"
 python3 -B "$ROOT_DIR/release/formal_web.py" safe_extract_frontend \
   "$BUILD_ROOT/scholarsense-frontend.tar.gz" "$WORK_DIR/served" "$EXPECTED_FRONTEND_SHA256"
-"$ROOT_DIR/scripts/install-formal-web-browsers.sh" "$WORK_DIR/browsers"
+BROWSER_INSTALL_ROOT="${FORMAL_BROWSER_INSTALL_ROOT:-$HOME/Library/Caches/ScholarSense/formal-browser-install/TEST-ENV-1.0.0}"
+"$ROOT_DIR/scripts/install-formal-web-browsers.sh" "$BROWSER_INSTALL_ROOT"
 
 node "$ROOT_DIR/frontend/scripts/run-formal-web-evidence.mjs" \
   --served-root "$WORK_DIR/served" \
-  --browsers "$WORK_DIR/browsers/browsers.json" \
+  --browsers "$BROWSER_INSTALL_ROOT/browsers.json" \
   --golden-root "$WORK_DIR/golden" \
   --artifact-uri "$ARTIFACT_URI" \
   --subject-sha256 "$EXPECTED_FRONTEND_SHA256" \

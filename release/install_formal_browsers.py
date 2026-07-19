@@ -92,6 +92,100 @@ def _readonly_tree(root: Path) -> None:
             path.chmod(0o555 if executable else 0o444)
 
 
+def _environment() -> dict[str, Any]:
+    document = load_json(
+        PROJECT_ROOT / "contracts/performance/test-environment-1.0.0.json",
+        legacy_numbers=True,
+    )
+    if not isinstance(document, dict):
+        raise BrowserInstallError("FORMAL_BROWSER_TEST_ENV_INVALID")
+    return document
+
+
+def _executable_relative_path(browser: str, channel: str, version: str) -> Path:
+    browser_root = Path(f"{browser}-{channel}")
+    if browser == "chrome":
+        return browser_root / "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+    return (
+        browser_root
+        / "package"
+        / f"MicrosoftEdge-{version}.pkg/Payload/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
+    )
+
+
+def validate_install(destination: Path) -> dict[str, Any]:
+    destination = destination.resolve()
+    manifest_path = destination / "browsers.json"
+    if not destination.is_dir() or not manifest_path.is_file() or manifest_path.is_symlink():
+        raise BrowserInstallError("FORMAL_BROWSER_INSTALL_INCOMPLETE")
+    manifest = load_json(manifest_path, legacy_numbers=True)
+    if not isinstance(manifest, dict):
+        raise BrowserInstallError("FORMAL_BROWSER_INSTALL_MANIFEST_INVALID")
+    if manifest.get("version") != "FORMAL-BROWSER-INSTALL-1.0.0":
+        raise BrowserInstallError("FORMAL_BROWSER_INSTALL_VERSION_MISMATCH")
+    if manifest.get("os") != "macOS 26.5.2 build 25F84 arm64":
+        raise BrowserInstallError("FORMAL_BROWSER_INSTALL_OS_MISMATCH")
+    records = manifest.get("browsers")
+    if not isinstance(records, list) or len(records) != 4:
+        raise BrowserInstallError("FORMAL_BROWSER_INSTALL_MATRIX_INCOMPLETE")
+    by_id = {
+        record.get("id"): record
+        for record in records
+        if isinstance(record, dict) and isinstance(record.get("id"), str)
+    }
+    required_ids = {
+        "chrome-current",
+        "chrome-previous",
+        "edge-current",
+        "edge-previous",
+    }
+    if set(by_id) != required_ids or len(by_id) != len(records):
+        raise BrowserInstallError("FORMAL_BROWSER_INSTALL_MATRIX_INVALID")
+
+    environment = _environment()
+    record_keys = {
+        "id",
+        "browser",
+        "channel",
+        "version",
+        "major",
+        "artifactPath",
+        "artifactSha256",
+        "executablePath",
+        "executableSha256",
+    }
+    for browser in ("chrome", "edge"):
+        for channel in ("current", "previous"):
+            identifier = f"{browser}-{channel}"
+            record = by_id[identifier]
+            expected = environment["web"][browser][channel]
+            if set(record) != record_keys:
+                raise BrowserInstallError(f"FORMAL_BROWSER_INSTALL_RECORD_INVALID: {identifier}")
+            expected_values = {
+                "id": identifier,
+                "browser": browser,
+                "channel": channel,
+                "version": expected["version"],
+                "major": expected["major"],
+                "artifactSha256": expected["artifactSha256"],
+                "executableSha256": expected["executableSha256"],
+            }
+            if any(record.get(key) != value for key, value in expected_values.items()):
+                raise BrowserInstallError(f"FORMAL_BROWSER_INSTALL_RECORD_DRIFT: {identifier}")
+            executable = destination / _executable_relative_path(browser, channel, expected["version"])
+            if record.get("executablePath") != str(executable):
+                raise BrowserInstallError(f"FORMAL_BROWSER_EXECUTABLE_PATH_MISMATCH: {identifier}")
+            if executable.is_symlink() or not executable.is_file() or not os.access(executable, os.X_OK):
+                raise BrowserInstallError(f"FORMAL_BROWSER_EXECUTABLE_MISSING: {identifier}")
+            actual = _sha256(executable)
+            if actual != expected["executableSha256"]:
+                raise BrowserInstallError(
+                    f"FORMAL_BROWSER_EXECUTABLE_DIGEST_MISMATCH: {identifier} "
+                    f"expected={expected['executableSha256']} actual={actual}"
+                )
+    return manifest
+
+
 def install(destination: Path, cache: Path) -> dict[str, Any]:
     product, version, build = _macos_identity()
     if (product, version, build, platform.machine()) != ("macOS", "26.5.2", "25F84", "arm64"):
@@ -101,10 +195,7 @@ def install(destination: Path, cache: Path) -> dict[str, Any]:
         )
     if destination.exists():
         raise BrowserInstallError("FORMAL_BROWSER_OUTPUT_ALREADY_EXISTS")
-    environment = load_json(
-        PROJECT_ROOT / "contracts/performance/test-environment-1.0.0.json",
-        legacy_numbers=True,
-    )
+    environment = _environment()
     cache.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_name(f".{destination.name}.{os.getpid()}.installing")
     temporary.mkdir(mode=0o700)
@@ -174,6 +265,13 @@ def install(destination: Path, cache: Path) -> dict[str, Any]:
         raise
 
 
+def ensure_install(destination: Path, cache: Path) -> dict[str, Any]:
+    destination = destination.resolve()
+    if destination.exists():
+        return validate_install(destination)
+    return install(destination, cache)
+
+
 def main(argv: list[str]) -> int:
     if len(argv) not in {2, 3}:
         print("usage: install_formal_browsers.py DESTINATION [CACHE]", file=sys.stderr)
@@ -185,7 +283,7 @@ def main(argv: list[str]) -> int:
         else Path.home() / "Library/Caches/ScholarSense/formal-browsers/TEST-ENV-1.0.0/artifacts"
     )
     try:
-        manifest = install(destination, cache)
+        manifest = ensure_install(destination, cache)
     except (BrowserInstallError, KeyError, OSError, TypeError, ValueError) as error:
         print(error, file=sys.stderr)
         return 1

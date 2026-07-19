@@ -63,6 +63,7 @@ def validate(project_root: Path) -> list[str]:
         ("license-policy-1.0.0.json", "license-policy.schema.json"),
         ("release-source-inventory-1.0.0.json", "release-source-inventory.schema.json"),
         ("formal-web-runner-1.0.0.json", "formal-web-runner.schema.json"),
+        ("visual-baseline-vgb-1.0.0.json", "visual-baseline.schema.json"),
         ("ui-token-manifest-1.0.0.json", "ui-token-manifest.schema.json"),
         ("brand-asset-manifest-1.0.0.json", "brand-asset-manifest.schema.json"),
     ):

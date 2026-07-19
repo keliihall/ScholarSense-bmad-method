@@ -38,7 +38,8 @@
     "labels": ["self-hosted", "macOS", "ARM64", "scholarsense-test-env-1"],
     "registration": "ephemeral-one-job",
     "isolation": "dedicated-temporary-work-root",
-    "cleanup": "runner-process-exit+work-root-removal-verified"
+    "browserToolLayer": "read-only-external-cache-revalidated-by-executable-sha256-per-job",
+    "cleanup": "runner-process-exit+registration-credentials-and-work-root-removal-verified"
   },
   "identities": {
     "build": "repo:keliihall/ScholarSense-bmad-method:ref:refs/heads/main#job:contract",
@@ -87,7 +88,12 @@
     "promotionCas": "https://api.github.com/repos/keliihall/ScholarSense-bmad-method/git/ref/tags/promotion-ledger/probe-29661725147-stage",
     "verifier": "https://github.com/keliihall/ScholarSense-bmad-method/actions/runs/29661725147/job/88125617556",
     "run": "https://github.com/keliihall/ScholarSense-bmad-method/actions/runs/29661725147",
-    "promotionLedgerRuleset": "https://github.com/keliihall/ScholarSense-bmad-method/rules/19154231"
+    "promotionLedgerRuleset": "https://github.com/keliihall/ScholarSense-bmad-method/rules/19154231",
+    "formalWebGoldenFailedRun": "https://github.com/keliihall/ScholarSense-bmad-method/actions/runs/29668605345",
+    "formalWebGoldenRun": "https://github.com/keliihall/ScholarSense-bmad-method/actions/runs/29668939935",
+    "formalWebGoldenJob": "https://github.com/keliihall/ScholarSense-bmad-method/actions/runs/29668939935/job/88144715639",
+    "formalWebGoldenUri": "ghcr.io/keliihall/scholarsense-visual-goldens@sha256:b2d686431983a7ab2c1797b2132b190aca352e40f2dc7252f8acf2818845106c",
+    "formalWebCandidateCellsSha256": "414a526f5d8ee21a752ff6f5d49528e32283bcb61fdb881aa30e56e76c85aef1"
   },
   "toolchain": {
     "trivy": "v0.72.0",
