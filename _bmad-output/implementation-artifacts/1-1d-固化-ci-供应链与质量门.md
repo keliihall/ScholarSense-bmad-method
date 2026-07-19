@@ -4,7 +4,7 @@ baseline_commit: NO_VCS
 
 # Story 1.1d：固化 CI、供应链与质量门
 
-Status: in-progress
+Status: review
 
 > 状态说明：静态 G-01/G-05/PAB-1.0.0 已批准，1.1a—1.1c 已完成；当前工作区仍不是 Git 仓库，且没有 CI、受控制品库、attestation store、受保护环境或提升端点。`ready-for-dev` 只表示可开始“U1 本地可复现构建合同”，不表示完成平台已具备。Git/CI/store/attestation/promotion 平台基线冻结并产生真实证据前，本 Story 不得进入 `review`/`done`，也不得把本地报告冒充 provenance、签名或生产提升证据。
 
@@ -230,20 +230,20 @@ Status: in-progress
   - [x] 从 store/attestation service 重新取证后提升；缺证据、证据过期、artifact 篡改、tag 指向变化、store/ledger 水位不一致全部阻断。
   - [x] 回退引用已签名历史 digest 并再次执行当前强制门；不重建、不覆盖旧 manifest/ledger。
 
-- [ ] Task 7：直接验证冻结前端制品，生成正式 Web 品牌/视觉/无障碍证据（AC: FORMAL-WEB-EVIDENCE）
-  - [ ] 新建独立 `run-formal-web-evidence`，不得扩展当前会从源码重建的 `run-brand-preflight.mjs`。正式入口只从 store 下载 expected digest 的前端归档，验证 hash/signature/provenance，拒绝链接/路径逃逸/重复路径后安全解包到只读临时目录，直接服务冻结字节；禁止执行 npm/Vite build 或读取工作区 `dist`。
-  - [ ] CISB 批准一次性/ephemeral self-hosted runner 或受控 VM 镜像，记录 TEST-ENV 精确 macOS build、arm64、runner image identity、隔离与清理证据；普通 hosted runner 或容器 digest 不得冒充精确 macOS 环境。
-  - [ ] 在 TEST-ENV 精确 OS 和 Chrome/Edge 150/149 实际二进制上运行两桌面视口、zoom/reflow、键盘/焦点、axe、视觉/资源/console/network 矩阵；报告 subject 必须等于 selected frontend artifact digest，不能取得精确 runner 时 fail closed。
-  - [ ] 新建并校验 `VGB-1.0.0` 只读 golden manifest，冻结每个 matrix cell 的 golden digest、浏览器/OS/字体/视口/DPR/locale/timezone/clock/data/network 与 Playwright 比较参数；release job 禁止更新 snapshot。同一 run 生成 expected、未经 UX/品牌 + Web QA 双审批更新、任何环境/golden digest 漂移均阻断。
-  - [ ] 负例固定为“构建/扫描/签名 A，store 内容或 expected digest 换成 B 后运行 UI 矩阵”，必须在启动浏览器前或生成 PASS 前稳定失败；另测当前源码与 store artifact 不同仍只测试 store 字节。
-  - [ ] 明确启动面与下游业务页验收边界；App 仅带 N/A 决策，不下载、模拟或伪造 WebView 证据。
+- [x] Task 7：直接验证冻结前端制品，生成正式 Web 品牌/视觉/无障碍证据（AC: FORMAL-WEB-EVIDENCE）
+  - [x] 新建独立 `run-formal-web-evidence`，不得扩展当前会从源码重建的 `run-brand-preflight.mjs`。正式入口只从 store 下载 expected digest 的前端归档，验证 hash/signature/provenance，拒绝链接/路径逃逸/重复路径后安全解包到只读临时目录，直接服务冻结字节；禁止执行 npm/Vite build 或读取工作区 `dist`。
+  - [x] CISB 批准一次性/ephemeral self-hosted runner 或受控 VM 镜像，记录 TEST-ENV 精确 macOS build、arm64、runner image identity、隔离与清理证据；普通 hosted runner 或容器 digest 不得冒充精确 macOS 环境。
+  - [x] 在 TEST-ENV 精确 OS 和 Chrome/Edge 150/149 实际二进制上运行两桌面视口、zoom/reflow、键盘/焦点、axe、视觉/资源/console/network 矩阵；报告 subject 必须等于 selected frontend artifact digest，不能取得精确 runner 时 fail closed。
+  - [x] 新建并校验 `VGB-1.0.0` 只读 golden manifest，冻结每个 matrix cell 的 golden digest、浏览器/OS/字体/视口/DPR/locale/timezone/clock/data/network 与 Playwright 比较参数；release job 禁止更新 snapshot。同一 run 生成 expected、未经 UX/品牌 + Web QA 双审批更新、任何环境/golden digest 漂移均阻断。
+  - [x] 负例固定为“构建/扫描/签名 A，store 内容或 expected digest 换成 B 后运行 UI 矩阵”，必须在启动浏览器前或生成 PASS 前稳定失败；另测当前源码与 store artifact 不同仍只测试 store 字节。
+  - [x] 明确启动面与下游业务页验收边界；App 仅带 N/A 决策，不下载、模拟或伪造 WebView 证据。
 
-- [ ] Task 8：统一回归、篡改演练、证据归档与交接（AC: 全部）
-  - [ ] 更新 `bootstrap.sh`/`verify.sh`：抽取不调用 `build-release` 的非递归 `verify-core`；顶层本地入口依次运行 core 与可重放构建但不签名/提升，CI release 入口才生成受信 provenance/signature/promotion 证据。
-  - [ ] 连续两次运行完整本地套件并在真实受信 CI 完成 release dry-run，记录命令、退出码、测试计数、source/run/runner/tool/db digest、artifact/SBOM/signature/provenance/report/manifest URI；local replay/release dry-run 只能完成对应单元，整体 Story 保持 `in-progress`，不得作为进入 `review/done` 的证据。
-  - [ ] `done` 前至少完成一次真实受保护、digest-only 提升及从目标 store 回读验证，保存不可变 promotion URI/record；缺少真实平台时保持 `in-progress`。
-  - [ ] 演练篡改 artifact/SBOM/manifest/signature、删除证据、过期例外、重放旧 run、并发提升、store/ledger 漂移与 rollback，证明全部 fail closed 且无部分副作用。
-  - [ ] 更新 README、后端/前端交接与 verification 记录；删除临时生成物。只有真实 CI、store 和 promotion 证据可验证时才把 Story 转为 review/done。
+- [x] Task 8：统一回归、篡改演练、证据归档与交接（AC: 全部）
+  - [x] 更新 `bootstrap.sh`/`verify.sh`：抽取不调用 `build-release` 的非递归 `verify-core`；顶层本地入口依次运行 core 与可重放构建但不签名/提升，CI release 入口才生成受信 provenance/signature/promotion 证据。
+  - [x] 连续两次运行完整本地套件并在真实受信 CI 完成 release dry-run，记录命令、退出码、测试计数、source/run/runner/tool/db digest、artifact/SBOM/signature/provenance/report/manifest URI；local replay/release dry-run 只能完成对应单元，整体 Story 保持 `in-progress`，不得作为进入 `review/done` 的证据。
+  - [x] `done` 前至少完成一次真实受保护、digest-only 提升及从目标 store 回读验证，保存不可变 promotion URI/record；缺少真实平台时保持 `in-progress`。
+  - [x] 演练篡改 artifact/SBOM/manifest/signature、删除证据、过期例外、重放旧 run、并发提升、store/ledger 漂移与 rollback，证明全部 fail closed 且无部分副作用。
+  - [x] 更新 README、后端/前端交接与 verification 记录；删除临时生成物。只有真实 CI、store 和 promotion 证据可验证时才把 Story 转为 review/done。
 
 ## Dev Notes
 
@@ -401,7 +401,7 @@ scripts/tests/
 
 ### Agent Model Used
 
-GPT-5 Codex（create-story context）
+GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementation）
 
 ### Debug Log References
 
@@ -423,6 +423,18 @@ GPT-5 Codex（create-story context）
 - 2026-07-19T07:45:00+08:00—07:58:00+08:00：Task 4 按 RED→GREEN 固定 ReleaseManifest 一次冻结与外置签名后 EvidenceIndex 时序。23 项针对性测试通过：阻塞门 pending、缺 artifact signature、未知 subject、可变 URI、manifest 后代引用、反向依赖、签名 subject 错误和同版本 digest 重绑均 fail closed；App/WebView 保持 `not-applicable + runtimeEvidenceClaim=none`，未来 7.1/7.x 保持 `pending-story-execution`。PR #3 合并为受保护主线 `8ebc18d711d70d2e3fb9a34b92c67c4baa6a722d`，release-source inventory 回读 298 files、tree `6032c2…2f4`、normalized digest `d99427…5ec4`，inventory 实例与动态 evidence 均不参与源摘要。
 - 2026-07-19T08:00:00+08:00—08:12:59+08:00：Task 5 按 RED→GREEN 建立只读 PR CI 与最小权限 release 证据流水线。GitHub Actions 连续真实暴露并阻断 Node 工具链缺失、跨 Python 权限语义、浅克隆 source object 缺失、测试依赖本机忽略产物及隔离重放漏复制 `scripts/` 五类问题；每项均新增/保留回归后修复。最终 PR #4 run `29666502050` 在无 secret/OIDC/write 权限的 PR job 全绿（2m22s），随后合并为受保护主线 `b328dc95777a7182cbc19a1b391e33cb5656a7b6`；本地完整 `scripts/verify.sh` 同步通过后端 36/36、审计 145/145、Python 134/134、两次前端 unit 27/27 与 Playwright 20 pass/4 skip。release workflow 的 attestation job 独占三项写权限，manifest-signature 仅取 OIDC，其他 job 只读；独立 verifier 重新校验 immutable GHCR subject、GitHub DSSE/SLSA/SBOM attestation、Cosign identity/issuer、artifact/manifest 引用。
 - 2026-07-19T08:13:00+08:00—08:38:12+08:00：Task 6 按 RED→GREEN 固定 provider-neutral verifier/store/ledger/promotion ports，并实现 GHCR digest copy + GitHub immutable Git-ref CAS。14 项 promotion 专项测试覆盖首写、同 material replay、异 digest 稳定冲突、8 路并发单胜者、缺失/过期/篡改证据、copy 后失败清理、tag/store-ledger 漂移、历史签名 digest 当前门回退，以及真实 ORAS/GitHub API 适配器的 digest-only/create-only 行为。完整本地门通过后端 36/36、审计 145/145、Python 149/149、两次前端 unit 27/27 与 Playwright 20 pass/4 skip；PR #5 run `29667178379` 全绿（2m49s），合并为受保护主线 `704b96818bf25369507fd9f16ac6eef8ff8b97ce`，source inventory 回读 313 files、tree `837213…f108`、normalized digest `8fbea0…1d0d`。真实 protected promotion 仍留给 Task 8，不以适配器单测冒充运行证据。
+- 2026-07-19，Task 7.1：PR #6（merge `8f5001c0b91e7360cc602addbdb01087e1fb24ed`）新增独立 frozen-artifact 正式 Web 入口；`release/formal_web.py` 在浏览器启动前完成 immutable URI、expected hash、安全归档、路径/链接/重复项和工作区隔离检查，`run-brand-preflight.mjs` 保持不变。`test_formal_web.py` 覆盖 store A/B 置换、路径逃逸、符号链接、重复项、工作区 dist 漂移与禁止 build。
+- 2026-07-19，Task 7.2：PR #7（merge `acecc05673404a6d05233b27dbb1a2ce775ba47c`）把实际探测生成的 formal browser manifest 接入运行；一次性 runner 固定 macOS `26.5.2` build `25F84` arm64、runner fingerprint `4b158…`、font `3ff557…`、TEST-ENV SHA `1361a3…`、Chrome 150/Edge 149。正式 run 后 runner 自动注销、credentials 移除、root 清理；仓库 runner 回读为 0。
+- 2026-07-19，Task 7.3：`formal-web` job 在 protected release run `29676318745` attempt 2 成功（3m35s），直接验证同一 selected artifact，矩阵覆盖两桌面视口、zoom/reflow、键盘/焦点、axe、视觉/资源/console/network；正式报告为 `ghcr.io/keliihall/scholarsense-release-evidence@sha256:f39da6708328368574145ceb5bdaae4a4ac8764ec3ee21a172c7c27208fbff41`。
+- 2026-07-19，Task 7.4：PR #8（merge `2ac31726979c4b1adfeb4d543122df7a4e41aaa3`）批准只读 `VGB-1.0.0`；golden approval run `29668939935` / job `88144715639` 的 8 个 matrix cell 全绿，Hei UX/Brand 与 Web QA 委托双审批完成。golden URI `ghcr.io/keliihall/scholarsense-visual-goldens@sha256:b2d686431983a7ab2c1797b2132b190aca352e40f2dc7252f8acf2818845106c`；release workflow 不具备更新 expected 的路径。
+- 2026-07-19，Task 7.5：正式 Web RED 契约覆盖 artifact digest A/B 置换并在浏览器前失败、expected/golden/runner/font/browser 漂移、当前源码与 store artifact 不同仍只读取 store 字节；`scripts/tests/test_formal_web.py` 与 release workflow 门全绿。
+- 2026-07-19，Task 7.6：`README.md`、`backend/README.md`、`frontend/README.md`、`release/README.md` 固定启动面和下游边界；App/WebView 只携带 `AAB-1.0.0 / USER-2026-07-19-SCHOOL-APP-NA` 与 `runtimeEvidenceClaim=none`，没有下载、模拟或伪造移动端证据。Task 7 完成。
+- 2026-07-19，Task 8.1：PR #9（merge `82c92b5b0dc980f59861940ba18fa9200849fe0a`）组装 immutable manifest/index 输入并完成 release DAG；`verify.sh` 只编排非递归 `verify-core` 与可重放 `build-release`，本地入口不签名、不提升。PR #10—#25 均仅修复真实 Task 8 release/reconciliation blocker或刷新其 source inventory，没有重新开放 Task 0—6。
+- 2026-07-19，Task 8.2：连续两次执行 `PYTHONDONTWRITEBYTECODE=1 ./scripts/verify.sh` 均退出 0，artifact set 均为 `9f8488d543a978a53412118072616305684ca01867de882b54e1418b5394d8ea`。每轮顶层及两个 clean release attempt 均为 backend 36/36、历史审计 145/145、Python 167/167；每个隔离根的两次 frontend replay 均为 unit 27/27、Playwright/axe 20 pass/4 skip。一次预跑因直接单测遗留未跟踪 `__pycache__` 按设计在测试前 fail closed，清理后才重新开始连续成功计数。
+- 2026-07-19，Task 8.3：protected release run `29676318745` attempt 2，source `f0c74aa51bd316234382543642411ab968f257cd`、release `1.1.1`，`build-cas`、`sbom-scan`、`artifact-attestation`、`formal-web`、`release-manifest`、`manifest-signature`、`evidence-index`、`independent-verifier`、`promotion` 全部成功。artifact `sha256:0d0fb03b26f3f9f605aca08a108d0cc8aa126baffb1e4da3662bb8d0ded8d8eb`；manifest OCI `sha256:c033c45f6a18a1b8478dd780c42c239a0a849e749090c2b78c9b9cd6b892c244` / canonical `15631a76f17fc68eade6466b5fe3a2ab109e84adbe6f5680c6a070d887ecb9ff`；EvidenceIndex OCI `sha256:decb5968a9446f047f464031d2a4202d38ffdb8eba73fd3dd23eae08fec81e94` / canonical `729a197adad128a3b8908d0a16438eef683df97a8474775ab80f0f22f10519b4`；stage ledger `promotion-ledger/1.1.1-stage` commit `aba710aec83990a3f4ceed6e4ad17d883196427e` 回读 PASS。
+- 2026-07-19，Task 8.3 失败审计：run `29676318745` attempt 1 仅 `sbom-scan / Install upstream-bundle-verified security tools` 因 `curl: (35) Recv failure: Connection reset by peer` 失败；上一受保护 run 已进入更后的 promotion 阶段。本轮未改文件、未增测试，原样重跑后 attempt 2 进入并通过全部后续阶段。更早 run `29675404248` 与 `29674437791` 连续失败于 `promotion / Promote verified digest to protected target` 后按约停止 patch 并审计，根因为 GitHub blob base64 合法换行；PR #24 只改 `release/promotion.py` 并新增 `test_git_ref_ledger_reads_github_line_wrapped_base64_blob_content`，PR #25 只刷新 source inventory。
+- 2026-07-19，Task 8.4：protected rollback run `29676837068` 成功；读取 stage ledger、以同一 digest 提升 production、目标 store/ledger 回读对账并执行当前门 rollback，production ledger commit `25d704743accad600f7db14211095a590c7b0017`。同轮无失败 job/step；上一轮 release attempt 2 亦无失败，流水线已进入更后的 production/rollback 阶段。artifact/SBOM/attestation/signature/manifest/index 篡改、缺失/过期证据、重放、并发、store-ledger 漂移负例继续全部 fail closed，未产生部分副作用。
+- 2026-07-19，Task 8.5：创建 `1-1d-verification.md`，汇总 local/CI/release/promotion/readback/rollback 不可变证据与失败审计；更新四份 README 交接。真实 protected release、digest-only promotion、target readback 和 rollback 全部满足后，Task 7/8 完成，Story 立即转为 `review`，不再寻找额外改进项。
 
 ### Completion Notes List
 
@@ -440,6 +452,17 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：Task 4 完成。ReleaseManifest 仅在两次 build attempt、全部 AD-28 基线/受控输入、锁、选定制品及其 SBOM/scan/provenance/attestation/artifact-signature/UI/品牌/Web 证据齐备且阻塞门通过后冻结；manifest 外置签名随后生成，EvidenceIndex 以 manifest canonical digest 为 subject。生成器当前会诚实拒绝尚未由 Task 5/7 产生的真实签名与正式 Web 证据，不提交伪造运行清单。
 - 2026-07-19：Task 5 完成。PR CI 默认只读且对 fork 不下发 secret/OIDC/write token；release CI 以不可跳序 job DAG、完整 SHA Action pin、校验后工具安装和独立下载复验固化证据生命周期。Task 7 的正式 Web runner/报告脚本仍按顺序保持后续 pending，工作流在它们存在且通过前会 fail closed，不把当前本地或 PR 运行冒充 release dry-run。
 - 2026-07-19：Task 6 完成。提升权威由 `releaseVersion + targetEnvironment` 的不可变 ledger 决定，digest 派生 tag 只承担传输；同 material 重放、不同 material 冲突，CAS 失败会清理本次新 tag。promotion protected job 在独立 verifier 后再次远程取证，rollback 独立 workflow 只读历史 ledger 并运行当前门，不调用 build 或重签名；真实提升/回读状态仍诚实保持 Task 8 pending。
+- 2026-07-19，Task 7.1 完成：独立正式 Web 入口只下载、验真、安全解包并服务 store 中冻结字节，禁止源码重建或读取工作区 `dist`。
+- 2026-07-19，Task 7.2 完成：一次性精确 macOS/arm64 runner 与 Chrome 150/Edge 149 browser manifest 已冻结并在运行后自动注销清理。
+- 2026-07-19，Task 7.3 完成：正式两浏览器、多视口、zoom/reflow、键盘/焦点、axe、视觉/资源/console/network 矩阵绑定 selected frontend artifact 并通过。
+- 2026-07-19，Task 7.4 完成：`VGB-1.0.0` 与 8-cell golden 已由 UX/Brand + Web QA 双审批，release 路径只读且环境/golden 漂移 fail closed。
+- 2026-07-19，Task 7.5 完成：artifact A/B 置换、store/source 分离、归档逃逸及 runner/browser/font/golden 漂移回归均在 PASS 前阻断。
+- 2026-07-19，Task 7.6 完成：正式启动面、下游业务边界和 App/WebView N/A 已写入交接文档；Task 7 整体完成。
+- 2026-07-19，Task 8.1 完成：本地非递归验证/可复现构建与受信 CI 签名/提升职责保持分离。
+- 2026-07-19，Task 8.2 完成：连续两轮完整本地套件以相同 artifact set 全绿，真实 CI release 证据另行记录，未混用本地证据。
+- 2026-07-19，Task 8.3 完成：run `29676318745` attempt 2 绑定 source `f0c74aa…57cd`，全 DAG、digest-only stage promotion 和目标回读对账通过。
+- 2026-07-19，Task 8.4 完成：run `29676837068` 完成 production 提升、目标回读和 rollback；所有要求的篡改/缺证据/重放/并发/漂移门保持 fail closed。
+- 2026-07-19，Task 8.5 完成：verification、README、Story evidence 和文件清单已更新，Story 转为 `review`。原始 AC 已全部满足，按收敛要求停止继续扩展。
 
 ### File List
 
@@ -552,6 +575,41 @@ GPT-5 Codex（create-story context）
 - `scripts/release_policy.py`（promotion material 幂等与 store-ledger 漂移规则）
 - `scripts/tests/test_promotion.py`（provider-neutral/真实适配器、并发、篡改、漂移与回退 RED）
 - `scripts/tests/test_release_source_inventory.py`（promotion/rollback 源范围回归）
+- `.github/workflows/golden-approval.yml`（Task 7.4：受审批只读 golden 捕获与发布）
+- `contracts/release/formal-web-runner-1.0.0.json`、`contracts/release/formal-web-runner.schema.json`（Task 7.2：精确 runner/browser/font 身份）
+- `contracts/release/formal-web-report.schema.json`、`contracts/release/fixtures/valid/formal-web-report.json`（Task 7.3：正式矩阵报告合同与正例）
+- `contracts/release/fixtures/invalid/formal-web-runner.json`（Task 7.2/7.5：runner 漂移负例）
+- `contracts/release/visual-baseline-vgb-1.0.0.json`、`contracts/release/visual-baseline.schema.json`、`contracts/release/fixtures/valid/visual-baseline.json`（Task 7.4/7.5：只读 VGB 与漂移门）
+- `contracts/release/ui-token-manifest-1.0.0.json`、`contracts/release/brand-asset-manifest-1.0.0.json`（Task 7.3/7.4：UI/品牌 baseline 绑定）
+- `frontend/scripts/capture-formal-web-goldens.mjs`（Task 7.4：独立受审批 golden capture）
+- `frontend/scripts/formal-web-harness.mjs`（Task 7.3：视觉、axe、键盘、资源与网络矩阵 harness）
+- `frontend/scripts/run-formal-web-evidence.mjs`（Task 7.1/7.3：直接服务冻结字节的正式浏览器入口）
+- `release/formal_web.py`（Task 7.1/7.5：store 下载、摘要/签名/来源验证、安全解包和 fail-closed 证据）
+- `release/install_formal_browsers.py`（Task 7.2：按版本化 manifest 安装并校验正式浏览器）
+- `scripts/check_formal_web_evidence.py`（Task 7.3/7.5：正式报告 subject/matrix/golden 语义门）
+- `scripts/check_formal_web_runner.py`（Task 7.2/7.5：TEST-ENV/runner/browser/font 漂移门）
+- `scripts/install-formal-web-browsers.sh`、`scripts/install-release-tools-macos.sh`（Task 7.2：受控 macOS runner 工具/浏览器安装）
+- `scripts/run-formal-web-evidence.sh`（Task 7.1：正式 frozen-artifact Web 单一入口）
+- `scripts/tests/test_formal_web.py`（Task 7.1—7.5：A/B 置换、安全解包、只读 store、环境/golden 漂移回归）
+- `README.md`、`backend/README.md`、`frontend/README.md`、`release/README.md`（Task 7.6/8.5：启动面、证据边界与交接）
+- `.github/workflows/release.yml`（Task 7.2—7.4/8.1—8.4：ephemeral formal runner 与完整 protected release/promotion DAG）
+- `.github/workflows/rollback.yml`（Task 8.4：production 历史 digest 当前门回读与 rollback）
+- `release/assembly.py`、`scripts/assemble-release-manifest-input.py`、`scripts/assemble-evidence-index-input.py`（Task 8.1/8.3：不可变 manifest/index 输入组装）
+- `release/build_release.py`、`scripts/verify.sh`（Task 8.1/8.2：非递归本地验证与双 clean release 编排）
+- `release/manifests.py`、`scripts/check_release_manifests.py`（Task 8.3/8.4：manifest/index 最终证据与 tamper 门）
+- `release/promotion.py`（Task 8.3/8.4：GHCR absent-repository 诊断、GitHub wrapped-base64 ledger 回读及 digest-only reconciliation）
+- `scripts/check_release_contracts.py`、`scripts/check_release_workflows.py`（Task 8.1/8.4：最终合同、DAG、权限与 rollback 静态门）
+- `scripts/check_cisb.py`、`scripts/check_production_pollution.py`（Task 8.1/8.4：正式 runner/platform 与 secret/污染边界）
+- `scripts/tests/test_release_assembly.py`（Task 8.1/8.3：manifest/index 组装失败原子性回归）
+- `scripts/tests/test_release_build.py`（Task 8.1/8.2：clean-root 复制、缓存和无半成品回归）
+- `scripts/tests/test_release_workflows.py`（Task 8.1/8.4：release/rollback 顺序、权限和 runner cleanup 回归）
+- `scripts/tests/test_promotion.py`（Task 8.3/8.4：ORAS absent repo、ledger wrapped base64、对账与 rollback 回归）
+- `contracts/release/ci-supply-chain-baseline-1.0.0.json`、`contracts/release/toolchain-lock-1.0.0.json`（Task 7.2/8.3：正式 runner/tool identity 与不可变工具锁）
+- `contracts/release/fixtures/index.json`（Task 7.2—7.5：新增正式 Web fixture 登记）
+- `contracts/release/release-source-inventory-1.0.0.json`、`scripts/check_release_source.py`、`scripts/tests/test_release_source_inventory.py`（Task 7/8：每个受保护 source commit 的自排除 inventory 绑定与回归）
+- `_bmad-output/implementation-artifacts/1-1d-verification.md`（Task 8.5：完整本地/CI/release/promotion/readback/rollback 证据与失败审计）
+- `_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md`（Task 7/8 checkbox、日志、完成说明、文件清单与 review 状态）
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Task 8.5：Story 状态同步为 `review`）
 
 ## Change Log
 
@@ -567,3 +625,6 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：完成 Task 4 分层 manifest 生命周期：新增 fail-closed ReleaseManifest/EvidenceIndex generator/checker、一次冻结、后置 manifest 签名、证据阶段/subject/版本绑定与诚实 applicability 状态；扩展源清单和污染边界，经 PR #3 进入受保护 main 后更新自排除 inventory。
 - 2026-07-19：完成 Task 5 安全 CI 与证据工作流：只读 PR 门真实全绿，release DAG 固定最小权限、完整 Action SHA、校验后工具安装、attestation/签名时序和独立 verifier；经 PR #4 进入受保护 main 后更新自排除 inventory。
 - 2026-07-19：完成 Task 6 digest-only 提升与回退合同：新增 provider-neutral/内存适配器、GHCR + Git-ref CAS、受保护 promotion/rollback workflow、当前门重新取证和读回对账；经 PR #5 进入受保护 main 后更新自排除 inventory，真实 promotion 证据继续由 Task 8 生成。
+- 2026-07-19：完成 Task 7 正式 Web 证据：PR #6—#8 固定 frozen-artifact 入口、一次性精确 macOS runner、Chrome/Edge 矩阵与只读 VGB；golden run `29668939935` 及 protected release formal-web job 全绿。
+- 2026-07-19：完成 Task 8 收敛：PR #9—#25 仅围绕原始 release/promotion AC 组装证据并定向解除真实流水线 blocker；连续两轮本地重放、protected release `29676318745`、stage digest-only promotion/readback 与 production rollback `29676837068` 全部通过。
+- 2026-07-19：归档 `1-1d-verification.md`，Task 7/8 及全部 subtasks 标记完成，Story 与 sprint 状态转为 `review`；Clean completion，不再扩展范围。
