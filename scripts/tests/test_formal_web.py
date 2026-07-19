@@ -290,6 +290,7 @@ class FormalWebContractTest(unittest.TestCase):
         self.assertIn("visual-baseline-vgb-1.0.0.json", combined)
         self.assertIn("browsers.json", combined)
         self.assertIn("FORMAL_BROWSER_INSTALL_ROOT", combined)
+        self.assertIn('chmod -R u+w "$WORK_DIR"', shell)
         self.assertNotIn("$RUNNER_TEMP/golden-browsers", workflow)
         self.assertNotIn("formal-browser-install.json", combined)
 

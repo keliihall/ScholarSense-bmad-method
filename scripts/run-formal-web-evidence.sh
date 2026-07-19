@@ -29,6 +29,7 @@ python3 -B "$ROOT_DIR/scripts/check_formal_web_runner.py" --require-actions
 
 WORK_DIR="$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/scholarsense-formal-web-XXXXXX")"
 cleanup() {
+  chmod -R u+w "$WORK_DIR" 2>/dev/null || true
   rm -rf -- "$WORK_DIR"
 }
 trap cleanup EXIT INT TERM
