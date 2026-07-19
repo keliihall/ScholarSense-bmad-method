@@ -107,15 +107,18 @@ jobs:
           test "$(shasum -a 256 "$build/build-manifest.json" | cut -d' ' -f1)" = "${{ needs.build-candidate.outputs.build-manifest-sha256 }}"
           python3 release/formal_web.py safe_extract_frontend \
             "$build/scholarsense-frontend.tar.gz" "$RUNNER_TEMP/golden-served" "$EXPECTED_SHA256"
-      - name: Install four exact digest-verified browser binaries
-        run: ./scripts/install-formal-web-browsers.sh "$RUNNER_TEMP/golden-browsers"
+      - name: Ensure the read-only exact browser tool layer
+        run: |
+          browser_root="$HOME/Library/Caches/ScholarSense/formal-browser-install/TEST-ENV-1.0.0"
+          ./scripts/install-formal-web-browsers.sh "$browser_root"
+          printf 'FORMAL_BROWSER_INSTALL_ROOT=%s\n' "$browser_root" >> "$GITHUB_ENV"
       - name: Capture the eight-cell candidate oracle
         env:
           EXPECTED_SHA256: ${{ needs.build-candidate.outputs.frontend-sha256 }}
         run: |
           node frontend/scripts/capture-formal-web-goldens.mjs \
             --served-root "$RUNNER_TEMP/golden-served" \
-            --browsers "$RUNNER_TEMP/golden-browsers/browsers.json" \
+            --browsers "$FORMAL_BROWSER_INSTALL_ROOT/browsers.json" \
             --subject-sha256 "$EXPECTED_SHA256" \
             --output "$RUNNER_TEMP/golden-capture"
       - name: Publish and read back the immutable golden candidate
