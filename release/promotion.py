@@ -767,9 +767,10 @@ class GitRefLedger:
             tree = self._json(self._api(f"git/trees/{tree_oid}"), "PROMOTION_LEDGER_TREE_INVALID")
             entry = next(item for item in tree["tree"] if item.get("path") == "promotion-record.json")
             blob = self._json(self._api(f"git/blobs/{entry['sha']}"), "PROMOTION_LEDGER_BLOB_INVALID")
-            if blob.get("encoding") != "base64":
+            encoded = blob.get("content")
+            if blob.get("encoding") != "base64" or not isinstance(encoded, str):
                 raise PromotionError("PROMOTION_LEDGER_BLOB_INVALID")
-            raw = base64.b64decode(blob["content"], validate=True)
+            raw = base64.b64decode(encoded.replace("\n", ""), validate=True)
             document = parse_json_bytes(raw)
         except (KeyError, StopIteration, TypeError, ValueError) as error:
             if isinstance(error, PromotionError):
