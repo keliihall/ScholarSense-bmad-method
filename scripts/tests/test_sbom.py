@@ -5,6 +5,7 @@ from dataclasses import replace
 import json
 import sys
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -12,7 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "release"))
 
 from release_json import load_json  # noqa: E402
-from release_policy import license_issues  # noqa: E402
+from release_policy import license_issues, vulnerability_issues  # noqa: E402
+from generate_sbom import _findings  # noqa: E402
 from sbom import (  # noqa: E402
     ScanContext,
     aggregate_components,
@@ -24,6 +26,7 @@ from sbom import (  # noqa: E402
     sbom_pair_issues,
     scan_context_policy_issues,
     security_adjudications,
+    _backend_license,
 )
 
 
@@ -59,7 +62,11 @@ class SbomContractTest(unittest.TestCase):
         self.assertIn("pkg:npm/%40typescript/typescript6@6.0.2", by_purl)
         self.assertNotIn("pkg:npm/%40popperjs/core@2.11.8", by_purl)
         self.assertTrue(all(component["hashes"] for component in components))
+        self.assertTrue(any(component["direct"] for component in components))
+        self.assertTrue(any(component["dependsOn"] for component in components))
         self.assertTrue(all(component["licenseExpression"] != "UNKNOWN" for component in components))
+        self.assertTrue(any(component["direct"] for component in components))
+        self.assertTrue(any(component["dependsOn"] for component in components))
 
     def test_backend_artifact_reconciles_lock_and_embedded_jarmode(self) -> None:
         components = backend_components(
@@ -70,6 +77,7 @@ class SbomContractTest(unittest.TestCase):
         purls = {component["purl"] for component in components}
         self.assertIn("pkg:maven/org.springframework.boot/spring-boot-jarmode-tools@4.1.0", purls)
         self.assertTrue(all(component["hashes"] for component in components))
+        self.assertEqual("UNKNOWN", _backend_license("pkg:maven/example/unreviewed@1.0.0"))
 
     def test_cyclonedx_and_spdx_bind_same_subject_components_tool_and_database(self) -> None:
         components = npm_components(load_json(PROJECT_ROOT / "frontend/package-lock.json"))[:3]
@@ -196,6 +204,44 @@ class SbomContractTest(unittest.TestCase):
         for version in ("0.69.4", "0.69.5", "0.69.6", "0.71.0", "latest"):
             with self.subTest(version=version):
                 self.assertTrue(scan_context_policy_issues(replace(self.context, trivy_version=version)))
+
+    def test_vulnerability_uses_highest_rating_and_malformed_rating_fails_closed(self) -> None:
+        base = {"id": "CVE-1", "affects": [{"ref": "pkg:npm/a@1"}]}
+        findings = _findings([{**base, "ratings": [{"severity": "LOW"}, {"severity": "CRITICAL"}]}])
+        self.assertEqual("CRITICAL", findings[0]["severity"])
+        malformed = _findings([{**base, "ratings": [{"severity": "future-severity"}]}])
+        self.assertEqual("UNKNOWN", malformed[0]["severity"])
+
+    def test_versioned_exception_records_are_subject_bound_and_expiring(self) -> None:
+        now = datetime(2026, 7, 19, tzinfo=timezone.utc)
+        vulnerability_policy = load_json(CONTRACTS / "vulnerability-policy-1.0.0.json")
+        finding = {"purl": "pkg:npm/a@1", "vulnerabilityId": "CVE-1", "severity": "HIGH"}
+        exception = {
+            "exceptionId": "VEX-2026-001",
+            "purl": "pkg:npm/a@1",
+            "vulnerabilityId": "CVE-1",
+            "subjectSha256": "a" * 64,
+            "reason": "Named compensating control.",
+            "approvedBy": "Hei",
+            "expiresAt": "2026-08-01T00:00:00Z",
+        }
+        self.assertEqual([], vulnerability_issues([finding], vulnerability_policy, [exception], "a" * 64, now))
+        self.assertTrue(vulnerability_issues([finding], vulnerability_policy, [exception], "b" * 64, now))
+
+        license_policy = load_json(CONTRACTS / "license-policy-1.0.0.json")
+        license_exception = {
+            "exceptionId": "LEX-2026-001",
+            "purl": "pkg:generic/a@1",
+            "licenseExpression": "LicenseRef-Reviewed",
+            "subjectSha256": "a" * 64,
+            "reason": "Legal review approved this use.",
+            "approvedBy": "Hei",
+            "expiresAt": "2026-08-01T00:00:00Z",
+        }
+        self.assertEqual([], license_issues(
+            [{"purl": "pkg:generic/a@1", "license": "LicenseRef-Reviewed"}],
+            license_policy, [license_exception], "a" * 64, now,
+        ))
 
 
 if __name__ == "__main__":

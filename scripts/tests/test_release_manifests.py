@@ -21,6 +21,7 @@ from manifests import (  # noqa: E402
     write_frozen_document,
 )
 from release_json import canonical_sha256, load_json, schema_issues  # noqa: E402
+from version_binding import InMemoryManifestVersionLedger, ManifestVersionBindingService, VersionBindingError  # noqa: E402
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -56,7 +57,14 @@ def _release_input() -> tuple[dict, dict]:
         item["size"] = source["size"]
         artifacts.append(item)
     evidence = []
-    common = ("sbom", "vulnerability-scan", "provenance", "sbom-attestation", "artifact-signature")
+    common = (
+        "sbom-cyclonedx",
+        "sbom-spdx",
+        "vulnerability-scan",
+        "provenance",
+        "sbom-attestation",
+        "artifact-signature",
+    )
     frontend_only = ("formal-web-report", "visual-baseline", "ui-token-manifest", "brand-asset-manifest")
     counter = 2
     for subject_id, subject_digest in artifact_digests.items():
@@ -80,9 +88,10 @@ def _release_input() -> tuple[dict, dict]:
         "buildManifest": build,
         "buildManifestRef": _reference("build-manifest", "BUILD-MANIFEST-1.0.0", canonical_sha256(build)),
         "sourceInventoryRef": _reference("release-source-inventory", "RELEASE-SOURCE-INVENTORY-1.0.0", "a" * 64),
+        "sourceArchiveRef": _reference("release-source-archive", "a" * 40, "b" * 64),
         "baselineApprovals": baselines,
         "runtimeEvidence": [
-            {"id": "supply-chain-evidence", "status": "passed", "evidenceIds": [item["id"] for item in evidence if item["kind"] != "formal-web-report"]},
+            {"id": "supply-chain-evidence", "status": "passed", "evidenceIds": [item["id"] for item in evidence if item["kind"] in common]},
             {"id": "formal-web-evidence", "status": "passed", "evidenceIds": [item["id"] for item in evidence if item["kind"] in frontend_only]},
             {"id": "app-webview", "status": "not-applicable", "decisionId": "USER-2026-07-19-SCHOOL-APP-NA", "runtimeEvidenceClaim": "none"},
             {"id": "future-app-device", "status": "pending-story-execution", "ownerStory": "7.1/7.x", "runtimeEvidenceClaim": "none"},
@@ -101,6 +110,13 @@ def _release_input() -> tuple[dict, dict]:
 
 
 class ReleaseManifestLifecycleTest(unittest.TestCase):
+    def test_release_version_has_one_global_manifest_digest(self) -> None:
+        service = ManifestVersionBindingService(InMemoryManifestVersionLedger())
+        self.assertEqual("bound", service.bind("1.0.0", "a" * 64))
+        self.assertEqual("replayed", service.bind("1.0.0", "a" * 64))
+        with self.assertRaisesRegex(VersionBindingError, "RELEASE_VERSION_MANIFEST_CONFLICT"):
+            service.bind("1.0.0", "b" * 64)
+
     def test_generator_freezes_only_a_complete_selected_artifact_evidence_set(self) -> None:
         payload, build = _release_input()
         manifest = create_release_manifest(payload)
@@ -129,6 +145,15 @@ class ReleaseManifestLifecycleTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "RELEASE_EVIDENCE_SUBJECT_UNKNOWN"):
             create_release_manifest(rebound)
 
+    def test_manifest_rejects_a_single_generic_sbom_reference(self) -> None:
+        payload, _build = _release_input()
+        generic = copy.deepcopy(payload)
+        for item in generic["evidence"]:
+            if item["kind"] in {"sbom-cyclonedx", "sbom-spdx"}:
+                item["kind"] = "sbom"
+        with self.assertRaisesRegex(ValueError, "RELEASE_(EVIDENCE_KIND_INVALID|REQUIRED_EVIDENCE_MISSING)"):
+            create_release_manifest(generic)
+
     def test_baseline_approval_and_runtime_applicability_are_separate_and_honest(self) -> None:
         payload, _build = _release_input()
         manifest = create_release_manifest(payload)
@@ -140,6 +165,12 @@ class ReleaseManifestLifecycleTest(unittest.TestCase):
         self.assertEqual("none", runtime["app-webview"]["runtimeEvidenceClaim"])
         self.assertEqual("pending-story-execution", runtime["future-app-device"]["status"])
         self.assertEqual("none", runtime["future-app-device"]["runtimeEvidenceClaim"])
+
+    def test_runtime_gate_links_are_kind_and_subject_scoped(self) -> None:
+        payload, build = _release_input()
+        payload["runtimeEvidence"][1]["evidenceIds"].append("backend-sbom-cyclonedx")
+        with self.assertRaisesRegex(ValueError, "RELEASE_RUNTIME_EVIDENCE_SEMANTICS_INVALID"):
+            create_release_manifest(payload)
 
     def test_release_manifest_rejects_descendant_or_nonexistent_references(self) -> None:
         payload, build = _release_input()

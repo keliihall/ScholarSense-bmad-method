@@ -4,7 +4,7 @@
   "type": "object",
   "properties": {
     "version": {"const": "RELEASE-SOURCE-INVENTORY-1.0.0"},
-    "repositoryUrl": {"type": "string", "format": "uri"},
+    "repositoryUrl": {"type": "string", "minLength": 1},
     "repositoryId": {"type": "integer", "minimum": 1},
     "sourceCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
     "gitTreeOid": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
@@ -13,7 +13,7 @@
     "normalization": {"type": "string", "minLength": 3},
     "includedScopes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
     "inventoryExclusion": {"type": "string", "minLength": 3},
-    "createdFrom": {"type": "string", "format": "uri"},
+    "createdFrom": {"type": "string", "minLength": 1},
     "historicalInventoryDisposition": {"type": "string", "minLength": 10}
   },
   "required": ["version", "repositoryUrl", "repositoryId", "sourceCommit", "gitTreeOid", "fileCount", "normalizedManifestSha256", "normalization", "includedScopes", "inventoryExclusion", "createdFrom", "historicalInventoryDisposition"],

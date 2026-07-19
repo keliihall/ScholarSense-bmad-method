@@ -43,7 +43,14 @@ REQUIRED_CONTROLLED_INPUT_IDS = frozenset(
 )
 REQUIRED_LOCK_IDS = frozenset({"backend-lock", "frontend-lock", "toolchain-lock"})
 COMMON_EVIDENCE_KINDS = frozenset(
-    {"artifact-signature", "provenance", "sbom", "sbom-attestation", "vulnerability-scan"}
+    {
+        "artifact-signature",
+        "provenance",
+        "sbom-attestation",
+        "sbom-cyclonedx",
+        "sbom-spdx",
+        "vulnerability-scan",
+    }
 )
 FRONTEND_EVIDENCE_KINDS = frozenset(
     {"brand-asset-manifest", "formal-web-report", "ui-token-manifest", "visual-baseline"}
@@ -148,6 +155,13 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
     issues.extend(_reference_issues(source_reference, "RELEASE_SOURCE_INVENTORY_REF"))
     if isinstance(source_reference, dict) and source_reference.get("id") != "release-source-inventory":
         issues.append("RELEASE_SOURCE_INVENTORY_ID_INVALID")
+    source_archive = manifest.get("sourceArchive")
+    issues.extend(_reference_issues(source_archive, "RELEASE_SOURCE_ARCHIVE_REF"))
+    if isinstance(source_archive, dict):
+        if source_archive.get("id") != "release-source-archive":
+            issues.append("RELEASE_SOURCE_ARCHIVE_ID_INVALID")
+        if source_archive.get("version") != manifest.get("sourceCommit"):
+            issues.append("RELEASE_SOURCE_ARCHIVE_COMMIT_MISMATCH")
 
     baseline_approvals = manifest.get("baselineApprovals")
     issues.extend(_exact_ids(baseline_approvals, REQUIRED_BASELINE_IDS, "RELEASE_BASELINE"))
@@ -230,6 +244,22 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         linked = item.get("evidenceIds")
         if not isinstance(linked, list) or not linked or any(value not in evidence_ids for value in linked):
             issues.append(f"RELEASE_RUNTIME_EVIDENCE_LINK_INVALID: {identity}")
+            continue
+        linked_evidence = {
+            evidence.get("id"): evidence
+            for evidence in manifest.get("evidence", [])
+            if isinstance(evidence, dict) and evidence.get("id") in linked
+        }
+        for evidence_id in linked:
+            evidence = linked_evidence.get(evidence_id, {})
+            kind = evidence.get("kind")
+            subject_id = artifact_by_digest.get(evidence.get("subjectBinarySha256"))
+            if identity == "formal-web-evidence" and (
+                kind not in FRONTEND_EVIDENCE_KINDS or subject_id != "frontend"
+            ):
+                issues.append(f"RELEASE_RUNTIME_EVIDENCE_SEMANTICS_INVALID: {identity}: {evidence_id}")
+            if identity == "supply-chain-evidence" and kind not in COMMON_EVIDENCE_KINDS:
+                issues.append(f"RELEASE_RUNTIME_EVIDENCE_SEMANTICS_INVALID: {identity}: {evidence_id}")
     app = runtime_by_id.get("app-webview", {})
     if app.get("status") != "not-applicable" or app.get("decisionId") != "USER-2026-07-19-SCHOOL-APP-NA" or app.get("runtimeEvidenceClaim") != "none" or "evidenceIds" in app:
         issues.append("RELEASE_APP_NA_DECISION_INVALID")
@@ -246,6 +276,7 @@ def create_release_manifest(payload: dict[str, Any]) -> dict[str, Any]:
         "releaseVersion": payload.get("releaseVersion"),
         "sourceCommit": build_manifest.get("sourceCommit") if isinstance(build_manifest, dict) else None,
         "sourceInventory": payload.get("sourceInventoryRef"),
+        "sourceArchive": payload.get("sourceArchiveRef"),
         "buildManifest": payload.get("buildManifestRef"),
         "buildAttempts": build_manifest.get("attempts") if isinstance(build_manifest, dict) else None,
         "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",

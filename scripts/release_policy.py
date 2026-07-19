@@ -57,14 +57,37 @@ def vulnerability_issues(
     return sorted(set(issues))
 
 
-def license_issues(components: list[dict[str, Any]], policy: dict[str, Any]) -> list[str]:
+def license_issues(
+    components: list[dict[str, Any]],
+    policy: dict[str, Any],
+    exceptions: list[dict[str, Any]] | None = None,
+    subject_sha256: str | None = None,
+    now: datetime | None = None,
+) -> list[str]:
     allowed = set(policy.get("allowed", [])) | set(policy.get("allowedExpressions", []))
     denied = set(policy.get("denied", []))
     issues: list[str] = []
     for component in components:
         license_name = str(component.get("license") or "UNKNOWN")
         purl = component.get("purl", "UNKNOWN")
-        if license_name == "UNKNOWN" or license_name in denied or license_name not in allowed:
+        accepted = False
+        for exception in exceptions or []:
+            expiry = _date_time(exception.get("expiresAt"))
+            if (
+                exception.get("purl") == purl
+                and exception.get("licenseExpression") == license_name
+                and exception.get("subjectSha256") == subject_sha256
+                and isinstance(exception.get("approvedBy"), str)
+                and bool(exception["approvedBy"].strip())
+                and isinstance(exception.get("reason"), str)
+                and len(exception["reason"].strip()) >= 10
+                and now is not None
+                and expiry is not None
+                and expiry > now
+            ):
+                accepted = True
+                break
+        if not accepted and (license_name == "UNKNOWN" or license_name in denied or license_name not in allowed):
             issues.append(f"LICENSE_BLOCKED: {purl} {license_name}")
     return sorted(set(issues))
 

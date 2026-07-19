@@ -12,6 +12,7 @@ concurrency:
 env:
   CANDIDATE_REPOSITORY: ghcr.io/keliihall/scholarsense-release-candidate
   GOLDEN_REPOSITORY: ghcr.io/keliihall/scholarsense-visual-goldens
+  EXPECTED_RUNNER_IMAGE_VERSION: 20260714.240.1
 
 jobs:
   build-candidate:
@@ -25,6 +26,8 @@ jobs:
       frontend-sha256: ${{ steps.publish.outputs.frontend-sha256 }}
       build-manifest-sha256: ${{ steps.publish.outputs.build-manifest-sha256 }}
     steps:
+      - name: Enforce frozen hosted runner image
+        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"
       - name: Checkout immutable protected source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -88,7 +91,7 @@ jobs:
         with:
           node-version: 24.18.0
       - name: Install frozen browser-harness dependencies without lifecycle scripts
-        run: npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+        run: ./_bmad/scripts/with_pab_toolchain.sh npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
       - name: Verify exact ephemeral runner identity
         run: python3 scripts/check_formal_web_runner.py --require-actions
       - name: Fetch and safely extract only the frozen candidate
@@ -116,7 +119,7 @@ jobs:
         env:
           EXPECTED_SHA256: ${{ needs.build-candidate.outputs.frontend-sha256 }}
         run: |
-          node frontend/scripts/capture-formal-web-goldens.mjs \
+          ./_bmad/scripts/with_pab_toolchain.sh node frontend/scripts/capture-formal-web-goldens.mjs \
             --served-root "$RUNNER_TEMP/golden-served" \
             --browsers "$FORMAL_BROWSER_INSTALL_ROOT/browsers.json" \
             --subject-sha256 "$EXPECTED_SHA256" \

@@ -56,6 +56,35 @@ class ReleasePlatformContractTest(unittest.TestCase):
         workflow = PROJECT_ROOT / ".github/workflows/platform-probe.yml"
         self.assertEqual([], validate_workflow(workflow))
 
+    def test_cisb_binds_the_actual_release_trust_contract(self) -> None:
+        baseline = load_json_document(CISB_PATH)
+        self.assertEqual(".github/workflows/release.yml", baseline["ci"]["workflow"])
+        self.assertEqual("ImageVersion", baseline["runner"]["runtimeImageVersionVariable"])
+        self.assertTrue(baseline["identities"]["build"].endswith("#workflow:release.yml#job:build-test"))
+        self.assertTrue(baseline["identities"]["attestation"].endswith("#workflow:artifact-signing.yml#job:sign"))
+        self.assertTrue(baseline["identities"]["webQa"].endswith("#workflow:release.yml#job:formal-web-test"))
+        artifact_signer = baseline["identities"]["artifactSigner"]
+        manifest_signer = baseline["identities"]["manifestSigner"]
+        self.assertNotEqual(artifact_signer, manifest_signer)
+        self.assertIn("artifact-signing.yml", artifact_signer)
+        self.assertIn("manifest-signing.yml", manifest_signer)
+        candidate = copy.deepcopy(baseline)
+        candidate["identities"]["attestation"] = candidate["identities"]["attestation"].replace(
+            "#job:sign", "#job:sign-artifacts"
+        )
+        self.assertIn("CISB_IDENTITY_JOB_NOT_FOUND: identities.attestation", validate_cisb(candidate, PROJECT_ROOT))
+
+    def test_cisb_records_the_approved_single_human_plus_automated_web_qa_policy(self) -> None:
+        baseline = load_json_document(CISB_PATH)
+        approval = baseline["goldenApproval"]
+        self.assertEqual("github-user:24710825:keliihall", approval["accountablePrincipal"])
+        self.assertEqual("single-accountable-plus-independent-automated-web-qa", approval["policy"])
+        self.assertEqual(".github/workflows/release.yml#job:formal-web-test", approval["webQaGate"])
+        self.assertIn("actions/runs/{runId}/approvals", approval["approvalHistoryApi"])
+        candidate = copy.deepcopy(baseline)
+        candidate["goldenApproval"]["webQaGate"] = ".github/workflows/release.yml#job:formal-web"
+        self.assertIn("CISB_WEB_QA_GATE_NOT_INDEPENDENT", validate_cisb(candidate, PROJECT_ROOT))
+
     def test_workflow_rejects_mutable_action_write_all_and_secret_sink(self) -> None:
         cases = {
             "mutable action": "uses: actions/checkout@v4\n",

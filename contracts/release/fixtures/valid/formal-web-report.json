@@ -19,8 +19,21 @@
       "actualScreenshotSha256": "f0edb343abe5756171ef72153335b62becefcfaa0ff213c2c618ddf7be72c203",
       "goldenScreenshotSha256": "f0edb343abe5756171ef72153335b62becefcfaa0ff213c2c618ddf7be72c203",
       "diffPixels": 0,
-      "checks": {"artifactServed":"passed","resources":"passed","console":"passed","network":"passed","keyboardFocus":"passed","axe":"passed","zoom200":"passed","reflow320":"passed","uiTokens":"passed","brandAssets":"passed"},
-      "result": "passed"
+      "checks": {
+        "artifactServed": "passed",
+        "resources": "passed",
+        "console": "passed",
+        "network": "passed",
+        "keyboardFocus": "passed",
+        "axe": "passed",
+        "zoom200": "passed",
+        "reflow320": "passed",
+        "uiTokens": "passed",
+        "brandAssets": "passed",
+        "responsive375": "passed"
+      },
+      "result": "passed",
+      "diffRgbaSha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
       "id": "chrome-current-desktop-minimum",
@@ -34,8 +47,21 @@
       "actualScreenshotSha256": "41122bc7de05b689f06a062cd50441c02363a419e31c527dafe217ab2d62a981",
       "goldenScreenshotSha256": "41122bc7de05b689f06a062cd50441c02363a419e31c527dafe217ab2d62a981",
       "diffPixels": 0,
-      "checks": {"artifactServed":"passed","resources":"passed","console":"passed","network":"passed","keyboardFocus":"passed","axe":"passed","zoom200":"passed","reflow320":"passed","uiTokens":"passed","brandAssets":"passed"},
-      "result": "passed"
+      "checks": {
+        "artifactServed": "passed",
+        "resources": "passed",
+        "console": "passed",
+        "network": "passed",
+        "keyboardFocus": "passed",
+        "axe": "passed",
+        "zoom200": "passed",
+        "reflow320": "passed",
+        "uiTokens": "passed",
+        "brandAssets": "passed",
+        "responsive375": "passed"
+      },
+      "result": "passed",
+      "diffRgbaSha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
       "id": "chrome-previous-desktop-reference",
@@ -49,8 +75,21 @@
       "actualScreenshotSha256": "f0edb343abe5756171ef72153335b62becefcfaa0ff213c2c618ddf7be72c203",
       "goldenScreenshotSha256": "f0edb343abe5756171ef72153335b62becefcfaa0ff213c2c618ddf7be72c203",
       "diffPixels": 0,
-      "checks": {"artifactServed":"passed","resources":"passed","console":"passed","network":"passed","keyboardFocus":"passed","axe":"passed","zoom200":"passed","reflow320":"passed","uiTokens":"passed","brandAssets":"passed"},
-      "result": "passed"
+      "checks": {
+        "artifactServed": "passed",
+        "resources": "passed",
+        "console": "passed",
+        "network": "passed",
+        "keyboardFocus": "passed",
+        "axe": "passed",
+        "zoom200": "passed",
+        "reflow320": "passed",
+        "uiTokens": "passed",
+        "brandAssets": "passed",
+        "responsive375": "passed"
+      },
+      "result": "passed",
+      "diffRgbaSha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
       "id": "chrome-previous-desktop-minimum",
@@ -64,8 +103,21 @@
       "actualScreenshotSha256": "41122bc7de05b689f06a062cd50441c02363a419e31c527dafe217ab2d62a981",
       "goldenScreenshotSha256": "41122bc7de05b689f06a062cd50441c02363a419e31c527dafe217ab2d62a981",
       "diffPixels": 0,
-      "checks": {"artifactServed":"passed","resources":"passed","console":"passed","network":"passed","keyboardFocus":"passed","axe":"passed","zoom200":"passed","reflow320":"passed","uiTokens":"passed","brandAssets":"passed"},
-      "result": "passed"
+      "checks": {
+        "artifactServed": "passed",
+        "resources": "passed",
+        "console": "passed",
+        "network": "passed",
+        "keyboardFocus": "passed",
+        "axe": "passed",
+        "zoom200": "passed",
+        "reflow320": "passed",
+        "uiTokens": "passed",
+        "brandAssets": "passed",
+        "responsive375": "passed"
+      },
+      "result": "passed",
+      "diffRgbaSha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
       "id": "edge-current-desktop-reference",
@@ -79,8 +131,21 @@
       "actualScreenshotSha256": "f0edb343abe5756171ef72153335b62becefcfaa0ff213c2c618ddf7be72c203",
       "goldenScreenshotSha256": "f0edb343abe5756171ef72153335b62becefcfaa0ff213c2c618ddf7be72c203",
       "diffPixels": 0,
-      "checks": {"artifactServed":"passed","resources":"passed","console":"passed","network":"passed","keyboardFocus":"passed","axe":"passed","zoom200":"passed","reflow320":"passed","uiTokens":"passed","brandAssets":"passed"},
-      "result": "passed"
+      "checks": {
+        "artifactServed": "passed",
+        "resources": "passed",
+        "console": "passed",
+        "network": "passed",
+        "keyboardFocus": "passed",
+        "axe": "passed",
+        "zoom200": "passed",
+        "reflow320": "passed",
+        "uiTokens": "passed",
+        "brandAssets": "passed",
+        "responsive375": "passed"
+      },
+      "result": "passed",
+      "diffRgbaSha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
       "id": "edge-current-desktop-minimum",
@@ -94,8 +159,21 @@
       "actualScreenshotSha256": "41122bc7de05b689f06a062cd50441c02363a419e31c527dafe217ab2d62a981",
       "goldenScreenshotSha256": "41122bc7de05b689f06a062cd50441c02363a419e31c527dafe217ab2d62a981",
       "diffPixels": 0,
-      "checks": {"artifactServed":"passed","resources":"passed","console":"passed","network":"passed","keyboardFocus":"passed","axe":"passed","zoom200":"passed","reflow320":"passed","uiTokens":"passed","brandAssets":"passed"},
-      "result": "passed"
+      "checks": {
+        "artifactServed": "passed",
+        "resources": "passed",
+        "console": "passed",
+        "network": "passed",
+        "keyboardFocus": "passed",
+        "axe": "passed",
+        "zoom200": "passed",
+        "reflow320": "passed",
+        "uiTokens": "passed",
+        "brandAssets": "passed",
+        "responsive375": "passed"
+      },
+      "result": "passed",
+      "diffRgbaSha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
       "id": "edge-previous-desktop-reference",
@@ -109,8 +187,21 @@
       "actualScreenshotSha256": "f0edb343abe5756171ef72153335b62becefcfaa0ff213c2c618ddf7be72c203",
       "goldenScreenshotSha256": "f0edb343abe5756171ef72153335b62becefcfaa0ff213c2c618ddf7be72c203",
       "diffPixels": 0,
-      "checks": {"artifactServed":"passed","resources":"passed","console":"passed","network":"passed","keyboardFocus":"passed","axe":"passed","zoom200":"passed","reflow320":"passed","uiTokens":"passed","brandAssets":"passed"},
-      "result": "passed"
+      "checks": {
+        "artifactServed": "passed",
+        "resources": "passed",
+        "console": "passed",
+        "network": "passed",
+        "keyboardFocus": "passed",
+        "axe": "passed",
+        "zoom200": "passed",
+        "reflow320": "passed",
+        "uiTokens": "passed",
+        "brandAssets": "passed",
+        "responsive375": "passed"
+      },
+      "result": "passed",
+      "diffRgbaSha256": "0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
       "id": "edge-previous-desktop-minimum",
@@ -124,8 +215,21 @@
       "actualScreenshotSha256": "41122bc7de05b689f06a062cd50441c02363a419e31c527dafe217ab2d62a981",
       "goldenScreenshotSha256": "41122bc7de05b689f06a062cd50441c02363a419e31c527dafe217ab2d62a981",
       "diffPixels": 0,
-      "checks": {"artifactServed":"passed","resources":"passed","console":"passed","network":"passed","keyboardFocus":"passed","axe":"passed","zoom200":"passed","reflow320":"passed","uiTokens":"passed","brandAssets":"passed"},
-      "result": "passed"
+      "checks": {
+        "artifactServed": "passed",
+        "resources": "passed",
+        "console": "passed",
+        "network": "passed",
+        "keyboardFocus": "passed",
+        "axe": "passed",
+        "zoom200": "passed",
+        "reflow320": "passed",
+        "uiTokens": "passed",
+        "brandAssets": "passed",
+        "responsive375": "passed"
+      },
+      "result": "passed",
+      "diffRgbaSha256": "0000000000000000000000000000000000000000000000000000000000000000"
     }
   ],
   "scope": {

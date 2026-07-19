@@ -1,1 +1,308 @@
-{"version":"EVIDENCE-INDEX-1.0.0","releaseVersion":"1.0.0","subjectManifestSha256":"8704d0bd89b77a92a44a249eb6bd4e5c79a93aa5862963c1d125e9179f834241","releaseManifest":{"id":"release-manifest","version":"RELEASE-MANIFEST-1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:8704d0bd89b77a92a44a249eb6bd4e5c79a93aa5862963c1d125e9179f834241","mediaType":"application/json","size":1,"binarySha256":"8704d0bd89b77a92a44a249eb6bd4e5c79a93aa5862963c1d125e9179f834241","ociDigest":"sha256:8704d0bd89b77a92a44a249eb6bd4e5c79a93aa5862963c1d125e9179f834241"},"manifestSignature":{"id":"manifest-signature","kind":"manifest-signature","stage":"manifest-signature","version":"COSIGN-BUNDLE-0.3","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","mediaType":"application/json","size":1,"binarySha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","ociDigest":"sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","subjectBinarySha256":"8704d0bd89b77a92a44a249eb6bd4e5c79a93aa5862963c1d125e9179f834241","dependsOn":["release-manifest"]},"evidence":[{"id":"backend","kind":"artifact","stage":"artifact","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","mediaType":"application/java-archive","size":1,"binarySha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","ociDigest":"sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","subjectBinarySha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","dependsOn":[]},{"id":"frontend","kind":"artifact","stage":"artifact","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:1111111111111111111111111111111111111111111111111111111111111111","mediaType":"application/gzip","size":1,"binarySha256":"1111111111111111111111111111111111111111111111111111111111111111","ociDigest":"sha256:1111111111111111111111111111111111111111111111111111111111111111","subjectBinarySha256":"1111111111111111111111111111111111111111111111111111111111111111","dependsOn":[]},{"id":"backend-sbom","kind":"sbom","stage":"artifact-evidence","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:2222222222222222222222222222222222222222222222222222222222222222","mediaType":"application/json","size":1,"binarySha256":"2222222222222222222222222222222222222222222222222222222222222222","ociDigest":"sha256:2222222222222222222222222222222222222222222222222222222222222222","subjectBinarySha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","dependsOn":["backend"]},{"id":"backend-vulnerability-scan","kind":"vulnerability-scan","stage":"artifact-evidence","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:3333333333333333333333333333333333333333333333333333333333333333","mediaType":"application/json","size":1,"binarySha256":"3333333333333333333333333333333333333333333333333333333333333333","ociDigest":"sha256:3333333333333333333333333333333333333333333333333333333333333333","subjectBinarySha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","dependsOn":["backend"]},{"id":"backend-provenance","kind":"provenance","stage":"artifact-evidence","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:4444444444444444444444444444444444444444444444444444444444444444","mediaType":"application/json","size":1,"binarySha256":"4444444444444444444444444444444444444444444444444444444444444444","ociDigest":"sha256:4444444444444444444444444444444444444444444444444444444444444444","subjectBinarySha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","dependsOn":["backend"]},{"id":"backend-sbom-attestation","kind":"sbom-attestation","stage":"artifact-evidence","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:5555555555555555555555555555555555555555555555555555555555555555","mediaType":"application/json","size":1,"binarySha256":"5555555555555555555555555555555555555555555555555555555555555555","ociDigest":"sha256:5555555555555555555555555555555555555555555555555555555555555555","subjectBinarySha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","dependsOn":["backend"]},{"id":"frontend-sbom","kind":"sbom","stage":"artifact-evidence","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:7777777777777777777777777777777777777777777777777777777777777777","mediaType":"application/json","size":1,"binarySha256":"7777777777777777777777777777777777777777777777777777777777777777","ociDigest":"sha256:7777777777777777777777777777777777777777777777777777777777777777","subjectBinarySha256":"1111111111111111111111111111111111111111111111111111111111111111","dependsOn":["frontend"]},{"id":"frontend-vulnerability-scan","kind":"vulnerability-scan","stage":"artifact-evidence","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:8888888888888888888888888888888888888888888888888888888888888888","mediaType":"application/json","size":1,"binarySha256":"8888888888888888888888888888888888888888888888888888888888888888","ociDigest":"sha256:8888888888888888888888888888888888888888888888888888888888888888","subjectBinarySha256":"1111111111111111111111111111111111111111111111111111111111111111","dependsOn":["frontend"]},{"id":"frontend-provenance","kind":"provenance","stage":"artifact-evidence","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:9999999999999999999999999999999999999999999999999999999999999999","mediaType":"application/json","size":1,"binarySha256":"9999999999999999999999999999999999999999999999999999999999999999","ociDigest":"sha256:9999999999999999999999999999999999999999999999999999999999999999","subjectBinarySha256":"1111111111111111111111111111111111111111111111111111111111111111","dependsOn":["frontend"]},{"id":"frontend-sbom-attestation","kind":"sbom-attestation","stage":"artifact-evidence","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","mediaType":"application/json","size":1,"binarySha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","ociDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","subjectBinarySha256":"1111111111111111111111111111111111111111111111111111111111111111","dependsOn":["frontend"]},{"id":"frontend-formal-web-report","kind":"formal-web-report","stage":"artifact-evidence","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","mediaType":"application/json","size":1,"binarySha256":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","ociDigest":"sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","subjectBinarySha256":"1111111111111111111111111111111111111111111111111111111111111111","dependsOn":["frontend"]},{"id":"frontend-visual-baseline","kind":"visual-baseline","stage":"artifact-evidence","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","mediaType":"application/json","size":1,"binarySha256":"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","ociDigest":"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","subjectBinarySha256":"1111111111111111111111111111111111111111111111111111111111111111","dependsOn":["frontend"]},{"id":"frontend-ui-token-manifest","kind":"ui-token-manifest","stage":"artifact-evidence","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee","mediaType":"application/json","size":1,"binarySha256":"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee","ociDigest":"sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee","subjectBinarySha256":"1111111111111111111111111111111111111111111111111111111111111111","dependsOn":["frontend"]},{"id":"frontend-brand-asset-manifest","kind":"brand-asset-manifest","stage":"artifact-evidence","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","mediaType":"application/json","size":1,"binarySha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","ociDigest":"sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","subjectBinarySha256":"1111111111111111111111111111111111111111111111111111111111111111","dependsOn":["frontend"]},{"id":"backend-artifact-signature","kind":"artifact-signature","stage":"artifact-signature","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:6666666666666666666666666666666666666666666666666666666666666666","mediaType":"application/json","size":1,"binarySha256":"6666666666666666666666666666666666666666666666666666666666666666","ociDigest":"sha256:6666666666666666666666666666666666666666666666666666666666666666","subjectBinarySha256":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","dependsOn":["backend","backend-provenance","backend-sbom-attestation"]},{"id":"frontend-artifact-signature","kind":"artifact-signature","stage":"artifact-signature","version":"1.0.0","uri":"oci://ghcr.io/keliihall/scholarsense/evidence@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","mediaType":"application/json","size":1,"binarySha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","ociDigest":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","subjectBinarySha256":"1111111111111111111111111111111111111111111111111111111111111111","dependsOn":["frontend","frontend-provenance","frontend-sbom-attestation"]}],"versionBindings":[{"releaseVersion":"1.0.0","manifestSha256":"8704d0bd89b77a92a44a249eb6bd4e5c79a93aa5862963c1d125e9179f834241"}],"createdAt":"2026-07-19T08:01:00+08:00"}
+{
+  "version": "EVIDENCE-INDEX-1.0.0",
+  "releaseVersion": "1.0.0",
+  "subjectManifestSha256": "cc8ade3ef1b1ca02c860f00ed4720a5e59b746a312ca6ad98ebb5cedf77ce2cd",
+  "releaseManifest": {
+    "id": "release-manifest",
+    "version": "RELEASE-MANIFEST-1.0.0",
+    "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:8704d0bd89b77a92a44a249eb6bd4e5c79a93aa5862963c1d125e9179f834241",
+    "mediaType": "application/json",
+    "size": 1,
+    "binarySha256": "cc8ade3ef1b1ca02c860f00ed4720a5e59b746a312ca6ad98ebb5cedf77ce2cd",
+    "ociDigest": "sha256:8704d0bd89b77a92a44a249eb6bd4e5c79a93aa5862963c1d125e9179f834241"
+  },
+  "manifestSignature": {
+    "id": "manifest-signature",
+    "kind": "manifest-signature",
+    "stage": "manifest-signature",
+    "version": "COSIGN-BUNDLE-0.3",
+    "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "mediaType": "application/json",
+    "size": 1,
+    "binarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "ociDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "subjectBinarySha256": "cc8ade3ef1b1ca02c860f00ed4720a5e59b746a312ca6ad98ebb5cedf77ce2cd",
+    "dependsOn": [
+      "release-manifest"
+    ]
+  },
+  "evidence": [
+    {
+      "id": "backend",
+      "kind": "artifact",
+      "stage": "artifact",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "mediaType": "application/java-archive",
+      "size": 1,
+      "binarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "ociDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "subjectBinarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "dependsOn": []
+    },
+    {
+      "id": "frontend",
+      "kind": "artifact",
+      "stage": "artifact",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "mediaType": "application/gzip",
+      "size": 1,
+      "binarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "ociDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "dependsOn": []
+    },
+    {
+      "id": "backend-sbom-cyclonedx",
+      "kind": "sbom-cyclonedx",
+      "stage": "artifact-evidence",
+      "version": "CYCLONEDX-1.7",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "ociDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "subjectBinarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "dependsOn": [
+        "backend"
+      ]
+    },
+    {
+      "id": "backend-sbom-spdx",
+      "kind": "sbom-spdx",
+      "stage": "artifact-evidence",
+      "version": "SPDX-2.3",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:1212121212121212121212121212121212121212121212121212121212121212",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "1212121212121212121212121212121212121212121212121212121212121212",
+      "ociDigest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+      "subjectBinarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "dependsOn": [
+        "backend"
+      ]
+    },
+    {
+      "id": "backend-vulnerability-scan",
+      "kind": "vulnerability-scan",
+      "stage": "artifact-evidence",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "ociDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "subjectBinarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "dependsOn": [
+        "backend"
+      ]
+    },
+    {
+      "id": "backend-provenance",
+      "kind": "provenance",
+      "stage": "artifact-evidence",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "ociDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "subjectBinarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "dependsOn": [
+        "backend"
+      ]
+    },
+    {
+      "id": "backend-sbom-attestation",
+      "kind": "sbom-attestation",
+      "stage": "artifact-evidence",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:5555555555555555555555555555555555555555555555555555555555555555",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "ociDigest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+      "subjectBinarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "dependsOn": [
+        "backend"
+      ]
+    },
+    {
+      "id": "frontend-sbom-cyclonedx",
+      "kind": "sbom-cyclonedx",
+      "stage": "artifact-evidence",
+      "version": "CYCLONEDX-1.7",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "7777777777777777777777777777777777777777777777777777777777777777",
+      "ociDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "dependsOn": [
+        "frontend"
+      ]
+    },
+    {
+      "id": "frontend-sbom-spdx",
+      "kind": "sbom-spdx",
+      "stage": "artifact-evidence",
+      "version": "SPDX-2.3",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:1313131313131313131313131313131313131313131313131313131313131313",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "1313131313131313131313131313131313131313131313131313131313131313",
+      "ociDigest": "sha256:1313131313131313131313131313131313131313131313131313131313131313",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "dependsOn": [
+        "frontend"
+      ]
+    },
+    {
+      "id": "frontend-vulnerability-scan",
+      "kind": "vulnerability-scan",
+      "stage": "artifact-evidence",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:8888888888888888888888888888888888888888888888888888888888888888",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "8888888888888888888888888888888888888888888888888888888888888888",
+      "ociDigest": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "dependsOn": [
+        "frontend"
+      ]
+    },
+    {
+      "id": "frontend-provenance",
+      "kind": "provenance",
+      "stage": "artifact-evidence",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "9999999999999999999999999999999999999999999999999999999999999999",
+      "ociDigest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "dependsOn": [
+        "frontend"
+      ]
+    },
+    {
+      "id": "frontend-sbom-attestation",
+      "kind": "sbom-attestation",
+      "stage": "artifact-evidence",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "ociDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "dependsOn": [
+        "frontend"
+      ]
+    },
+    {
+      "id": "frontend-formal-web-report",
+      "kind": "formal-web-report",
+      "stage": "artifact-evidence",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "ociDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "dependsOn": [
+        "frontend"
+      ]
+    },
+    {
+      "id": "frontend-visual-baseline",
+      "kind": "visual-baseline",
+      "stage": "artifact-evidence",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "ociDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "dependsOn": [
+        "frontend"
+      ]
+    },
+    {
+      "id": "frontend-ui-token-manifest",
+      "kind": "ui-token-manifest",
+      "stage": "artifact-evidence",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "ociDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "dependsOn": [
+        "frontend"
+      ]
+    },
+    {
+      "id": "frontend-brand-asset-manifest",
+      "kind": "brand-asset-manifest",
+      "stage": "artifact-evidence",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "ociDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "dependsOn": [
+        "frontend"
+      ]
+    },
+    {
+      "id": "backend-artifact-signature",
+      "kind": "artifact-signature",
+      "stage": "artifact-signature",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "ociDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "subjectBinarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "dependsOn": [
+        "backend",
+        "backend-provenance",
+        "backend-sbom-attestation"
+      ]
+    },
+    {
+      "id": "frontend-artifact-signature",
+      "kind": "artifact-signature",
+      "stage": "artifact-signature",
+      "version": "1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "ociDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "dependsOn": [
+        "frontend",
+        "frontend-provenance",
+        "frontend-sbom-attestation"
+      ]
+    }
+  ],
+  "versionBindings": [
+    {
+      "releaseVersion": "1.0.0",
+      "manifestSha256": "cc8ade3ef1b1ca02c860f00ed4720a5e59b746a312ca6ad98ebb5cedf77ce2cd"
+    }
+  ],
+  "createdAt": "2026-07-19T08:01:00+08:00"
+}

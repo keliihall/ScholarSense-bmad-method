@@ -7,6 +7,7 @@ import hashlib
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -34,6 +35,7 @@ CHECK_NAMES = frozenset(
         "keyboardFocus",
         "axe",
         "zoom200",
+        "responsive375",
         "reflow320",
         "uiTokens",
         "brandAssets",
@@ -132,15 +134,30 @@ def safe_extract_frontend(
     if destination.exists():
         raise FormalWebError("FORMAL_WEB_OUTPUT_ALREADY_EXISTS")
     try:
-        actual_sha256 = _sha256(archive)
+        descriptor = os.open(archive, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        archive_stream = os.fdopen(descriptor, "rb")
+        archive_stat = os.fstat(archive_stream.fileno())
+        if not stat.S_ISREG(archive_stat.st_mode):
+            archive_stream.close()
+            raise FormalWebError("FORMAL_WEB_ARTIFACT_NOT_REGULAR")
+        digest = hashlib.sha256()
+        for chunk in iter(lambda: archive_stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+        actual_sha256 = digest.hexdigest()
+        archive_stream.seek(0)
     except OSError as error:
         raise FormalWebError("FORMAL_WEB_ARTIFACT_UNREADABLE") from error
     if actual_sha256 != expected_sha256:
+        archive_stream.close()
         raise FormalWebError(
             f"FORMAL_WEB_ARTIFACT_DIGEST_MISMATCH: expected={expected_sha256} actual={actual_sha256}"
         )
     if before_extract is not None:
-        before_extract()
+        try:
+            before_extract()
+        except BaseException:
+            archive_stream.close()
+            raise
 
     temporary = destination.with_name(f".{destination.name}.{os.getpid()}.extracting")
     if temporary.exists():
@@ -149,7 +166,7 @@ def safe_extract_frontend(
     names: set[str] = set()
     total = 0
     try:
-        with tarfile.open(archive, "r:gz") as source:
+        with archive_stream, tarfile.open(fileobj=archive_stream, mode="r:gz") as source:
             for member in source.getmembers():
                 relative = _safe_member_path(member.name.rstrip("/") if member.isdir() else member.name)
                 rendered = relative.as_posix()
@@ -244,8 +261,12 @@ def visual_baseline_issues(document: Any, test_environment: Any) -> list[str]:
             issues.append(f"FORMAL_WEB_VGB_{field.upper()}_INVALID")
     if document.get("testEnvironmentSha256") != test_environment.get("contentSha256"):
         issues.append("FORMAL_WEB_VGB_TEST_ENVIRONMENT_MISMATCH")
-    if not document.get("approvedByUxBrand") or not document.get("approvedByWebQa"):
-        issues.append("FORMAL_WEB_VGB_APPROVAL_MISSING")
+    if document.get("approvedByUxBrand") != "github-user:24710825:keliihall":
+        issues.append("FORMAL_WEB_VGB_UX_BRAND_OWNER_MISMATCH")
+    if document.get("automatedWebQaGate") != "automated-gate:.github/workflows/release.yml#job:formal-web-test":
+        issues.append("FORMAL_WEB_VGB_AUTOMATED_WEB_QA_GATE_MISMATCH")
+    if document.get("approvalPolicy") != "single-accountable-plus-independent-automated-web-qa":
+        issues.append("FORMAL_WEB_VGB_APPROVAL_POLICY_MISMATCH")
 
     viewport_records = {
         item.get("id"): item
@@ -378,6 +399,8 @@ def formal_web_report_issues(report: Any, visual_baseline: Any, test_environment
         for field, value in comparisons.items():
             if cell.get(field) != value:
                 issues.append(f"FORMAL_WEB_REPORT_CELL_{field.upper()}_MISMATCH: {identity}")
+        if not HEX64.fullmatch(str(cell.get("diffRgbaSha256", ""))):
+            issues.append(f"FORMAL_WEB_REPORT_CELL_DIFF_DIGEST_INVALID: {identity}")
         checks = cell.get("checks")
         if not isinstance(checks, dict) or set(checks) != set(CHECK_NAMES) or any(
             value != "passed" for value in checks.values()

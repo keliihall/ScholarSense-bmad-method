@@ -6,19 +6,59 @@
     "version": {"const": "BACKEND-LOCK-1.0.0"},
     "dependencies": {"type": "array", "items": {"$ref": "#/$defs/component"}, "uniqueItems": true},
     "plugins": {"type": "array", "items": {"$ref": "#/$defs/component"}, "uniqueItems": true},
+    "pluginResolution": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/pluginRoot"}, "uniqueItems": true},
+    "extensions": {"type": "array", "maxItems": 0, "items": {"$ref": "#/$defs/component"}},
+    "runtimeGraph": {"$ref": "#/$defs/runtimeNode"},
+    "runtimeGraphSupplement": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[^:]+:[^:]+:[0-9][^:]*$"}},
     "wrapper": {"$ref": "#/$defs/component"}
   },
-  "required": ["version", "dependencies", "plugins", "wrapper"],
+  "required": ["version", "dependencies", "plugins", "pluginResolution", "extensions", "runtimeGraph", "runtimeGraphSupplement", "wrapper"],
   "additionalProperties": false,
   "$defs": {
     "component": {
       "type": "object",
       "properties": {
         "coordinate": {"type": "string", "pattern": "^[^:]+:[^:]+:[0-9][^:]*$"},
-        "sourceUri": {"type": "string", "format": "uri"},
+        "sourceUri": {"type": "string", "minLength": 1},
         "binarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
       },
       "required": ["coordinate", "sourceUri", "binarySha256"],
+      "additionalProperties": false
+    },
+    "pluginArtifact": {
+      "type": "object",
+      "properties": {
+        "coordinate": {"type": "string", "minLength": 5},
+        "sourceUri": {"type": "string", "minLength": 1},
+        "binarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "pomSourceUri": {"type": "string", "minLength": 1},
+        "pomSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "required": ["coordinate", "sourceUri", "binarySha256", "pomSourceUri", "pomSha256"],
+      "additionalProperties": false
+    },
+    "pluginRoot": {
+      "type": "object",
+      "properties": {
+        "root": {"type": "string", "pattern": "^[^:]+:[^:]+:[0-9][^:]*$"},
+        "artifacts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/pluginArtifact"}, "uniqueItems": true}
+      },
+      "required": ["root", "artifacts"],
+      "additionalProperties": false
+    },
+    "runtimeNode": {
+      "type": "object",
+      "properties": {
+        "groupId": {"type": "string", "minLength": 1},
+        "artifactId": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1},
+        "type": {"const": "jar"},
+        "scope": {"type": "string"},
+        "classifier": {"type": "string"},
+        "optional": {"type": "string", "enum": ["false", "true"]},
+        "children": {"type": "array", "items": {"$ref": "#/$defs/runtimeNode"}}
+      },
+      "required": ["groupId", "artifactId", "version", "type", "scope", "classifier", "optional"],
       "additionalProperties": false
     }
   }

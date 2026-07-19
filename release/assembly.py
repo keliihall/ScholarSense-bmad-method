@@ -149,10 +149,12 @@ def assemble_release_manifest_input(
     if build_path.read_bytes() != canonical_bytes(build_manifest):
         raise ValueError("RELEASE_ASSEMBLY_BUILD_MANIFEST_NOT_CANONICAL_BYTES")
 
-    source_inventory_path = source_root / "contracts/release/release-source-inventory-1.0.0.json"
+    source_inventory_path = artifact_root / "release-source-inventory.json"
+    source_archive_path = artifact_root / "release-source.tar.gz"
     source_inventory = load_json(source_inventory_path)
     if (
         not isinstance(source_inventory, dict)
+        or source_inventory.get("sourceCommit") != build_manifest.get("sourceCommit")
         or source_inventory.get("normalizedManifestSha256") != build_manifest.get("sourceManifestSha256")
     ):
         raise ValueError("RELEASE_ASSEMBLY_SOURCE_INVENTORY_SUBJECT_MISMATCH")
@@ -198,7 +200,8 @@ def assemble_release_manifest_input(
         subject = subject_digests[identity]
         evidence.extend(
             [
-                _reference(f"{identity}-sbom", "1.0.0", sbom_uri, sbom_root / f"{identity}.cdx.json", kind="sbom", subject_sha256=subject),
+                _reference(f"{identity}-sbom-cyclonedx", "CYCLONEDX-1.7", sbom_uri, sbom_root / f"{identity}.cdx.json", kind="sbom-cyclonedx", subject_sha256=subject),
+                _reference(f"{identity}-sbom-spdx", "SPDX-2.3", sbom_uri, sbom_root / f"{identity}.spdx.json", kind="sbom-spdx", subject_sha256=subject),
                 _reference(f"{identity}-vulnerability-scan", "1.0.0", sbom_uri, sbom_root / "sbom-evidence.json", kind="vulnerability-scan", subject_sha256=subject),
                 _reference(f"{identity}-provenance", "1.0.0", attestation_uri, attestation_root / f"scholarsense-{identity}.attestations.json", kind="provenance", subject_sha256=subject),
                 _reference(f"{identity}-sbom-attestation", "1.0.0", attestation_uri, attestation_root / f"scholarsense-{identity}.attestations.json", kind="sbom-attestation", subject_sha256=subject),
@@ -214,6 +217,14 @@ def assemble_release_manifest_input(
         ]
     )
     frontend_kinds = {"formal-web-report", "visual-baseline", "ui-token-manifest", "brand-asset-manifest"}
+    supply_chain_kinds = {
+        "artifact-signature",
+        "provenance",
+        "sbom-attestation",
+        "sbom-cyclonedx",
+        "sbom-spdx",
+        "vulnerability-scan",
+    }
     return {
         "releaseVersion": release_version,
         "buildManifest": build_manifest,
@@ -230,12 +241,19 @@ def assemble_release_manifest_input(
             artifact_uri,
             source_inventory_path,
         ),
+        "sourceArchiveRef": _reference(
+            "release-source-archive",
+            str(build_manifest.get("sourceCommit")),
+            artifact_uri,
+            source_archive_path,
+            media_type="application/vnd.scholarsense.release-source.v1+gzip",
+        ),
         "baselineApprovals": _controlled_references(source_root, artifact_uri, BASELINES, approved=True),
         "runtimeEvidence": [
             {
                 "id": "supply-chain-evidence",
                 "status": "passed",
-                "evidenceIds": [item["id"] for item in evidence if item["kind"] != "formal-web-report"],
+                "evidenceIds": [item["id"] for item in evidence if item["kind"] in supply_chain_kinds],
             },
             {
                 "id": "formal-web-evidence",

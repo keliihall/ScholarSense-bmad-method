@@ -86,7 +86,9 @@ def source_scope_issues(files: list[dict[str, str]]) -> list[str]:
     required = {
         ".github/CODEOWNERS",
         ".github/workflows/ci.yml",
+        ".github/workflows/artifact-signing.yml",
         ".github/workflows/golden-approval.yml",
+        ".github/workflows/manifest-signing.yml",
         ".github/workflows/platform-probe.yml",
         ".github/workflows/release.yml",
         ".github/workflows/rollback.yml",
@@ -108,6 +110,7 @@ def source_scope_issues(files: list[dict[str, str]]) -> list[str]:
         "release/manifests.py",
         "release/promotion.py",
         "release/verifier.py",
+        "release/version_binding.py",
         "scripts/check_promotion.py",
         "scripts/assemble-evidence-index-input.py",
         "scripts/assemble-release-manifest-input.py",
@@ -182,7 +185,11 @@ def build_git_inventory(project_root: Path, revision: str) -> dict[str, Any]:
     }
 
 
-def validate_release_source_inventory(document: dict[str, Any], project_root: Path) -> list[str]:
+def validate_release_source_inventory(
+    document: dict[str, Any],
+    project_root: Path,
+    expected_commit: str | None = None,
+) -> list[str]:
     issues: list[str] = []
     if document.get("version") != INVENTORY_VERSION:
         issues.append("RELEASE_SOURCE_INVENTORY_VERSION_INVALID")
@@ -191,6 +198,10 @@ def validate_release_source_inventory(document: dict[str, Any], project_root: Pa
     commit = document.get("sourceCommit")
     if not isinstance(commit, str) or not OID.fullmatch(commit):
         return sorted(set(issues + ["RELEASE_SOURCE_COMMIT_INVALID"]))
+    if expected_commit is not None:
+        expected = _git(project_root, "rev-parse", f"{expected_commit}^{{commit}}")
+        if expected.returncode != 0 or commit != expected.stdout.strip():
+            issues.append("RELEASE_SOURCE_CURRENT_COMMIT_MISMATCH")
     if not OID.fullmatch(str(document.get("gitTreeOid", ""))):
         issues.append("RELEASE_SOURCE_TREE_INVALID")
     if not DIGEST.fullmatch(str(document.get("normalizedManifestSha256", ""))):
@@ -204,10 +215,24 @@ def validate_release_source_inventory(document: dict[str, Any], project_root: Pa
     for field in ("gitTreeOid", "fileCount", "normalizedManifestSha256"):
         if document.get(field) != actual[field]:
             issues.append(f"RELEASE_SOURCE_{field.upper()}_MISMATCH")
-    contains = _git(project_root, "branch", "-r", "--contains", commit)
-    if contains.returncode != 0 or "origin/main" not in contains.stdout:
-        issues.append("RELEASE_SOURCE_NOT_ON_REMOTE_MAIN")
+    # The checked-in approval inventory must be anchored on protected remote main.
+    # A runtime inventory is instead anchored to the exact build commit supplied by
+    # the caller, so local/review-branch replays remain possible before merge.
+    if expected_commit is None:
+        contains = _git(project_root, "branch", "-r", "--contains", commit)
+        if contains.returncode != 0 or "origin/main" not in contains.stdout:
+            issues.append("RELEASE_SOURCE_NOT_ON_REMOTE_MAIN")
     return sorted(set(issues))
+
+
+def runtime_release_source_inventory(project_root: Path, revision: str) -> dict[str, Any]:
+    inventory = build_git_inventory(project_root, revision)
+    return {
+        "version": INVENTORY_VERSION,
+        "repositoryUrl": "https://github.com/keliihall/ScholarSense-bmad-method",
+        **inventory,
+        "inventoryExclusion": INVENTORY_PATH,
+    }
 
 
 def main(argv: list[str]) -> int:

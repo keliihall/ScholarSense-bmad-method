@@ -13,7 +13,7 @@
       "type": "object",
       "properties": {
         "name": {"type": "string", "minLength": 1},
-        "uri": {"type": "string", "format": "uri"},
+        "uri": {"type": "string", "minLength": 1},
         "mediaType": {"type": "string", "minLength": 3},
         "binarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "license": {"type": "string", "minLength": 2}

@@ -7,6 +7,7 @@ import json
 import sys
 import threading
 import unittest
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -16,12 +17,14 @@ sys.path.insert(0, str(PROJECT_ROOT / "release"))
 
 from promotion import (  # noqa: E402
     CommandResult,
+    CommandEvidenceVerifier,
     GitRefLedger,
     InMemoryPromotionAdapter,
     OrasDigestStore,
     PromotionError,
     PromotionEvidence,
     PromotionRequest,
+    approval_from_github_history,
 )
 
 
@@ -56,14 +59,36 @@ def request(
         target_environment=target,
         evidence=selected or evidence(),
         actor="release-job",
-        approver=f"protected-environment:{target}",
+        approver="github-user:24710825:keliihall",
         run_id="29670000000",
         run_attempt=1,
+        approval_environment_id=18374865168 if target == "stage" else 18374869063,
+        approval_evidence_uri="https://api.github.com/repos/keliihall/ScholarSense-bmad-method/actions/runs/29670000000/approvals",
+        approval_evidence_sha256="4" * 64,
         rollback_of_ledger_uri=rollback_of,
     )
 
 
 class PromotionContractTest(unittest.TestCase):
+    def test_actual_github_environment_approval_is_bound_to_the_record(self) -> None:
+        history = [
+            {
+                "user": {"login": "keliihall", "id": 24710825},
+                "state": "approved",
+                "comment": "release approved",
+                "environments": [{"id": 18374865168, "name": "stage"}],
+            }
+        ]
+        approval = approval_from_github_history(history, "stage", 18374865168, "29676318745")
+        self.assertEqual("github-user:24710825:keliihall", approval.principal)
+        self.assertEqual(
+            "https://api.github.com/repos/keliihall/ScholarSense-bmad-method/actions/runs/29676318745/approvals",
+            approval.evidence_uri,
+        )
+        self.assertRegex(approval.evidence_sha256, "^[0-9a-f]{64}$")
+        with self.assertRaisesRegex(PromotionError, "PROMOTION_APPROVAL_HISTORY_INVALID"):
+            approval_from_github_history([], "stage", 18374865168, "29676318745")
+
     def adapter(self, selected: PromotionEvidence | None = None) -> InMemoryPromotionAdapter:
         chosen = selected or evidence()
         adapter = InMemoryPromotionAdapter(
@@ -91,6 +116,21 @@ class PromotionContractTest(unittest.TestCase):
             first.record["targetArtifactUri"],
         )
         self.assertNotIn(":latest", str(first.record))
+
+    def test_production_requires_the_existing_stage_ledger_and_stage_namespace_subject(self) -> None:
+        selected = evidence()
+        adapter = self.adapter(selected)
+        with self.assertRaisesRegex(PromotionError, "PROMOTION_STAGE_LEDGER_REQUIRED"):
+            adapter.promote(request(selected, target="production"), NOW)
+
+        stage = adapter.promote(request(selected), NOW)
+        staged_evidence = copy.deepcopy(selected)
+        object.__setattr__(staged_evidence, "artifact_uri", stage.record["targetArtifactUri"])
+        adapter.seed_candidate(staged_evidence.artifact_uri)
+        adapter.seed_evidence(staged_evidence)
+        production = adapter.promote(request(staged_evidence, target="production"), NOW + timedelta(minutes=1))
+        self.assertEqual("stage", production.record["fromEnvironment"])
+        self.assertEqual(stage.record["targetArtifactUri"], production.record["sourceArtifactUri"])
 
     def test_same_key_different_digest_is_stable_conflict_without_partial_state(self) -> None:
         selected = evidence()
@@ -175,7 +215,17 @@ class PromotionContractTest(unittest.TestCase):
         adapter = self.adapter()
         historical = adapter.promote(request(), NOW).record
         verification_calls = adapter.verification_count
-        rollback = request(target="production", rollback_of=historical["ledgerUri"])
+        rollback_evidence = replace(
+            evidence(),
+            artifact_uri=historical["targetArtifactUri"],
+        )
+        adapter.seed_candidate(rollback_evidence.artifact_uri)
+        adapter.seed_evidence(rollback_evidence)
+        rollback = request(
+            rollback_evidence,
+            target="production",
+            rollback_of=historical["ledgerUri"],
+        )
 
         outcome = adapter.rollback(rollback, historical, NOW + timedelta(minutes=2))
 
@@ -200,6 +250,24 @@ class PromotionContractTest(unittest.TestCase):
 
 
 class PromotionProductionSurfaceTest(unittest.TestCase):
+    def test_command_verifier_returns_only_measured_manifest_and_index_digests(self) -> None:
+        class Runner:
+            def run(self, arguments, *, environment=None, stdin=None):
+                return CommandResult(
+                    0,
+                    "verify-release: PASS\n"
+                    f"VERIFIED_MANIFEST_SHA256={'2' * 64}\n"
+                    f"VERIFIED_EVIDENCE_INDEX_SHA256={'3' * 64}\n",
+                    "",
+                )
+
+        selected = request()
+        receipt = CommandEvidenceVerifier(
+            Path("scripts/verify-release.sh"), "verifier", timedelta(minutes=15), Runner()
+        ).verify(selected, NOW)
+        self.assertEqual(selected.evidence.manifest_sha256, receipt.measured_manifest_sha256)
+        self.assertEqual(selected.evidence.evidence_index_sha256, receipt.measured_evidence_index_sha256)
+
     def test_real_adapter_and_entrypoint_are_present_and_digest_only(self) -> None:
         implementation = (PROJECT_ROOT / "release/promotion.py").read_text(encoding="utf-8")
         entrypoint = (PROJECT_ROOT / "scripts/promote-release.sh").read_text(encoding="utf-8")
@@ -405,7 +473,7 @@ class PromotionRealAdapterUnitTest(unittest.TestCase):
         self.assertTrue(any(command[:4] == ["gh", "api", "--method", "DELETE"] for command in runner.commands))
         self.assertFalse(any(command[1:4] == ["manifest", "delete", "--force"] for command in runner.commands))
 
-    def test_ghcr_prepare_removes_only_unledgered_tags_for_the_same_release(self) -> None:
+    def test_ghcr_prepare_never_deletes_a_possible_concurrent_winner(self) -> None:
         runner = _FakeOrasRunner()
         digest = evidence().artifact_oci_digest
         repository = "ghcr.io/keliihall/scholarsense-release-stage"
@@ -421,7 +489,7 @@ class PromotionRealAdapterUnitTest(unittest.TestCase):
 
         store.prepare("1.0.0", repository)
 
-        self.assertIsNone(store.tag_digest(stale))
+        self.assertEqual(digest, store.tag_digest(stale))
         self.assertEqual(digest, store.tag_digest(other))
 
     def test_ghcr_cleanup_refuses_to_delete_a_shared_package_version(self) -> None:

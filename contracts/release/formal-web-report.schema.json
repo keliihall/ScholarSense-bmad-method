@@ -28,11 +28,12 @@
         "keyboardFocus": {"const": "passed"},
         "axe": {"const": "passed"},
         "zoom200": {"const": "passed"},
+        "responsive375": {"const": "passed"},
         "reflow320": {"const": "passed"},
         "uiTokens": {"const": "passed"},
         "brandAssets": {"const": "passed"}
       },
-      "required": ["artifactServed", "resources", "console", "network", "keyboardFocus", "axe", "zoom200", "reflow320", "uiTokens", "brandAssets"],
+      "required": ["artifactServed", "resources", "console", "network", "keyboardFocus", "axe", "zoom200", "responsive375", "reflow320", "uiTokens", "brandAssets"],
       "additionalProperties": false
     },
     "cell": {
@@ -49,10 +50,11 @@
         "actualScreenshotSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "goldenScreenshotSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "diffPixels": {"const": 0},
+        "diffRgbaSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "checks": {"$ref": "#/$defs/checks"},
         "result": {"const": "passed"}
       },
-      "required": ["id", "browser", "channel", "major", "browserVersion", "viewport", "executableSha256", "actualScreenshotPath", "actualScreenshotSha256", "goldenScreenshotSha256", "diffPixels", "checks", "result"],
+      "required": ["id", "browser", "channel", "major", "browserVersion", "viewport", "executableSha256", "actualScreenshotPath", "actualScreenshotSha256", "goldenScreenshotSha256", "diffPixels", "diffRgbaSha256", "checks", "result"],
       "additionalProperties": false
     },
     "scope": {

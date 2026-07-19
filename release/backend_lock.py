@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
+import subprocess
+import sys
 import zipfile
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
@@ -117,6 +120,80 @@ def _wrapper_properties(project_root: Path) -> dict[str, str]:
     return properties
 
 
+def plugin_resolution_graph(output: str, repository: Path) -> list[dict[str, Any]]:
+    roots: list[dict[str, Any]] = []
+    current: dict[str, Any] | None = None
+    seen_by_root: dict[str, set[str]] = {}
+    for raw in output.splitlines():
+        if raw.startswith("[INFO] "):
+            raw = raw.removeprefix("[INFO] ")
+        if not re.match(r"^ {3}(?: {3})?[^ ]", raw):
+            continue
+        indentation = len(raw) - len(raw.lstrip(" "))
+        rendered = raw.strip()
+        coordinate, separator, absolute = rendered.rpartition(":")
+        path = Path(absolute)
+        if not separator or not path.is_absolute() or not path.is_file():
+            continue
+        fields = coordinate.split(":")
+        if len(fields) not in {4, 5} or fields[2] != "jar":
+            raise ValueError(f"BACKEND_LOCK_PLUGIN_RESOLUTION_COORDINATE_INVALID: {coordinate}")
+        group, artifact = fields[0], fields[1]
+        version = fields[-1]
+        expected_parent = repository / Path(*group.split(".")) / artifact / version
+        try:
+            relative = path.resolve().relative_to(repository.resolve())
+        except ValueError as error:
+            raise ValueError(f"BACKEND_LOCK_PLUGIN_RESOLUTION_PATH_INVALID: {coordinate}") from error
+        if path.parent.resolve() != expected_parent.resolve():
+            raise ValueError(f"BACKEND_LOCK_PLUGIN_RESOLUTION_PATH_INVALID: {coordinate}")
+        pom = expected_parent / f"{artifact}-{version}.pom"
+        if not pom.is_file():
+            raise ValueError(f"BACKEND_LOCK_PLUGIN_POM_MISSING: {coordinate}")
+        entry = {
+            "coordinate": coordinate,
+            "sourceUri": CENTRAL + relative.as_posix(),
+            "binarySha256": _sha256(path),
+            "pomSourceUri": CENTRAL + pom.relative_to(repository).as_posix(),
+            "pomSha256": _sha256(pom),
+        }
+        if indentation == 3:
+            root_coordinate = f"{group}:{artifact}:{version}"
+            current = {"root": root_coordinate, "artifacts": []}
+            roots.append(current)
+            seen_by_root[root_coordinate] = set()
+        if current is None:
+            raise ValueError("BACKEND_LOCK_PLUGIN_RESOLUTION_ROOT_MISSING")
+        seen = seen_by_root[current["root"]]
+        if coordinate not in seen:
+            current["artifacts"].append(entry)
+            seen.add(coordinate)
+    for root in roots:
+        root["artifacts"] = sorted(root["artifacts"], key=lambda item: item["coordinate"])
+    return sorted(roots, key=lambda item: item["root"])
+
+
+def resolve_plugin_graph(project_root: Path) -> list[dict[str, Any]]:
+    result = subprocess.run(
+        [
+            str(project_root / "_bmad/scripts/with_pab_toolchain.sh"),
+            str(project_root / "backend/mvnw"),
+            "-f", str(project_root / "backend/pom.xml"),
+            "-o", "dependency:resolve-plugins",
+            "-DincludeTransitive=true",
+            "-DoutputAbsoluteArtifactFilename=true",
+        ],
+        cwd=project_root,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise ValueError("BACKEND_LOCK_PLUGIN_RESOLUTION_FAILED")
+    return plugin_resolution_graph(result.stdout, Path.home() / ".m2/repository")
+
+
 def validate_backend_lock(lock: dict[str, Any], project_root: Path) -> list[str]:
     issues: list[str] = []
     if lock.get("version") != "BACKEND-LOCK-1.0.0":
@@ -158,6 +235,42 @@ def validate_backend_lock(lock: dict[str, Any], project_root: Path) -> list[str]
         "binarySha256": WRAPPER_SHA256,
     }:
         issues.append("BACKEND_LOCK_WRAPPER_MISMATCH")
+    resolution = lock.get("pluginResolution")
+    extensions = lock.get("extensions")
+    if not isinstance(resolution, list) or not resolution:
+        issues.append("BACKEND_LOCK_PLUGIN_RESOLUTION_MISSING")
+    else:
+        try:
+            if resolution != resolve_plugin_graph(project_root):
+                issues.append("BACKEND_LOCK_PLUGIN_RESOLUTION_DRIFT")
+        except ValueError as error:
+            issues.append(str(error))
+    if extensions != []:
+        issues.append("BACKEND_LOCK_EXTENSION_SET_INVALID")
+    runtime_graph = lock.get("runtimeGraph")
+    graph_coordinates: set[str] = set()
+
+    def collect_runtime(node: Any) -> None:
+        if not isinstance(node, dict):
+            return
+        values = (node.get("groupId"), node.get("artifactId"), node.get("version"))
+        if all(isinstance(value, str) and value for value in values):
+            graph_coordinates.add(":".join(values))
+        for child in node.get("children", []):
+            collect_runtime(child)
+
+    collect_runtime(runtime_graph)
+    locked_runtime = {
+        item.get("coordinate") for item in lock.get("dependencies", []) if isinstance(item, dict)
+    }
+    supplement = lock.get("runtimeGraphSupplement")
+    if (
+        not isinstance(runtime_graph, dict)
+        or not isinstance(supplement, list)
+        or not locked_runtime.issubset(graph_coordinates | set(supplement))
+        or not set(supplement).issubset(locked_runtime)
+    ):
+        issues.append("BACKEND_LOCK_RUNTIME_GRAPH_INCOMPLETE")
     try:
         build_plugins, managed_plugins = _declared_plugins(project_root)
         expected_build = {"org.springframework.boot:spring-boot-maven-plugin": "4.1.0"}
@@ -192,3 +305,9 @@ def validate_backend_lock(lock: dict[str, Any], project_root: Path) -> list[str]
         except ValueError as error:
             issues.append(str(error))
     return sorted(set(issues))
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        raise SystemExit("usage: backend_lock.py PLUGIN_RESOLUTION_OUTPUT")
+    print(json.dumps(plugin_resolution_graph(Path(sys.argv[1]).read_text(), Path.home() / ".m2/repository"), sort_keys=True))

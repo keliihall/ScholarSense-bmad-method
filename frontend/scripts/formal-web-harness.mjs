@@ -25,6 +25,7 @@ const CHECK_NAMES = [
   'keyboardFocus',
   'axe',
   'zoom200',
+  'responsive375',
   'reflow320',
   'uiTokens',
   'brandAssets',
@@ -162,7 +163,7 @@ function browserRecords(browserInstall) {
 }
 
 
-async function checkPage(page, baseURL, uiTokens, brandAssets) {
+async function checkPage(page, baseURL, uiTokens, brandAssets, blockedExternal) {
   const consoleErrors = [];
   const failedRequests = [];
   const badResponses = [];
@@ -235,6 +236,13 @@ async function checkPage(page, baseURL, uiTokens, brandAssets) {
   );
 
   await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1 });
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto(baseURL, { waitUntil: 'networkidle' });
+  ensure(await page.getByRole('heading', { name: 'ScholarSense 前端基线' }).isVisible(), 'FORMAL_WEB_RESPONSIVE_375_HEADING_MISSING');
+  ensure(await page.getByRole('button', { name: '连接恢复后显式重试' }).isVisible(), 'FORMAL_WEB_RESPONSIVE_375_ACTION_MISSING');
+  const mobileOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  ensure(mobileOverflow <= 1, 'FORMAL_WEB_RESPONSIVE_375_OVERFLOW');
+
   await page.setViewportSize({ width: 320, height: 720 });
   ensure(await page.getByRole('heading', { name: 'ScholarSense 前端基线' }).isVisible(), 'FORMAL_WEB_REFLOW_HEADING_MISSING');
   ensure(await page.getByRole('button', { name: '连接恢复后显式重试' }).isVisible(), 'FORMAL_WEB_REFLOW_ACTION_MISSING');
@@ -247,9 +255,56 @@ async function checkPage(page, baseURL, uiTokens, brandAssets) {
     const url = new URL(value);
     return url.origin === origin && url.pathname.startsWith(BASE_PATH);
   }), 'FORMAL_WEB_EXTERNAL_NETWORK_FORBIDDEN');
+  ensure(blockedExternal.length === 0, 'FORMAL_WEB_EXTERNAL_NETWORK_BLOCKED', blockedExternal.join('|'));
   ensure(consoleErrors.length === 0, 'FORMAL_WEB_CONSOLE_ERROR', consoleErrors.join('|'));
   ensure(failedRequests.length === 0, 'FORMAL_WEB_NETWORK_FAILURE', failedRequests.join('|'));
   ensure(badResponses.length === 0, 'FORMAL_WEB_BAD_RESPONSE', badResponses.join('|'));
+}
+
+
+async function comparePngPixels(page, actual, golden, thresholdPermille) {
+  return page.evaluate(async ({ actualBase64, goldenBase64, threshold }) => {
+    const decode = async (encoded) => createImageBitmap(new Blob([
+      Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0)),
+    ], { type: 'image/png' }));
+    const [actualImage, goldenImage] = await Promise.all([decode(actualBase64), decode(goldenBase64)]);
+    if (actualImage.width !== goldenImage.width || actualImage.height !== goldenImage.height) {
+      throw new Error('FORMAL_WEB_VISUAL_DIMENSION_DRIFT');
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = actualImage.width;
+    canvas.height = actualImage.height;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    context.drawImage(actualImage, 0, 0);
+    const actualPixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(goldenImage, 0, 0);
+    const goldenPixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const diff = new Uint8Array(actualPixels.length);
+    let diffPixels = 0;
+    for (let offset = 0; offset < actualPixels.length; offset += 4) {
+      const delta = Math.max(
+        Math.abs(actualPixels[offset] - goldenPixels[offset]),
+        Math.abs(actualPixels[offset + 1] - goldenPixels[offset + 1]),
+        Math.abs(actualPixels[offset + 2] - goldenPixels[offset + 2]),
+        Math.abs(actualPixels[offset + 3] - goldenPixels[offset + 3]),
+      );
+      if (delta * 1000 > threshold * 255) {
+        diffPixels += 1;
+        diff[offset] = 255;
+        diff[offset + 3] = 255;
+      }
+    }
+    const digest = await crypto.subtle.digest('SHA-256', diff);
+    return {
+      diffPixels,
+      diffRgbaSha256: Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join(''),
+    };
+  }, {
+    actualBase64: actual.toString('base64'),
+    goldenBase64: golden.toString('base64'),
+    threshold: thresholdPermille,
+  });
 }
 
 
@@ -298,6 +353,17 @@ export async function runFormalMatrix({
           reducedMotion: oracle.reducedMotion ?? 'reduce',
           serviceWorkers: 'block',
         });
+        const blockedExternal = [];
+        const allowedOrigin = new URL(server.baseURL).origin;
+        await context.route('**/*', async (route) => {
+          const url = new URL(route.request().url());
+          if (url.origin === allowedOrigin && url.pathname.startsWith(BASE_PATH)) {
+            await route.continue();
+          } else {
+            blockedExternal.push(route.request().url());
+            await route.abort('blockedbyclient');
+          }
+        });
         await context.addInitScript(({ fixedClock }) => {
           const RealDate = Date;
           const fixed = new RealDate(fixedClock).valueOf();
@@ -308,7 +374,7 @@ export async function runFormalMatrix({
           globalThis.Date = FixedDate;
         }, { fixedClock: cell.clock });
         const page = await context.newPage();
-        await checkPage(page, server.baseURL, uiTokens, brandAssets);
+        await checkPage(page, server.baseURL, uiTokens, brandAssets, blockedExternal);
         await page.setViewportSize({ width: cell.width, height: cell.height });
         await page.goto(server.baseURL, { waitUntil: 'networkidle' });
         await page.evaluate(() => document.fonts.ready);
@@ -321,13 +387,16 @@ export async function runFormalMatrix({
           scale: 'css',
         });
         const actualDigest = createHash('sha256').update(screenshot).digest('hex');
+        let comparison = await comparePngPixels(page, screenshot, screenshot, oracle.thresholdPermille ?? 100);
         if (mode === 'verify') {
           ensure(goldenRoot, 'FORMAL_WEB_GOLDEN_ROOT_MISSING');
           const goldenPath = resolve(goldenRoot, cell.goldenPath);
           ensure(existsSync(goldenPath), 'FORMAL_WEB_GOLDEN_MISSING', cell.id);
           const goldenDigest = sha256File(goldenPath);
           ensure(goldenDigest === cell.goldenScreenshotSha256, 'FORMAL_WEB_GOLDEN_TAMPER', cell.id);
-          ensure(actualDigest === goldenDigest, 'FORMAL_WEB_VISUAL_DRIFT', cell.id);
+          const golden = readFileSync(goldenPath);
+          comparison = await comparePngPixels(page, screenshot, golden, oracle.thresholdPermille ?? 100);
+          ensure(comparison.diffPixels <= (oracle.maxDiffPixels ?? 0), 'FORMAL_WEB_VISUAL_DRIFT', cell.id);
         }
         results.push({
           id: cell.id,
@@ -340,7 +409,8 @@ export async function runFormalMatrix({
           actualScreenshotSha256: actualDigest,
           actualScreenshotPath: `screenshots/${cell.goldenPath}`,
           goldenScreenshotSha256: mode === 'verify' ? cell.goldenScreenshotSha256 : actualDigest,
-          diffPixels: 0,
+          diffPixels: comparison.diffPixels,
+          diffRgbaSha256: comparison.diffRgbaSha256,
           checks: Object.fromEntries(CHECK_NAMES.map((name) => [name, 'passed'])),
           result: 'passed',
         });

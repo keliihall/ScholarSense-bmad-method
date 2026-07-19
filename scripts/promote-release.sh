@@ -51,9 +51,27 @@ case "$target_environment" in
     ;;
 esac
 
+if [[ "$target_environment" == "production" ]]; then
+  stage_history="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/stage-promotion-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.json"
+  python3 -B "$ROOT_DIR/scripts/read_promotion.py" \
+    "$release_version" stage "$GITHUB_REPOSITORY" "$stage_history"
+  export ARTIFACT_URI="$(jq -er '.targetArtifactUri' "$stage_history")"
+  export SBOM_URI="$(jq -er '.sbomUri' "$stage_history")"
+  export ATTESTATION_URI="$(jq -er '.attestationUri' "$stage_history")"
+  export WEB_URI="$(jq -er '.webUri' "$stage_history")"
+  export MANIFEST_URI="$(jq -er '.manifestUri' "$stage_history")"
+  export MANIFEST_SHA256="$(jq -er '.manifestSha256' "$stage_history")"
+  export SIGNATURE_URI="$(jq -er '.signatureUri' "$stage_history")"
+  export INDEX_URI="$(jq -er '.evidenceIndexUri' "$stage_history")"
+  export EVIDENCE_INDEX_SHA256="$(jq -er '.evidenceIndexSha256' "$stage_history")"
+fi
+
 tools="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/scholarsense-promotion-tools-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
 "$ROOT_DIR/scripts/install-release-tools.sh" "$tools" oci
 "$tools/oras" login ghcr.io --username "$GITHUB_ACTOR" --password-stdin <<< "$ORAS_PASSWORD"
+approval_history="$tools/approval-history.json"
+environment_id="$(gh api "repos/$GITHUB_REPOSITORY/environments/$target_environment" --jq .id)"
+gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/approvals" > "$approval_history"
 
 arguments=(
   --release-version "$release_version"
@@ -69,7 +87,8 @@ arguments=(
   --manifest-sha256 "$MANIFEST_SHA256"
   --evidence-index-sha256 "$EVIDENCE_INDEX_SHA256"
   --actor "$GITHUB_ACTOR"
-  --approver "${PROMOTION_APPROVER:-protected-environment:$target_environment}"
+  --approval-history "$approval_history"
+  --environment-id "$environment_id"
   --run-id "$GITHUB_RUN_ID"
   --run-attempt "$GITHUB_RUN_ATTEMPT"
   --repository "$GITHUB_REPOSITORY"

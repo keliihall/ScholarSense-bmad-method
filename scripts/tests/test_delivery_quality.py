@@ -26,6 +26,13 @@ class DeliveryQualityTest(unittest.TestCase):
             self.assertTrue(path.is_file(), f"missing {relative}")
             self.assertTrue(path.stat().st_mode & 0o111, f"not executable: {relative}")
 
+    def test_bootstrap_prewarms_runtime_dependencies_before_offline_verification(self) -> None:
+        bootstrap = (PROJECT_ROOT / "scripts/bootstrap.sh").read_text(encoding="utf-8")
+        runtime_resolve = "dependency:resolve -DincludeScope=runtime"
+
+        self.assertIn(runtime_resolve, bootstrap)
+        self.assertLess(bootstrap.index(runtime_resolve), bootstrap.index('echo "[bootstrap] PASS"'))
+
     def test_frontend_replay_copies_every_production_root_it_scans(self) -> None:
         verifier = (PROJECT_ROOT / "scripts/verify_frontend.sh").read_text(encoding="utf-8")
         for relative in PRODUCTION_ROOTS:

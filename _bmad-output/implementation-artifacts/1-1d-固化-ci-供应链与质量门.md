@@ -4,7 +4,7 @@ baseline_commit: NO_VCS
 
 # Story 1.1d：固化 CI、供应链与质量门
 
-Status: review
+Status: in-progress
 
 > 状态说明：静态 G-01/G-05/PAB-1.0.0 已批准，1.1a—1.1c 已完成；当前工作区仍不是 Git 仓库，且没有 CI、受控制品库、attestation store、受保护环境或提升端点。`ready-for-dev` 只表示可开始“U1 本地可复现构建合同”，不表示完成平台已具备。Git/CI/store/attestation/promotion 平台基线冻结并产生真实证据前，本 Story 不得进入 `review`/`done`，也不得把本地报告冒充 provenance、签名或生产提升证据。
 
@@ -245,6 +245,46 @@ Status: review
   - [x] 演练篡改 artifact/SBOM/manifest/signature、删除证据、过期例外、重放旧 run、并发提升、store/ledger 漂移与 rollback，证明全部 fail closed 且无部分副作用。
   - [x] 更新 README、后端/前端交接与 verification 记录；删除临时生成物。只有真实 CI、store 和 promotion 证据可验证时才把 Story 转为 review/done。
 
+### Review Findings
+
+- [x] [Review][Decision] 重新冻结并批准真实发布信任合同 — 当前 CISB 批准的是 `platform-probe.yml` 签名身份，但 verifier 接受 `release.yml`；artifact 与 manifest signer 也共享同一 workflow identity，且 hosted runner 的冻结 imageVersion 没有运行时强制。需要 accountable owner 决定是让发布工作流服从现有基线，还是拆分 signer 身份并重新批准实际 workflow、runner、权限和存储不变量。
+- [x] [Review][Decision] 指定可强制执行的 UX/品牌与 Web QA 双审批主体 — Golden workflow 只有一个 `stage` environment，并把两个审批角色作为同一运行的自由字符串输入，代码无法证明两名独立具名审批者。需要指定两类实际 reviewer/approval rule，或明确修改验收合同。
+- [x] [Review][Decision] 选择 PromotionRecord 获取真实审批人身份的权威来源 — 当前记录固定写入 `protected-environment:<target>`，不是实际批准者。需要决定采用 GitHub deployment/environment API、独立签名批准记录，还是其他经 CISB 批准且可回放审计的机制。
+- [x] [Review][Patch] 阻止 `workflow_dispatch` 自由字符串被插入特权 Shell 源代码 [.github/workflows/release.yml:78]
+- [x] [Review][Patch] 对 GitHub DSSE attestation 执行密码学验签并绑定 workflow/source/predicate 内容 [release/verifier.py:25]
+- [x] [Review][Patch] 禁止 candidate 直接提升到 production，并强制验证既有 stage ledger/namespace [release/promotion.py:165]
+- [x] [Review][Patch] 对同一 `releaseVersion` 建立全局唯一的 manifest digest 绑定 [.github/workflows/release.yml:302]
+- [x] [Review][Patch] 将实际拉取的全部 OCI URI、文件摘要和 subject 与已签名 ReleaseManifest/EvidenceIndex 逐项交叉绑定 [scripts/verify-release.sh:26]
+- [x] [Review][Patch] 由 verifier 测量并回传 manifest/index 摘要，禁止 Promotion receipt 回显请求值 [release/promotion.py:799]
+- [x] [Review][Patch] 让 source tar 和受控输入具备可定位的不可变 CAS 引用并纳入 readback 比对 [release/assembly.py:211]
+- [x] [Review][Patch] 将 release-source inventory 精确绑定当前构建 commit/tree，而非任意历史 main commit [scripts/check_release_source.py:185]
+- [x] [Review][Patch] 让 Node canonicalizer 在解析阶段拒绝重复键、浮点/指数数值与其他非 profile 原始 JSON [release/canonical-json.mjs:61]
+- [x] [Review][Patch] 将 schema 实现收回 Story 冻结的关键词集合与唯一 `date-time` format [scripts/release_json.py:16]
+- [x] [Review][Patch] 锁定并在执行前验证完整 Maven plugin/POM/extension 传递解析树 [release/backend_lock.py:18]
+- [x] [Review][Patch] 按最高阻断等级评估 vulnerability 的全部 ratings，未知/畸形值 fail closed [release/generate_sbom.py:194]
+- [x] [Review][Patch] 禁止把未知 Maven 许可证默认伪装为 Apache-2.0 [release/sbom.py:258]
+- [x] [Review][Patch] 将版本化漏洞与许可证例外真正接入生成和独立验证路径 [release/generate_sbom.py:299]
+- [x] [Review][Patch] 在 CycloneDX/SPDX 中保留真实 Maven/npm 直接与传递依赖图 [release/sbom.py:399]
+- [x] [Review][Patch] 为 SPDX SBOM 生成 attestation，并把 CycloneDX/SPDX 都纳入 ReleaseManifest [.github/workflows/release.yml:187]
+- [x] [Review][Patch] 消除前端归档 hash 与解包之间的路径替换 TOCTOU [release/formal_web.py:121]
+- [x] [Review][Patch] 补齐 375×812、真实像素 diff/actual/golden 摘要，并在请求发送前阻断非本地网络 [frontend/scripts/formal-web-harness.mjs:58]
+- [x] [Review][Patch] 限制每个 runtime gate 只能引用匹配 kind/subject 的证据 [release/manifests.py:221]
+- [x] [Review][Patch] rollback 使用当前漏洞数据库与当前强制策略重新扫描历史制品 [scripts/rollback-release.sh:28]
+- [x] [Review][Patch] 拆分 build/test 与 publish，使构建和正式 Web 测试 job 不持有写权限 [.github/workflows/release.yml:38]
+- [x] [Review][Patch] 发布与 Golden 路径的 Java/Node/npm/Maven 命令统一经 PAB toolchain wrapper [.github/workflows/release.yml:120]
+- [x] [Review][Patch] 修复真实 ORAS promotion 并发时 `prepare` 删除另一胜者 tag 的竞态 [release/promotion.py:602]
+
+#### 定向复核（2026-07-19）
+
+- [ ] [Review][Patch] 修正 signer 拆分后 formal Web 仍验证旧 `release.yml` 证书身份的必然阻断回归 [scripts/run-formal-web-evidence.sh:58]
+- [ ] [Review][Patch] 消除 reusable signer 中 `release_version` 再次插入特权 Shell 源码的命令注入路径 [.github/workflows/artifact-signing.yml:91]
+- [ ] [Review][Patch] 将 CISB 的 build/attestation/WebQA job 身份绑定拆分后的真实 DAG，并让 checker 拒绝不存在或错指的 job [contracts/release/ci-supply-chain-baseline-1.0.0.json:46]
+- [ ] [Review][Patch] 统一唯一人类 UX/Brand owner + 独立自动 WebQA 的 AC、VGB 与语义门，且不得将 `formal-web` publisher 冒充 WebQA 执行主体 [contracts/release/visual-baseline-vgb-1.0.0.json:5]
+- [ ] [Review][Patch] 使 ReleaseManifest schema/semantic checker 分别强制 CycloneDX 与 SPDX 引用，拒绝只有单一泛化 `sbom` 证据的清单 [release/manifests.py:220]
+- [ ] [Review][Patch] 将正式 Web 入口的裸 `node` 执行收回 PAB toolchain wrapper [scripts/run-formal-web-evidence.sh:69]
+- [ ] [Review][Patch] 在 Golden 候选构建中强制 CISB 冻结的 hosted runner `ImageVersion`，并增加漂移负例 [.github/workflows/golden-approval.yml:17]
+- [ ] [Review][Patch] 在新 signer/job DAG 上完成真实受保护 release/promotion replay，回读验证 signer identity、SPDX attestation 与实际 approvals API 路径后再恢复 `done` [_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md:467]
+
 ## Dev Notes
 
 ### 当前代码与必须保留的行为
@@ -426,7 +466,7 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19，Task 7.1：PR #6（merge `8f5001c0b91e7360cc602addbdb01087e1fb24ed`）新增独立 frozen-artifact 正式 Web 入口；`release/formal_web.py` 在浏览器启动前完成 immutable URI、expected hash、安全归档、路径/链接/重复项和工作区隔离检查，`run-brand-preflight.mjs` 保持不变。`test_formal_web.py` 覆盖 store A/B 置换、路径逃逸、符号链接、重复项、工作区 dist 漂移与禁止 build。
 - 2026-07-19，Task 7.2：PR #7（merge `acecc05673404a6d05233b27dbb1a2ce775ba47c`）把实际探测生成的 formal browser manifest 接入运行；一次性 runner 固定 macOS `26.5.2` build `25F84` arm64、runner fingerprint `4b158…`、font `3ff557…`、TEST-ENV SHA `1361a3…`、Chrome 150/Edge 149。正式 run 后 runner 自动注销、credentials 移除、root 清理；仓库 runner 回读为 0。
 - 2026-07-19，Task 7.3：`formal-web` job 在 protected release run `29676318745` attempt 2 成功（3m35s），直接验证同一 selected artifact，矩阵覆盖两桌面视口、zoom/reflow、键盘/焦点、axe、视觉/资源/console/network；正式报告为 `ghcr.io/keliihall/scholarsense-release-evidence@sha256:f39da6708328368574145ceb5bdaae4a4ac8764ec3ee21a172c7c27208fbff41`。
-- 2026-07-19，Task 7.4：PR #8（merge `2ac31726979c4b1adfeb4d543122df7a4e41aaa3`）批准只读 `VGB-1.0.0`；golden approval run `29668939935` / job `88144715639` 的 8 个 matrix cell 全绿，Hei UX/Brand 与 Web QA 委托双审批完成。golden URI `ghcr.io/keliihall/scholarsense-visual-goldens@sha256:b2d686431983a7ab2c1797b2132b190aca352e40f2dc7252f8acf2818845106c`；release workflow 不具备更新 expected 的路径。
+- 2026-07-19，Task 7.4：PR #8（merge `2ac31726979c4b1adfeb4d543122df7a4e41aaa3`）批准只读 `VGB-1.0.0`；golden approval run `29668939935` / job `88144715639` 的 8 个 matrix cell 全绿。后续 review 明确项目不存在第二名人工 reviewer：唯一具名 UX/Brand accountable owner 为 `github-user:24710825:keliihall`，Web QA 由独立、签名的 `formal-web` 自动门执行，不再声称“两名人工双审批”。golden URI `ghcr.io/keliihall/scholarsense-visual-goldens@sha256:b2d686431983a7ab2c1797b2132b190aca352e40f2dc7252f8acf2818845106c`；release workflow 不具备更新 expected 的路径。
 - 2026-07-19，Task 7.5：正式 Web RED 契约覆盖 artifact digest A/B 置换并在浏览器前失败、expected/golden/runner/font/browser 漂移、当前源码与 store artifact 不同仍只读取 store 字节；`scripts/tests/test_formal_web.py` 与 release workflow 门全绿。
 - 2026-07-19，Task 7.6：`README.md`、`backend/README.md`、`frontend/README.md`、`release/README.md` 固定启动面和下游边界；App/WebView 只携带 `AAB-1.0.0 / USER-2026-07-19-SCHOOL-APP-NA` 与 `runtimeEvidenceClaim=none`，没有下载、模拟或伪造移动端证据。Task 7 完成。
 - 2026-07-19，Task 8.1：PR #9（merge `82c92b5b0dc980f59861940ba18fa9200849fe0a`）组装 immutable manifest/index 输入并完成 release DAG；`verify.sh` 只编排非递归 `verify-core` 与可重放 `build-release`，本地入口不签名、不提升。PR #10—#25 均仅修复真实 Task 8 release/reconciliation blocker或刷新其 source inventory，没有重新开放 Task 0—6。
@@ -435,6 +475,9 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19，Task 8.3 失败审计：run `29676318745` attempt 1 仅 `sbom-scan / Install upstream-bundle-verified security tools` 因 `curl: (35) Recv failure: Connection reset by peer` 失败；上一受保护 run 已进入更后的 promotion 阶段。本轮未改文件、未增测试，原样重跑后 attempt 2 进入并通过全部后续阶段。更早 run `29675404248` 与 `29674437791` 连续失败于 `promotion / Promote verified digest to protected target` 后按约停止 patch 并审计，根因为 GitHub blob base64 合法换行；PR #24 只改 `release/promotion.py` 并新增 `test_git_ref_ledger_reads_github_line_wrapped_base64_blob_content`，PR #25 只刷新 source inventory。
 - 2026-07-19，Task 8.4：protected rollback run `29676837068` 成功；读取 stage ledger、以同一 digest 提升 production、目标 store/ledger 回读对账并执行当前门 rollback，production ledger commit `25d704743accad600f7db14211095a590c7b0017`。同轮无失败 job/step；上一轮 release attempt 2 亦无失败，流水线已进入更后的 production/rollback 阶段。artifact/SBOM/attestation/signature/manifest/index 篡改、缺失/过期证据、重放、并发、store-ledger 漂移负例继续全部 fail closed，未产生部分副作用。
 - 2026-07-19，Task 8.5：创建 `1-1d-verification.md`，汇总 local/CI/release/promotion/readback/rollback 不可变证据与失败审计；更新四份 README 交接。真实 protected release、digest-only promotion、target readback 和 rollback 全部满足后，Task 7/8 完成，Story 立即转为 `review`，不再寻找额外改进项。
+- 2026-07-19T20:20:00+08:00—20:23:00+08:00：Review 修复回归完成。后端 36/36、Python 188/188、两轮前端各 unit 27/27、Playwright 20 pass/4 skip；CISB、7 个 workflow security、release lifecycle、contract/schema/source inventory 全部 PASS。顶层 `verify.sh` 的 core 与两轮前端重放通过，随后按设计在未提交源码处以 `SOURCE_WORKSPACE_DIRTY` fail closed；需在可追溯提交后完成最后一次 release replay。
+- 2026-07-19：Review 决策由用户批准并澄清“没有两名 reviewer”。合同现冻结为唯一人类责任主体 `github-user:24710825:keliihall` 加独立自动 WebQA 门；PromotionRecord 的实际批准者取 GitHub Actions run approvals API。artifact 与 manifest 仅由两个不同 reusable workflow identity 签名，旧内联 signer job 已删除。
+- 2026-07-19T20:31:00+08:00—20:38:00+08:00：最终 `./scripts/verify.sh` 在 clean commit `93734fa53565c977b3b83fc678f8d2a0cd6e2ecd` 上退出 0。顶层及两个隔离 release attempt 的后端 36/36、审计 145/145、Python 188/188、两轮前端 unit 27/27 与 Playwright 20 pass/4 skip 全绿；CISB、7 workflow security、release lifecycle、contracts/schema/source inventory 全部 PASS。两次 clean 构建得到相同 `artifactSet=9f8488d543a978a53412118072616305684ca01867de882b54e1418b5394d8ea`。
 
 ### Completion Notes List
 
@@ -455,7 +498,7 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19，Task 7.1 完成：独立正式 Web 入口只下载、验真、安全解包并服务 store 中冻结字节，禁止源码重建或读取工作区 `dist`。
 - 2026-07-19，Task 7.2 完成：一次性精确 macOS/arm64 runner 与 Chrome 150/Edge 149 browser manifest 已冻结并在运行后自动注销清理。
 - 2026-07-19，Task 7.3 完成：正式两浏览器、多视口、zoom/reflow、键盘/焦点、axe、视觉/资源/console/network 矩阵绑定 selected frontend artifact 并通过。
-- 2026-07-19，Task 7.4 完成：`VGB-1.0.0` 与 8-cell golden 已由 UX/Brand + Web QA 双审批，release 路径只读且环境/golden 漂移 fail closed。
+- 2026-07-19，Task 7.4 完成：`VGB-1.0.0` 与 8-cell golden 由唯一具名 UX/Brand owner 批准，并由独立自动 WebQA 门验证；release 路径只读且环境/golden 漂移 fail closed，不存在或虚构第二名人工 reviewer。
 - 2026-07-19，Task 7.5 完成：artifact A/B 置换、store/source 分离、归档逃逸及 runner/browser/font/golden 漂移回归均在 PASS 前阻断。
 - 2026-07-19，Task 7.6 完成：正式启动面、下游业务边界和 App/WebView N/A 已写入交接文档；Task 7 整体完成。
 - 2026-07-19，Task 8.1 完成：本地非递归验证/可复现构建与受信 CI 签名/提升职责保持分离。
@@ -463,11 +506,13 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19，Task 8.3 完成：run `29676318745` attempt 2 绑定 source `f0c74aa…57cd`，全 DAG、digest-only stage promotion 和目标回读对账通过。
 - 2026-07-19，Task 8.4 完成：run `29676837068` 完成 production 提升、目标回读和 rollback；所有要求的篡改/缺证据/重放/并发/漂移门保持 fail closed。
 - 2026-07-19，Task 8.5 完成：verification、README、Story evidence 和文件清单已更新，Story 转为 `review`。原始 AC 已全部满足，按收敛要求停止继续扩展。
+- 2026-07-19：26 项 Review Findings 已全部修复并有回归覆盖。关键收敛包括真实 workflow/runner/signer 身份、GitHub 实际审批历史、cryptographic attestation、stage→production 绑定、全局版本绑定、完整 SBOM/Maven 图、正式 Web TOCTOU/像素/network 门、当前策略 rollback、读写 job 分离及 ORAS 并发安全。
+- 2026-07-19：最终统一验证与双 clean release replay 全绿；Story 与 sprint 同步转为 `done`。
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md`（开工验证、HALT 与文件记录）
-- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Story 状态改为 `in-progress`）
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Story 最终状态同步为 `done`）
 - `.gitignore`（排除 release 临时输出、审计锁和编辑过程文件）
 - `.github/CODEOWNERS`（发布供应链关键路径责任人）
 - `.github/workflows/platform-probe.yml`（真实 store/attestation/signing/promotion/verifier 能力探测）
@@ -608,8 +653,11 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - `contracts/release/fixtures/index.json`（Task 7.2—7.5：新增正式 Web fixture 登记）
 - `contracts/release/release-source-inventory-1.0.0.json`、`scripts/check_release_source.py`、`scripts/tests/test_release_source_inventory.py`（Task 7/8：每个受保护 source commit 的自排除 inventory 绑定与回归）
 - `_bmad-output/implementation-artifacts/1-1d-verification.md`（Task 8.5：完整本地/CI/release/promotion/readback/rollback 证据与失败审计）
-- `_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md`（Task 7/8 checkbox、日志、完成说明、文件清单与 review 状态）
-- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Task 8.5：Story 状态同步为 `review`）
+- `_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md`（Task/Review checkbox、日志、完成说明、文件清单与 `done` 状态）
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Story 状态同步为 `done`）
+- `.github/workflows/artifact-signing.yml`（Review：独立 artifact provenance、CycloneDX/SPDX attestation 与 artifact signer identity）
+- `.github/workflows/manifest-signing.yml`（Review：独立 manifest signer identity）
+- `release/version_binding.py`（Review：`releaseVersion` 到 manifest digest 的全局 create-only 绑定）
 
 ## Change Log
 
@@ -628,3 +676,5 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19：完成 Task 7 正式 Web 证据：PR #6—#8 固定 frozen-artifact 入口、一次性精确 macOS runner、Chrome/Edge 矩阵与只读 VGB；golden run `29668939935` 及 protected release formal-web job 全绿。
 - 2026-07-19：完成 Task 8 收敛：PR #9—#25 仅围绕原始 release/promotion AC 组装证据并定向解除真实流水线 blocker；连续两轮本地重放、protected release `29676318745`、stage digest-only promotion/readback 与 production rollback `29676837068` 全部通过。
 - 2026-07-19：归档 `1-1d-verification.md`，Task 7/8 及全部 subtasks 标记完成，Story 与 sprint 状态转为 `review`；Clean completion，不再扩展范围。
+- 2026-07-19：完成 3 项 Review 决策与 23 项 Review 补丁；按用户澄清取消“两名人工 reviewer”假设，冻结为 `keliihall` 唯一人类责任主体 + 独立自动 WebQA，并采用 GitHub run approvals API 记录实际环境批准者。
+- 2026-07-19：clean commit `93734fa53565c977b3b83fc678f8d2a0cd6e2ecd` 上最终 `./scripts/verify.sh` 全绿，双 clean release artifact set 一致；Story 状态转为 `done`。
