@@ -41,7 +41,7 @@
 # - 回顾产生的行动项追加到 action_items，sprint-status 会呈现未完成项
 
 generated: 2026-07-17T20:58:14+0800
-last_updated: 2026-07-19T22:33:58+0800
+last_updated: 2026-07-20T00:11:10+0800
 project: ScholarSense-bmad-method
 project_key: NOKEY
 tracking_system: file-system

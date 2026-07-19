@@ -287,10 +287,10 @@ Status: review
 
 #### 定向修复验证（2026-07-19）
 
-- [ ] [Review][Patch] 将 CISB identity 精确绑定冻结的 repository/ref/workflow/job 职责，拒绝“job 存在但错指”及 fork repository identity [scripts/check_cisb.py:67]
-- [ ] [Review][Patch] 将 cold-cache 预热执行的 `maven-dependency-plugin` 版本、传递解析图与摘要纳入 backend lock，并在首次执行前验真 [scripts/bootstrap.sh:24]
-- [ ] [Review][Patch] 让 Golden workflow checker 强制 `build-candidate` 使用 CISB 冻结的 GitHub-hosted runner，并拒绝只在注释/非执行文本中出现的 `ImageVersion` 守卫 [scripts/check_release_workflows.py:204]
-- [ ] [Review][Patch] 完成“唯一人类 UX/Brand owner + 独立自动 WebQA”合同统一：修正 AC/Task 中的“双审批”残留，并让语义门拒绝 CISB/VGB owner 或未实际执行的 WebQA gate 漂移 [_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md:167]
+- [x] [Review][Patch] 将 CISB identity 精确绑定冻结的 repository/ref/workflow/job 职责，拒绝“job 存在但错指”及 fork repository identity [scripts/check_cisb.py:67]
+- [x] [Review][Patch] 将 cold-cache 预热执行的 `maven-dependency-plugin` 版本、传递解析图与摘要纳入 backend lock，并在首次执行前验真 [scripts/bootstrap.sh:24]
+- [x] [Review][Patch] 让 Golden workflow checker 强制 `build-candidate` 使用 CISB 冻结的 GitHub-hosted runner，并拒绝只在注释/非执行文本中出现的 `ImageVersion` 守卫 [scripts/check_release_workflows.py:204]
+- [x] [Review][Patch] 完成“唯一人类 UX/Brand owner + 独立自动 WebQA”合同统一：修正 AC/Task 中的“双审批”残留，并让语义门拒绝 CISB/VGB owner 或未实际执行的 WebQA gate 漂移 [_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md:167]
 
 ## Dev Notes
 
@@ -495,6 +495,9 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19T21:08:00+08:00—21:19:00+08:00：PR #27 cold-cache CI run `29689454021` 全绿并经受保护主线合并为 `9c89446e8e8f6cfd6ca5c5dcbc5d0788ae12e92c`。首次 CI 暴露 Maven runtime dependency 未在 offline verify 前预热，新增 `test_bootstrap_prewarms_runtime_dependencies_before_offline_verification` 并修复 `scripts/bootstrap.sh`；未放宽离线门。
 - 2026-07-19T21:36:00+08:00—22:17:00+08:00：protected release run `29689873567` 终态 attempt 3 成功，source `9c89446…92c`、release `1.1.2`、target `stage`。attempt 1 因一次性 runner 名称不符冻结前缀而 `FORMAL_WEB_RUNNER_NAME_DRIFT` fail closed；attempt 2 在身份门通过后因 ORAS 拉取的瞬时 `unexpected EOF` 失败；均未进入未验证的 promotion，也未修改代码或放宽策略。
 - 2026-07-19T22:17:00+08:00—22:33:00+08:00：真实证据回读完成。artifact/manifest 证书 SAN 分别精确命中 `artifact-signing.yml@refs/heads/main` 与 `manifest-signing.yml@refs/heads/main`，OIDC issuer 均为 GitHub Actions；backend/frontend 实际字节的 SPDX predicate、source digest/ref 与 signer 强制验证通过。approvals API 回读 `keliihall` 已批准 `stage`；ledger `promotion-ledger/1.1.2-stage` 指向 `32acc27296ea1e5879dd80620ec70edd4e9e6ee5`；一次性 runner 自注销后 repository runner 数为 0。
+- 2026-07-19—2026-07-20：四组定向负例均先 RED 后 GREEN：CISB 拒绝 fork/ref/错职责 identity，Golden 拒绝 runner 漂移与注释守卫，CISB/VGB 拒绝 owner 与未执行 WebQA 漂移，backend lock 拒绝缺失/篡改的 bootstrap plugin 图。固定工具链下 61 项定向测试全绿。
+- 2026-07-19T23:52:00+08:00—2026-07-20T00:01:02+08:00：使用全空临时 Maven repository 重放 `bootstrap.sh`；43 个锁定 artifact 的 86 个 JAR/POM 在 dependency plugin 首次执行前全部验真，runtime 与 lifecycle plugin 后续预热完成，`bootstrap: PASS`。
+- 2026-07-20T00:02:00+08:00—00:10:00+08:00：clean commit `457bf010a3edc507cca4d8fb793ec0ab5f9bcf42` 上 `verify_core.sh` 与 `verify.sh` 均退出 0。后端 36/36、审计 145/145、Python 197/197；每个前端重放 unit 27/27、Playwright 20 pass/4 skip；CISB、7 workflows、release lifecycle/contracts/source inventory 全绿。两份隔离 release build 一致，`artifactSet=1a32797d4cd903e5a8cb8cf5a2ce05b9f3b38fee298369e3c6246c2417e51a98`。
 
 ### Completion Notes List
 
@@ -526,6 +529,7 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19：26 项 Review Findings 已全部修复并有回归覆盖。关键收敛包括真实 workflow/runner/signer 身份、GitHub 实际审批历史、cryptographic attestation、stage→production 绑定、全局版本绑定、完整 SBOM/Maven 图、正式 Web TOCTOU/像素/network 门、当前策略 rollback、读写 job 分离及 ORAS 并发安全。
 - 2026-07-19：最终统一验证与双 clean release replay 全绿；Story 与 sprint 同步转为 `done`。
 - 2026-07-19：定向复核 8 项全部完成；PR #27 cold-cache CI、protected release `1.1.2`、独立 verifier、stage approval/promotion/readback、signer identity 与 SPDX attestation 均有真实证据。按 `bmad-dev-story` 交付边界将 Story 与 sprint 转为 `review`，由后续 review 步骤决定 `done`。
+- 2026-07-20：四项定向 Review patch 完成。CISB identity 按 repository/ref/workflow/job 职责精确绑定；`maven-dependency-plugin:3.10.0` 及 43 项传递图在首次执行前验真；Golden runner/守卫与唯一 UX/Brand owner + 独立自动 WebQA 合同均 fail closed。空仓 bootstrap、完整回归与双 clean release 全绿，Story 保持 `review`。
 
 ### File List
 
@@ -571,7 +575,7 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - `backend/README.md`（中性运行制品路径与发布身份说明）
 - `backend/src/test/java/cn/edu/suda/scholarsense/architecture/BuildRootContractTest.java`（JAR/timestamp/Wrapper 构建根合同）
 - `deploy/base/roles.json`（web-api/worker 原子切换到同一中性 JAR）
-- `contracts/release/backend-lock-1.0.0.json`（41 项 runtime、6 项 plugin 与 Wrapper 来源/checksum 锁）
+- `contracts/release/backend-lock-1.0.0.json`（41 项 runtime、7 项 plugin、bootstrap plugin 传递图与 Wrapper 来源/checksum 锁）
 - `contracts/release/build-manifest.schema.json`（显式绑定 backend/frontend/toolchain locks）
 - `contracts/release/fixtures/valid/build-manifest.json`（中性制品名与 lock digest 正例）
 - `release/archive.py`（固定 mtime/mode/order/gzip 参数的原子归档器）
@@ -677,6 +681,10 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - `.github/workflows/manifest-signing.yml`（Review：独立 manifest signer identity）
 - `release/version_binding.py`（Review：`releaseVersion` 到 manifest digest 的全局 create-only 绑定）
 - `scripts/bootstrap.sh`、`scripts/tests/test_delivery_quality.py`（定向复核：cold-cache CI 在离线验证前预热受锁 runtime dependencies）
+- `backend/pom.xml`、`contracts/release/backend-lock-1.0.0.json`、`contracts/release/backend-lock.schema.json`、`contracts/release/fixtures/valid/backend-lock.json`、`release/backend_lock.py`（定向修复：版本化 bootstrap plugin 与可验真传递图）
+- `scripts/bootstrap.sh`、`scripts/prepare_locked_maven_plugin.py`、`scripts/check_release_source.py`（定向修复：空 Maven repository 预热、验摘要与发布源覆盖）
+- `scripts/check_cisb.py`、`scripts/check_formal_web_evidence.py`、`scripts/check_release_workflows.py`（定向修复：identity 职责、Golden runner/可执行守卫与 UX/Brand/WebQA 语义门）
+- `scripts/tests/test_backend_lock.py`、`scripts/tests/test_delivery_quality.py`、`scripts/tests/test_release_platform.py`、`scripts/tests/test_release_source_inventory.py`、`scripts/tests/test_release_workflows.py`、`scripts/tests/test_sbom.py`（定向负例、空仓预热、源清单与 SBOM 计数回归）
 
 ## Change Log
 
@@ -698,3 +706,4 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19：完成 3 项 Review 决策与 23 项 Review 补丁；按用户澄清取消“两名人工 reviewer”假设，冻结为 `keliihall` 唯一人类责任主体 + 独立自动 WebQA，并采用 GitHub run approvals API 记录实际环境批准者。
 - 2026-07-19：clean commit `93734fa53565c977b3b83fc678f8d2a0cd6e2ecd` 上最终 `./scripts/verify.sh` 全绿，双 clean release artifact set 一致；Story 状态转为 `done`。
 - 2026-07-19：完成 8 项定向 Review patch 与 cold-cache 回归，经 PR #27 合并到受保护 main；protected release `29689873567` attempt 3 全 DAG、stage approval/promotion/readback、signer identity、SPDX attestation 与 runner cleanup 回读全部通过，Story 与 sprint 转为 `review`。
+- 2026-07-20：完成 4 项定向 Review patch：CISB identity 职责精确绑定、Maven bootstrap plugin 首次执行前验真、Golden hosted runner/可执行 `ImageVersion` 守卫、唯一 UX/Brand owner + 独立自动 WebQA 合同统一；clean commit `457bf01` 的空仓 bootstrap、完整回归与双 clean release 均通过。
