@@ -4,7 +4,7 @@ baseline_commit: NO_VCS
 
 # Story 1.1d：固化 CI、供应链与质量门
 
-Status: review
+Status: done
 
 > 状态说明：静态 G-01/G-05/PAB-1.0.0 已批准，1.1a—1.1c 已完成；当前工作区仍不是 Git 仓库，且没有 CI、受控制品库、attestation store、受保护环境或提升端点。`ready-for-dev` 只表示可开始“U1 本地可复现构建合同”，不表示完成平台已具备。Git/CI/store/attestation/promotion 平台基线冻结并产生真实证据前，本 Story 不得进入 `review`/`done`，也不得把本地报告冒充 provenance、签名或生产提升证据。
 
@@ -466,6 +466,7 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19，Task 8.5：创建 `1-1d-verification.md`，汇总 local/CI/release/promotion/readback/rollback 不可变证据与失败审计；更新四份 README 交接。真实 protected release、digest-only promotion、target readback 和 rollback 全部满足后，Task 7/8 完成，Story 立即转为 `review`，不再寻找额外改进项。
 - 2026-07-19T20:20:00+08:00—20:23:00+08:00：Review 修复回归完成。后端 36/36、Python 188/188、两轮前端各 unit 27/27、Playwright 20 pass/4 skip；CISB、7 个 workflow security、release lifecycle、contract/schema/source inventory 全部 PASS。顶层 `verify.sh` 的 core 与两轮前端重放通过，随后按设计在未提交源码处以 `SOURCE_WORKSPACE_DIRTY` fail closed；需在可追溯提交后完成最后一次 release replay。
 - 2026-07-19：Review 决策由用户批准并澄清“没有两名 reviewer”。合同现冻结为唯一人类责任主体 `github-user:24710825:keliihall` 加独立自动 WebQA 门；PromotionRecord 的实际批准者取 GitHub Actions run approvals API。artifact 与 manifest 仅由两个不同 reusable workflow identity 签名，旧内联 signer job 已删除。
+- 2026-07-19T20:31:00+08:00—20:38:00+08:00：最终 `./scripts/verify.sh` 在 clean commit `93734fa53565c977b3b83fc678f8d2a0cd6e2ecd` 上退出 0。顶层及两个隔离 release attempt 的后端 36/36、审计 145/145、Python 188/188、两轮前端 unit 27/27 与 Playwright 20 pass/4 skip 全绿；CISB、7 workflow security、release lifecycle、contracts/schema/source inventory 全部 PASS。两次 clean 构建得到相同 `artifactSet=9f8488d543a978a53412118072616305684ca01867de882b54e1418b5394d8ea`。
 
 ### Completion Notes List
 
@@ -495,11 +496,12 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19，Task 8.4 完成：run `29676837068` 完成 production 提升、目标回读和 rollback；所有要求的篡改/缺证据/重放/并发/漂移门保持 fail closed。
 - 2026-07-19，Task 8.5 完成：verification、README、Story evidence 和文件清单已更新，Story 转为 `review`。原始 AC 已全部满足，按收敛要求停止继续扩展。
 - 2026-07-19：26 项 Review Findings 已全部修复并有回归覆盖。关键收敛包括真实 workflow/runner/signer 身份、GitHub 实际审批历史、cryptographic attestation、stage→production 绑定、全局版本绑定、完整 SBOM/Maven 图、正式 Web TOCTOU/像素/network 门、当前策略 rollback、读写 job 分离及 ORAS 并发安全。
+- 2026-07-19：最终统一验证与双 clean release replay 全绿；Story 与 sprint 同步转为 `done`。
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md`（开工验证、HALT 与文件记录）
-- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Story 状态改为 `in-progress`）
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Story 最终状态同步为 `done`）
 - `.gitignore`（排除 release 临时输出、审计锁和编辑过程文件）
 - `.github/CODEOWNERS`（发布供应链关键路径责任人）
 - `.github/workflows/platform-probe.yml`（真实 store/attestation/signing/promotion/verifier 能力探测）
@@ -640,8 +642,8 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - `contracts/release/fixtures/index.json`（Task 7.2—7.5：新增正式 Web fixture 登记）
 - `contracts/release/release-source-inventory-1.0.0.json`、`scripts/check_release_source.py`、`scripts/tests/test_release_source_inventory.py`（Task 7/8：每个受保护 source commit 的自排除 inventory 绑定与回归）
 - `_bmad-output/implementation-artifacts/1-1d-verification.md`（Task 8.5：完整本地/CI/release/promotion/readback/rollback 证据与失败审计）
-- `_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md`（Task 7/8 checkbox、日志、完成说明、文件清单与 review 状态）
-- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Task 8.5：Story 状态同步为 `review`）
+- `_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md`（Task/Review checkbox、日志、完成说明、文件清单与 `done` 状态）
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Story 状态同步为 `done`）
 - `.github/workflows/artifact-signing.yml`（Review：独立 artifact provenance、CycloneDX/SPDX attestation 与 artifact signer identity）
 - `.github/workflows/manifest-signing.yml`（Review：独立 manifest signer identity）
 - `release/version_binding.py`（Review：`releaseVersion` 到 manifest digest 的全局 create-only 绑定）
@@ -664,3 +666,4 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19：完成 Task 8 收敛：PR #9—#25 仅围绕原始 release/promotion AC 组装证据并定向解除真实流水线 blocker；连续两轮本地重放、protected release `29676318745`、stage digest-only promotion/readback 与 production rollback `29676837068` 全部通过。
 - 2026-07-19：归档 `1-1d-verification.md`，Task 7/8 及全部 subtasks 标记完成，Story 与 sprint 状态转为 `review`；Clean completion，不再扩展范围。
 - 2026-07-19：完成 3 项 Review 决策与 23 项 Review 补丁；按用户澄清取消“两名人工 reviewer”假设，冻结为 `keliihall` 唯一人类责任主体 + 独立自动 WebQA，并采用 GitHub run approvals API 记录实际环境批准者。
+- 2026-07-19：clean commit `93734fa53565c977b3b83fc678f8d2a0cd6e2ecd` 上最终 `./scripts/verify.sh` 全绿，双 clean release artifact set 一致；Story 状态转为 `done`。
