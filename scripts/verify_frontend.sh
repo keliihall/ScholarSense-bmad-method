@@ -56,6 +56,7 @@ run_replay() {
   cp -R "$ROOT_DIR/deploy" "$replay_root/deploy"
   cp -R "$ROOT_DIR/.github" "$replay_root/.github"
   cp -R "$ROOT_DIR/release" "$replay_root/release"
+  cp -R "$ROOT_DIR/scripts" "$replay_root/scripts"
   cp -R "$ROOT_DIR/docs/architecture/adr" "$replay_root/docs/architecture/adr"
   cd "$replay_root/frontend"
 
