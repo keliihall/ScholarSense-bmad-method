@@ -133,6 +133,8 @@ def validate_release_workflows(project_root: Path) -> list[str]:
             issues.append("RELEASE_PROMOTION_LEDGER_PERMISSION_MISSING")
         if not re.search(r"(?m)^      packages:\s*write\s*$", promotion):
             issues.append("RELEASE_PROMOTION_STORE_PERMISSION_MISSING")
+        if "GH_TOKEN: ${{ github.token }}" not in promotion:
+            issues.append("RELEASE_PROMOTION_GITHUB_API_TOKEN_MISSING")
         verifier = bodies.get("independent-verifier", "")
         if WRITE_PERMISSION.search(verifier):
             issues.append("RELEASE_INDEPENDENT_VERIFIER_WRITE_PERMISSION_FORBIDDEN")
@@ -183,6 +185,8 @@ def validate_release_workflows(project_root: Path) -> list[str]:
             issues.append("ROLLBACK_PROTECTED_ENVIRONMENT_MISSING")
         if "scripts/rollback-release.sh" not in rollback:
             issues.append("ROLLBACK_CURRENT_GATE_ENTRYPOINT_MISSING")
+        if "GH_TOKEN: ${{ github.token }}" not in rollback:
+            issues.append("ROLLBACK_GITHUB_API_TOKEN_MISSING")
         if "scripts/build-release.sh" in rollback or "build-cas:" in rollback:
             issues.append("ROLLBACK_REBUILD_FORBIDDEN")
         if re.search(r"(?m)^\s+id-token:\s*write\s*$", rollback):
