@@ -32,7 +32,7 @@ def main(argv: list[str]) -> int:
             if argv[1] == "release"
             else evidence_index_issues(document, subject)
         )
-        if document_path.read_bytes() != canonical_bytes(document) + b"\n":
+        if document_path.read_bytes() != canonical_bytes(document):
             issues.append("MANIFEST_NOT_CANONICAL_BYTES")
     except (OSError, TypeError, ValueError) as error:
         print(error, file=sys.stderr)
