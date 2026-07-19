@@ -61,6 +61,8 @@ def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
         "ci.workflow",
         "runner.provider",
         "runner.label",
+        "runner.imageVersion",
+        "runner.runtimeImageVersionVariable",
         "formalWebRunner.provider",
         "formalWebRunner.baselineUri",
         "formalWebRunner.runnerImageSha256",
@@ -69,7 +71,8 @@ def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
         "formalWebRunner.cleanup",
         "identities.build",
         "identities.attestation",
-        "identities.signing",
+        "identities.artifactSigner",
+        "identities.manifestSigner",
         "identities.promotion",
         "identities.verifier",
         "artifactStore.provider",
@@ -84,7 +87,12 @@ def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
         "attestation.subjectQuery",
         "signing.provider",
         "signing.oidcIssuer",
-        "signing.certificateIdentity",
+        "signing.artifactCertificateIdentity",
+        "signing.manifestCertificateIdentity",
+        "goldenApproval.policy",
+        "goldenApproval.accountablePrincipal",
+        "goldenApproval.webQaGate",
+        "goldenApproval.approvalHistoryApi",
         "promotion.adapter",
         "promotion.stageEnvironmentId",
         "promotion.productionEnvironmentId",
@@ -93,6 +101,7 @@ def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
         "promotion.ledgerUri",
         "promotion.reconciliationApi",
         "promotion.rollbackApi",
+        "promotion.approvalHistoryApi",
         "capabilityEvidence.repository",
         "capabilityEvidence.protectedEnvironments",
         "capabilityEvidence.artifactCasReadback",
@@ -127,6 +136,19 @@ def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
         for name, commit in actions.items():
             if not COMMIT_OID.fullmatch(str(commit)):
                 issues.append(f"CISB_PLATFORM_BASELINE_INCOMPLETE: toolchain.actions.{name}")
+
+    if _get(document, "runner.runtimeImageVersionVariable") != "ImageVersion":
+        issues.append("CISB_PLATFORM_BASELINE_INCOMPLETE: runner.runtimeImageVersionVariable")
+    artifact_signer = _get(document, "identities.artifactSigner")
+    manifest_signer = _get(document, "identities.manifestSigner")
+    if artifact_signer == manifest_signer:
+        issues.append("CISB_SIGNER_IDENTITY_SEPARATION_REQUIRED")
+    if _get(document, "signing.artifactCertificateIdentity") != artifact_signer:
+        issues.append("CISB_ARTIFACT_SIGNER_IDENTITY_MISMATCH")
+    if _get(document, "signing.manifestCertificateIdentity") != manifest_signer:
+        issues.append("CISB_MANIFEST_SIGNER_IDENTITY_MISMATCH")
+    if _get(document, "goldenApproval.policy") != "single-accountable-plus-independent-automated-web-qa":
+        issues.append("CISB_GOLDEN_APPROVAL_POLICY_INVALID")
 
     workflow_value = _get(document, "ci.workflow")
     if isinstance(workflow_value, str) and _is_concrete(workflow_value):

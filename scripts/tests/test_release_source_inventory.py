@@ -15,6 +15,7 @@ from check_release_source import (  # noqa: E402
     build_git_inventory,
     source_scope_issues,
     validate_release_source_inventory,
+    runtime_release_source_inventory,
 )
 from normalized_manifest import build_manifest  # noqa: E402
 
@@ -45,6 +46,15 @@ class ReleaseSourceInventoryTest(unittest.TestCase):
                 candidate = copy.deepcopy(baseline)
                 candidate[field] = value
                 self.assertTrue(validate_release_source_inventory(candidate, PROJECT_ROOT))
+
+    def test_runtime_inventory_is_bound_to_the_exact_build_commit(self) -> None:
+        runtime = runtime_release_source_inventory(PROJECT_ROOT, "HEAD")
+        self.assertEqual([], validate_release_source_inventory(runtime, PROJECT_ROOT, "HEAD"))
+        historical = load_json_document(INVENTORY_PATH)
+        self.assertIn(
+            "RELEASE_SOURCE_CURRENT_COMMIT_MISMATCH",
+            validate_release_source_inventory(historical, PROJECT_ROOT, "HEAD"),
+        )
 
     def test_current_source_scope_covers_workflow_release_adr_wrappers_and_build_configuration(self) -> None:
         actual = build_git_inventory(PROJECT_ROOT, "HEAD")

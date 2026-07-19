@@ -1,0 +1,45 @@
+name: reusable-manifest-signing
+
+on:
+  workflow_call:
+    inputs:
+      manifest_uri: {required: true, type: string}
+      release_version: {required: true, type: string}
+    outputs:
+      signature_uri:
+        value: ${{ jobs.sign.outputs.signature-uri }}
+
+permissions: {}
+
+env:
+  EXPECTED_RUNNER_IMAGE_VERSION: 20260714.240.1
+
+jobs:
+  sign:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    outputs:
+      signature-uri: ${{ steps.publish.outputs.signature-uri }}
+    steps:
+      - name: Enforce frozen hosted runner image
+        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.sha }}
+      - run: ./scripts/install-release-tools.sh "$RUNNER_TEMP/release-tools" signing
+      - name: Fetch, sign, and publish immutable manifest
+        id: publish
+        env:
+          ORAS_PASSWORD: ${{ github.token }}
+        run: |
+          "$RUNNER_TEMP/release-tools/oras" login ghcr.io --username "$GITHUB_ACTOR" --password-stdin <<< "$ORAS_PASSWORD"
+          mkdir -p release-out/manifest release-out/manifest-signature
+          "$RUNNER_TEMP/release-tools/oras" pull "${{ inputs.manifest_uri }}" --output release-out/manifest
+          manifest="release-out/manifest/release-out/release-manifest.json"
+          "$RUNNER_TEMP/release-tools/cosign" sign-blob --yes --bundle release-out/manifest-signature/release-manifest.sigstore.json "$manifest"
+          target="ghcr.io/keliihall/scholarsense-release-evidence:manifest-signature-${{ inputs.release_version }}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/manifest-signature/release-manifest.sigstore.json:application/vnd.dev.sigstore.bundle.v0.3+json --format go-template='{{.digest}}')"
+          printf 'signature-uri=ghcr.io/keliihall/scholarsense-release-evidence@%s\n' "$digest" >> "$GITHUB_OUTPUT"

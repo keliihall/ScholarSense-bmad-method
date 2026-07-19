@@ -20,4 +20,8 @@ echo "[bootstrap] validate frontend and contract seeds"
 echo "[bootstrap] prewarm isolated frontend dependency and browser cache"
 "$TOOLCHAIN" "$ROOT_DIR/scripts/verify_frontend.sh" --prepare
 
+echo "[bootstrap] resolve Maven build plugins before any lifecycle execution"
+"$TOOLCHAIN" "$ROOT_DIR/backend/mvnw" -f "$ROOT_DIR/backend/pom.xml" \
+  dependency:resolve-plugins -DincludeTransitive=true -DoutputAbsoluteArtifactFilename=true
+
 echo "[bootstrap] PASS"

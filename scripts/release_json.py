@@ -20,7 +20,7 @@ ALLOWED_SCHEMA_KEYWORDS = {
     "uniqueItems",
 }
 ALLOWED_TYPES = {"array", "boolean", "integer", "null", "number", "object", "string"}
-ALLOWED_FORMATS = {"date-time", "uri"}
+ALLOWED_FORMATS = {"date-time"}
 PLACEHOLDER = re.compile(r"(?i)^(?:tbd|todo|unknown|latest|no_vcs|placeholder|somewhere|n/?a)$")
 LOCAL_PATH = re.compile(r"(?:^|\s)(?:/Users/[^/\s]+/|/home/[^/\s]+/|[A-Za-z]:\\Users\\)")
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
@@ -263,8 +263,6 @@ def schema_issues(instance: Any, schema: Any) -> list[str]:
                 issues.append(f"SCHEMA_PATTERN_MISMATCH: {path}")
             if node.get("format") == "date-time" and not _date_time(value):
                 issues.append(f"SCHEMA_DATE_TIME_INVALID: {path}")
-            if node.get("format") == "uri" and not _uri(value):
-                issues.append(f"SCHEMA_URI_INVALID: {path}")
         if isinstance(value, (int, float)) and not isinstance(value, bool):
             if "minimum" in node and value < node["minimum"]:
                 issues.append(f"SCHEMA_MINIMUM: {path}")

@@ -30,22 +30,24 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  RELEASE_VERSION: ${{ inputs.release_version }}
+  TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
+  ROLLBACK_VERSION: ${{ inputs.rollback_version }}
+  ROLLBACK_ENVIRONMENT: ${{ inputs.rollback_environment }}
   CANDIDATE_REPOSITORY: ghcr.io/keliihall/scholarsense-release-candidate
   EVIDENCE_REPOSITORY: ghcr.io/keliihall/scholarsense-release-evidence
   MANIFEST_REPOSITORY: ghcr.io/keliihall/scholarsense-release-manifest
+  EXPECTED_RUNNER_IMAGE_VERSION: 20260714.240.1
 
 jobs:
-  build-cas:
+  build-test:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      packages: write
-    outputs:
-      artifact-uri: ${{ steps.publish.outputs.artifact-uri }}
-      frontend-sha256: ${{ steps.publish.outputs.frontend-sha256 }}
-      build-manifest-sha256: ${{ steps.publish.outputs.build-manifest-sha256 }}
     steps:
+      - name: Enforce frozen hosted runner image
+        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"
       - name: Checkout immutable protected source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -65,6 +67,38 @@ jobs:
           ./scripts/bootstrap.sh
           ./scripts/build-release.sh release-out/build
           git archive --format=tar HEAD | gzip -n > release-out/build/release-source.tar.gz
+          find release-out/build -type f -print0 | sort -z | xargs -0 sha256sum > release-out/build-transfer.sha256
+      - name: Transfer verified build output to isolated publisher
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+          name: release-build-${{ github.run_id }}-${{ github.run_attempt }}
+          path: release-out
+          retention-days: 1
+          if-no-files-found: error
+
+  build-cas:
+    needs: build-test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      artifact-uri: ${{ steps.publish.outputs.artifact-uri }}
+      frontend-sha256: ${{ steps.publish.outputs.frontend-sha256 }}
+      build-manifest-sha256: ${{ steps.publish.outputs.build-manifest-sha256 }}
+    steps:
+      - name: Enforce frozen hosted runner image
+        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"
+      - name: Checkout immutable publisher
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.sha }}
+      - name: Download and verify isolated build output
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: release-build-${{ github.run_id }}-${{ github.run_attempt }}
+          path: release-out
+      - run: sha256sum --check release-out/build-transfer.sha256
       - name: Install digest-verified OCI client
         run: ./scripts/install-release-tools.sh "$RUNNER_TEMP/release-tools" oci
       - name: Authenticate to candidate CAS
@@ -75,11 +109,12 @@ jobs:
       - name: Upload and read back exact build bytes by digest
         id: publish
         run: |
-          target="${CANDIDATE_REPOSITORY}:${{ inputs.release_version }}-run-${{ github.run_id }}-${{ github.run_attempt }}"
+          target="${CANDIDATE_REPOSITORY}:${RELEASE_VERSION}-run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" \
             release-out/build/scholarsense-backend.jar:application/java-archive \
             release-out/build/scholarsense-frontend.tar.gz:application/gzip \
             release-out/build/build-manifest.json:application/vnd.scholarsense.build-manifest.v1+json \
+            release-out/build/release-source-inventory.json:application/vnd.scholarsense.release-source-inventory.v1+json \
             release-out/build/release-source.tar.gz:application/vnd.scholarsense.release-source.v1+gzip \
             --format go-template='{{.digest}}')"
           uri="${CANDIDATE_REPOSITORY}@${digest}"
@@ -88,6 +123,8 @@ jobs:
           cmp release-out/build/scholarsense-backend.jar release-out/readback/release-out/build/scholarsense-backend.jar
           cmp release-out/build/scholarsense-frontend.tar.gz release-out/readback/release-out/build/scholarsense-frontend.tar.gz
           cmp release-out/build/build-manifest.json release-out/readback/release-out/build/build-manifest.json
+          cmp release-out/build/release-source-inventory.json release-out/readback/release-out/build/release-source-inventory.json
+          cmp release-out/build/release-source.tar.gz release-out/readback/release-out/build/release-source.tar.gz
           printf 'artifact-uri=%s\n' "$uri" >> "$GITHUB_OUTPUT"
           printf 'frontend-sha256=%s\n' "$(sha256sum release-out/build/scholarsense-frontend.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           printf 'build-manifest-sha256=%s\n' "$(sha256sum release-out/build/build-manifest.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
@@ -101,6 +138,8 @@ jobs:
     outputs:
       sbom-uri: ${{ steps.publish.outputs.sbom-uri }}
     steps:
+      - name: Enforce frozen hosted runner image
+        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"
       - name: Checkout immutable verifier and policies
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -117,7 +156,7 @@ jobs:
       - name: Install upstream-bundle-verified security tools
         run: ./scripts/install-release-tools.sh "$RUNNER_TEMP/release-tools" security
       - name: Prewarm exact frontend dependency cache without lifecycle scripts
-        run: npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+        run: ./_bmad/scripts/with_pab_toolchain.sh npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
       - name: Authenticate and fetch selected artifact digest
         env:
           ORAS_PASSWORD: ${{ github.token }}
@@ -142,7 +181,7 @@ jobs:
         run: |
           files=()
           while IFS= read -r file; do files+=("$file:application/json"); done < <(find release-out/sbom -type f -name '*.json' -print | sort)
-          target="${EVIDENCE_REPOSITORY}:sbom-${{ inputs.release_version }}-${{ github.run_id }}-${{ github.run_attempt }}"
+          target="${EVIDENCE_REPOSITORY}:sbom-${RELEASE_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" "${files[@]}" --format go-template='{{.digest}}')"
           uri="${EVIDENCE_REPOSITORY}@${digest}"
           mkdir release-out/sbom-readback
@@ -150,82 +189,27 @@ jobs:
           python3 scripts/check_sbom.py . release-out/artifact/release-out/build release-out/sbom-readback/release-out/sbom
           printf 'sbom-uri=%s\n' "$uri" >> "$GITHUB_OUTPUT"
 
-  artifact-attestation:
+  artifact-signing:
     needs: [build-cas, sbom-scan]
-    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
       id-token: write
       attestations: write
       artifact-metadata: write
-    outputs:
-      attestation-uri: ${{ steps.publish.outputs.attestation-uri }}
-    steps:
-      - name: Checkout immutable signing policy
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          ref: ${{ github.sha }}
-      - name: Install digest-verified OCI and signing clients
-        run: ./scripts/install-release-tools.sh "$RUNNER_TEMP/release-tools" signing
-      - name: Fetch artifact and SBOM solely by immutable URI
-        env:
-          ORAS_PASSWORD: ${{ github.token }}
-        run: |
-          "$RUNNER_TEMP/release-tools/oras" login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
-          mkdir -p release-out/artifact release-out/sbom
-          "$RUNNER_TEMP/release-tools/oras" pull "${{ needs.build-cas.outputs.artifact-uri }}" --output release-out/artifact
-          "$RUNNER_TEMP/release-tools/oras" pull "${{ needs.sbom-scan.outputs.sbom-uri }}" --output release-out/sbom
-      - name: Attest backend build provenance
-        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
-        with:
-          subject-path: release-out/artifact/release-out/build/scholarsense-backend.jar
-      - name: Attest frontend build provenance
-        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
-        with:
-          subject-path: release-out/artifact/release-out/build/scholarsense-frontend.tar.gz
-      - name: Attest backend CycloneDX SBOM
-        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
-        with:
-          subject-path: release-out/artifact/release-out/build/scholarsense-backend.jar
-          predicate-type: https://cyclonedx.org/bom
-          predicate-path: release-out/sbom/release-out/sbom/backend.cdx.json
-      - name: Attest frontend CycloneDX SBOM
-        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
-        with:
-          subject-path: release-out/artifact/release-out/build/scholarsense-frontend.tar.gz
-          predicate-type: https://cyclonedx.org/bom
-          predicate-path: release-out/sbom/release-out/sbom/frontend.cdx.json
-      - name: Sign both selected artifacts and query their attestations
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p release-out/attestation
-          for subject in scholarsense-backend.jar scholarsense-frontend.tar.gz; do
-            path="release-out/artifact/release-out/build/$subject"
-            stem="${subject%%.*}"
-            "$RUNNER_TEMP/release-tools/cosign" sign-blob --yes --bundle "release-out/attestation/${stem}.sigstore.json" "$path"
-            sha="$(sha256sum "$path" | cut -d' ' -f1)"
-            gh api "repos/${GITHUB_REPOSITORY}/attestations/sha256:${sha}" > "release-out/attestation/${stem}.attestations.json"
-            test "$(jq -er '.attestations | length' "release-out/attestation/${stem}.attestations.json")" -ge 2
-          done
-      - name: Publish immutable provenance, attestation, and artifact signatures
-        id: publish
-        run: |
-          files=()
-          while IFS= read -r file; do files+=("$file:application/json"); done < <(find release-out/attestation -type f -name '*.json' -print | sort)
-          target="${EVIDENCE_REPOSITORY}:attestation-${{ inputs.release_version }}-${{ github.run_id }}-${{ github.run_attempt }}"
-          digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" "${files[@]}" --format go-template='{{.digest}}')"
-          printf 'attestation-uri=%s@%s\n' "$EVIDENCE_REPOSITORY" "$digest" >> "$GITHUB_OUTPUT"
+    uses: ./.github/workflows/artifact-signing.yml
+    with:
+      artifact_uri: ${{ needs.build-cas.outputs.artifact-uri }}
+      sbom_uri: ${{ needs.sbom-scan.outputs.sbom-uri }}
+      release_version: ${{ inputs.release_version }}
+    secrets: inherit
 
-  formal-web:
-    needs: [build-cas, artifact-attestation]
+  formal-web-test:
+    needs: [build-cas, artifact-signing]
     runs-on: [self-hosted, macOS, ARM64, scholarsense-test-env-1]
     permissions:
       contents: read
-      packages: write
-    outputs:
-      web-uri: ${{ steps.publish.outputs.web-uri }}
+      packages: read
     steps:
       - name: Checkout immutable formal verifier
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -236,7 +220,7 @@ jobs:
         with:
           node-version: 24.18.0
       - name: Install frozen browser-harness dependencies without lifecycle scripts
-        run: npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+        run: ./_bmad/scripts/with_pab_toolchain.sh npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
       - name: Verify and test only frozen frontend bytes
         env:
           ORAS_PASSWORD: ${{ github.token }}
@@ -246,8 +230,36 @@ jobs:
             "${{ needs.build-cas.outputs.frontend-sha256 }}" \
             "${{ needs.build-cas.outputs.build-manifest-sha256 }}" \
             "1361a3f0fdeb6e747c5c1f6bfc682863d2a96240cd2136ec23c2370e52593fbb" \
-            "${{ needs.artifact-attestation.outputs.attestation-uri }}" \
+            "${{ needs.artifact-signing.outputs.attestation_uri }}" \
             release-out/formal-web
+          find release-out/formal-web -type f -print0 | sort -z | xargs -0 shasum -a 256 > release-out/formal-web-transfer.sha256
+      - name: Transfer formal results to isolated publisher
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+          name: formal-web-${{ github.run_id }}-${{ github.run_attempt }}
+          path: release-out
+          retention-days: 1
+          if-no-files-found: error
+
+  formal-web:
+    needs: formal-web-test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      web-uri: ${{ steps.publish.outputs.web-uri }}
+    steps:
+      - name: Enforce frozen hosted runner image
+        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: formal-web-${{ github.run_id }}-${{ github.run_attempt }}
+          path: release-out
+      - run: shasum -a 256 --check release-out/formal-web-transfer.sha256
       - name: Publish formal Web evidence
         id: publish
         env:
@@ -255,13 +267,13 @@ jobs:
         run: |
           tools="$RUNNER_TEMP/release-tools-publish"
           config="$RUNNER_TEMP/formal-publish-oras-config.json"
-          ./scripts/install-release-tools-macos.sh "$tools" oci
+          ./scripts/install-release-tools.sh "$tools" oci
           "$tools/oras" --registry-config "$config" login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
           cd release-out/formal-web
           files=()
           while IFS= read -r file; do files+=("$file:application/json"); done < <(find . -type f -name '*.json' -print | sort)
           while IFS= read -r file; do files+=("$file:image/png"); done < <(find . -type f -name '*.png' -print | sort)
-          target="${EVIDENCE_REPOSITORY}:web-${{ inputs.release_version }}-${{ github.run_id }}-${{ github.run_attempt }}"
+          target="${EVIDENCE_REPOSITORY}:web-${RELEASE_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           digest="$("$tools/oras" --registry-config "$config" push "$target" "${files[@]}" --format go-template='{{.digest}}')"
           uri="${EVIDENCE_REPOSITORY}@${digest}"
           mkdir "$RUNNER_TEMP/formal-web-readback"
@@ -270,15 +282,17 @@ jobs:
           printf 'web-uri=%s\n' "$uri" >> "$GITHUB_OUTPUT"
 
   release-manifest:
-    needs: [build-cas, sbom-scan, artifact-attestation, formal-web]
+    needs: [build-cas, sbom-scan, artifact-signing, formal-web]
     runs-on: ubuntu-24.04
     permissions:
-      contents: read
+      contents: write
       packages: write
     outputs:
       manifest-uri: ${{ steps.publish.outputs.manifest-uri }}
       manifest-sha256: ${{ steps.publish.outputs.manifest-sha256 }}
     steps:
+      - name: Enforce frozen hosted runner image
+        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"
       - name: Checkout immutable manifest contracts
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -290,52 +304,39 @@ jobs:
           ORAS_PASSWORD: ${{ github.token }}
           ARTIFACT_URI: ${{ needs.build-cas.outputs.artifact-uri }}
           SBOM_URI: ${{ needs.sbom-scan.outputs.sbom-uri }}
-          ATTESTATION_URI: ${{ needs.artifact-attestation.outputs.attestation-uri }}
+          ATTESTATION_URI: ${{ needs.artifact-signing.outputs.attestation_uri }}
           WEB_URI: ${{ needs.formal-web.outputs.web-uri }}
         run: |
           "$RUNNER_TEMP/release-tools/oras" login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
-          python3 scripts/assemble-release-manifest-input.py "${{ inputs.release_version }}" release-out/release-input.json
+          python3 scripts/assemble-release-manifest-input.py "$RELEASE_VERSION" release-out/release-input.json
           python3 release/generate_manifests.py release release-out/release-input.json release-out/release-manifest.json
       - name: Publish the frozen unsigned ReleaseManifest
         id: publish
         run: |
-          target="${MANIFEST_REPOSITORY}:${{ inputs.release_version }}-${{ github.run_id }}-${{ github.run_attempt }}"
+          target="${MANIFEST_REPOSITORY}:${RELEASE_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/release-manifest.json:application/vnd.scholarsense.release-manifest.v1+json --format go-template='{{.digest}}')"
           printf 'manifest-uri=%s@%s\n' "$MANIFEST_REPOSITORY" "$digest" >> "$GITHUB_OUTPUT"
           printf 'manifest-sha256=%s\n' "$(sha256sum release-out/release-manifest.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - name: Bind releaseVersion globally to exactly one manifest digest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MANIFEST_SHA256: ${{ steps.publish.outputs.manifest-sha256 }}
+        run: python3 -B release/version_binding.py "$RELEASE_VERSION" "$MANIFEST_SHA256" "$GITHUB_REPOSITORY"
 
-  manifest-signature:
+  manifest-signing:
     needs: release-manifest
-    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
       id-token: write
-    outputs:
-      signature-uri: ${{ steps.publish.outputs.signature-uri }}
-    steps:
-      - name: Checkout immutable signing policy
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        with:
-          ref: ${{ github.sha }}
-      - name: Install digest-verified signing clients
-        run: ./scripts/install-release-tools.sh "$RUNNER_TEMP/release-tools" signing
-      - name: Fetch frozen manifest, sign it, and publish only the external bundle
-        id: publish
-        env:
-          ORAS_PASSWORD: ${{ github.token }}
-        run: |
-          "$RUNNER_TEMP/release-tools/oras" login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
-          mkdir -p release-out/manifest release-out/manifest-signature
-          "$RUNNER_TEMP/release-tools/oras" pull "${{ needs.release-manifest.outputs.manifest-uri }}" --output release-out/manifest
-          manifest="release-out/manifest/release-out/release-manifest.json"
-          "$RUNNER_TEMP/release-tools/cosign" sign-blob --yes --bundle release-out/manifest-signature/release-manifest.sigstore.json "$manifest"
-          target="${EVIDENCE_REPOSITORY}:manifest-signature-${{ inputs.release_version }}-${{ github.run_id }}-${{ github.run_attempt }}"
-          digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/manifest-signature/release-manifest.sigstore.json:application/vnd.dev.sigstore.bundle.v0.3+json --format go-template='{{.digest}}')"
-          printf 'signature-uri=%s@%s\n' "$EVIDENCE_REPOSITORY" "$digest" >> "$GITHUB_OUTPUT"
+    uses: ./.github/workflows/manifest-signing.yml
+    with:
+      manifest_uri: ${{ needs.release-manifest.outputs.manifest-uri }}
+      release_version: ${{ inputs.release_version }}
+    secrets: inherit
 
   evidence-index:
-    needs: [release-manifest, manifest-signature]
+    needs: [release-manifest, manifest-signing]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -344,6 +345,8 @@ jobs:
       index-uri: ${{ steps.publish.outputs.index-uri }}
       index-sha256: ${{ steps.publish.outputs.index-sha256 }}
     steps:
+      - name: Enforce frozen hosted runner image
+        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"
       - name: Checkout immutable index contracts
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -354,7 +357,7 @@ jobs:
         env:
           ORAS_PASSWORD: ${{ github.token }}
           MANIFEST_URI: ${{ needs.release-manifest.outputs.manifest-uri }}
-          SIGNATURE_URI: ${{ needs.manifest-signature.outputs.signature-uri }}
+          SIGNATURE_URI: ${{ needs.manifest-signing.outputs.signature_uri }}
         run: |
           "$RUNNER_TEMP/release-tools/oras" login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
           python3 scripts/assemble-evidence-index-input.py release-out/index-input.json
@@ -362,18 +365,20 @@ jobs:
       - name: Publish immutable EvidenceIndex
         id: publish
         run: |
-          target="${MANIFEST_REPOSITORY}:evidence-index-${{ inputs.release_version }}-${{ github.run_id }}-${{ github.run_attempt }}"
+          target="${MANIFEST_REPOSITORY}:evidence-index-${RELEASE_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/evidence-index.json:application/vnd.scholarsense.evidence-index.v1+json --format go-template='{{.digest}}')"
           printf 'index-uri=%s@%s\n' "$MANIFEST_REPOSITORY" "$digest" >> "$GITHUB_OUTPUT"
           printf 'index-sha256=%s\n' "$(sha256sum release-out/evidence-index.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
   independent-verifier:
-    needs: [build-cas, sbom-scan, artifact-attestation, formal-web, release-manifest, manifest-signature, evidence-index]
+    needs: [build-cas, sbom-scan, artifact-signing, formal-web, release-manifest, manifest-signing, evidence-index]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: read
     steps:
+      - name: Enforce frozen hosted runner image
+        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"
       - name: Checkout verifier from immutable source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -381,23 +386,26 @@ jobs:
       - name: Re-fetch and verify every subject, attestation, and signature
         env:
           ORAS_PASSWORD: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           ARTIFACT_URI: ${{ needs.build-cas.outputs.artifact-uri }}
           SBOM_URI: ${{ needs.sbom-scan.outputs.sbom-uri }}
-          ATTESTATION_URI: ${{ needs.artifact-attestation.outputs.attestation-uri }}
+          ATTESTATION_URI: ${{ needs.artifact-signing.outputs.attestation_uri }}
           WEB_URI: ${{ needs.formal-web.outputs.web-uri }}
           MANIFEST_URI: ${{ needs.release-manifest.outputs.manifest-uri }}
-          SIGNATURE_URI: ${{ needs.manifest-signature.outputs.signature-uri }}
+          SIGNATURE_URI: ${{ needs.manifest-signing.outputs.signature_uri }}
           INDEX_URI: ${{ needs.evidence-index.outputs.index-uri }}
         run: ./scripts/verify-release.sh
 
   promotion:
-    needs: [build-cas, sbom-scan, artifact-attestation, formal-web, release-manifest, manifest-signature, evidence-index, independent-verifier]
+    needs: [build-cas, sbom-scan, artifact-signing, formal-web, release-manifest, manifest-signing, evidence-index, independent-verifier]
     runs-on: ubuntu-24.04
     environment: ${{ inputs.target_environment }}
     permissions:
       contents: write
       packages: write
     steps:
+      - name: Enforce frozen hosted runner image
+        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"
       - name: Checkout immutable promotion adapter
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -408,21 +416,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ARTIFACT_URI: ${{ needs.build-cas.outputs.artifact-uri }}
           SBOM_URI: ${{ needs.sbom-scan.outputs.sbom-uri }}
-          ATTESTATION_URI: ${{ needs.artifact-attestation.outputs.attestation-uri }}
+          ATTESTATION_URI: ${{ needs.artifact-signing.outputs.attestation_uri }}
           WEB_URI: ${{ needs.formal-web.outputs.web-uri }}
           MANIFEST_URI: ${{ needs.release-manifest.outputs.manifest-uri }}
           MANIFEST_SHA256: ${{ needs.release-manifest.outputs.manifest-sha256 }}
-          SIGNATURE_URI: ${{ needs.manifest-signature.outputs.signature-uri }}
+          SIGNATURE_URI: ${{ needs.manifest-signing.outputs.signature_uri }}
           INDEX_URI: ${{ needs.evidence-index.outputs.index-uri }}
           EVIDENCE_INDEX_SHA256: ${{ needs.evidence-index.outputs.index-sha256 }}
-          PROMOTION_APPROVER: protected-environment:${{ inputs.target_environment }}
         run: |
           output="$RUNNER_TEMP/promotion-record.json"
-          if [[ -n "${{ inputs.rollback_version }}" || -n "${{ inputs.rollback_environment }}" ]]; then
+          if [[ -n "$ROLLBACK_VERSION" || -n "$ROLLBACK_ENVIRONMENT" ]]; then
             ./scripts/promote-release.sh \
-              "${{ inputs.release_version }}" "${{ inputs.target_environment }}" "$output" \
-              "${{ inputs.rollback_version }}" "${{ inputs.rollback_environment }}"
+              "$RELEASE_VERSION" "$TARGET_ENVIRONMENT" "$output" \
+              "$ROLLBACK_VERSION" "$ROLLBACK_ENVIRONMENT"
           else
             ./scripts/promote-release.sh \
-              "${{ inputs.release_version }}" "${{ inputs.target_environment }}" "$output"
+              "$RELEASE_VERSION" "$TARGET_ENVIRONMENT" "$output"
           fi

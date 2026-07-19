@@ -68,6 +68,19 @@ class ReleaseCanonicalContractTest(unittest.TestCase):
             with self.subTest(value=repr(value)), self.assertRaises(ValueError):
                 canonical_bytes(value)
 
+    def test_node_parser_rejects_raw_non_profile_json_before_canonicalization(self) -> None:
+        for payload in ('{"a":1,"a":2}', '{"a":1.0}', '{"a":1e2}', '{"a":-0}'):
+            with self.subTest(payload=payload):
+                result = subprocess.run(
+                    ["node", str(PROJECT_ROOT / "release/canonical-json.mjs")],
+                    input=payload,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=False,
+                )
+                self.assertNotEqual(0, result.returncode)
+
 
 class ReleaseSchemaContractTest(unittest.TestCase):
     def test_all_release_schemas_use_the_controlled_fail_closed_subset(self) -> None:

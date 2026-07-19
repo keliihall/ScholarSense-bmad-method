@@ -7,6 +7,7 @@
     "status": {"const": "approved"},
     "approvedByUxBrand": {"type": "string", "minLength": 2},
     "approvedByWebQa": {"type": "string", "minLength": 2},
+    "approvalPolicy": {"const": "single-accountable-plus-independent-automated-web-qa"},
     "effectiveAt": {"type": "string", "format": "date-time"},
     "approvedArtifactSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "testEnvironmentVersion": {"const": "TEST-ENV-1.0.0"},
@@ -28,7 +29,7 @@
     "scale": {"const": "css"},
     "cells": {"type": "array", "minItems": 8, "maxItems": 8, "items": {"$ref": "#/$defs/cell"}, "uniqueItems": true}
   },
-  "required": ["version", "status", "approvedByUxBrand", "approvedByWebQa", "effectiveAt", "approvedArtifactSha256", "testEnvironmentVersion", "testEnvironmentSha256", "runnerImageSha256", "fontManifestSha256", "deviceScaleFactor", "locale", "timezone", "clock", "colorScheme", "reducedMotion", "networkProfile", "dataProfile", "thresholdPermille", "maxDiffPixels", "animations", "caret", "scale", "cells"],
+  "required": ["version", "status", "approvedByUxBrand", "approvedByWebQa", "approvalPolicy", "effectiveAt", "approvedArtifactSha256", "testEnvironmentVersion", "testEnvironmentSha256", "runnerImageSha256", "fontManifestSha256", "deviceScaleFactor", "locale", "timezone", "clock", "colorScheme", "reducedMotion", "networkProfile", "dataProfile", "thresholdPermille", "maxDiffPixels", "animations", "caret", "scale", "cells"],
   "additionalProperties": false,
   "$defs": {
     "cell": {

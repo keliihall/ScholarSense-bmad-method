@@ -15,6 +15,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 from assembly import assemble_evidence_index_input, assemble_release_manifest_input  # noqa: E402
 from manifests import create_evidence_index, create_release_manifest, write_frozen_document  # noqa: E402
 from release_json import canonical_bytes, canonical_sha256, load_json  # noqa: E402
+from verifier import pulled_release_material_issues  # noqa: E402
 
 
 def sha256(payload: bytes) -> str:
@@ -55,7 +56,14 @@ class ReleaseAssemblyTest(unittest.TestCase):
         write(artifact / "scholarsense-backend.jar", backend)
         write(artifact / "scholarsense-frontend.tar.gz", frontend)
         write(artifact / "build-manifest.json", canonical_bytes(build))
-        for name in ("backend.cdx.json", "frontend.cdx.json", "sbom-evidence.json"):
+        runtime_inventory = dict(inventory)
+        runtime_inventory["sourceCommit"] = build["sourceCommit"]
+        write(artifact / "release-source-inventory.json", canonical_bytes(runtime_inventory))
+        write(artifact / "release-source.tar.gz", b"source-archive")
+        for name in (
+            "backend.cdx.json", "backend.spdx.json", "frontend.cdx.json", "frontend.spdx.json",
+            "sbom-evidence.json",
+        ):
             write(sbom / name, json.dumps({"name": name}).encode("utf-8"))
         for subject in ("scholarsense-backend", "scholarsense-frontend"):
             write(attestation / f"{subject}.attestations.json", b'{"attestations":[{}]}')
@@ -84,6 +92,8 @@ class ReleaseAssemblyTest(unittest.TestCase):
                 "2026-07-19T10:30:00+08:00",
             )
             manifest = create_release_manifest(payload)
+            self.assertIn("backend-sbom-spdx", {item["id"] for item in manifest["evidence"]})
+            self.assertIn("frontend-sbom-spdx", {item["id"] for item in manifest["evidence"]})
             self.assertEqual("1.1.0", manifest["releaseVersion"])
             self.assertEqual(2, len(manifest["artifacts"]))
             self.assertGreaterEqual(len(manifest["evidence"]), 14)
@@ -147,6 +157,31 @@ class ReleaseAssemblyTest(unittest.TestCase):
             )
             self.assertEqual(canonical_sha256(manifest), index["subjectManifestSha256"])
             self.assertEqual(sha256(signature_path.read_bytes()), index["manifestSignature"]["binarySha256"])
+
+            index_path = root / "evidence-index.json"
+            write_frozen_document(index_path, index)
+            uris = {
+                "artifact": "ghcr.io/keliihall/a@sha256:" + "1" * 64,
+                "sbom": "ghcr.io/keliihall/b@sha256:" + "2" * 64,
+                "attestation": "ghcr.io/keliihall/c@sha256:" + "3" * 64,
+                "web": "ghcr.io/keliihall/d@sha256:" + "4" * 64,
+                "manifest": "ghcr.io/keliihall/manifest@sha256:" + "5" * 64,
+                "signature": "ghcr.io/keliihall/signature@sha256:" + "6" * 64,
+            }
+            self.assertEqual(
+                [],
+                pulled_release_material_issues(
+                    PROJECT_ROOT, artifact, sbom, attestation, web,
+                    manifest_path, signature_path, index_path, uris,
+                ),
+            )
+            (sbom / "backend.cdx.json").write_bytes(b"tampered")
+            self.assertTrue(
+                pulled_release_material_issues(
+                    PROJECT_ROOT, artifact, sbom, attestation, web,
+                    manifest_path, signature_path, index_path, uris,
+                )
+            )
 
 
 if __name__ == "__main__":

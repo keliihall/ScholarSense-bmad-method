@@ -81,6 +81,20 @@ class FrozenFrontendExtractionTest(unittest.TestCase):
                 safe_extract_frontend(artifact_b, root / "served", expected, before_extract=launch)
             self.assertFalse(launched)
 
+    def test_path_replacement_after_hash_cannot_change_extracted_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            selected = root / "selected.tar.gz"
+            replacement = root / "replacement.tar.gz"
+            digest = archive(selected, {"index.html": b"verified-A"})
+            archive(replacement, {"index.html": b"swapped-B"})
+
+            def replace_path() -> None:
+                os.replace(replacement, selected)
+
+            safe_extract_frontend(selected, root / "served", digest, before_extract=replace_path)
+            self.assertEqual(b"verified-A", (root / "served/index.html").read_bytes())
+
     def test_rejects_traversal_links_duplicates_and_preexisting_output(self) -> None:
         cases = (
             ("traversal", ("../escape", b"bad", "file")),
@@ -218,6 +232,7 @@ class FormalWebContractTest(unittest.TestCase):
                     "actualScreenshotPath": f"screenshots/{cell['goldenPath']}",
                     "goldenScreenshotSha256": cell["goldenScreenshotSha256"],
                     "diffPixels": 0,
+                    "diffRgbaSha256": "0" * 64,
                     "checks": {
                         "artifactServed": "passed",
                         "resources": "passed",
@@ -226,6 +241,7 @@ class FormalWebContractTest(unittest.TestCase):
                         "keyboardFocus": "passed",
                         "axe": "passed",
                         "zoom200": "passed",
+                        "responsive375": "passed",
                         "reflow320": "passed",
                         "uiTokens": "passed",
                         "brandAssets": "passed",
@@ -293,6 +309,17 @@ class FormalWebContractTest(unittest.TestCase):
         self.assertIn('chmod -R u+w "$WORK_DIR"', shell)
         self.assertNotIn("$RUNNER_TEMP/golden-browsers", workflow)
         self.assertNotIn("formal-browser-install.json", combined)
+
+    def test_visual_baseline_does_not_claim_two_human_reviewers(self) -> None:
+        self.assertEqual("github-user:24710825:keliihall", self.vgb["approvedByUxBrand"])
+        self.assertEqual(
+            "automated-gate:.github/workflows/release.yml#job:formal-web",
+            self.vgb["approvedByWebQa"],
+        )
+        self.assertEqual(
+            "single-accountable-plus-independent-automated-web-qa",
+            self.vgb["approvalPolicy"],
+        )
 
 
 if __name__ == "__main__":

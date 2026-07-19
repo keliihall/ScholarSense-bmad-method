@@ -9,23 +9,27 @@ from pathlib import Path
 
 
 EXPECTED_RELEASE_ORDER = (
+    "build-test",
     "build-cas",
     "sbom-scan",
-    "artifact-attestation",
+    "artifact-signing",
+    "formal-web-test",
     "formal-web",
     "release-manifest",
-    "manifest-signature",
+    "manifest-signing",
     "evidence-index",
     "independent-verifier",
     "promotion",
 )
 EXPECTED_NEEDS = {
+    "build-cas": "build-test",
     "sbom-scan": "build-cas",
-    "artifact-attestation": "sbom-scan",
-    "formal-web": "artifact-attestation",
+    "artifact-signing": "sbom-scan",
+    "formal-web-test": "artifact-signing",
+    "formal-web": "formal-web-test",
     "release-manifest": "formal-web",
-    "manifest-signature": "release-manifest",
-    "evidence-index": "manifest-signature",
+    "evidence-index": "manifest-signing",
+    "manifest-signing": "release-manifest",
     "independent-verifier": "evidence-index",
     "promotion": "independent-verifier",
 }
@@ -53,6 +57,16 @@ def validate_release_workflows(project_root: Path) -> list[str]:
     ci, issues = _read(root / ".github/workflows/ci.yml", "CI_WORKFLOW_MISSING")
     release, release_read_issues = _read(root / ".github/workflows/release.yml", "RELEASE_WORKFLOW_MISSING")
     issues.extend(release_read_issues)
+    artifact_signing, artifact_signing_issues = _read(
+        root / ".github/workflows/artifact-signing.yml",
+        "ARTIFACT_SIGNING_WORKFLOW_MISSING",
+    )
+    issues.extend(artifact_signing_issues)
+    manifest_signing, manifest_signing_issues = _read(
+        root / ".github/workflows/manifest-signing.yml",
+        "MANIFEST_SIGNING_WORKFLOW_MISSING",
+    )
+    issues.extend(manifest_signing_issues)
     rollback, rollback_read_issues = _read(root / ".github/workflows/rollback.yml", "ROLLBACK_WORKFLOW_MISSING")
     issues.extend(rollback_read_issues)
     golden, golden_read_issues = _read(
@@ -90,23 +104,22 @@ def validate_release_workflows(project_root: Path) -> list[str]:
                 issues.append(f"RELEASE_JOB_ORDER_INVALID: {job} needs {need}")
         for job, body in bodies.items():
             has_oidc = bool(re.search(r"(?m)^      id-token:\s*write\s*$", body))
-            if has_oidc and job not in {"artifact-attestation", "manifest-signature"}:
+            if has_oidc and job not in {"artifact-signing", "manifest-signing"}:
                 issues.append(f"RELEASE_OIDC_PERMISSION_OVERBROAD: {job}")
             for permission in ("attestations", "artifact-metadata"):
-                if re.search(rf"(?m)^      {permission}:\s*write\s*$", body) and job != "artifact-attestation":
+                if re.search(rf"(?m)^      {permission}:\s*write\s*$", body) and job != "artifact-signing":
                     issues.append(f"RELEASE_ATTESTATION_PERMISSION_OVERBROAD: {job}:{permission}")
-        attest = bodies.get("artifact-attestation", "")
-        for permission in ("id-token", "attestations", "artifact-metadata"):
-            if not re.search(rf"(?m)^      {permission}:\s*write\s*$", attest):
-                issues.append(f"RELEASE_ATTESTATION_PERMISSION_MISSING: {permission}")
-        for forbidden in ("actions/upload-artifact", "actions/download-artifact"):
-            if forbidden in release:
-                issues.append(f"RELEASE_MUTABLE_JOB_TRANSFER_FORBIDDEN: {forbidden}")
+        for required_transfer in (
+            "actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808",
+            "actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16",
+            "build-transfer.sha256",
+            "formal-web-transfer.sha256",
+        ):
+            if required_transfer not in release:
+                issues.append(f"RELEASE_VERIFIED_JOB_TRANSFER_MISSING: {required_transfer}")
         required_tokens = (
             "scripts/build-release.sh",
             "scripts/generate-sbom.sh",
-            "actions/attest@",
-            "sign-blob --yes --bundle",
             "scripts/run-formal-web-evidence.sh",
             "scripts/assemble-release-manifest-input.py",
             "release/generate_manifests.py release",
@@ -118,9 +131,13 @@ def validate_release_workflows(project_root: Path) -> list[str]:
         for token in required_tokens:
             if token not in release:
                 issues.append(f"RELEASE_LIFECYCLE_STEP_MISSING: {token}")
-        build = bodies.get("build-cas", "")
+        build = bodies.get("build-test", "")
         if "fetch-depth: 0" not in build:
             issues.append("RELEASE_BUILD_FULL_SOURCE_HISTORY_MISSING")
+        if WRITE_PERMISSION.search(build):
+            issues.append("RELEASE_BUILD_TEST_WRITE_PERMISSION_FORBIDDEN")
+        if "scripts/build-release.sh" in bodies.get("build-cas", ""):
+            issues.append("RELEASE_PUBLISHER_REBUILD_FORBIDDEN")
         sbom = bodies.get("sbom-scan", "")
         if "mkdir -p release-out/artifact" not in sbom:
             issues.append("RELEASE_SBOM_READBACK_PARENT_CREATION_MISSING")
@@ -138,19 +155,44 @@ def validate_release_workflows(project_root: Path) -> list[str]:
         verifier = bodies.get("independent-verifier", "")
         if WRITE_PERMISSION.search(verifier):
             issues.append("RELEASE_INDEPENDENT_VERIFIER_WRITE_PERMISSION_FORBIDDEN")
-        formal = bodies.get("formal-web", "")
+        formal = bodies.get("formal-web-test", "")
         for required in (
             "runs-on: [self-hosted, macOS, ARM64, scholarsense-test-env-1]",
             "actions/setup-node@",
             "npm ci --prefix frontend --ignore-scripts",
             "scripts/run-formal-web-evidence.sh",
-            "-name '*.png'",
         ):
             if required not in formal:
                 issues.append(f"RELEASE_FORMAL_WEB_GATE_INCOMPLETE: {required}")
+        if "-name '*.png'" not in bodies.get("formal-web", ""):
+            issues.append("RELEASE_FORMAL_WEB_GATE_INCOMPLETE: published PNG evidence")
         for forbidden in ("capture-formal-web-goldens", "update-snapshots", "--update-snapshots"):
             if forbidden in formal:
                 issues.append(f"RELEASE_FORMAL_WEB_ORACLE_MUTATION_FORBIDDEN: {forbidden}")
+        if WRITE_PERMISSION.search(formal):
+            issues.append("RELEASE_FORMAL_WEB_TEST_WRITE_PERMISSION_FORBIDDEN")
+        if "scripts/run-formal-web-evidence.sh" in bodies.get("formal-web", ""):
+            issues.append("RELEASE_FORMAL_WEB_PUBLISHER_RETEST_FORBIDDEN")
+        for obsolete in ("artifact-attestation", "manifest-signature"):
+            if obsolete in bodies:
+                issues.append(f"RELEASE_LEGACY_SIGNER_JOB_FORBIDDEN: {obsolete}")
+    if artifact_signing:
+        for required in (
+            "workflow_call:",
+            "actions/attest@",
+            "https://cyclonedx.org/bom",
+            "https://spdx.dev/Document",
+            "sign-blob --yes --bundle",
+            "id-token: write",
+            "attestations: write",
+            "artifact-metadata: write",
+        ):
+            if required not in artifact_signing:
+                issues.append(f"ARTIFACT_SIGNING_GATE_INCOMPLETE: {required}")
+    if manifest_signing:
+        for required in ("workflow_call:", "sign-blob --yes --bundle", "id-token: write"):
+            if required not in manifest_signing:
+                issues.append(f"MANIFEST_SIGNING_GATE_INCOMPLETE: {required}")
     if golden:
         if "workflow_dispatch:" not in golden or "pull_request:" in golden or "pull_request_target:" in golden:
             issues.append("GOLDEN_APPROVAL_TRIGGER_INVALID")

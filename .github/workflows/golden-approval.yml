@@ -88,7 +88,7 @@ jobs:
         with:
           node-version: 24.18.0
       - name: Install frozen browser-harness dependencies without lifecycle scripts
-        run: npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+        run: ./_bmad/scripts/with_pab_toolchain.sh npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
       - name: Verify exact ephemeral runner identity
         run: python3 scripts/check_formal_web_runner.py --require-actions
       - name: Fetch and safely extract only the frozen candidate
@@ -116,7 +116,7 @@ jobs:
         env:
           EXPECTED_SHA256: ${{ needs.build-candidate.outputs.frontend-sha256 }}
         run: |
-          node frontend/scripts/capture-formal-web-goldens.mjs \
+          ./_bmad/scripts/with_pab_toolchain.sh node frontend/scripts/capture-formal-web-goldens.mjs \
             --served-root "$RUNNER_TEMP/golden-served" \
             --browsers "$FORMAL_BROWSER_INSTALL_ROOT/browsers.json" \
             --subject-sha256 "$EXPECTED_SHA256" \

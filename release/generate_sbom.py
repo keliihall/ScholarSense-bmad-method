@@ -193,10 +193,18 @@ def _scan_draft(
 
 def _findings(vulnerabilities: list[dict[str, Any]]) -> list[dict[str, str]]:
     findings: list[dict[str, str]] = []
+    rank = {"UNKNOWN": 5, "CRITICAL": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1, "NONE": 0}
     for vulnerability in vulnerabilities:
         ratings = vulnerability.get("ratings", [])
-        severities = [str(item.get("severity", "UNKNOWN")).upper() for item in ratings if isinstance(item, dict)]
-        severity = severities[0] if severities else "UNKNOWN"
+        if not isinstance(ratings, list) or not ratings:
+            severities = ["UNKNOWN"]
+        else:
+            severities = []
+            for item in ratings:
+                raw = item.get("severity") if isinstance(item, dict) else None
+                normalized = raw.upper() if isinstance(raw, str) else "UNKNOWN"
+                severities.append(normalized if normalized in rank else "UNKNOWN")
+        severity = max(severities, key=lambda value: rank[value])
         for affected in vulnerability.get("affects", []):
             if isinstance(affected, dict):
                 findings.append(
@@ -273,6 +281,9 @@ def generate(
     policy_issues = license_issues(
         [{"purl": item["purl"], "license": item["licenseExpression"]} for item in third_party],
         license_policy,
+        license_policy.get("exceptions", []),
+        manifest["attempts"][0]["artifactSetSha256"],
+        datetime.now(timezone.utc),
     )
     if policy_issues:
         raise ValueError(policy_issues[0])
@@ -300,7 +311,7 @@ def generate(
             vulnerability_policy_issues = vulnerability_issues(
                 findings,
                 vulnerability_policy,
-                [],
+                vulnerability_policy.get("exceptions", []),
                 subject["binarySha256"],
                 datetime.now(timezone.utc),
             )

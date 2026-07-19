@@ -9,6 +9,7 @@
   "denied": ["AGPL-1.0-only", "AGPL-3.0-only", "SSPL-1.0"],
   "unknownTreatment": "block",
   "noticeRequired": true,
+  "exceptions": [],
   "sourceDisclosureRequiredFor": [
     "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
     "EPL-2.0 OR LGPL-2.1-only",

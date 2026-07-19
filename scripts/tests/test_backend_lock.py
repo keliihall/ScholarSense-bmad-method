@@ -23,6 +23,9 @@ class BackendLockContractTest(unittest.TestCase):
         self.assertGreaterEqual(len(lock["dependencies"]), 40)
         self.assertGreaterEqual(len(lock["plugins"]), 6)
         self.assertEqual([], validate_backend_lock(lock, PROJECT_ROOT))
+        self.assertGreaterEqual(len(lock["pluginResolution"]), 6)
+        self.assertGreater(sum(len(item["artifacts"]) for item in lock["pluginResolution"]), 40)
+        self.assertEqual([], lock["extensions"])
 
     def test_backend_lock_rejects_checksum_source_and_dynamic_version_drift(self) -> None:
         baseline = load_json(LOCK_PATH)

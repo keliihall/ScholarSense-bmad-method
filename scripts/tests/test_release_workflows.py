@@ -27,6 +27,22 @@ class ReleaseWorkflowContractTest(unittest.TestCase):
         self.assertIn("[self-hosted, macOS, ARM64, scholarsense-test-env-1]", golden)
         self.assertNotIn("update-snapshots", golden + release)
 
+    def test_dispatch_inputs_are_never_interpolated_into_privileged_shell_source(self) -> None:
+        release = (PROJECT_ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        rollback = (PROJECT_ROOT / ".github/workflows/rollback.yml").read_text(encoding="utf-8")
+        for workflow in (release, rollback):
+            lines = workflow.splitlines()
+            for index, line in enumerate(lines):
+                if not line.lstrip().startswith("run:"):
+                    continue
+                indent = len(line) - len(line.lstrip())
+                block: list[str] = []
+                for candidate in lines[index + 1 :]:
+                    if candidate.strip() and len(candidate) - len(candidate.lstrip()) <= indent:
+                        break
+                    block.append(candidate)
+                self.assertNotIn("${{ inputs.", "\n".join(block))
+
     def test_checker_rejects_pr_write_oidc_order_bypass_and_secret_execution(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -57,6 +73,28 @@ class ReleaseWorkflowContractTest(unittest.TestCase):
         tools = {item["name"]: item for item in lock["tools"]}
         self.assertEqual("fdaa1c168d67041cd0d8f5782f8136ac5d148827b6911ba8bb577cbc7e13de2c", tools["cosign-linux-amd64-bundle"]["binarySha256"])
         self.assertEqual("fccbe7d4877af44f27e205528626dfeb3ff6efac57c22061f1fccb59e8a80007", tools["trivy-linux-amd64-bundle"]["binarySha256"])
+
+    def test_manifest_version_is_globally_bound_before_signing(self) -> None:
+        release = (PROJECT_ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        binding = release.index("release/version_binding.py")
+        signing = release.index("  manifest-signing:")
+        self.assertLess(binding, signing)
+
+    def test_selected_signatures_use_distinct_reusable_workflow_identities_and_spdx(self) -> None:
+        release = (PROJECT_ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        verifier = (PROJECT_ROOT / "scripts/verify-release.sh").read_text(encoding="utf-8")
+        self.assertIn("uses: ./.github/workflows/artifact-signing.yml", release)
+        self.assertIn("uses: ./.github/workflows/manifest-signing.yml", release)
+        self.assertNotIn("  artifact-attestation:", release)
+        self.assertNotIn("  manifest-signature:", release)
+        self.assertIn("https://spdx.dev/Document", verifier)
+
+    def test_build_and_formal_tests_are_isolated_from_publish_permissions(self) -> None:
+        release = (PROJECT_ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        self.assertIn("  build-test:", release)
+        self.assertIn("  formal-web-test:", release)
+        self.assertIn("build-transfer.sha256", release)
+        self.assertIn("formal-web-transfer.sha256", release)
 
 
 if __name__ == "__main__":

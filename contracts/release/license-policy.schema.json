@@ -10,9 +10,10 @@
     "unknownTreatment": {"const": "block"},
     "noticeRequired": {"type": "boolean"},
     "sourceDisclosureRequiredFor": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 3}},
-    "obligations": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/obligation"}}
+    "obligations": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/obligation"}},
+    "exceptions": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/exception"}}
   },
-  "required": ["version", "allowed", "allowedExpressions", "denied", "unknownTreatment", "noticeRequired", "sourceDisclosureRequiredFor", "obligations"],
+  "required": ["version", "allowed", "allowedExpressions", "denied", "unknownTreatment", "noticeRequired", "sourceDisclosureRequiredFor", "obligations", "exceptions"],
   "additionalProperties": false,
   "$defs": {
     "obligation": {
@@ -22,6 +23,20 @@
         "actions": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 3}}
       },
       "required": ["licenseExpression", "actions"],
+      "additionalProperties": false
+    },
+    "exception": {
+      "type": "object",
+      "properties": {
+        "exceptionId": {"type": "string", "pattern": "^LEX-[0-9]{4}-[0-9]{3}$"},
+        "purl": {"type": "string", "minLength": 1},
+        "licenseExpression": {"type": "string", "minLength": 1},
+        "subjectSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "reason": {"type": "string", "minLength": 10},
+        "approvedBy": {"type": "string", "minLength": 1},
+        "expiresAt": {"type": "string", "format": "date-time"}
+      },
+      "required": ["exceptionId", "purl", "licenseExpression", "subjectSha256", "reason", "approvedBy", "expiresAt"],
       "additionalProperties": false
     }
   }

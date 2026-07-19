@@ -56,6 +56,24 @@ class ReleasePlatformContractTest(unittest.TestCase):
         workflow = PROJECT_ROOT / ".github/workflows/platform-probe.yml"
         self.assertEqual([], validate_workflow(workflow))
 
+    def test_cisb_binds_the_actual_release_trust_contract(self) -> None:
+        baseline = load_json_document(CISB_PATH)
+        self.assertEqual(".github/workflows/release.yml", baseline["ci"]["workflow"])
+        self.assertEqual("ImageVersion", baseline["runner"]["runtimeImageVersionVariable"])
+        artifact_signer = baseline["identities"]["artifactSigner"]
+        manifest_signer = baseline["identities"]["manifestSigner"]
+        self.assertNotEqual(artifact_signer, manifest_signer)
+        self.assertIn("artifact-signing.yml", artifact_signer)
+        self.assertIn("manifest-signing.yml", manifest_signer)
+
+    def test_cisb_records_the_approved_single_human_plus_automated_web_qa_policy(self) -> None:
+        baseline = load_json_document(CISB_PATH)
+        approval = baseline["goldenApproval"]
+        self.assertEqual("github-user:24710825:keliihall", approval["accountablePrincipal"])
+        self.assertEqual("single-accountable-plus-independent-automated-web-qa", approval["policy"])
+        self.assertEqual(".github/workflows/release.yml#job:formal-web", approval["webQaGate"])
+        self.assertIn("actions/runs/{runId}/approvals", approval["approvalHistoryApi"])
+
     def test_workflow_rejects_mutable_action_write_all_and_secret_sink(self) -> None:
         cases = {
             "mutable action": "uses: actions/checkout@v4\n",

@@ -37,6 +37,7 @@ export MANIFEST_SHA256="$(jq -er '.manifestSha256' "$history")"
 export SIGNATURE_URI="$(jq -er '.signatureUri' "$history")"
 export INDEX_URI="$(jq -er '.evidenceIndexUri' "$history")"
 export EVIDENCE_INDEX_SHA256="$(jq -er '.evidenceIndexSha256' "$history")"
+export REQUIRE_CURRENT_RESCAN=1
 
 # promote-release invokes scripts/verify-release.sh against every historical remote
 # subject before the production CAS. It never invokes build-release or a package build.

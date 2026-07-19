@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import base64
 import copy
+import hashlib
 import json
 import os
 import re
@@ -70,6 +71,65 @@ class PromotionError(RuntimeError):
 
 
 @dataclass(frozen=True)
+class ApprovalRecord:
+    principal: str
+    environment_id: int
+    evidence_uri: str
+    evidence_sha256: str
+
+
+def approval_from_github_history(
+    document: Any,
+    target_environment: str,
+    expected_environment_id: int,
+    run_id: str,
+    repository: str = "keliihall/ScholarSense-bmad-method",
+) -> ApprovalRecord:
+    if (
+        not RUN_ID.fullmatch(run_id)
+        or target_environment not in TARGET_REPOSITORIES
+        or not isinstance(expected_environment_id, int)
+        or isinstance(expected_environment_id, bool)
+        or not isinstance(document, list)
+    ):
+        raise PromotionError("PROMOTION_APPROVAL_HISTORY_INVALID")
+    matches: list[dict[str, Any]] = []
+    for review in document:
+        if not isinstance(review, dict) or review.get("state") != "approved":
+            continue
+        environments = review.get("environments")
+        if not isinstance(environments, list):
+            continue
+        if any(
+            isinstance(environment, dict)
+            and environment.get("id") == expected_environment_id
+            and environment.get("name") == target_environment
+            for environment in environments
+        ):
+            matches.append(review)
+    if len(matches) != 1:
+        raise PromotionError("PROMOTION_APPROVAL_HISTORY_INVALID")
+    user = matches[0].get("user")
+    if not isinstance(user, dict):
+        raise PromotionError("PROMOTION_APPROVAL_HISTORY_INVALID")
+    login = user.get("login")
+    user_id = user.get("id")
+    if not isinstance(login, str) or not re.fullmatch(r"[A-Za-z0-9-]{1,39}", login):
+        raise PromotionError("PROMOTION_APPROVAL_HISTORY_INVALID")
+    if not isinstance(user_id, int) or isinstance(user_id, bool) or user_id < 1:
+        raise PromotionError("PROMOTION_APPROVAL_HISTORY_INVALID")
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repository):
+        raise PromotionError("PROMOTION_APPROVAL_HISTORY_INVALID")
+    digest = hashlib.sha256(canonical_bytes(document)).hexdigest()
+    return ApprovalRecord(
+        principal=f"github-user:{user_id}:{login}",
+        environment_id=expected_environment_id,
+        evidence_uri=f"https://api.github.com/repos/{repository}/actions/runs/{run_id}/approvals",
+        evidence_sha256=digest,
+    )
+
+
+@dataclass(frozen=True)
 class PromotionEvidence:
     artifact_uri: str
     sbom_uri: str
@@ -93,12 +153,17 @@ class PromotionRequest:
     approver: str
     run_id: str
     run_attempt: int
+    approval_environment_id: int
+    approval_evidence_uri: str
+    approval_evidence_sha256: str
     rollback_of_ledger_uri: str | None = None
 
 
 @dataclass(frozen=True)
 class VerificationReceipt:
     evidence: PromotionEvidence
+    measured_manifest_sha256: str
+    measured_evidence_index_sha256: str
     verifier_identity: str
     verified_at: datetime
     expires_at: datetime
@@ -169,12 +234,23 @@ def _request_issues(request: PromotionRequest) -> list[str]:
     expected_from = {"stage": "candidate", "production": "stage"}.get(request.target_environment)
     if expected_from is None or request.from_environment != expected_from:
         issues.append("PROMOTION_ENVIRONMENT_TRANSITION_INVALID")
-    if not request.actor or not request.approver:
+    if not request.actor or re.fullmatch(r"github-user:[1-9][0-9]*:[A-Za-z0-9-]{1,39}", request.approver) is None:
         issues.append("PROMOTION_PROTECTED_IDENTITY_MISSING")
     if not RUN_ID.fullmatch(request.run_id):
         issues.append("PROMOTION_RUN_ID_INVALID")
     if isinstance(request.run_attempt, bool) or request.run_attempt < 1:
         issues.append("PROMOTION_RUN_ATTEMPT_INVALID")
+    expected_approval_uri = (
+        "https://api.github.com/repos/keliihall/ScholarSense-bmad-method/actions/runs/"
+        f"{request.run_id}/approvals"
+    )
+    if (
+        isinstance(request.approval_environment_id, bool)
+        or request.approval_environment_id < 1
+        or request.approval_evidence_uri != expected_approval_uri
+        or HEX64.fullmatch(request.approval_evidence_sha256) is None
+    ):
+        issues.append("PROMOTION_APPROVAL_EVIDENCE_INVALID")
     values = asdict(request.evidence)
     for field in EVIDENCE_URI_FIELDS:
         if not OCI_URI.fullmatch(str(values[field])):
@@ -196,6 +272,10 @@ def _receipt_issues(request: PromotionRequest, receipt: VerificationReceipt, now
     issues: list[str] = []
     if receipt.evidence != request.evidence:
         issues.append("PROMOTION_VERIFICATION_SUBJECT_MISMATCH")
+    if receipt.measured_manifest_sha256 != request.evidence.manifest_sha256:
+        issues.append("PROMOTION_VERIFIED_MANIFEST_DIGEST_MISMATCH")
+    if receipt.measured_evidence_index_sha256 != request.evidence.evidence_index_sha256:
+        issues.append("PROMOTION_VERIFIED_INDEX_DIGEST_MISMATCH")
     if not receipt.verifier_identity:
         issues.append("PROMOTION_VERIFIER_IDENTITY_MISSING")
     try:
@@ -236,15 +316,18 @@ def _record(
         "attestationUri": evidence.attestation_uri,
         "webUri": evidence.web_uri,
         "manifestUri": evidence.manifest_uri,
-        "manifestSha256": evidence.manifest_sha256,
+        "manifestSha256": receipt.measured_manifest_sha256,
         "signatureUri": evidence.signature_uri,
         "evidenceIndexUri": evidence.index_uri,
-        "evidenceIndexSha256": evidence.evidence_index_sha256,
+        "evidenceIndexSha256": receipt.measured_evidence_index_sha256,
         "verifierIdentity": receipt.verifier_identity,
         "verifiedAt": _timestamp(receipt.verified_at),
         "evidenceExpiresAt": _timestamp(receipt.expires_at),
         "actor": request.actor,
         "approver": request.approver,
+        "approvalEnvironmentId": request.approval_environment_id,
+        "approvalEvidenceUri": request.approval_evidence_uri,
+        "approvalEvidenceSha256": request.approval_evidence_sha256,
         "runId": request.run_id,
         "runAttempt": request.run_attempt,
         "result": "promoted",
@@ -294,6 +377,19 @@ def promotion_record_issues(
     for field in ("manifestSha256", "evidenceIndexSha256"):
         if not HEX64.fullmatch(str(record.get(field, ""))):
             issues.append(f"PROMOTION_LEDGER_DIGEST_INVALID: {field}")
+    if re.fullmatch(r"github-user:[1-9][0-9]*:[A-Za-z0-9-]{1,39}", str(record.get("approver", ""))) is None:
+        issues.append("PROMOTION_LEDGER_APPROVER_INVALID")
+    approval_environment_id = record.get("approvalEnvironmentId")
+    if isinstance(approval_environment_id, bool) or not isinstance(approval_environment_id, int) or approval_environment_id < 1:
+        issues.append("PROMOTION_LEDGER_APPROVAL_ENVIRONMENT_INVALID")
+    expected_approval_uri = (
+        "https://api.github.com/repos/keliihall/ScholarSense-bmad-method/actions/runs/"
+        f"{record.get('runId')}/approvals"
+    )
+    if record.get("approvalEvidenceUri") != expected_approval_uri or not HEX64.fullmatch(
+        str(record.get("approvalEvidenceSha256", ""))
+    ):
+        issues.append("PROMOTION_LEDGER_APPROVAL_EVIDENCE_INVALID")
     rollback_uri = record.get("rollbackOfLedgerUri")
     if rollback_uri is not None and not LEDGER_URI.fullmatch(str(rollback_uri)):
         issues.append("PROMOTION_ROLLBACK_LEDGER_URI_INVALID")
@@ -327,6 +423,39 @@ class PromotionService:
         issues = _request_issues(request)
         if issues:
             raise PromotionError(issues[0])
+        if request.target_environment == "production":
+            stage_uri = self.ledger.uri(request.release_version, "stage")
+            stage_record = self.ledger.read(request.release_version, "stage")
+            if stage_record is None:
+                raise PromotionError("PROMOTION_STAGE_LEDGER_REQUIRED")
+            if promotion_record_issues(stage_record, request.release_version, "stage", stage_uri):
+                raise PromotionError("PROMOTION_STAGE_LEDGER_INVALID")
+            expected_stage_material = {
+                "sourceArtifactUri": stage_record.get("targetArtifactUri"),
+                "artifactOciDigest": stage_record.get("artifactOciDigest"),
+                "sbomUri": stage_record.get("sbomUri"),
+                "attestationUri": stage_record.get("attestationUri"),
+                "webUri": stage_record.get("webUri"),
+                "manifestUri": stage_record.get("manifestUri"),
+                "manifestSha256": stage_record.get("manifestSha256"),
+                "signatureUri": stage_record.get("signatureUri"),
+                "evidenceIndexUri": stage_record.get("evidenceIndexUri"),
+                "evidenceIndexSha256": stage_record.get("evidenceIndexSha256"),
+            }
+            actual_stage_material = {
+                "sourceArtifactUri": request.evidence.artifact_uri,
+                "artifactOciDigest": request.evidence.artifact_oci_digest,
+                "sbomUri": request.evidence.sbom_uri,
+                "attestationUri": request.evidence.attestation_uri,
+                "webUri": request.evidence.web_uri,
+                "manifestUri": request.evidence.manifest_uri,
+                "manifestSha256": request.evidence.manifest_sha256,
+                "signatureUri": request.evidence.signature_uri,
+                "evidenceIndexUri": request.evidence.index_uri,
+                "evidenceIndexSha256": request.evidence.evidence_index_sha256,
+            }
+            if actual_stage_material != expected_stage_material:
+                raise PromotionError("PROMOTION_STAGE_LEDGER_MATERIAL_MISMATCH")
         receipt = self.verifier.verify(request, now)
         issues = _receipt_issues(request, receipt, now)
         if issues:
@@ -427,7 +556,14 @@ class _InMemoryVerifier:
                 raise PromotionError(f"PROMOTION_EVIDENCE_MISSING: {field}")
             if self.available[field] != value:
                 raise PromotionError(f"PROMOTION_EVIDENCE_TAMPERED: {field}")
-        return VerificationReceipt(request.evidence, self.identity, now, now + self.ttl)
+        return VerificationReceipt(
+            request.evidence,
+            request.evidence.manifest_sha256,
+            request.evidence.evidence_index_sha256,
+            self.identity,
+            now,
+            now + self.ttl,
+        )
 
 
 class _InMemoryStore:
@@ -608,10 +744,10 @@ class OrasDigestStore:
             if any(marker in lowered for marker in ("not found", "name unknown", "name_unknown")):
                 return
             raise PromotionError("PROMOTION_STORE_TAG_LIST_FAILED")
-        prefix = f"release-{release_version}-"
-        tags = sorted(line.strip() for line in listed.stdout.splitlines() if line.strip().startswith(prefix))
-        for tag in tags:
-            self.delete_tag(f"{target_repository}:{tag}")
+        # Never delete pre-existing release tags here: another concurrent run may
+        # already have copied its winning digest but not yet committed the ledger.
+        # Cleanup is limited to the exact tag this invocation proves it created.
+        _ = listed.stdout
 
     def copy_by_digest(self, source_uri: str, target_repository: str, target_tag: str) -> StoreCopy:
         source_digest = _uri_digest(source_uri)
@@ -813,7 +949,22 @@ class CommandEvidenceVerifier:
         result = self.runner.run([self.script], environment=environment)
         if result.returncode != 0 or "verify-release: PASS" not in result.stdout:
             raise PromotionError("PROMOTION_CURRENT_VERIFIER_FAILED")
-        return VerificationReceipt(evidence, self.identity, now, now + self.ttl)
+        measured: dict[str, str] = {}
+        for line in result.stdout.splitlines():
+            if line.startswith("VERIFIED_MANIFEST_SHA256="):
+                measured["manifest"] = line.partition("=")[2]
+            elif line.startswith("VERIFIED_EVIDENCE_INDEX_SHA256="):
+                measured["index"] = line.partition("=")[2]
+        if set(measured) != {"manifest", "index"} or not all(HEX64.fullmatch(value) for value in measured.values()):
+            raise PromotionError("PROMOTION_VERIFIER_MEASUREMENT_MISSING")
+        return VerificationReceipt(
+            evidence,
+            measured["manifest"],
+            measured["index"],
+            self.identity,
+            now,
+            now + self.ttl,
+        )
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -826,7 +977,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--manifest-sha256", required=True)
     parser.add_argument("--evidence-index-sha256", required=True)
     parser.add_argument("--actor", required=True)
-    parser.add_argument("--approver", required=True)
+    parser.add_argument("--approval-history", type=Path, required=True)
+    parser.add_argument("--environment-id", type=int, required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--run-attempt", type=int, required=True)
     parser.add_argument("--repository", required=True)
@@ -896,9 +1048,18 @@ def main(argv: list[str] | None = None) -> int:
             target_environment=arguments.target_environment,
             evidence=evidence,
             actor=arguments.actor,
-            approver=arguments.approver,
+            approver=(approval := approval_from_github_history(
+                parse_json_bytes(arguments.approval_history.read_bytes()),
+                arguments.target_environment,
+                arguments.environment_id,
+                arguments.run_id,
+                arguments.repository,
+            )).principal,
             run_id=arguments.run_id,
             run_attempt=arguments.run_attempt,
+            approval_environment_id=approval.environment_id,
+            approval_evidence_uri=approval.evidence_uri,
+            approval_evidence_sha256=approval.evidence_sha256,
             rollback_of_ledger_uri=rollback_uri,
         )
         service = PromotionService(

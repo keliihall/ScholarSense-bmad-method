@@ -20,7 +20,7 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-from check_release_source import build_git_inventory  # noqa: E402
+from check_release_source import runtime_release_source_inventory  # noqa: E402
 from release_json import canonical_bytes, canonical_sha256, load_json, schema_issues  # noqa: E402
 from archive import create_normalized_tar_gz  # noqa: E402
 
@@ -190,7 +190,8 @@ def build_release(root: Path, destination: Path) -> dict[str, Any]:
     remote_main = _git(project_root, "rev-parse", "refs/remotes/origin/main")
     if len(remote_main) != 40:
         raise RuntimeError("REMOTE_MAIN_COMMIT_INVALID")
-    source_manifest_sha256 = build_git_inventory(project_root, commit)["normalizedManifestSha256"]
+    source_inventory = runtime_release_source_inventory(project_root, commit)
+    source_manifest_sha256 = source_inventory["normalizedManifestSha256"]
     toolchain_lock = load_json(project_root / "contracts/release/toolchain-lock-1.0.0.json")
     backend_lock = load_json(project_root / "contracts/release/backend-lock-1.0.0.json")
     toolchain_lock_sha256 = canonical_sha256(toolchain_lock)
@@ -260,6 +261,7 @@ def build_release(root: Path, destination: Path) -> dict[str, Any]:
         for name, path in attempt_paths[0].items():
             shutil.copyfile(path, staging / name)
         (staging / "build-manifest.json").write_bytes(canonical_bytes(manifest))
+        (staging / "release-source-inventory.json").write_bytes(canonical_bytes(source_inventory))
         os.replace(staging, output)
         return manifest
 

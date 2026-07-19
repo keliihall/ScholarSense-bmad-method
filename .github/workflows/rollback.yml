@@ -17,6 +17,11 @@ on:
 
 permissions: {}
 
+env:
+  HISTORICAL_RELEASE_VERSION: ${{ inputs.historical_release_version }}
+  HISTORICAL_ENVIRONMENT: ${{ inputs.historical_environment }}
+  EXPECTED_RUNNER_IMAGE_VERSION: 20260714.240.1
+
 concurrency:
   group: protected-rollback-production-${{ inputs.historical_release_version }}
   cancel-in-progress: false
@@ -30,6 +35,8 @@ jobs:
       contents: write
       packages: write
     steps:
+      - name: Enforce frozen hosted runner image
+        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"
       - name: Checkout current immutable verifier and promotion adapter
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -38,9 +45,8 @@ jobs:
         env:
           ORAS_PASSWORD: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
-          PROMOTION_APPROVER: protected-environment:production
         run: |
           ./scripts/rollback-release.sh \
-            "${{ inputs.historical_release_version }}" \
-            "${{ inputs.historical_environment }}" \
+            "$HISTORICAL_RELEASE_VERSION" \
+            "$HISTORICAL_ENVIRONMENT" \
             "$RUNNER_TEMP/rollback-promotion-record.json"

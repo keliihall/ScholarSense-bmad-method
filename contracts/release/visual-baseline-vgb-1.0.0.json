@@ -1,8 +1,9 @@
 {
   "version": "VGB-1.0.0",
   "status": "approved",
-  "approvedByUxBrand": "Hei (delegated UX/Brand owner)",
-  "approvedByWebQa": "Hei (delegated Web QA owner)",
+  "approvedByUxBrand": "github-user:24710825:keliihall",
+  "approvedByWebQa": "automated-gate:.github/workflows/release.yml#job:formal-web",
+  "approvalPolicy": "single-accountable-plus-independent-automated-web-qa",
   "effectiveAt": "2026-07-19T09:47:15+08:00",
   "approvedArtifactSha256": "811cf79679aa946f52cf7c17451932cf89ef89e4a934b0fdd9e72e27b66ea5a2",
   "testEnvironmentVersion": "TEST-ENV-1.0.0",

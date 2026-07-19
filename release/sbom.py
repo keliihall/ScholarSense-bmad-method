@@ -26,6 +26,43 @@ BACKEND_SPECIAL_LICENSES = {
     "pkg:maven/org.slf4j/jul-to-slf4j@2.0.18": "MIT",
     "pkg:maven/org.slf4j/slf4j-api@2.0.18": "MIT",
 }
+BACKEND_APACHE_LICENSE_PURLS = {
+    "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.21",
+    "pkg:maven/commons-logging/commons-logging@1.3.6",
+    "pkg:maven/io.micrometer/micrometer-commons@1.17.0",
+    "pkg:maven/io.micrometer/micrometer-core@1.17.0",
+    "pkg:maven/io.micrometer/micrometer-jakarta9@1.17.0",
+    "pkg:maven/io.micrometer/micrometer-observation@1.17.0",
+    "pkg:maven/org.apache.logging.log4j/log4j-api@2.25.4",
+    "pkg:maven/org.apache.logging.log4j/log4j-to-slf4j@2.25.4",
+    "pkg:maven/org.apache.tomcat.embed/tomcat-embed-core@11.0.22",
+    "pkg:maven/org.apache.tomcat.embed/tomcat-embed-el@11.0.22",
+    "pkg:maven/org.apache.tomcat.embed/tomcat-embed-websocket@11.0.22",
+    "pkg:maven/org.jspecify/jspecify@1.0.0",
+    "pkg:maven/org.springframework.boot/spring-boot-actuator-autoconfigure@4.1.0",
+    "pkg:maven/org.springframework.boot/spring-boot-actuator@4.1.0",
+    "pkg:maven/org.springframework.boot/spring-boot-autoconfigure@4.1.0",
+    "pkg:maven/org.springframework.boot/spring-boot-health@4.1.0",
+    "pkg:maven/org.springframework.boot/spring-boot-http-converter@4.1.0",
+    "pkg:maven/org.springframework.boot/spring-boot-jackson@4.1.0",
+    "pkg:maven/org.springframework.boot/spring-boot-micrometer-metrics@4.1.0",
+    "pkg:maven/org.springframework.boot/spring-boot-micrometer-observation@4.1.0",
+    "pkg:maven/org.springframework.boot/spring-boot-servlet@4.1.0",
+    "pkg:maven/org.springframework.boot/spring-boot-tomcat@4.1.0",
+    "pkg:maven/org.springframework.boot/spring-boot-web-server@4.1.0",
+    "pkg:maven/org.springframework.boot/spring-boot-webmvc@4.1.0",
+    "pkg:maven/org.springframework.boot/spring-boot@4.1.0",
+    "pkg:maven/org.springframework/spring-aop@7.0.8",
+    "pkg:maven/org.springframework/spring-beans@7.0.8",
+    "pkg:maven/org.springframework/spring-context@7.0.8",
+    "pkg:maven/org.springframework/spring-core@7.0.8",
+    "pkg:maven/org.springframework/spring-expression@7.0.8",
+    "pkg:maven/org.springframework/spring-web@7.0.8",
+    "pkg:maven/org.springframework/spring-webmvc@7.0.8",
+    "pkg:maven/org.yaml/snakeyaml@2.6",
+    "pkg:maven/tools.jackson.core/jackson-core@3.1.4",
+    "pkg:maven/tools.jackson.core/jackson-databind@3.1.4",
+}
 LICENSE_OBLIGATIONS = {
     "0BSD": ["retain-license-text"],
     "Apache-2.0": ["retain-license-text", "retain-notice", "state-modifications"],
@@ -142,6 +179,7 @@ def npm_components(lock: dict[str, Any]) -> list[dict[str, Any]]:
     if not isinstance(packages, dict):
         raise ValueError("NPM_LOCK_PACKAGES_INVALID")
     by_purl: dict[str, dict[str, Any]] = {}
+    path_to_purl: dict[str, str] = {}
     for path, metadata in sorted(packages.items()):
         if not path:
             continue
@@ -155,6 +193,7 @@ def npm_components(lock: dict[str, Any]) -> list[dict[str, Any]]:
             raise ValueError(f"NPM_LOCK_COMPONENT_INCOMPLETE: {path}")
         name = _resolved_npm_name(source)
         purl = _npm_purl(name, version)
+        path_to_purl[path] = purl
         component = {
             "kind": "npm",
             "name": name,
@@ -164,11 +203,46 @@ def npm_components(lock: dict[str, Any]) -> list[dict[str, Any]]:
             "hashes": [_integrity_hash(integrity)],
             "licenseExpression": license_expression,
             "presence": "frontend-lock-and-bundled-build-input",
+            "dependsOn": [],
+            "direct": False,
         }
         previous = by_purl.get(purl)
-        if previous is not None and previous != component:
+        if previous is not None and {
+            key: value for key, value in previous.items() if key not in {"dependsOn", "direct"}
+        } != {key: value for key, value in component.items() if key not in {"dependsOn", "direct"}}:
             raise ValueError(f"NPM_PURL_REBOUND: {purl}")
-        by_purl[purl] = component
+        if previous is None:
+            by_purl[purl] = component
+
+    def resolve_dependency(path: str, name: str) -> str | None:
+        base = path
+        while True:
+            candidate = f"{base}/node_modules/{name}" if base else f"node_modules/{name}"
+            if candidate in path_to_purl:
+                return path_to_purl[candidate]
+            marker = base.rfind("/node_modules/")
+            if marker < 0:
+                base = ""
+            else:
+                base = base[:marker]
+            if not base and candidate == f"node_modules/{name}":
+                return None
+
+    root = packages.get("") if isinstance(packages.get(""), dict) else {}
+    for name in set(root.get("dependencies", {})) | set(root.get("devDependencies", {})):
+        resolved = resolve_dependency("", name)
+        if resolved is not None:
+            by_purl[resolved]["direct"] = True
+    for path, metadata in sorted(packages.items()):
+        if not path or not isinstance(metadata, dict):
+            continue
+        source = path_to_purl[path]
+        linked = set(by_purl[source]["dependsOn"])
+        for name in set(metadata.get("dependencies", {})) | set(metadata.get("optionalDependencies", {})):
+            resolved = resolve_dependency(path, name)
+            if resolved is not None and resolved != source:
+                linked.add(resolved)
+        by_purl[source]["dependsOn"] = sorted(linked)
     return [by_purl[purl] for purl in sorted(by_purl)]
 
 
@@ -256,7 +330,11 @@ def _nested_jar_payloads(jar: Path) -> dict[str, bytes]:
 
 
 def _backend_license(purl: str) -> str:
-    return BACKEND_SPECIAL_LICENSES.get(purl, "Apache-2.0")
+    if purl in BACKEND_SPECIAL_LICENSES:
+        return BACKEND_SPECIAL_LICENSES[purl]
+    if purl in BACKEND_APACHE_LICENSE_PURLS:
+        return "Apache-2.0"
+    return "UNKNOWN"
 
 
 def backend_components(lock: dict[str, Any], jar: Path) -> list[dict[str, Any]]:
@@ -285,6 +363,8 @@ def backend_components(lock: dict[str, Any], jar: Path) -> list[dict[str, Any]]:
                 "hashes": [{"alg": "SHA-256", "content": digest}],
                 "licenseExpression": _backend_license(purl),
                 "presence": "backend-jar-runtime",
+                "dependsOn": [],
+                "direct": False,
             }
         )
     generated = "spring-boot-jarmode-tools-4.1.0.jar"
@@ -305,11 +385,39 @@ def backend_components(lock: dict[str, Any], jar: Path) -> list[dict[str, Any]]:
             "hashes": [{"alg": "SHA-256", "content": hashlib.sha256(payloads[generated]).hexdigest()}],
             "licenseExpression": "Apache-2.0",
             "presence": "generated-from-spring-boot-loader-tools",
+            "dependsOn": [],
+            "direct": True,
         }
     )
     unexpected = sorted(set(payloads) - expected_names)
     if unexpected:
         raise ValueError(f"BACKEND_SBOM_UNEXPECTED_NESTED_JAR: {unexpected[0]}")
+    by_purl = {item["purl"]: item for item in components}
+
+    def walk(node: Any, parent: str | None = None) -> None:
+        if not isinstance(node, dict):
+            raise ValueError("BACKEND_SBOM_RUNTIME_GRAPH_INVALID")
+        coordinate = f"{node.get('groupId')}:{node.get('artifactId')}:{node.get('version')}"
+        purl = _maven_purl(coordinate)
+        current = parent
+        if purl in by_purl:
+            if parent is None:
+                by_purl[purl]["direct"] = True
+            elif parent != purl:
+                by_purl[parent]["dependsOn"] = sorted(set(by_purl[parent]["dependsOn"]) | {purl})
+            current = purl
+        children = node.get("children", [])
+        if children is not None and not isinstance(children, list):
+            raise ValueError("BACKEND_SBOM_RUNTIME_GRAPH_INVALID")
+        for child in children or []:
+            walk(child, current)
+
+    walk(lock.get("runtimeGraph"))
+    for coordinate in lock.get("runtimeGraphSupplement", []):
+        purl = _maven_purl(coordinate)
+        if purl not in by_purl:
+            raise ValueError(f"BACKEND_SBOM_RUNTIME_GRAPH_SUPPLEMENT_INVALID: {coordinate}")
+        by_purl[purl]["direct"] = True
     return sorted(components, key=lambda item: item["purl"])
 
 
@@ -376,6 +484,7 @@ def copy_component(component: dict[str, Any]) -> dict[str, Any]:
     return {
         **component,
         "hashes": [dict(item) for item in component["hashes"]],
+        "dependsOn": list(component.get("dependsOn", [])),
     }
 
 
@@ -404,6 +513,7 @@ def build_cyclonedx(
 ) -> dict[str, Any]:
     subject_ref = f"artifact:sha256:{subject['binarySha256']}"
     rendered = [_cdx_component(component) for component in sorted(components, key=lambda item: item["purl"])]
+    component_purls = {item["purl"] for item in components}
     return {
         "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
         "bomFormat": "CycloneDX",
@@ -449,7 +559,16 @@ def build_cyclonedx(
             ],
         },
         "components": rendered,
-        "dependencies": [{"ref": subject_ref, "dependsOn": [item["bom-ref"] for item in rendered]}],
+        "dependencies": [
+            {
+                "ref": subject_ref,
+                "dependsOn": [item["purl"] for item in components if item.get("direct", True)],
+            },
+            *[
+                {"ref": item["purl"], "dependsOn": [value for value in item.get("dependsOn", []) if value in component_purls]}
+                for item in sorted(components, key=lambda value: value["purl"])
+            ],
+        ],
         "vulnerabilities": sorted(vulnerabilities, key=lambda item: (item.get("id", ""), json.dumps(item, sort_keys=True))),
     }
 
@@ -481,6 +600,7 @@ def build_spdx(subject: dict[str, Any], components: list[dict[str, Any]], contex
         }
     ]
     relationships: list[dict[str, str]] = []
+    component_purls = {item["purl"] for item in components}
     for component in sorted(components, key=lambda item: item["purl"]):
         identifier = _spdx_id(component["purl"])
         packages.append(
@@ -504,9 +624,18 @@ def build_spdx(subject: dict[str, Any], components: list[dict[str, Any]], contex
                 "sourceInfo": f"kind={component['kind']};presence={component['presence']}",
             }
         )
-        relationships.append(
-            {"spdxElementId": root_id, "relationshipType": "DEPENDS_ON", "relatedSpdxElement": identifier}
-        )
+        if component.get("direct", True):
+            relationships.append(
+                {"spdxElementId": root_id, "relationshipType": "DEPENDS_ON", "relatedSpdxElement": identifier}
+            )
+        for dependency in (value for value in component.get("dependsOn", []) if value in component_purls):
+            relationships.append(
+                {
+                    "spdxElementId": identifier,
+                    "relationshipType": "DEPENDS_ON",
+                    "relatedSpdxElement": _spdx_id(dependency),
+                }
+            )
     namespace = f"https://scholarsense.suda.edu.cn/sbom/{subject['binarySha256']}/spdx"
     annotations = [
         f"scholarsense:trivy-archive-sha256={context.trivy_archive_sha256}",
@@ -594,6 +723,28 @@ def sbom_pair_issues(
         issues.append("SBOM_CYCLONEDX_COMPONENT_SET_MISMATCH")
     if set(spdx_items) != set(expected):
         issues.append("SBOM_SPDX_COMPONENT_SET_MISMATCH")
+    expected_edges = {
+        (component["purl"], dependency)
+        for component in components
+        for dependency in component.get("dependsOn", [])
+        if dependency in expected
+    }
+    cdx_edges = {
+        (entry.get("ref"), dependency)
+        for entry in cyclonedx.get("dependencies", [])
+        if isinstance(entry, dict) and entry.get("ref") != f"artifact:sha256:{subject['binarySha256']}"
+        for dependency in entry.get("dependsOn", [])
+    }
+    spdx_to_purl = {package.get("SPDXID"): purl for purl, package in spdx_items.items()}
+    spdx_edges = {
+        (spdx_to_purl.get(item.get("spdxElementId")), spdx_to_purl.get(item.get("relatedSpdxElement")))
+        for item in spdx.get("relationships", [])
+        if isinstance(item, dict) and item.get("spdxElementId") != "SPDXRef-Artifact"
+    }
+    if cdx_edges != expected_edges:
+        issues.append("SBOM_CYCLONEDX_DEPENDENCY_GRAPH_MISMATCH")
+    if spdx_edges != expected_edges:
+        issues.append("SBOM_SPDX_DEPENDENCY_GRAPH_MISMATCH")
     for purl, component in expected.items():
         cdx = cdx_items.get(purl, {})
         spdx_component = spdx_items.get(purl, {})

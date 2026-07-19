@@ -24,13 +24,16 @@
     "evidenceExpiresAt": {"type": "string", "format": "date-time"},
     "actor": {"type": "string", "minLength": 2},
     "approver": {"type": "string", "minLength": 2},
+    "approvalEnvironmentId": {"type": "integer", "minimum": 1},
+    "approvalEvidenceUri": {"type": "string", "pattern": "^https://api\\.github\\.com/repos/keliihall/ScholarSense-bmad-method/actions/runs/[0-9]+/approvals$"},
+    "approvalEvidenceSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "runId": {"type": "string", "pattern": "^[0-9]+$"},
     "runAttempt": {"type": "integer", "minimum": 1},
     "result": {"type": "string", "enum": ["promoted", "replayed", "conflict", "rejected"]},
     "createdAt": {"type": "string", "format": "date-time"},
-    "ledgerUri": {"type": "string", "format": "uri"},
-    "rollbackOfLedgerUri": {"type": "string", "format": "uri"}
+    "ledgerUri": {"type": "string", "minLength": 1},
+    "rollbackOfLedgerUri": {"type": "string", "minLength": 1}
   },
-  "required": ["version", "releaseVersion", "fromEnvironment", "targetEnvironment", "sourceArtifactUri", "targetArtifactUri", "targetTagUri", "artifactOciDigest", "sbomUri", "attestationUri", "webUri", "manifestUri", "manifestSha256", "signatureUri", "evidenceIndexUri", "evidenceIndexSha256", "verifierIdentity", "verifiedAt", "evidenceExpiresAt", "actor", "approver", "runId", "runAttempt", "result", "createdAt", "ledgerUri"],
+  "required": ["version", "releaseVersion", "fromEnvironment", "targetEnvironment", "sourceArtifactUri", "targetArtifactUri", "targetTagUri", "artifactOciDigest", "sbomUri", "attestationUri", "webUri", "manifestUri", "manifestSha256", "signatureUri", "evidenceIndexUri", "evidenceIndexSha256", "verifierIdentity", "verifiedAt", "evidenceExpiresAt", "actor", "approver", "approvalEnvironmentId", "approvalEvidenceUri", "approvalEvidenceSha256", "runId", "runAttempt", "result", "createdAt", "ledgerUri"],
   "additionalProperties": false
 }
