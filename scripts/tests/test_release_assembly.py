@@ -36,7 +36,8 @@ class ReleaseAssemblyTest(unittest.TestCase):
         frontend = b"frontend-artifact"
         build = load_json(PROJECT_ROOT / "contracts/release/fixtures/valid/build-manifest.json")
         inventory = load_json(PROJECT_ROOT / "contracts/release/release-source-inventory-1.0.0.json")
-        build["sourceCommit"] = inventory["sourceCommit"]
+        build["sourceCommit"] = "f" * 40
+        build["sourceManifestSha256"] = inventory["normalizedManifestSha256"]
         build["artifacts"] = [
             {
                 "name": "scholarsense-backend.jar",
