@@ -215,9 +215,13 @@ def validate_release_source_inventory(
     for field in ("gitTreeOid", "fileCount", "normalizedManifestSha256"):
         if document.get(field) != actual[field]:
             issues.append(f"RELEASE_SOURCE_{field.upper()}_MISMATCH")
-    contains = _git(project_root, "branch", "-r", "--contains", commit)
-    if contains.returncode != 0 or "origin/main" not in contains.stdout:
-        issues.append("RELEASE_SOURCE_NOT_ON_REMOTE_MAIN")
+    # The checked-in approval inventory must be anchored on protected remote main.
+    # A runtime inventory is instead anchored to the exact build commit supplied by
+    # the caller, so local/review-branch replays remain possible before merge.
+    if expected_commit is None:
+        contains = _git(project_root, "branch", "-r", "--contains", commit)
+        if contains.returncode != 0 or "origin/main" not in contains.stdout:
+            issues.append("RELEASE_SOURCE_NOT_ON_REMOTE_MAIN")
     return sorted(set(issues))
 
 
