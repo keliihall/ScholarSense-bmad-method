@@ -427,7 +427,7 @@ def evidence_index_issues(index: Any, release_manifest: Any) -> list[str]:
 
 
 def write_frozen_document(path: Path, document: dict[str, Any]) -> None:
-    payload = canonical_bytes(document) + b"\n"
+    payload = canonical_bytes(document)
     target = path.resolve()
     target.parent.mkdir(parents=True, exist_ok=True)
     try:

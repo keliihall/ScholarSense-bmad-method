@@ -259,7 +259,7 @@ def build_release(root: Path, destination: Path) -> dict[str, Any]:
         staging.mkdir()
         for name, path in attempt_paths[0].items():
             shutil.copyfile(path, staging / name)
-        (staging / "build-manifest.json").write_bytes(canonical_bytes(manifest) + b"\n")
+        (staging / "build-manifest.json").write_bytes(canonical_bytes(manifest))
         os.replace(staging, output)
         return manifest
 
