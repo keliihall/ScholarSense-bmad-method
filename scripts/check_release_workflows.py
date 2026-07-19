@@ -118,6 +118,9 @@ def validate_release_workflows(project_root: Path) -> list[str]:
         for token in required_tokens:
             if token not in release:
                 issues.append(f"RELEASE_LIFECYCLE_STEP_MISSING: {token}")
+        build = bodies.get("build-cas", "")
+        if "fetch-depth: 0" not in build:
+            issues.append("RELEASE_BUILD_FULL_SOURCE_HISTORY_MISSING")
         promotion = bodies.get("promotion", "")
         if "environment: ${{ inputs.target_environment }}" not in promotion:
             issues.append("RELEASE_PROMOTION_PROTECTED_ENVIRONMENT_MISSING")
