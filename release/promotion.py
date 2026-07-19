@@ -605,7 +605,7 @@ class OrasDigestStore:
         listed = self.runner.run([self.oras, "repo", "tags", target_repository])
         if listed.returncode != 0:
             lowered = listed.stderr.lower()
-            if "not found" in lowered or "name_unknown" in lowered:
+            if any(marker in lowered for marker in ("not found", "name unknown", "name_unknown")):
                 return
             raise PromotionError("PROMOTION_STORE_TAG_LIST_FAILED")
         prefix = f"release-{release_version}-"

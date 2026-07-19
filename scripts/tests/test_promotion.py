@@ -239,6 +239,7 @@ class _FakeOrasRunner:
         self.descriptors: dict[str, str] = {}
         self.commands: list[list[str]] = []
         self.package_versions: list[dict] = []
+        self.repo_tags_error: str | None = None
 
     def run(self, arguments, *, environment=None, stdin=None) -> CommandResult:
         command = list(arguments)
@@ -256,6 +257,8 @@ class _FakeOrasRunner:
             self.package_versions = [item for item in self.package_versions if item["id"] != version_id]
             return CommandResult(0, "", "")
         if command[1:3] == ["repo", "tags"]:
+            if self.repo_tags_error is not None:
+                return CommandResult(1, "", self.repo_tags_error)
             repository = command[3]
             tags = sorted(
                 uri.removeprefix(f"{repository}:")
@@ -338,6 +341,18 @@ class _FakeGitHubRunner:
 
 
 class PromotionRealAdapterUnitTest(unittest.TestCase):
+    def test_ghcr_prepare_treats_registry_name_unknown_as_an_absent_repository(self) -> None:
+        runner = _FakeOrasRunner()
+        runner.repo_tags_error = (
+            "Error response from registry: name unknown: "
+            "repository name not known to registry"
+        )
+        store = OrasDigestStore(Path("/controlled/oras"), runner)
+
+        store.prepare("1.0.0", "ghcr.io/keliihall/scholarsense-release-stage")
+
+        self.assertFalse(any(len(item) > 1 and item[1] == "copy" for item in runner.commands))
+
     def test_oras_adapter_copies_and_reads_back_only_the_selected_digest(self) -> None:
         runner = _FakeOrasRunner()
         selected = evidence()
