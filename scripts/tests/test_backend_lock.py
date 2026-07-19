@@ -50,6 +50,20 @@ class BackendLockContractTest(unittest.TestCase):
             validate_backend_lock(candidate, PROJECT_ROOT),
         )
 
+        incomplete = copy.deepcopy(lock)
+        bootstrap = next(
+            item for item in incomplete["pluginResolution"] if item["root"] == coordinate
+        )
+        bootstrap["artifacts"] = [
+            item
+            for item in bootstrap["artifacts"]
+            if item["coordinate"] != "org.tukaani:xz:jar:1.11"
+        ]
+        self.assertIn(
+            "BACKEND_LOCK_BOOTSTRAP_PLUGIN_GRAPH_DRIFT",
+            validate_backend_lock(incomplete, PROJECT_ROOT),
+        )
+
     def test_cold_cache_preparer_fetches_verifies_and_then_reuses_locked_bytes(self) -> None:
         source_repository = Path.home() / ".m2/repository"
 

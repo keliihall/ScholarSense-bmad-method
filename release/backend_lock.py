@@ -28,6 +28,7 @@ BUILD_PLUGINS = (
     ("org.apache.maven.plugins", "maven-surefire-plugin", "3.5.6"),
 )
 BOOTSTRAP_PLUGIN = "org.apache.maven.plugins:maven-dependency-plugin:3.10.0"
+BOOTSTRAP_PLUGIN_GRAPH_SHA256 = "9d74ebed40422f19730cdcb6f935c9168b8ad10da025edd94a3acfd128d50721"
 DYNAMIC = re.compile(r"(?i)(?:SNAPSHOT|LATEST|RELEASE|\[|\]|\(|\)|\+|\*)")
 GENERATED_RUNTIME_LIBS = {"spring-boot-jarmode-tools-4.1.0.jar"}
 MAVEN_NAMESPACE = {"m": "http://maven.apache.org/POM/4.0.0"}
@@ -207,6 +208,16 @@ def bootstrap_plugin_artifacts(lock: dict[str, Any]) -> list[dict[str, str]]:
             raise ValueError("BACKEND_LOCK_BOOTSTRAP_PLUGIN_DIGEST_INVALID")
         if not re.fullmatch(r"[0-9a-f]{64}", str(artifact.get("pomSha256") or "")):
             raise ValueError("BACKEND_LOCK_BOOTSTRAP_PLUGIN_DIGEST_INVALID")
+    graph_digest = hashlib.sha256(
+        json.dumps(
+            artifacts,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    if graph_digest != BOOTSTRAP_PLUGIN_GRAPH_SHA256:
+        raise ValueError("BACKEND_LOCK_BOOTSTRAP_PLUGIN_GRAPH_DRIFT")
     return artifacts
 
 

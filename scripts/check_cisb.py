@@ -31,6 +31,18 @@ PROMOTION_IDENTITY = re.compile(
     r"^repo:(?P<repository>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+):environment:\{stage\|production\}"
     r"#workflow:(?P<workflow>[A-Za-z0-9_.-]+\.ya?ml)#job:(?P<job>[a-z][a-z0-9-]*)$"
 )
+EXPECTED_REPOSITORY = "keliihall/ScholarSense-bmad-method"
+EXPECTED_REPOSITORY_URL = f"https://github.com/{EXPECTED_REPOSITORY}"
+EXPECTED_PROTECTED_REF = "refs/heads/main"
+EXPECTED_RELEASE_WORKFLOW = ".github/workflows/release.yml"
+EXPECTED_UX_BRAND_OWNER = "github-user:24710825:keliihall"
+EXPECTED_WEB_QA_GATE = ".github/workflows/release.yml#job:formal-web-test"
+EXPECTED_RUNNER = {
+    "provider": "GitHub-hosted",
+    "label": "ubuntu-24.04",
+    "imageVersion": "20260714.240.1",
+    "runtimeImageVersionVariable": "ImageVersion",
+}
 WRITE_PERMISSION = re.compile(
     r"(?m)^      (?:contents|packages|actions|checks|pull-requests|issues|id-token|attestations|artifact-metadata):\s*write\s*$"
 )
@@ -73,22 +85,41 @@ def _workflow_jobs(project_root: Path, workflow_name: str) -> dict[str, str]:
 
 
 def _job_executes(body: str, command: str) -> bool:
+    if re.search(r"(?m)^    if:\s*", body):
+        return False
     lines = body.splitlines()
-    for index, line in enumerate(lines):
-        match = re.fullmatch(r" {8}run:\s*(.*)", line)
-        if match is None:
+    step_starts = [index for index, line in enumerate(lines) if line.startswith("      - ")]
+    forms = {command, f"./{command}"}
+    for position, start in enumerate(step_starts):
+        end = step_starts[position + 1] if position + 1 < len(step_starts) else len(lines)
+        step = lines[start:end]
+        if any(
+            re.fullmatch(r" {8}(?:if|continue-on-error|shell):.*", line)
+            for line in step
+        ):
             continue
-        declaration = match.group(1).strip()
-        if declaration not in {"|", ">", "|-", ">-"}:
-            if command in declaration and not declaration.startswith("#"):
-                return True
-            continue
-        for candidate in lines[index + 1 :]:
-            if candidate.strip() and len(candidate) - len(candidate.lstrip()) <= 8:
+        for index, line in enumerate(step):
+            match = re.fullmatch(r" {8}run:\s*(.*)", line)
+            if match is None:
+                continue
+            declaration = match.group(1).strip()
+            if declaration not in {"|", ">", "|-", ">-"}:
+                if declaration in forms:
+                    return True
                 break
-            rendered = candidate.strip()
-            if rendered and not rendered.startswith("#") and command in rendered:
+            executable: list[str] = []
+            for candidate in step[index + 1 :]:
+                if candidate.strip() and len(candidate) - len(candidate.lstrip()) <= 8:
+                    break
+                rendered = candidate.strip()
+                if rendered and not rendered.startswith("#"):
+                    executable.append(rendered)
+            if not executable:
+                break
+            first = executable[0]
+            if first in forms or first in {f"{form} \\" for form in forms}:
                 return True
+            break
     return False
 
 
@@ -97,11 +128,18 @@ def visual_governance_issues(
 ) -> list[str]:
     issues: list[str] = []
     approval = document.get("goldenApproval", {})
+    if (
+        visual_baseline.get("approvedByUxBrand") != EXPECTED_UX_BRAND_OWNER
+        or approval.get("accountablePrincipal") != EXPECTED_UX_BRAND_OWNER
+    ):
+        issues.append("CISB_VGB_UX_BRAND_OWNER_INVALID")
     if visual_baseline.get("approvedByUxBrand") != approval.get("accountablePrincipal"):
         issues.append("CISB_VGB_UX_BRAND_OWNER_MISMATCH")
     if visual_baseline.get("approvalPolicy") != approval.get("policy"):
         issues.append("CISB_VGB_APPROVAL_POLICY_MISMATCH")
     gate = approval.get("webQaGate")
+    if gate != EXPECTED_WEB_QA_GATE:
+        issues.append("CISB_WEB_QA_GATE_INVALID")
     if visual_baseline.get("automatedWebQaGate") != f"automated-gate:{gate}":
         issues.append("CISB_VGB_WEB_QA_GATE_MISMATCH")
     gate_match = WEB_QA_GATE.fullmatch(gate) if isinstance(gate, str) else None
@@ -115,25 +153,12 @@ def visual_governance_issues(
     return issues
 
 
-def _repository_slug(document: dict[str, Any]) -> str | None:
-    value = _get(document, "repository.url")
-    if not isinstance(value, str):
-        return None
-    match = re.fullmatch(r"https://github\.com/([^/]+/[^/]+?)(?:\.git)?/?", value)
-    return match.group(1) if match else None
-
-
-def _identity_duty(document: dict[str, Any], field: str) -> tuple[str, str] | None:
-    release_workflow = Path(str(_get(document, "ci.workflow") or "")).name
-    web_qa_gate = _get(document, "goldenApproval.webQaGate")
-    web_qa_match = WEB_QA_GATE.fullmatch(web_qa_gate) if isinstance(web_qa_gate, str) else None
+def _identity_duty(field: str) -> tuple[str, str] | None:
+    release_workflow = Path(EXPECTED_RELEASE_WORKFLOW).name
     duties = {
         "identities.build": (release_workflow, "build-test"),
         "identities.attestation": ("artifact-signing.yml", "sign"),
-        "identities.webQa": (
-            web_qa_match.group("workflow") if web_qa_match else "",
-            web_qa_match.group("job") if web_qa_match else "",
-        ),
+        "identities.webQa": (release_workflow, "formal-web-test"),
         "identities.verifier": (release_workflow, "independent-verifier"),
     }
     return duties.get(field)
@@ -144,14 +169,14 @@ def _identity_job_issues(document: dict[str, Any], project_root: Path, field: st
     match = IDENTITY_JOB.fullmatch(value) if isinstance(value, str) else None
     if match is None:
         return [f"CISB_IDENTITY_JOB_INVALID: {field}"]
-    if match.group("repository") != _repository_slug(document):
+    if match.group("repository") != EXPECTED_REPOSITORY:
         return [f"CISB_IDENTITY_REPOSITORY_MISMATCH: {field}"]
-    if match.group("ref") != _get(document, "ci.protectedRef"):
+    if match.group("ref") != EXPECTED_PROTECTED_REF:
         return [f"CISB_IDENTITY_REF_MISMATCH: {field}"]
     jobs = _workflow_jobs(project_root, match.group("workflow"))
     if match.group("job") not in jobs:
         return [f"CISB_IDENTITY_JOB_NOT_FOUND: {field}"]
-    if (match.group("workflow"), match.group("job")) != _identity_duty(document, field):
+    if (match.group("workflow"), match.group("job")) != _identity_duty(field):
         return [f"CISB_IDENTITY_DUTY_MISMATCH: {field}"]
     return []
 
@@ -163,9 +188,9 @@ def _signer_identity_issues(
     match = SIGNER_IDENTITY.fullmatch(value) if isinstance(value, str) else None
     if match is None:
         return [f"CISB_SIGNER_IDENTITY_INVALID: {field}"]
-    if match.group("repository") != _repository_slug(document):
+    if match.group("repository") != EXPECTED_REPOSITORY:
         return [f"CISB_SIGNER_REPOSITORY_MISMATCH: {field}"]
-    if match.group("ref") != _get(document, "ci.protectedRef"):
+    if match.group("ref") != EXPECTED_PROTECTED_REF:
         return [f"CISB_SIGNER_REF_MISMATCH: {field}"]
     if match.group("workflow") != expected_workflow:
         return [f"CISB_SIGNER_DUTY_MISMATCH: {field}"]
@@ -179,9 +204,9 @@ def _promotion_identity_issues(document: dict[str, Any], project_root: Path) -> 
     match = PROMOTION_IDENTITY.fullmatch(value) if isinstance(value, str) else None
     if match is None:
         return ["CISB_PROMOTION_IDENTITY_INVALID"]
-    if match.group("repository") != _repository_slug(document):
+    if match.group("repository") != EXPECTED_REPOSITORY:
         return ["CISB_PROMOTION_REPOSITORY_MISMATCH"]
-    release_workflow = Path(str(_get(document, "ci.workflow") or "")).name
+    release_workflow = Path(EXPECTED_RELEASE_WORKFLOW).name
     if (match.group("workflow"), match.group("job")) != (release_workflow, "promotion"):
         return ["CISB_PROMOTION_DUTY_MISMATCH"]
     if match.group("job") not in _workflow_jobs(project_root, match.group("workflow")):
@@ -275,6 +300,14 @@ def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
     authority = document.get("authority", {})
     if authority.get("accountable") != "Hei":
         issues.append("CISB_PLATFORM_BASELINE_INCOMPLETE: authority.accountable")
+    if _get(document, "repository.url") != EXPECTED_REPOSITORY_URL:
+        issues.append("CISB_REPOSITORY_MISMATCH")
+    if _get(document, "repository.defaultBranch") != "main":
+        issues.append("CISB_DEFAULT_BRANCH_MISMATCH")
+    if _get(document, "ci.protectedRef") != EXPECTED_PROTECTED_REF:
+        issues.append("CISB_PROTECTED_REF_MISMATCH")
+    if _get(document, "ci.workflow") != EXPECTED_RELEASE_WORKFLOW:
+        issues.append("CISB_RELEASE_WORKFLOW_MISMATCH")
     if not COMMIT_OID.fullmatch(str(_get(document, "repository.sourceCommit") or "")):
         issues.append("CISB_PLATFORM_BASELINE_INCOMPLETE: repository.sourceCommit")
     for tool in ("trivy", "cosign", "oras"):
@@ -286,8 +319,11 @@ def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
             if not COMMIT_OID.fullmatch(str(commit)):
                 issues.append(f"CISB_PLATFORM_BASELINE_INCOMPLETE: toolchain.actions.{name}")
 
-    if _get(document, "runner.runtimeImageVersionVariable") != "ImageVersion":
-        issues.append("CISB_PLATFORM_BASELINE_INCOMPLETE: runner.runtimeImageVersionVariable")
+    if any(
+        _get(document, f"runner.{field}") != expected
+        for field, expected in EXPECTED_RUNNER.items()
+    ):
+        issues.append("CISB_RUNNER_BASELINE_MISMATCH")
     artifact_signer = _get(document, "identities.artifactSigner")
     manifest_signer = _get(document, "identities.manifestSigner")
     if artifact_signer == manifest_signer:

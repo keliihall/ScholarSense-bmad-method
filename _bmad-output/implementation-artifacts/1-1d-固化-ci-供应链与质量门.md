@@ -4,7 +4,7 @@ baseline_commit: NO_VCS
 
 # Story 1.1d：固化 CI、供应链与质量门
 
-Status: review
+Status: done
 
 > 状态说明：静态 G-01/G-05/PAB-1.0.0 已批准，1.1a—1.1c 已完成；当前工作区仍不是 Git 仓库，且没有 CI、受控制品库、attestation store、受保护环境或提升端点。`ready-for-dev` 只表示可开始“U1 本地可复现构建合同”，不表示完成平台已具备。Git/CI/store/attestation/promotion 平台基线冻结并产生真实证据前，本 Story 不得进入 `review`/`done`，也不得把本地报告冒充 provenance、签名或生产提升证据。
 
@@ -291,6 +291,13 @@ Status: review
 - [x] [Review][Patch] 将 cold-cache 预热执行的 `maven-dependency-plugin` 版本、传递解析图与摘要纳入 backend lock，并在首次执行前验真 [scripts/bootstrap.sh:24]
 - [x] [Review][Patch] 让 Golden workflow checker 强制 `build-candidate` 使用 CISB 冻结的 GitHub-hosted runner，并拒绝只在注释/非执行文本中出现的 `ImageVersion` 守卫 [scripts/check_release_workflows.py:204]
 - [x] [Review][Patch] 完成“唯一人类 UX/Brand owner + 独立自动 WebQA”合同统一：修正 AC/Task 中的“双审批”残留，并让语义门拒绝 CISB/VGB owner 或未实际执行的 WebQA gate 漂移 [_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md:167]
+
+#### 定向复核验证（2026-07-20）
+
+- [x] [Review][Patch] CISB identity 仍可随同一待验基线整体漂移：同步替换 `repository.url` 与全部 identity 为 fork，或同步替换 `ci.protectedRef` 与 identity ref 为非保护分支时，校验仍通过，因为期望 repository/ref 来自同一份待验 CISB，未绑定冻结仓库与实际 workflow main guard [scripts/check_cisb.py:147]
+- [x] [Review][Patch] Maven bootstrap plugin 传递图仍可删项通过：校验只检查现存条目形状/摘要，并将 bootstrap root 排除于实际解析图对账；删除任一传递 artifact 后仍返回 PASS，首次 Maven 执行可在线补拉未预先验真依赖 [release/backend_lock.py:281]
+- [x] [Review][Patch] Golden `ImageVersion` 守卫仍可被跳过：checker 只检查精确 `run:` 文本存在，不检查守卫 step 是否必然执行且 fail closed；增加 `if: false` 或等价非执行路径仍无告警 [scripts/check_release_workflows.py:223]
+- [x] [Review][Patch] UX/Brand owner 与自动 WebQA 语义门仍可绕过：`_job_executes` 仅做子串匹配，将真实调用改为 `echo ./scripts/run-formal-web-evidence.sh ...` 仍被判定已执行；同时把 CISB/VGB owner 改为同一非批准主体也只满足交叉相等，未绑定冻结 owner [scripts/check_cisb.py:75]
 
 ## Dev Notes
 

@@ -97,6 +97,31 @@ class ReleaseWorkflowContractTest(unittest.TestCase):
                 "        # " + guard.strip(),
                 "GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING",
             ),
+            "guard step skipped": (
+                "      - name: Enforce frozen hosted runner image\n",
+                "      - name: Enforce frozen hosted runner image\n"
+                "        if: ${{ false }}\n",
+                "GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING",
+            ),
+            "guard failure ignored": (
+                "      - name: Enforce frozen hosted runner image\n",
+                "      - name: Enforce frozen hosted runner image\n"
+                "        continue-on-error: true\n",
+                "GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING",
+            ),
+            "runner image overridden": (
+                "      - name: Enforce frozen hosted runner image\n",
+                "      - name: Enforce frozen hosted runner image\n"
+                "        env:\n"
+                "          ImageVersion: 20260714.240.1\n",
+                "GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING",
+            ),
+            "runner image overridden globally": (
+                "  EXPECTED_RUNNER_IMAGE_VERSION: 20260714.240.1\n",
+                "  EXPECTED_RUNNER_IMAGE_VERSION: 20260714.240.1\n"
+                "  ImageVersion: 20260714.240.1\n",
+                "GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING",
+            ),
         }
         for label, (old, new, expected_issue) in mutations.items():
             with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:

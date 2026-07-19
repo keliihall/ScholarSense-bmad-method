@@ -54,6 +54,28 @@ def _jobs(content: str) -> tuple[list[str], dict[str, str]]:
     return [name for name, _body in matches], dict(matches)
 
 
+def _step_blocks(body: str) -> list[list[str]]:
+    lines = body.splitlines()
+    starts = [index for index, line in enumerate(lines) if line.startswith("      - ")]
+    return [
+        lines[start : starts[position + 1] if position + 1 < len(starts) else len(lines)]
+        for position, start in enumerate(starts)
+    ]
+
+
+def _has_unconditional_first_step(body: str, name: str, run: str) -> bool:
+    steps = _step_blocks(body)
+    if not steps or steps[0][0] != f"      - name: {name}":
+        return False
+    step = steps[0]
+    if any(
+        re.fullmatch(r" {8}(?:if|continue-on-error|env|shell):.*", line)
+        for line in step
+    ):
+        return False
+    return f"        run: {run}" in step
+
+
 def validate_release_workflows(project_root: Path) -> list[str]:
     root = project_root.resolve()
     ci, issues = _read(root / ".github/workflows/ci.yml", "CI_WORKFLOW_MISSING")
@@ -222,10 +244,27 @@ def validate_release_workflows(project_root: Path) -> list[str]:
             issues.append("GOLDEN_APPROVAL_HOSTED_RUNNER_MISMATCH")
         expected_environment = f"  EXPECTED_RUNNER_IMAGE_VERSION: {runner_image_version}"
         expected_guard = (
-            f'        run: test "${{{runtime_version_variable}:-missing}}" = '
+            f'test "${{{runtime_version_variable}:-missing}}" = '
             '"$EXPECTED_RUNNER_IMAGE_VERSION"'
         )
-        if expected_environment not in golden.splitlines() or expected_guard not in build_candidate.splitlines():
+        runtime_override = re.search(
+            rf"(?m)^\s{{4,}}(?:{re.escape(runtime_version_variable)}|EXPECTED_RUNNER_IMAGE_VERSION):",
+            build_candidate,
+        )
+        global_runtime_override = re.search(
+            rf"(?m)^\s+(?:{re.escape(runtime_version_variable)}):",
+            golden,
+        )
+        if (
+            expected_environment not in golden.splitlines()
+            or runtime_override
+            or global_runtime_override
+            or not _has_unconditional_first_step(
+                build_candidate,
+                "Enforce frozen hosted runner image",
+                expected_guard,
+            )
+        ):
             issues.append("GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING")
         capture = bodies.get("capture-goldens", "")
         if not re.search(r"(?m)^    needs:\s*build-candidate\s*$", capture):
