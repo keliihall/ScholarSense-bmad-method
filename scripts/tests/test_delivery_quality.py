@@ -28,10 +28,25 @@ class DeliveryQualityTest(unittest.TestCase):
 
     def test_bootstrap_prewarms_runtime_dependencies_before_offline_verification(self) -> None:
         bootstrap = (PROJECT_ROOT / "scripts/bootstrap.sh").read_text(encoding="utf-8")
-        runtime_resolve = "dependency:resolve -DincludeScope=runtime"
+        plugin_prepare = "prepare_locked_maven_plugin.py"
+        runtime_resolve = (
+            "org.apache.maven.plugins:maven-dependency-plugin:3.10.0:resolve "
+            "-DincludeScope=runtime"
+        )
+        plugin_resolve = (
+            "org.apache.maven.plugins:maven-dependency-plugin:3.10.0:resolve-plugins"
+        )
+        normalized = " ".join(bootstrap.replace("\\\n", " ").split())
 
-        self.assertIn(runtime_resolve, bootstrap)
-        self.assertLess(bootstrap.index(runtime_resolve), bootstrap.index('echo "[bootstrap] PASS"'))
+        self.assertIn(plugin_prepare, bootstrap)
+        self.assertIn('"$ROOT_DIR" "$MAVEN_REPOSITORY"', normalized)
+        self.assertEqual(2, bootstrap.count('-Dmaven.repo.local="$MAVEN_REPOSITORY"'))
+        self.assertIn(runtime_resolve, normalized)
+        self.assertIn(plugin_resolve, bootstrap)
+        self.assertLess(normalized.index(plugin_prepare), normalized.index(runtime_resolve))
+        self.assertLess(normalized.index(runtime_resolve), normalized.index('echo "[bootstrap] PASS"'))
+        self.assertNotIn(" dependency:resolve ", bootstrap)
+        self.assertNotIn(" dependency:resolve-plugins ", bootstrap)
 
     def test_frontend_replay_copies_every_production_root_it_scans(self) -> None:
         verifier = (PROJECT_ROOT / "scripts/verify_frontend.sh").read_text(encoding="utf-8")

@@ -4,7 +4,7 @@ baseline_commit: NO_VCS
 
 # Story 1.1d：固化 CI、供应链与质量门
 
-Status: review
+Status: done
 
 > 状态说明：静态 G-01/G-05/PAB-1.0.0 已批准，1.1a—1.1c 已完成；当前工作区仍不是 Git 仓库，且没有 CI、受控制品库、attestation store、受保护环境或提升端点。`ready-for-dev` 只表示可开始“U1 本地可复现构建合同”，不表示完成平台已具备。Git/CI/store/attestation/promotion 平台基线冻结并产生真实证据前，本 Story 不得进入 `review`/`done`，也不得把本地报告冒充 provenance、签名或生产提升证据。
 
@@ -164,7 +164,7 @@ Status: review
 **Then** 独立正式入口 `run-formal-web-evidence` 只接受 artifact store URI、expected frontend artifact SHA-256、selected BuildManifest digest 与 TEST-ENV digest；从 store 下载待提升归档，验证 size/mediaType/hash/signature/provenance，安全解包到只读临时目录并直接服务这些冻结字节。正式路径禁止执行 `npm run build`、`vite build`、读取工作区源码/`dist` 或把当前源码重建结果作为测试 subject；报告 `subjectArtifactSha256` 必须等于 ReleaseManifest 与 promotion gate 使用的前端 digest  
 **And** Chrome 150/149 与 Edge 150/149 分别覆盖 1440×900、1366×768、375×812、320px reflow、200% zoom、键盘/焦点、非颜色状态、等价表格/live region、axe/WCAG baseline、视觉差异、reduced-motion、资源/base-path/console/network error，并生成绑定 source/artifact/BuildManifest/TEST-ENV/runner/browser executable digest 的机器报告和可读摘要  
 **And** `VGB-1.0.0` 为版本化只读 golden manifest：每个 OS/browser 完整版本与 executable digest/page/viewport 都有预先存在的 golden URI/SHA-256；固定 `deviceScaleFactor=1`、`locale=zh-CN`、`timezone=Asia/Shanghai`、light color scheme、clock/data/network、实际字体文件/runner image digest，等待 `document.fonts.ready`，禁用 animation/transition、隐藏 caret、固定 reduced-motion，并以 `threshold=0.1,maxDiffPixels=0` 比较且保存 golden/actual/diff digest  
-**And** release workflow 禁止 `--update-snapshots` 或本次 run 生成 expected 后自验；golden 只能由独立受保护更新工作流发布新版本，并取得具名 UX/品牌 owner 与 Web QA 双审批。本次 run 之前不存在/未批准、摘要漂移、字体/OS/browser 漂移或阈值漂移均 fail closed  
+**And** release workflow 禁止 `--update-snapshots` 或本次 run 生成 expected 后自验；golden 只能由独立受保护更新工作流发布新版本，由唯一具名 UX/品牌 accountable owner 批准，并由与发布器分离的自动 Web QA gate 实际执行验证；不得虚构第二名人工 reviewer。本次 run 之前不存在/未批准、摘要漂移、字体/OS/browser 漂移或阈值漂移均 fail closed
 **And** 1.1c 的 `optional-brand-preflight-not-formal-report` 及会从当前源码重建的 `run-brand-preflight.mjs` 保持原分类，只能作为本地预检，不能改名或扩展成正式报告。正式报告只证明生产启动面发布基线，不声称 1.2 尚未实现的门户/SSO/业务页已通过最终 Web/WCAG  
 **And** App/WebView 继续携带 `AAB-1.0.0 / USER-2026-07-19-SCHOOL-APP-NA` 与 `runtimeEvidenceClaim=none`；不得用桌面 Chromium 代替真机，也不得生成虚假 pass。
 
@@ -234,7 +234,7 @@ Status: review
   - [x] 新建独立 `run-formal-web-evidence`，不得扩展当前会从源码重建的 `run-brand-preflight.mjs`。正式入口只从 store 下载 expected digest 的前端归档，验证 hash/signature/provenance，拒绝链接/路径逃逸/重复路径后安全解包到只读临时目录，直接服务冻结字节；禁止执行 npm/Vite build 或读取工作区 `dist`。
   - [x] CISB 批准一次性/ephemeral self-hosted runner 或受控 VM 镜像，记录 TEST-ENV 精确 macOS build、arm64、runner image identity、隔离与清理证据；普通 hosted runner 或容器 digest 不得冒充精确 macOS 环境。
   - [x] 在 TEST-ENV 精确 OS 和 Chrome/Edge 150/149 实际二进制上运行两桌面视口、zoom/reflow、键盘/焦点、axe、视觉/资源/console/network 矩阵；报告 subject 必须等于 selected frontend artifact digest，不能取得精确 runner 时 fail closed。
-  - [x] 新建并校验 `VGB-1.0.0` 只读 golden manifest，冻结每个 matrix cell 的 golden digest、浏览器/OS/字体/视口/DPR/locale/timezone/clock/data/network 与 Playwright 比较参数；release job 禁止更新 snapshot。同一 run 生成 expected、未经 UX/品牌 + Web QA 双审批更新、任何环境/golden digest 漂移均阻断。
+  - [x] 新建并校验 `VGB-1.0.0` 只读 golden manifest，冻结每个 matrix cell 的 golden digest、浏览器/OS/字体/视口/DPR/locale/timezone/clock/data/network 与 Playwright 比较参数；release job 禁止更新 snapshot。同一 run 生成 expected、未经唯一具名 UX/品牌 accountable owner 批准或未由独立自动 Web QA gate 实际执行验证、任何环境/golden digest 漂移均阻断；不要求或虚构第二名人工 reviewer。
   - [x] 负例固定为“构建/扫描/签名 A，store 内容或 expected digest 换成 B 后运行 UI 矩阵”，必须在启动浏览器前或生成 PASS 前稳定失败；另测当前源码与 store artifact 不同仍只测试 store 字节。
   - [x] 明确启动面与下游业务页验收边界；App 仅带 N/A 决策，不下载、模拟或伪造 WebView 证据。
 
@@ -284,6 +284,20 @@ Status: review
 - [x] [Review][Patch] 将正式 Web 入口的裸 `node` 执行收回 PAB toolchain wrapper [scripts/run-formal-web-evidence.sh:69]
 - [x] [Review][Patch] 在 Golden 候选构建中强制 CISB 冻结的 hosted runner `ImageVersion`，并增加漂移负例 [.github/workflows/golden-approval.yml:17]
 - [x] [Review][Patch] 在新 signer/job DAG 上完成真实受保护 release/promotion replay，回读验证 signer identity、SPDX attestation 与实际 approvals API 路径后再恢复 `done` [_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md:467]
+
+#### 定向修复验证（2026-07-19）
+
+- [x] [Review][Patch] 将 CISB identity 精确绑定冻结的 repository/ref/workflow/job 职责，拒绝“job 存在但错指”及 fork repository identity [scripts/check_cisb.py:67]
+- [x] [Review][Patch] 将 cold-cache 预热执行的 `maven-dependency-plugin` 版本、传递解析图与摘要纳入 backend lock，并在首次执行前验真 [scripts/bootstrap.sh:24]
+- [x] [Review][Patch] 让 Golden workflow checker 强制 `build-candidate` 使用 CISB 冻结的 GitHub-hosted runner，并拒绝只在注释/非执行文本中出现的 `ImageVersion` 守卫 [scripts/check_release_workflows.py:204]
+- [x] [Review][Patch] 完成“唯一人类 UX/Brand owner + 独立自动 WebQA”合同统一：修正 AC/Task 中的“双审批”残留，并让语义门拒绝 CISB/VGB owner 或未实际执行的 WebQA gate 漂移 [_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md:167]
+
+#### 定向复核验证（2026-07-20）
+
+- [x] [Review][Patch] CISB identity 仍可随同一待验基线整体漂移：同步替换 `repository.url` 与全部 identity 为 fork，或同步替换 `ci.protectedRef` 与 identity ref 为非保护分支时，校验仍通过，因为期望 repository/ref 来自同一份待验 CISB，未绑定冻结仓库与实际 workflow main guard [scripts/check_cisb.py:147]
+- [x] [Review][Patch] Maven bootstrap plugin 传递图仍可删项通过：校验只检查现存条目形状/摘要，并将 bootstrap root 排除于实际解析图对账；删除任一传递 artifact 后仍返回 PASS，首次 Maven 执行可在线补拉未预先验真依赖 [release/backend_lock.py:281]
+- [x] [Review][Patch] Golden `ImageVersion` 守卫仍可被跳过：checker 只检查精确 `run:` 文本存在，不检查守卫 step 是否必然执行且 fail closed；增加 `if: false` 或等价非执行路径仍无告警 [scripts/check_release_workflows.py:223]
+- [x] [Review][Patch] UX/Brand owner 与自动 WebQA 语义门仍可绕过：`_job_executes` 仅做子串匹配，将真实调用改为 `echo ./scripts/run-formal-web-evidence.sh ...` 仍被判定已执行；同时把 CISB/VGB owner 改为同一非批准主体也只满足交叉相等，未绑定冻结 owner [scripts/check_cisb.py:75]
 
 ## Dev Notes
 
@@ -439,6 +453,12 @@ scripts/tests/
 
 ## Dev Agent Record
 
+### Implementation Plan
+
+- 以四组定向负例分别锁定 CISB identity、Maven cold-cache 预热、Golden hosted runner 与 UX/Brand + 自动 WebQA 合同漂移，每组先确认 RED，再做最小修复。
+- 每项修复后运行定向测试与相关合同门；四项收敛后重放完整回归、可复现构建和 Definition of Done 校验。
+- 仅在测试与验收条件全部通过后勾选定向修复项，并更新 Debug Log、Completion Notes、File List 与 Change Log。
+
 ### Agent Model Used
 
 GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementation）
@@ -482,6 +502,9 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19T21:08:00+08:00—21:19:00+08:00：PR #27 cold-cache CI run `29689454021` 全绿并经受保护主线合并为 `9c89446e8e8f6cfd6ca5c5dcbc5d0788ae12e92c`。首次 CI 暴露 Maven runtime dependency 未在 offline verify 前预热，新增 `test_bootstrap_prewarms_runtime_dependencies_before_offline_verification` 并修复 `scripts/bootstrap.sh`；未放宽离线门。
 - 2026-07-19T21:36:00+08:00—22:17:00+08:00：protected release run `29689873567` 终态 attempt 3 成功，source `9c89446…92c`、release `1.1.2`、target `stage`。attempt 1 因一次性 runner 名称不符冻结前缀而 `FORMAL_WEB_RUNNER_NAME_DRIFT` fail closed；attempt 2 在身份门通过后因 ORAS 拉取的瞬时 `unexpected EOF` 失败；均未进入未验证的 promotion，也未修改代码或放宽策略。
 - 2026-07-19T22:17:00+08:00—22:33:00+08:00：真实证据回读完成。artifact/manifest 证书 SAN 分别精确命中 `artifact-signing.yml@refs/heads/main` 与 `manifest-signing.yml@refs/heads/main`，OIDC issuer 均为 GitHub Actions；backend/frontend 实际字节的 SPDX predicate、source digest/ref 与 signer 强制验证通过。approvals API 回读 `keliihall` 已批准 `stage`；ledger `promotion-ledger/1.1.2-stage` 指向 `32acc27296ea1e5879dd80620ec70edd4e9e6ee5`；一次性 runner 自注销后 repository runner 数为 0。
+- 2026-07-19—2026-07-20：四组定向负例均先 RED 后 GREEN：CISB 拒绝 fork/ref/错职责 identity，Golden 拒绝 runner 漂移与注释守卫，CISB/VGB 拒绝 owner 与未执行 WebQA 漂移，backend lock 拒绝缺失/篡改的 bootstrap plugin 图。固定工具链下 61 项定向测试全绿。
+- 2026-07-19T23:52:00+08:00—2026-07-20T00:01:02+08:00：使用全空临时 Maven repository 重放 `bootstrap.sh`；43 个锁定 artifact 的 86 个 JAR/POM 在 dependency plugin 首次执行前全部验真，runtime 与 lifecycle plugin 后续预热完成，`bootstrap: PASS`。
+- 2026-07-20T00:02:00+08:00—00:10:00+08:00：clean commit `457bf010a3edc507cca4d8fb793ec0ab5f9bcf42` 上 `verify_core.sh` 与 `verify.sh` 均退出 0。后端 36/36、审计 145/145、Python 197/197；每个前端重放 unit 27/27、Playwright 20 pass/4 skip；CISB、7 workflows、release lifecycle/contracts/source inventory 全绿。两份隔离 release build 一致，`artifactSet=1a32797d4cd903e5a8cb8cf5a2ce05b9f3b38fee298369e3c6246c2417e51a98`。
 
 ### Completion Notes List
 
@@ -513,6 +536,7 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19：26 项 Review Findings 已全部修复并有回归覆盖。关键收敛包括真实 workflow/runner/signer 身份、GitHub 实际审批历史、cryptographic attestation、stage→production 绑定、全局版本绑定、完整 SBOM/Maven 图、正式 Web TOCTOU/像素/network 门、当前策略 rollback、读写 job 分离及 ORAS 并发安全。
 - 2026-07-19：最终统一验证与双 clean release replay 全绿；Story 与 sprint 同步转为 `done`。
 - 2026-07-19：定向复核 8 项全部完成；PR #27 cold-cache CI、protected release `1.1.2`、独立 verifier、stage approval/promotion/readback、signer identity 与 SPDX attestation 均有真实证据。按 `bmad-dev-story` 交付边界将 Story 与 sprint 转为 `review`，由后续 review 步骤决定 `done`。
+- 2026-07-20：四项定向 Review patch 完成。CISB identity 按 repository/ref/workflow/job 职责精确绑定；`maven-dependency-plugin:3.10.0` 及 43 项传递图在首次执行前验真；Golden runner/守卫与唯一 UX/Brand owner + 独立自动 WebQA 合同均 fail closed。空仓 bootstrap、完整回归与双 clean release 全绿，Story 保持 `review`。
 
 ### File List
 
@@ -558,7 +582,7 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - `backend/README.md`（中性运行制品路径与发布身份说明）
 - `backend/src/test/java/cn/edu/suda/scholarsense/architecture/BuildRootContractTest.java`（JAR/timestamp/Wrapper 构建根合同）
 - `deploy/base/roles.json`（web-api/worker 原子切换到同一中性 JAR）
-- `contracts/release/backend-lock-1.0.0.json`（41 项 runtime、6 项 plugin 与 Wrapper 来源/checksum 锁）
+- `contracts/release/backend-lock-1.0.0.json`（41 项 runtime、7 项 plugin、bootstrap plugin 传递图与 Wrapper 来源/checksum 锁）
 - `contracts/release/build-manifest.schema.json`（显式绑定 backend/frontend/toolchain locks）
 - `contracts/release/fixtures/valid/build-manifest.json`（中性制品名与 lock digest 正例）
 - `release/archive.py`（固定 mtime/mode/order/gzip 参数的原子归档器）
@@ -664,6 +688,10 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - `.github/workflows/manifest-signing.yml`（Review：独立 manifest signer identity）
 - `release/version_binding.py`（Review：`releaseVersion` 到 manifest digest 的全局 create-only 绑定）
 - `scripts/bootstrap.sh`、`scripts/tests/test_delivery_quality.py`（定向复核：cold-cache CI 在离线验证前预热受锁 runtime dependencies）
+- `backend/pom.xml`、`contracts/release/backend-lock-1.0.0.json`、`contracts/release/backend-lock.schema.json`、`contracts/release/fixtures/valid/backend-lock.json`、`release/backend_lock.py`（定向修复：版本化 bootstrap plugin 与可验真传递图）
+- `scripts/bootstrap.sh`、`scripts/prepare_locked_maven_plugin.py`、`scripts/check_release_source.py`（定向修复：空 Maven repository 预热、验摘要与发布源覆盖）
+- `scripts/check_cisb.py`、`scripts/check_formal_web_evidence.py`、`scripts/check_release_workflows.py`（定向修复：identity 职责、Golden runner/可执行守卫与 UX/Brand/WebQA 语义门）
+- `scripts/tests/test_backend_lock.py`、`scripts/tests/test_delivery_quality.py`、`scripts/tests/test_release_platform.py`、`scripts/tests/test_release_source_inventory.py`、`scripts/tests/test_release_workflows.py`、`scripts/tests/test_sbom.py`（定向负例、空仓预热、源清单与 SBOM 计数回归）
 
 ## Change Log
 
@@ -685,3 +713,4 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19：完成 3 项 Review 决策与 23 项 Review 补丁；按用户澄清取消“两名人工 reviewer”假设，冻结为 `keliihall` 唯一人类责任主体 + 独立自动 WebQA，并采用 GitHub run approvals API 记录实际环境批准者。
 - 2026-07-19：clean commit `93734fa53565c977b3b83fc678f8d2a0cd6e2ecd` 上最终 `./scripts/verify.sh` 全绿，双 clean release artifact set 一致；Story 状态转为 `done`。
 - 2026-07-19：完成 8 项定向 Review patch 与 cold-cache 回归，经 PR #27 合并到受保护 main；protected release `29689873567` attempt 3 全 DAG、stage approval/promotion/readback、signer identity、SPDX attestation 与 runner cleanup 回读全部通过，Story 与 sprint 转为 `review`。
+- 2026-07-20：完成 4 项定向 Review patch：CISB identity 职责精确绑定、Maven bootstrap plugin 首次执行前验真、Golden hosted runner/可执行 `ImageVersion` 守卫、唯一 UX/Brand owner + 独立自动 WebQA 合同统一；clean commit `457bf01` 的空仓 bootstrap、完整回归与双 clean release 均通过。

@@ -58,15 +58,91 @@ class ReleaseWorkflowContractTest(unittest.TestCase):
         guard = 'run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"'
         self.assertIn(guard, golden)
         with tempfile.TemporaryDirectory() as directory:
-            workflows = Path(directory) / ".github/workflows"
+            root = Path(directory)
+            workflows = root / ".github/workflows"
             workflows.mkdir(parents=True)
+            contracts = root / "contracts/release"
+            contracts.mkdir(parents=True)
+            contracts.joinpath("ci-supply-chain-baseline-1.0.0.json").write_bytes(
+                PROJECT_ROOT.joinpath(
+                    "contracts/release/ci-supply-chain-baseline-1.0.0.json"
+                ).read_bytes()
+            )
             for name in workflow_names:
                 content = (PROJECT_ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
                 if name == "golden-approval.yml":
                     content = content.replace(guard, "run: true", 1)
                 (workflows / name).write_text(content, encoding="utf-8")
-            issues = validate_release_workflows(Path(directory))
+            issues = validate_release_workflows(root)
         self.assertIn("GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING", issues)
+
+    def test_golden_checker_rejects_runner_mismatch_and_non_executable_image_guard(self) -> None:
+        workflow_names = (
+            "ci.yml",
+            "release.yml",
+            "artifact-signing.yml",
+            "manifest-signing.yml",
+            "rollback.yml",
+            "golden-approval.yml",
+        )
+        guard = '        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"'
+        mutations = {
+            "wrong hosted runner": (
+                "    runs-on: ubuntu-24.04",
+                "    runs-on: ubuntu-22.04",
+                "GOLDEN_APPROVAL_HOSTED_RUNNER_MISMATCH",
+            ),
+            "guard hidden in comment": (
+                guard,
+                "        # " + guard.strip(),
+                "GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING",
+            ),
+            "guard step skipped": (
+                "      - name: Enforce frozen hosted runner image\n",
+                "      - name: Enforce frozen hosted runner image\n"
+                "        if: ${{ false }}\n",
+                "GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING",
+            ),
+            "guard failure ignored": (
+                "      - name: Enforce frozen hosted runner image\n",
+                "      - name: Enforce frozen hosted runner image\n"
+                "        continue-on-error: true\n",
+                "GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING",
+            ),
+            "runner image overridden": (
+                "      - name: Enforce frozen hosted runner image\n",
+                "      - name: Enforce frozen hosted runner image\n"
+                "        env:\n"
+                "          ImageVersion: 20260714.240.1\n",
+                "GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING",
+            ),
+            "runner image overridden globally": (
+                "  EXPECTED_RUNNER_IMAGE_VERSION: 20260714.240.1\n",
+                "  EXPECTED_RUNNER_IMAGE_VERSION: 20260714.240.1\n"
+                "  ImageVersion: 20260714.240.1\n",
+                "GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING",
+            ),
+        }
+        for label, (old, new, expected_issue) in mutations.items():
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                workflows = root / ".github/workflows"
+                workflows.mkdir(parents=True)
+                contracts = root / "contracts/release"
+                contracts.mkdir(parents=True)
+                contracts.joinpath("ci-supply-chain-baseline-1.0.0.json").write_bytes(
+                    PROJECT_ROOT.joinpath(
+                        "contracts/release/ci-supply-chain-baseline-1.0.0.json"
+                    ).read_bytes()
+                )
+                for name in workflow_names:
+                    content = (PROJECT_ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
+                    if name == "golden-approval.yml":
+                        self.assertIn(old, content)
+                        content = content.replace(old, new, 1)
+                    (workflows / name).write_text(content, encoding="utf-8")
+                issues = validate_release_workflows(root)
+            self.assertIn(expected_issue, issues)
 
     def test_checker_rejects_pr_write_oidc_order_bypass_and_secret_execution(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

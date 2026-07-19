@@ -7,6 +7,8 @@ import re
 import sys
 from pathlib import Path
 
+from release_json import load_json
+
 
 EXPECTED_RELEASE_ORDER = (
     "build-test",
@@ -50,6 +52,28 @@ def _jobs(content: str) -> tuple[list[str], dict[str, str]]:
         return [], {}
     matches = JOB.findall(content[marker + 1 :])
     return [name for name, _body in matches], dict(matches)
+
+
+def _step_blocks(body: str) -> list[list[str]]:
+    lines = body.splitlines()
+    starts = [index for index, line in enumerate(lines) if line.startswith("      - ")]
+    return [
+        lines[start : starts[position + 1] if position + 1 < len(starts) else len(lines)]
+        for position, start in enumerate(starts)
+    ]
+
+
+def _has_unconditional_first_step(body: str, name: str, run: str) -> bool:
+    steps = _step_blocks(body)
+    if not steps or steps[0][0] != f"      - name: {name}":
+        return False
+    step = steps[0]
+    if any(
+        re.fullmatch(r" {8}(?:if|continue-on-error|env|shell):.*", line)
+        for line in step
+    ):
+        return False
+    return f"        run: {run}" in step
 
 
 def validate_release_workflows(project_root: Path) -> list[str]:
@@ -202,9 +226,44 @@ def validate_release_workflows(project_root: Path) -> list[str]:
         if order != ["build-candidate", "capture-goldens"]:
             issues.append("GOLDEN_APPROVAL_JOB_ORDER_INVALID")
         build_candidate = bodies.get("build-candidate", "")
+        try:
+            cisb = load_json(root / "contracts/release/ci-supply-chain-baseline-1.0.0.json")
+            runner = cisb["runner"]
+            runner_label = runner["label"]
+            runner_image_version = runner["imageVersion"]
+            runtime_version_variable = runner["runtimeImageVersionVariable"]
+            if runner.get("provider") != "GitHub-hosted" or not all(
+                isinstance(value, str) and value
+                for value in (runner_label, runner_image_version, runtime_version_variable)
+            ):
+                raise ValueError("runner")
+        except (KeyError, OSError, TypeError, ValueError):
+            issues.append("GOLDEN_APPROVAL_CISB_RUNNER_INVALID")
+            runner_label = runner_image_version = runtime_version_variable = ""
+        if f"    runs-on: {runner_label}" not in build_candidate.splitlines():
+            issues.append("GOLDEN_APPROVAL_HOSTED_RUNNER_MISMATCH")
+        expected_environment = f"  EXPECTED_RUNNER_IMAGE_VERSION: {runner_image_version}"
+        expected_guard = (
+            f'test "${{{runtime_version_variable}:-missing}}" = '
+            '"$EXPECTED_RUNNER_IMAGE_VERSION"'
+        )
+        runtime_override = re.search(
+            rf"(?m)^\s{{4,}}(?:{re.escape(runtime_version_variable)}|EXPECTED_RUNNER_IMAGE_VERSION):",
+            build_candidate,
+        )
+        global_runtime_override = re.search(
+            rf"(?m)^\s+(?:{re.escape(runtime_version_variable)}):",
+            golden,
+        )
         if (
-            "EXPECTED_RUNNER_IMAGE_VERSION: 20260714.240.1" not in golden
-            or 'test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"' not in build_candidate
+            expected_environment not in golden.splitlines()
+            or runtime_override
+            or global_runtime_override
+            or not _has_unconditional_first_step(
+                build_candidate,
+                "Enforce frozen hosted runner image",
+                expected_guard,
+            )
         ):
             issues.append("GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING")
         capture = bodies.get("capture-goldens", "")

@@ -14,6 +14,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "release"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from formal_web import formal_web_report_issues, visual_baseline_issues  # noqa: E402
+from check_cisb import visual_governance_issues  # noqa: E402
 from release_json import load_json, schema_issues  # noqa: E402
 
 
@@ -45,6 +46,7 @@ def _load_controlled(root: Path) -> tuple[dict[str, Any], dict[str, Any], list[s
     try:
         test_environment = load_json(root / "contracts/performance/test-environment-1.0.0.json", legacy_numbers=True)
         oracle = load_json(contracts / "visual-baseline-vgb-1.0.0.json")
+        cisb = load_json(contracts / "ci-supply-chain-baseline-1.0.0.json")
         controlled = (
             (oracle, load_json(contracts / "visual-baseline.schema.json"), "visual-baseline-vgb-1.0.0.json"),
             (
@@ -66,6 +68,7 @@ def _load_controlled(root: Path) -> tuple[dict[str, Any], dict[str, Any], list[s
         for instance, schema, label in controlled:
             issues.extend(f"{label}: {issue}" for issue in schema_issues(instance, schema))
         issues.extend(visual_baseline_issues(oracle, test_environment))
+        issues.extend(visual_governance_issues(cisb, oracle, root))
     except (OSError, TypeError, ValueError) as error:
         return {}, {}, [f"FORMAL_WEB_CONTROLLED_INPUT_INVALID: {error}"]
     return oracle, test_environment, sorted(set(issues))

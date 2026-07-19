@@ -88,6 +88,7 @@ class ReleaseSourceInventoryTest(unittest.TestCase):
             "scripts/check_formal_web_runner.py",
             "scripts/install-formal-web-browsers.sh",
             "scripts/promote-release.sh",
+            "scripts/prepare_locked_maven_plugin.py",
             "scripts/read_promotion.py",
             "scripts/rollback-release.sh",
             "scripts/run-formal-web-evidence.sh",
