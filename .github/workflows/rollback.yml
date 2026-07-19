@@ -1,0 +1,45 @@
+name: protected-rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      historical_release_version:
+        description: Historical signed semantic release to re-verify and replay
+        required: true
+        type: string
+      historical_environment:
+        description: Immutable ledger holding the historical digest
+        required: true
+        type: choice
+        options:
+          - stage
+          - production
+
+permissions: {}
+
+concurrency:
+  group: protected-rollback-production-${{ inputs.historical_release_version }}
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout current immutable verifier and promotion adapter
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.sha }}
+      - name: Re-fetch historical evidence, run current gates, and replay digest
+        env:
+          ORAS_PASSWORD: ${{ github.token }}
+          PROMOTION_APPROVER: protected-environment:production
+        run: |
+          ./scripts/rollback-release.sh \
+            "${{ inputs.historical_release_version }}" \
+            "${{ inputs.historical_environment }}" \
+            "$RUNNER_TEMP/rollback-promotion-record.json"

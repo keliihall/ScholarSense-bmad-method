@@ -17,6 +17,7 @@ EXPECTED_RELEASE_ORDER = (
     "manifest-signature",
     "evidence-index",
     "independent-verifier",
+    "promotion",
 )
 EXPECTED_NEEDS = {
     "sbom-scan": "build-cas",
@@ -26,6 +27,7 @@ EXPECTED_NEEDS = {
     "manifest-signature": "release-manifest",
     "evidence-index": "manifest-signature",
     "independent-verifier": "evidence-index",
+    "promotion": "independent-verifier",
 }
 WRITE_PERMISSION = re.compile(r"(?m)^\s+(?:contents|packages|actions|checks|pull-requests|issues|id-token|attestations|artifact-metadata):\s*write\s*$")
 JOB = re.compile(r"(?ms)^  ([a-z][a-z0-9-]*):\n(.*?)(?=^  [a-z][a-z0-9-]*:\n|\Z)")
@@ -51,6 +53,8 @@ def validate_release_workflows(project_root: Path) -> list[str]:
     ci, issues = _read(root / ".github/workflows/ci.yml", "CI_WORKFLOW_MISSING")
     release, release_read_issues = _read(root / ".github/workflows/release.yml", "RELEASE_WORKFLOW_MISSING")
     issues.extend(release_read_issues)
+    rollback, rollback_read_issues = _read(root / ".github/workflows/rollback.yml", "ROLLBACK_WORKFLOW_MISSING")
+    issues.extend(rollback_read_issues)
     if ci:
         if "pull_request:" not in ci:
             issues.append("CI_PULL_REQUEST_TRIGGER_MISSING")
@@ -102,10 +106,34 @@ def validate_release_workflows(project_root: Path) -> list[str]:
             "release/generate_manifests.py release",
             "release/generate_manifests.py index",
             "scripts/verify-release.sh",
+            "scripts/promote-release.sh",
         )
         for token in required_tokens:
             if token not in release:
                 issues.append(f"RELEASE_LIFECYCLE_STEP_MISSING: {token}")
+        promotion = bodies.get("promotion", "")
+        if "environment: ${{ inputs.target_environment }}" not in promotion:
+            issues.append("RELEASE_PROMOTION_PROTECTED_ENVIRONMENT_MISSING")
+        if not re.search(r"(?m)^      contents:\s*write\s*$", promotion):
+            issues.append("RELEASE_PROMOTION_LEDGER_PERMISSION_MISSING")
+        if not re.search(r"(?m)^      packages:\s*write\s*$", promotion):
+            issues.append("RELEASE_PROMOTION_STORE_PERMISSION_MISSING")
+        verifier = bodies.get("independent-verifier", "")
+        if WRITE_PERMISSION.search(verifier):
+            issues.append("RELEASE_INDEPENDENT_VERIFIER_WRITE_PERMISSION_FORBIDDEN")
+    if rollback:
+        if "workflow_dispatch:" not in rollback or "pull_request:" in rollback or "pull_request_target:" in rollback:
+            issues.append("ROLLBACK_TRIGGER_INVALID")
+        if "github.ref == 'refs/heads/main'" not in rollback:
+            issues.append("ROLLBACK_PROTECTED_REF_GUARD_MISSING")
+        if "environment: production" not in rollback:
+            issues.append("ROLLBACK_PROTECTED_ENVIRONMENT_MISSING")
+        if "scripts/rollback-release.sh" not in rollback:
+            issues.append("ROLLBACK_CURRENT_GATE_ENTRYPOINT_MISSING")
+        if "scripts/build-release.sh" in rollback or "build-cas:" in rollback:
+            issues.append("ROLLBACK_REBUILD_FORBIDDEN")
+        if re.search(r"(?m)^\s+id-token:\s*write\s*$", rollback):
+            issues.append("ROLLBACK_NEW_SIGNING_IDENTITY_FORBIDDEN")
     return sorted(set(issues))
 
 

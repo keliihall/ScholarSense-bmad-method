@@ -7,6 +7,21 @@ on:
         description: Immutable semantic release version
         required: true
         type: string
+      target_environment:
+        description: Protected digest-only promotion target
+        required: true
+        type: choice
+        options:
+          - stage
+          - production
+      rollback_version:
+        description: Optional historical signed release version to re-verify without rebuilding
+        required: false
+        type: string
+      rollback_environment:
+        description: Optional historical ledger environment paired with rollback_version
+        required: false
+        type: string
 
 permissions: {}
 
@@ -235,6 +250,7 @@ jobs:
       packages: write
     outputs:
       manifest-uri: ${{ steps.publish.outputs.manifest-uri }}
+      manifest-sha256: ${{ steps.publish.outputs.manifest-sha256 }}
     steps:
       - name: Checkout immutable manifest contracts
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -259,6 +275,7 @@ jobs:
           target="${MANIFEST_REPOSITORY}:${{ inputs.release_version }}-${{ github.run_id }}-${{ github.run_attempt }}"
           digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/release-manifest.json:application/vnd.scholarsense.release-manifest.v1+json --format go-template='{{.digest}}')"
           printf 'manifest-uri=%s@%s\n' "$MANIFEST_REPOSITORY" "$digest" >> "$GITHUB_OUTPUT"
+          printf 'manifest-sha256=%s\n' "$(sha256sum release-out/release-manifest.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
   manifest-signature:
     needs: release-manifest
@@ -298,6 +315,7 @@ jobs:
       packages: write
     outputs:
       index-uri: ${{ steps.publish.outputs.index-uri }}
+      index-sha256: ${{ steps.publish.outputs.index-sha256 }}
     steps:
       - name: Checkout immutable index contracts
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -320,6 +338,7 @@ jobs:
           target="${MANIFEST_REPOSITORY}:evidence-index-${{ inputs.release_version }}-${{ github.run_id }}-${{ github.run_attempt }}"
           digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/evidence-index.json:application/vnd.scholarsense.evidence-index.v1+json --format go-template='{{.digest}}')"
           printf 'index-uri=%s@%s\n' "$MANIFEST_REPOSITORY" "$digest" >> "$GITHUB_OUTPUT"
+          printf 'index-sha256=%s\n' "$(sha256sum release-out/evidence-index.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
   independent-verifier:
     needs: [build-cas, sbom-scan, artifact-attestation, formal-web, release-manifest, manifest-signature, evidence-index]
@@ -343,3 +362,39 @@ jobs:
           SIGNATURE_URI: ${{ needs.manifest-signature.outputs.signature-uri }}
           INDEX_URI: ${{ needs.evidence-index.outputs.index-uri }}
         run: ./scripts/verify-release.sh
+
+  promotion:
+    needs: [build-cas, sbom-scan, artifact-attestation, formal-web, release-manifest, manifest-signature, evidence-index, independent-verifier]
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.target_environment }}
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout immutable promotion adapter
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.sha }}
+      - name: Re-verify current remote evidence, promote by digest, and reconcile ledger
+        env:
+          ORAS_PASSWORD: ${{ github.token }}
+          ARTIFACT_URI: ${{ needs.build-cas.outputs.artifact-uri }}
+          SBOM_URI: ${{ needs.sbom-scan.outputs.sbom-uri }}
+          ATTESTATION_URI: ${{ needs.artifact-attestation.outputs.attestation-uri }}
+          WEB_URI: ${{ needs.formal-web.outputs.web-uri }}
+          MANIFEST_URI: ${{ needs.release-manifest.outputs.manifest-uri }}
+          MANIFEST_SHA256: ${{ needs.release-manifest.outputs.manifest-sha256 }}
+          SIGNATURE_URI: ${{ needs.manifest-signature.outputs.signature-uri }}
+          INDEX_URI: ${{ needs.evidence-index.outputs.index-uri }}
+          EVIDENCE_INDEX_SHA256: ${{ needs.evidence-index.outputs.index-sha256 }}
+          PROMOTION_APPROVER: protected-environment:${{ inputs.target_environment }}
+        run: |
+          output="$RUNNER_TEMP/promotion-record.json"
+          if [[ -n "${{ inputs.rollback_version }}" || -n "${{ inputs.rollback_environment }}" ]]; then
+            ./scripts/promote-release.sh \
+              "${{ inputs.release_version }}" "${{ inputs.target_environment }}" "$output" \
+              "${{ inputs.rollback_version }}" "${{ inputs.rollback_environment }}"
+          else
+            ./scripts/promote-release.sh \
+              "${{ inputs.release_version }}" "${{ inputs.target_environment }}" "$output"
+          fi
