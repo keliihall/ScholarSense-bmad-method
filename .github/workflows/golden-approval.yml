@@ -115,7 +115,7 @@ jobs:
         run: |
           node frontend/scripts/capture-formal-web-goldens.mjs \
             --served-root "$RUNNER_TEMP/golden-served" \
-            --browsers "$RUNNER_TEMP/golden-browsers/formal-browser-install.json" \
+            --browsers "$RUNNER_TEMP/golden-browsers/browsers.json" \
             --subject-sha256 "$EXPECTED_SHA256" \
             --output "$RUNNER_TEMP/golden-capture"
       - name: Publish and read back the immutable golden candidate

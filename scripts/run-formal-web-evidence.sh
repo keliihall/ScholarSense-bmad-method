@@ -66,7 +66,7 @@ python3 -B "$ROOT_DIR/release/formal_web.py" safe_extract_frontend \
 
 node "$ROOT_DIR/frontend/scripts/run-formal-web-evidence.mjs" \
   --served-root "$WORK_DIR/served" \
-  --browsers "$WORK_DIR/browsers/formal-browser-install.json" \
+  --browsers "$WORK_DIR/browsers/browsers.json" \
   --golden-root "$WORK_DIR/golden" \
   --artifact-uri "$ARTIFACT_URI" \
   --subject-sha256 "$EXPECTED_FRONTEND_SHA256" \
