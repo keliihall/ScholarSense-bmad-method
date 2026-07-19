@@ -19,6 +19,14 @@ class ReleaseWorkflowContractTest(unittest.TestCase):
     def test_pr_ci_and_protected_release_workflows_enforce_the_lifecycle(self) -> None:
         self.assertEqual([], validate_release_workflows(PROJECT_ROOT))
 
+    def test_golden_approval_is_separate_from_release_and_uses_exact_runner(self) -> None:
+        golden = (PROJECT_ROOT / ".github/workflows/golden-approval.yml").read_text(encoding="utf-8")
+        release = (PROJECT_ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        self.assertIn("capture-formal-web-goldens.mjs", golden)
+        self.assertNotIn("capture-formal-web-goldens.mjs", release)
+        self.assertIn("[self-hosted, macOS, ARM64, scholarsense-test-env-1]", golden)
+        self.assertNotIn("update-snapshots", golden + release)
+
     def test_checker_rejects_pr_write_oidc_order_bypass_and_secret_execution(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

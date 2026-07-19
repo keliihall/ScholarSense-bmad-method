@@ -224,11 +224,11 @@ Status: in-progress
   - [x] `actions/attest`、checkout/upload/download、Cosign installer 等全部完整 SHA 固定；Trivy/Cosign 下载先按上游 Sigstore/checksum 验证，版本/digest 收录进 CISB/toolchain lock。
   - [x] 在独立 verifier job 重新下载并验证全部 subject digest、Sigstore bundle certificate identity/OIDC issuer、SLSA predicate、SBOM attestation 和 manifest 引用。
 
-- [ ] Task 6：实现 digest-only 提升、幂等、对账与回退（AC: PROMOTION-ROLLBACK, EVIDENCE-LIFECYCLE）
-  - [ ] 第一阶段定义 provider-neutral promotion port，并用内存/fixture adapter 验证 digest-only、稳定错误、幂等、并发与 fail-closed 合同；该阶段不得声称真实提升已完成。
-  - [ ] 平台确定后实现真实 digest-addressed store/promotion adapter：用条件写/CAS 证明同键同 digest 重放、异 digest 409/稳定错误、并发单胜者、失败原子回滚与不可变 ledger；build identity 无提升权限，protected environment 的 promotion identity 只接受已验 manifest + EvidenceIndex digest。
-  - [ ] 从 store/attestation service 重新取证后提升；缺证据、证据过期、artifact 篡改、tag 指向变化、store/ledger 水位不一致全部阻断。
-  - [ ] 回退引用已签名历史 digest 并再次执行当前强制门；不重建、不覆盖旧 manifest/ledger。
+- [x] Task 6：实现 digest-only 提升、幂等、对账与回退（AC: PROMOTION-ROLLBACK, EVIDENCE-LIFECYCLE）
+  - [x] 第一阶段定义 provider-neutral promotion port，并用内存/fixture adapter 验证 digest-only、稳定错误、幂等、并发与 fail-closed 合同；该阶段不得声称真实提升已完成。
+  - [x] 平台确定后实现真实 digest-addressed store/promotion adapter：用条件写/CAS 证明同键同 digest 重放、异 digest 409/稳定错误、并发单胜者、失败原子回滚与不可变 ledger；build identity 无提升权限，protected environment 的 promotion identity 只接受已验 manifest + EvidenceIndex digest。
+  - [x] 从 store/attestation service 重新取证后提升；缺证据、证据过期、artifact 篡改、tag 指向变化、store/ledger 水位不一致全部阻断。
+  - [x] 回退引用已签名历史 digest 并再次执行当前强制门；不重建、不覆盖旧 manifest/ledger。
 
 - [ ] Task 7：直接验证冻结前端制品，生成正式 Web 品牌/视觉/无障碍证据（AC: FORMAL-WEB-EVIDENCE）
   - [ ] 新建独立 `run-formal-web-evidence`，不得扩展当前会从源码重建的 `run-brand-preflight.mjs`。正式入口只从 store 下载 expected digest 的前端归档，验证 hash/signature/provenance，拒绝链接/路径逃逸/重复路径后安全解包到只读临时目录，直接服务冻结字节；禁止执行 npm/Vite build 或读取工作区 `dist`。
@@ -422,6 +422,7 @@ GPT-5 Codex（create-story context）
 - 2026-07-19T07:10:10+08:00—07:14:00+08:00：实际 SBOM checker 全绿，三类 subject 的 Critical/High/UNKNOWN finding 均为 0；隔离 `npm ci --offline --ignore-scripts` 后 `npm ls --all` 对账为 installed 126 + platform optional 30 = lock unique 156，无额外组件。`@vitejs/plugin-vue`、`@types/node`、6 个 Maven plugin、Wrapper 与 3 个未执行 lifecycle script 均有来源/checksum/license/vulnerability 决策；205 项第三方 NOTICE/源码义务清单摘要 `474720…3ab5`。完整 `verify-core` 后端 36/36、审计 145/145、Python 117/117、前端两次各 unit 27/27、Playwright 20 pass/4 skip。
 - 2026-07-19T07:45:00+08:00—07:58:00+08:00：Task 4 按 RED→GREEN 固定 ReleaseManifest 一次冻结与外置签名后 EvidenceIndex 时序。23 项针对性测试通过：阻塞门 pending、缺 artifact signature、未知 subject、可变 URI、manifest 后代引用、反向依赖、签名 subject 错误和同版本 digest 重绑均 fail closed；App/WebView 保持 `not-applicable + runtimeEvidenceClaim=none`，未来 7.1/7.x 保持 `pending-story-execution`。PR #3 合并为受保护主线 `8ebc18d711d70d2e3fb9a34b92c67c4baa6a722d`，release-source inventory 回读 298 files、tree `6032c2…2f4`、normalized digest `d99427…5ec4`，inventory 实例与动态 evidence 均不参与源摘要。
 - 2026-07-19T08:00:00+08:00—08:12:59+08:00：Task 5 按 RED→GREEN 建立只读 PR CI 与最小权限 release 证据流水线。GitHub Actions 连续真实暴露并阻断 Node 工具链缺失、跨 Python 权限语义、浅克隆 source object 缺失、测试依赖本机忽略产物及隔离重放漏复制 `scripts/` 五类问题；每项均新增/保留回归后修复。最终 PR #4 run `29666502050` 在无 secret/OIDC/write 权限的 PR job 全绿（2m22s），随后合并为受保护主线 `b328dc95777a7182cbc19a1b391e33cb5656a7b6`；本地完整 `scripts/verify.sh` 同步通过后端 36/36、审计 145/145、Python 134/134、两次前端 unit 27/27 与 Playwright 20 pass/4 skip。release workflow 的 attestation job 独占三项写权限，manifest-signature 仅取 OIDC，其他 job 只读；独立 verifier 重新校验 immutable GHCR subject、GitHub DSSE/SLSA/SBOM attestation、Cosign identity/issuer、artifact/manifest 引用。
+- 2026-07-19T08:13:00+08:00—08:38:12+08:00：Task 6 按 RED→GREEN 固定 provider-neutral verifier/store/ledger/promotion ports，并实现 GHCR digest copy + GitHub immutable Git-ref CAS。14 项 promotion 专项测试覆盖首写、同 material replay、异 digest 稳定冲突、8 路并发单胜者、缺失/过期/篡改证据、copy 后失败清理、tag/store-ledger 漂移、历史签名 digest 当前门回退，以及真实 ORAS/GitHub API 适配器的 digest-only/create-only 行为。完整本地门通过后端 36/36、审计 145/145、Python 149/149、两次前端 unit 27/27 与 Playwright 20 pass/4 skip；PR #5 run `29667178379` 全绿（2m49s），合并为受保护主线 `704b96818bf25369507fd9f16ac6eef8ff8b97ce`，source inventory 回读 313 files、tree `837213…f108`、normalized digest `8fbea0…1d0d`。真实 protected promotion 仍留给 Task 8，不以适配器单测冒充运行证据。
 
 ### Completion Notes List
 
@@ -438,6 +439,7 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：Task 3 完成。固定并验证 Trivy/Cosign release bundle，按实际归档、frontend lock、`npm ls`、backend runtime/plugin/Wrapper lock 生成三组 subject-bound CycloneDX/SPDX；统一 checker 对 component hash/purl/license、工具/DB/subject/policy/report digest fail closed，并生成机器化敏感依赖裁决与第三方 NOTICE/源码义务证据。
 - 2026-07-19：Task 4 完成。ReleaseManifest 仅在两次 build attempt、全部 AD-28 基线/受控输入、锁、选定制品及其 SBOM/scan/provenance/attestation/artifact-signature/UI/品牌/Web 证据齐备且阻塞门通过后冻结；manifest 外置签名随后生成，EvidenceIndex 以 manifest canonical digest 为 subject。生成器当前会诚实拒绝尚未由 Task 5/7 产生的真实签名与正式 Web 证据，不提交伪造运行清单。
 - 2026-07-19：Task 5 完成。PR CI 默认只读且对 fork 不下发 secret/OIDC/write token；release CI 以不可跳序 job DAG、完整 SHA Action pin、校验后工具安装和独立下载复验固化证据生命周期。Task 7 的正式 Web runner/报告脚本仍按顺序保持后续 pending，工作流在它们存在且通过前会 fail closed，不把当前本地或 PR 运行冒充 release dry-run。
+- 2026-07-19：Task 6 完成。提升权威由 `releaseVersion + targetEnvironment` 的不可变 ledger 决定，digest 派生 tag 只承担传输；同 material 重放、不同 material 冲突，CAS 失败会清理本次新 tag。promotion protected job 在独立 verifier 后再次远程取证，rollback 独立 workflow 只读历史 ledger 并运行当前门，不调用 build 或重签名；真实提升/回读状态仍诚实保持 Task 8 pending。
 
 ### File List
 
@@ -535,6 +537,21 @@ GPT-5 Codex（create-story context）
 - `scripts/tests/test_sbom.py`（CI 自包含实际后端制品测试，不依赖本机忽略证据）
 - `scripts/verify_core.sh`（接入 release workflow 生命周期门）
 - `scripts/verify_frontend.sh`（隔离重放纳入 `scripts/` production root）
+- `.github/workflows/rollback.yml`（受保护生产回退：历史 digest 当前门复验、无重建/重签名）
+- `.github/workflows/release.yml`（独立 verifier 后增加受保护 digest-only promotion job）
+- `contracts/release/promotion-record.schema.json`（完整 store/evidence/verifier/ledger/rollback 绑定）
+- `contracts/release/fixtures/valid/promotion-record.json`（完整不可变提升正例）
+- `release/promotion.py`（provider-neutral ports、内存 fixture、ORAS store、Git-ref CAS、提升/对账/回退 CLI）
+- `release/README.md`（提升权威边界、幂等/CAS 与无重建回退说明）
+- `scripts/check_promotion.py`（目标 GHCR digest/tag 与 ledger 只读对账）
+- `scripts/promote-release.sh`（受保护身份重新取证后的单一提升入口）
+- `scripts/read_promotion.py`（严格读取 canonical 历史 ledger record）
+- `scripts/rollback-release.sh`（从历史记录恢复全部不可变证据并调用当前提升门）
+- `scripts/check_release_workflows.py`（promotion 顺序/权限/environment 与 rollback 无重建门）
+- `scripts/check_release_source.py`（promotion/rollback 生产面必需源范围）
+- `scripts/release_policy.py`（promotion material 幂等与 store-ledger 漂移规则）
+- `scripts/tests/test_promotion.py`（provider-neutral/真实适配器、并发、篡改、漂移与回退 RED）
+- `scripts/tests/test_release_source_inventory.py`（promotion/rollback 源范围回归）
 
 ## Change Log
 
@@ -549,3 +566,4 @@ GPT-5 Codex（create-story context）
 - 2026-07-19：完成 Task 3 SBOM-SCAN：固定并以 Cosign 验证 Trivy 0.72.0，生成后端/前端/聚合 CycloneDX 1.7 与 SPDX 2.3，严格对账实际制品、npm 实装树、frontend/backend/plugin/Wrapper locks，绑定工具/DB/subject/policy digest 并输出敏感组件、安装脚本和许可证义务证据。
 - 2026-07-19：完成 Task 4 分层 manifest 生命周期：新增 fail-closed ReleaseManifest/EvidenceIndex generator/checker、一次冻结、后置 manifest 签名、证据阶段/subject/版本绑定与诚实 applicability 状态；扩展源清单和污染边界，经 PR #3 进入受保护 main 后更新自排除 inventory。
 - 2026-07-19：完成 Task 5 安全 CI 与证据工作流：只读 PR 门真实全绿，release DAG 固定最小权限、完整 Action SHA、校验后工具安装、attestation/签名时序和独立 verifier；经 PR #4 进入受保护 main 后更新自排除 inventory。
+- 2026-07-19：完成 Task 6 digest-only 提升与回退合同：新增 provider-neutral/内存适配器、GHCR + Git-ref CAS、受保护 promotion/rollback workflow、当前门重新取证和读回对账；经 PR #5 进入受保护 main 后更新自排除 inventory，真实 promotion 证据继续由 Task 8 生成。

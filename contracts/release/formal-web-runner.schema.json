@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/release/formal-web-runner.schema.json",
+  "type": "object",
+  "properties": {
+    "version": {"const": "FORMAL-WEB-RUNNER-1.0.0"},
+    "status": {"const": "approved"},
+    "approvedBy": {"type": "string", "minLength": 2},
+    "effectiveAt": {"type": "string", "format": "date-time"},
+    "labels": {"type": "array", "minItems": 4, "uniqueItems": true, "items": {"type": "string", "minLength": 2}},
+    "fingerprint": {"$ref": "#/$defs/fingerprint"},
+    "runnerImageSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "required": ["version", "status", "approvedBy", "effectiveAt", "labels", "fingerprint", "runnerImageSha256"],
+  "additionalProperties": false,
+  "$defs": {
+    "fingerprint": {
+      "type": "object",
+      "properties": {
+        "version": {"const": "FORMAL-WEB-RUNNER-1.0.0"},
+        "provider": {"const": "GitHub-Actions-self-hosted-ephemeral"},
+        "osVersion": {"const": "26.5.2"},
+        "osBuild": {"const": "25F84"},
+        "architecture": {"const": "arm64"},
+        "runnerVersion": {"const": "2.335.1"},
+        "runnerArchiveSha256": {"const": "e1a9bc7a3661e06fa0b129d15c2064fe65dc81a431001d8958a9db1409b73769"},
+        "fontManifestSha256": {"const": "3ff5578415c7d41c99316ae0844ae3c749023853cb20106e371ea9228101dac6"},
+        "isolation": {"const": "ephemeral-one-job-registration+dedicated-temporary-work-root+post-job-removal"}
+      },
+      "required": ["version", "provider", "osVersion", "osBuild", "architecture", "runnerVersion", "runnerArchiveSha256", "fontManifestSha256", "isolation"],
+      "additionalProperties": false
+    }
+  }
+}

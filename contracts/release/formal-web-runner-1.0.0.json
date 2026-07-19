@@ -1,0 +1,19 @@
+{
+  "version": "FORMAL-WEB-RUNNER-1.0.0",
+  "status": "approved",
+  "approvedBy": "Hei",
+  "effectiveAt": "2026-07-19T08:45:00+08:00",
+  "labels": ["self-hosted", "macOS", "ARM64", "scholarsense-test-env-1"],
+  "fingerprint": {
+    "version": "FORMAL-WEB-RUNNER-1.0.0",
+    "provider": "GitHub-Actions-self-hosted-ephemeral",
+    "osVersion": "26.5.2",
+    "osBuild": "25F84",
+    "architecture": "arm64",
+    "runnerVersion": "2.335.1",
+    "runnerArchiveSha256": "e1a9bc7a3661e06fa0b129d15c2064fe65dc81a431001d8958a9db1409b73769",
+    "fontManifestSha256": "3ff5578415c7d41c99316ae0844ae3c749023853cb20106e371ea9228101dac6",
+    "isolation": "ephemeral-one-job-registration+dedicated-temporary-work-root+post-job-removal"
+  },
+  "runnerImageSha256": "4b158b9887e1869d59442dc4fd4119bdb2650e7834484c6ea4463906acc825e0"
+}
