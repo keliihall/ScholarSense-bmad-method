@@ -7,6 +7,8 @@ import re
 import sys
 from pathlib import Path
 
+from release_json import load_json
+
 
 EXPECTED_RELEASE_ORDER = (
     "build-test",
@@ -202,10 +204,28 @@ def validate_release_workflows(project_root: Path) -> list[str]:
         if order != ["build-candidate", "capture-goldens"]:
             issues.append("GOLDEN_APPROVAL_JOB_ORDER_INVALID")
         build_candidate = bodies.get("build-candidate", "")
-        if (
-            "EXPECTED_RUNNER_IMAGE_VERSION: 20260714.240.1" not in golden
-            or 'test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"' not in build_candidate
-        ):
+        try:
+            cisb = load_json(root / "contracts/release/ci-supply-chain-baseline-1.0.0.json")
+            runner = cisb["runner"]
+            runner_label = runner["label"]
+            runner_image_version = runner["imageVersion"]
+            runtime_version_variable = runner["runtimeImageVersionVariable"]
+            if runner.get("provider") != "GitHub-hosted" or not all(
+                isinstance(value, str) and value
+                for value in (runner_label, runner_image_version, runtime_version_variable)
+            ):
+                raise ValueError("runner")
+        except (KeyError, OSError, TypeError, ValueError):
+            issues.append("GOLDEN_APPROVAL_CISB_RUNNER_INVALID")
+            runner_label = runner_image_version = runtime_version_variable = ""
+        if f"    runs-on: {runner_label}" not in build_candidate.splitlines():
+            issues.append("GOLDEN_APPROVAL_HOSTED_RUNNER_MISMATCH")
+        expected_environment = f"  EXPECTED_RUNNER_IMAGE_VERSION: {runner_image_version}"
+        expected_guard = (
+            f'        run: test "${{{runtime_version_variable}:-missing}}" = '
+            '"$EXPECTED_RUNNER_IMAGE_VERSION"'
+        )
+        if expected_environment not in golden.splitlines() or expected_guard not in build_candidate.splitlines():
             issues.append("GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING")
         capture = bodies.get("capture-goldens", "")
         if not re.search(r"(?m)^    needs:\s*build-candidate\s*$", capture):

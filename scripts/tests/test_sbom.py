@@ -139,7 +139,7 @@ class SbomContractTest(unittest.TestCase):
         decisions = {item["identity"]: item for item in evidence["components"]}
         self.assertEqual("approved", decisions["pkg:npm/%40vitejs/plugin-vue@6.0.8"]["decision"])
         self.assertEqual("approved", decisions["pkg:npm/%40types/node@24.13.3"]["decision"])
-        self.assertEqual(6, sum(item["kind"] == "maven-plugin" for item in evidence["components"]))
+        self.assertEqual(7, sum(item["kind"] == "maven-plugin" for item in evidence["components"]))
         self.assertEqual(1, sum(item["kind"] == "maven-wrapper" for item in evidence["components"]))
         self.assertEqual(3, len(evidence["installScripts"]))
         self.assertTrue(all(item["decision"] == "blocked-not-executed" for item in evidence["installScripts"]))
@@ -153,7 +153,7 @@ class SbomContractTest(unittest.TestCase):
         backend_lock = load_json(CONTRACTS / "backend-lock-1.0.0.json")
         backend = backend_components(backend_lock, BUILT_BACKEND)
         aggregate = aggregate_components(manifest, backend, npm, backend_lock)
-        self.assertEqual(207, len(aggregate))
+        self.assertEqual(208, len(aggregate))
         kinds = {item["kind"] for item in aggregate}
         self.assertTrue(
             {"release-artifact", "maven-runtime", "maven-generated-runtime", "npm", "maven-plugin", "maven-wrapper"}

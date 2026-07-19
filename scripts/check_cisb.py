@@ -17,11 +17,19 @@ COMMIT_OID = re.compile(r"^[0-9a-f]{40}$")
 SEMVER = re.compile(r"^v?\d+\.\d+\.\d+$")
 JOB = re.compile(r"(?ms)^  ([a-z][a-z0-9-]*):\n(.*?)(?=^  [a-z][a-z0-9-]*:\n|\Z)")
 IDENTITY_JOB = re.compile(
-    r"^repo:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+:ref:refs/heads/[A-Za-z0-9._/-]+"
+    r"^repo:(?P<repository>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+):ref:(?P<ref>refs/heads/[A-Za-z0-9._/-]+)"
     r"#workflow:(?P<workflow>[A-Za-z0-9_.-]+\.ya?ml)#job:(?P<job>[a-z][a-z0-9-]*)$"
 )
 WEB_QA_GATE = re.compile(
     r"^\.github/workflows/(?P<workflow>[A-Za-z0-9_.-]+\.ya?ml)#job:(?P<job>[a-z][a-z0-9-]*)$"
+)
+SIGNER_IDENTITY = re.compile(
+    r"^https://github\.com/(?P<repository>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/\.github/workflows/"
+    r"(?P<workflow>[A-Za-z0-9_.-]+\.ya?ml)@(?P<ref>refs/heads/[A-Za-z0-9._/-]+)$"
+)
+PROMOTION_IDENTITY = re.compile(
+    r"^repo:(?P<repository>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+):environment:\{stage\|production\}"
+    r"#workflow:(?P<workflow>[A-Za-z0-9_.-]+\.ya?ml)#job:(?P<job>[a-z][a-z0-9-]*)$"
 )
 WRITE_PERMISSION = re.compile(
     r"(?m)^      (?:contents|packages|actions|checks|pull-requests|issues|id-token|attestations|artifact-metadata):\s*write\s*$"
@@ -64,13 +72,120 @@ def _workflow_jobs(project_root: Path, workflow_name: str) -> dict[str, str]:
     return dict(JOB.findall(content[marker + 1 :]))
 
 
+def _job_executes(body: str, command: str) -> bool:
+    lines = body.splitlines()
+    for index, line in enumerate(lines):
+        match = re.fullmatch(r" {8}run:\s*(.*)", line)
+        if match is None:
+            continue
+        declaration = match.group(1).strip()
+        if declaration not in {"|", ">", "|-", ">-"}:
+            if command in declaration and not declaration.startswith("#"):
+                return True
+            continue
+        for candidate in lines[index + 1 :]:
+            if candidate.strip() and len(candidate) - len(candidate.lstrip()) <= 8:
+                break
+            rendered = candidate.strip()
+            if rendered and not rendered.startswith("#") and command in rendered:
+                return True
+    return False
+
+
+def visual_governance_issues(
+    document: dict[str, Any], visual_baseline: dict[str, Any], project_root: Path
+) -> list[str]:
+    issues: list[str] = []
+    approval = document.get("goldenApproval", {})
+    if visual_baseline.get("approvedByUxBrand") != approval.get("accountablePrincipal"):
+        issues.append("CISB_VGB_UX_BRAND_OWNER_MISMATCH")
+    if visual_baseline.get("approvalPolicy") != approval.get("policy"):
+        issues.append("CISB_VGB_APPROVAL_POLICY_MISMATCH")
+    gate = approval.get("webQaGate")
+    if visual_baseline.get("automatedWebQaGate") != f"automated-gate:{gate}":
+        issues.append("CISB_VGB_WEB_QA_GATE_MISMATCH")
+    gate_match = WEB_QA_GATE.fullmatch(gate) if isinstance(gate, str) else None
+    body = (
+        _workflow_jobs(project_root, gate_match.group("workflow")).get(gate_match.group("job"), "")
+        if gate_match
+        else ""
+    )
+    if not _job_executes(body, "scripts/run-formal-web-evidence.sh"):
+        issues.append("CISB_WEB_QA_GATE_NOT_EXECUTED")
+    return issues
+
+
+def _repository_slug(document: dict[str, Any]) -> str | None:
+    value = _get(document, "repository.url")
+    if not isinstance(value, str):
+        return None
+    match = re.fullmatch(r"https://github\.com/([^/]+/[^/]+?)(?:\.git)?/?", value)
+    return match.group(1) if match else None
+
+
+def _identity_duty(document: dict[str, Any], field: str) -> tuple[str, str] | None:
+    release_workflow = Path(str(_get(document, "ci.workflow") or "")).name
+    web_qa_gate = _get(document, "goldenApproval.webQaGate")
+    web_qa_match = WEB_QA_GATE.fullmatch(web_qa_gate) if isinstance(web_qa_gate, str) else None
+    duties = {
+        "identities.build": (release_workflow, "build-test"),
+        "identities.attestation": ("artifact-signing.yml", "sign"),
+        "identities.webQa": (
+            web_qa_match.group("workflow") if web_qa_match else "",
+            web_qa_match.group("job") if web_qa_match else "",
+        ),
+        "identities.verifier": (release_workflow, "independent-verifier"),
+    }
+    return duties.get(field)
+
+
 def _identity_job_issues(document: dict[str, Any], project_root: Path, field: str) -> list[str]:
     value = _get(document, field)
     match = IDENTITY_JOB.fullmatch(value) if isinstance(value, str) else None
     if match is None:
         return [f"CISB_IDENTITY_JOB_INVALID: {field}"]
-    if match.group("job") not in _workflow_jobs(project_root, match.group("workflow")):
+    if match.group("repository") != _repository_slug(document):
+        return [f"CISB_IDENTITY_REPOSITORY_MISMATCH: {field}"]
+    if match.group("ref") != _get(document, "ci.protectedRef"):
+        return [f"CISB_IDENTITY_REF_MISMATCH: {field}"]
+    jobs = _workflow_jobs(project_root, match.group("workflow"))
+    if match.group("job") not in jobs:
         return [f"CISB_IDENTITY_JOB_NOT_FOUND: {field}"]
+    if (match.group("workflow"), match.group("job")) != _identity_duty(document, field):
+        return [f"CISB_IDENTITY_DUTY_MISMATCH: {field}"]
+    return []
+
+
+def _signer_identity_issues(
+    document: dict[str, Any], project_root: Path, field: str, expected_workflow: str
+) -> list[str]:
+    value = _get(document, field)
+    match = SIGNER_IDENTITY.fullmatch(value) if isinstance(value, str) else None
+    if match is None:
+        return [f"CISB_SIGNER_IDENTITY_INVALID: {field}"]
+    if match.group("repository") != _repository_slug(document):
+        return [f"CISB_SIGNER_REPOSITORY_MISMATCH: {field}"]
+    if match.group("ref") != _get(document, "ci.protectedRef"):
+        return [f"CISB_SIGNER_REF_MISMATCH: {field}"]
+    if match.group("workflow") != expected_workflow:
+        return [f"CISB_SIGNER_DUTY_MISMATCH: {field}"]
+    if "sign" not in _workflow_jobs(project_root, expected_workflow):
+        return [f"CISB_SIGNER_JOB_NOT_FOUND: {field}"]
+    return []
+
+
+def _promotion_identity_issues(document: dict[str, Any], project_root: Path) -> list[str]:
+    value = _get(document, "identities.promotion")
+    match = PROMOTION_IDENTITY.fullmatch(value) if isinstance(value, str) else None
+    if match is None:
+        return ["CISB_PROMOTION_IDENTITY_INVALID"]
+    if match.group("repository") != _repository_slug(document):
+        return ["CISB_PROMOTION_REPOSITORY_MISMATCH"]
+    release_workflow = Path(str(_get(document, "ci.workflow") or "")).name
+    if (match.group("workflow"), match.group("job")) != (release_workflow, "promotion"):
+        return ["CISB_PROMOTION_DUTY_MISMATCH"]
+    if match.group("job") not in _workflow_jobs(project_root, match.group("workflow")):
+        return ["CISB_PROMOTION_JOB_NOT_FOUND"]
     return []
 
 
@@ -181,6 +296,17 @@ def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
         issues.append("CISB_ARTIFACT_SIGNER_IDENTITY_MISMATCH")
     if _get(document, "signing.manifestCertificateIdentity") != manifest_signer:
         issues.append("CISB_MANIFEST_SIGNER_IDENTITY_MISMATCH")
+    issues.extend(
+        _signer_identity_issues(
+            document, project_root, "identities.artifactSigner", "artifact-signing.yml"
+        )
+    )
+    issues.extend(
+        _signer_identity_issues(
+            document, project_root, "identities.manifestSigner", "manifest-signing.yml"
+        )
+    )
+    issues.extend(_promotion_identity_issues(document, project_root))
     if _get(document, "goldenApproval.policy") != "single-accountable-plus-independent-automated-web-qa":
         issues.append("CISB_GOLDEN_APPROVAL_POLICY_INVALID")
 
@@ -198,7 +324,7 @@ def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
         )
         if (
             not body
-            or "scripts/run-formal-web-evidence.sh" not in body
+            or not _job_executes(body, "scripts/run-formal-web-evidence.sh")
             or WRITE_PERMISSION.search(body)
             or not str(_get(document, "identities.webQa") or "").endswith(expected_identity_suffix)
         ):
@@ -211,6 +337,15 @@ def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
             issues.append(f"CISB_PLATFORM_BASELINE_INCOMPLETE: ci.workflow ({workflow_value})")
         else:
             issues.extend(validate_workflow(workflow))
+    try:
+        visual_baseline = load_json(
+            project_root / "contracts/release/visual-baseline-vgb-1.0.0.json"
+        )
+        if not isinstance(visual_baseline, dict):
+            raise ValueError("VGB_OBJECT_REQUIRED")
+        issues.extend(visual_governance_issues(document, visual_baseline, project_root))
+    except (OSError, ValueError):
+        issues.append("CISB_VGB_GOVERNANCE_INVALID")
     return sorted(set(issues))
 
 

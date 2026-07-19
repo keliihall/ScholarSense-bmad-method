@@ -164,7 +164,7 @@ Status: review
 **Then** 独立正式入口 `run-formal-web-evidence` 只接受 artifact store URI、expected frontend artifact SHA-256、selected BuildManifest digest 与 TEST-ENV digest；从 store 下载待提升归档，验证 size/mediaType/hash/signature/provenance，安全解包到只读临时目录并直接服务这些冻结字节。正式路径禁止执行 `npm run build`、`vite build`、读取工作区源码/`dist` 或把当前源码重建结果作为测试 subject；报告 `subjectArtifactSha256` 必须等于 ReleaseManifest 与 promotion gate 使用的前端 digest  
 **And** Chrome 150/149 与 Edge 150/149 分别覆盖 1440×900、1366×768、375×812、320px reflow、200% zoom、键盘/焦点、非颜色状态、等价表格/live region、axe/WCAG baseline、视觉差异、reduced-motion、资源/base-path/console/network error，并生成绑定 source/artifact/BuildManifest/TEST-ENV/runner/browser executable digest 的机器报告和可读摘要  
 **And** `VGB-1.0.0` 为版本化只读 golden manifest：每个 OS/browser 完整版本与 executable digest/page/viewport 都有预先存在的 golden URI/SHA-256；固定 `deviceScaleFactor=1`、`locale=zh-CN`、`timezone=Asia/Shanghai`、light color scheme、clock/data/network、实际字体文件/runner image digest，等待 `document.fonts.ready`，禁用 animation/transition、隐藏 caret、固定 reduced-motion，并以 `threshold=0.1,maxDiffPixels=0` 比较且保存 golden/actual/diff digest  
-**And** release workflow 禁止 `--update-snapshots` 或本次 run 生成 expected 后自验；golden 只能由独立受保护更新工作流发布新版本，并取得具名 UX/品牌 owner 与 Web QA 双审批。本次 run 之前不存在/未批准、摘要漂移、字体/OS/browser 漂移或阈值漂移均 fail closed  
+**And** release workflow 禁止 `--update-snapshots` 或本次 run 生成 expected 后自验；golden 只能由独立受保护更新工作流发布新版本，由唯一具名 UX/品牌 accountable owner 批准，并由与发布器分离的自动 Web QA gate 实际执行验证；不得虚构第二名人工 reviewer。本次 run 之前不存在/未批准、摘要漂移、字体/OS/browser 漂移或阈值漂移均 fail closed
 **And** 1.1c 的 `optional-brand-preflight-not-formal-report` 及会从当前源码重建的 `run-brand-preflight.mjs` 保持原分类，只能作为本地预检，不能改名或扩展成正式报告。正式报告只证明生产启动面发布基线，不声称 1.2 尚未实现的门户/SSO/业务页已通过最终 Web/WCAG  
 **And** App/WebView 继续携带 `AAB-1.0.0 / USER-2026-07-19-SCHOOL-APP-NA` 与 `runtimeEvidenceClaim=none`；不得用桌面 Chromium 代替真机，也不得生成虚假 pass。
 
@@ -234,7 +234,7 @@ Status: review
   - [x] 新建独立 `run-formal-web-evidence`，不得扩展当前会从源码重建的 `run-brand-preflight.mjs`。正式入口只从 store 下载 expected digest 的前端归档，验证 hash/signature/provenance，拒绝链接/路径逃逸/重复路径后安全解包到只读临时目录，直接服务冻结字节；禁止执行 npm/Vite build 或读取工作区 `dist`。
   - [x] CISB 批准一次性/ephemeral self-hosted runner 或受控 VM 镜像，记录 TEST-ENV 精确 macOS build、arm64、runner image identity、隔离与清理证据；普通 hosted runner 或容器 digest 不得冒充精确 macOS 环境。
   - [x] 在 TEST-ENV 精确 OS 和 Chrome/Edge 150/149 实际二进制上运行两桌面视口、zoom/reflow、键盘/焦点、axe、视觉/资源/console/network 矩阵；报告 subject 必须等于 selected frontend artifact digest，不能取得精确 runner 时 fail closed。
-  - [x] 新建并校验 `VGB-1.0.0` 只读 golden manifest，冻结每个 matrix cell 的 golden digest、浏览器/OS/字体/视口/DPR/locale/timezone/clock/data/network 与 Playwright 比较参数；release job 禁止更新 snapshot。同一 run 生成 expected、未经 UX/品牌 + Web QA 双审批更新、任何环境/golden digest 漂移均阻断。
+  - [x] 新建并校验 `VGB-1.0.0` 只读 golden manifest，冻结每个 matrix cell 的 golden digest、浏览器/OS/字体/视口/DPR/locale/timezone/clock/data/network 与 Playwright 比较参数；release job 禁止更新 snapshot。同一 run 生成 expected、未经唯一具名 UX/品牌 accountable owner 批准或未由独立自动 Web QA gate 实际执行验证、任何环境/golden digest 漂移均阻断；不要求或虚构第二名人工 reviewer。
   - [x] 负例固定为“构建/扫描/签名 A，store 内容或 expected digest 换成 B 后运行 UI 矩阵”，必须在启动浏览器前或生成 PASS 前稳定失败；另测当前源码与 store artifact 不同仍只测试 store 字节。
   - [x] 明确启动面与下游业务页验收边界；App 仅带 N/A 决策，不下载、模拟或伪造 WebView 证据。
 
@@ -284,6 +284,13 @@ Status: review
 - [x] [Review][Patch] 将正式 Web 入口的裸 `node` 执行收回 PAB toolchain wrapper [scripts/run-formal-web-evidence.sh:69]
 - [x] [Review][Patch] 在 Golden 候选构建中强制 CISB 冻结的 hosted runner `ImageVersion`，并增加漂移负例 [.github/workflows/golden-approval.yml:17]
 - [x] [Review][Patch] 在新 signer/job DAG 上完成真实受保护 release/promotion replay，回读验证 signer identity、SPDX attestation 与实际 approvals API 路径后再恢复 `done` [_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md:467]
+
+#### 定向修复验证（2026-07-19）
+
+- [ ] [Review][Patch] 将 CISB identity 精确绑定冻结的 repository/ref/workflow/job 职责，拒绝“job 存在但错指”及 fork repository identity [scripts/check_cisb.py:67]
+- [ ] [Review][Patch] 将 cold-cache 预热执行的 `maven-dependency-plugin` 版本、传递解析图与摘要纳入 backend lock，并在首次执行前验真 [scripts/bootstrap.sh:24]
+- [ ] [Review][Patch] 让 Golden workflow checker 强制 `build-candidate` 使用 CISB 冻结的 GitHub-hosted runner，并拒绝只在注释/非执行文本中出现的 `ImageVersion` 守卫 [scripts/check_release_workflows.py:204]
+- [ ] [Review][Patch] 完成“唯一人类 UX/Brand owner + 独立自动 WebQA”合同统一：修正 AC/Task 中的“双审批”残留，并让语义门拒绝 CISB/VGB owner 或未实际执行的 WebQA gate 漂移 [_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md:167]
 
 ## Dev Notes
 
@@ -438,6 +445,12 @@ scripts/tests/
 - [JSON Schema Draft 2020-12](https://json-schema.org/draft/2020-12)
 
 ## Dev Agent Record
+
+### Implementation Plan
+
+- 以四组定向负例分别锁定 CISB identity、Maven cold-cache 预热、Golden hosted runner 与 UX/Brand + 自动 WebQA 合同漂移，每组先确认 RED，再做最小修复。
+- 每项修复后运行定向测试与相关合同门；四项收敛后重放完整回归、可复现构建和 Definition of Done 校验。
+- 仅在测试与验收条件全部通过后勾选定向修复项，并更新 Debug Log、Completion Notes、File List 与 Change Log。
 
 ### Agent Model Used
 

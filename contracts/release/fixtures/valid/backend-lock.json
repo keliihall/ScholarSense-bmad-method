@@ -1,5 +1,6 @@
 {
   "version": "BACKEND-LOCK-1.0.0",
+  "bootstrapPlugin": "org.apache.maven.plugins:maven-dependency-plugin:3.10.0",
   "dependencies": [
     {
       "coordinate": "org.example:library:1.0.0",

@@ -20,12 +20,14 @@ WRAPPER_SOURCE = CENTRAL + "org/apache/maven/apache-maven/3.9.16/apache-maven-3.
 WRAPPER_SHA256 = "5af3b743dd8b876b5c45da33b676251e5f1687712644abb4ee519ca56e1d89ce"
 BUILD_PLUGINS = (
     ("org.springframework.boot", "spring-boot-maven-plugin", "4.1.0"),
+    ("org.apache.maven.plugins", "maven-dependency-plugin", "3.10.0"),
     ("org.apache.maven.plugins", "maven-clean-plugin", "3.5.0"),
     ("org.apache.maven.plugins", "maven-resources-plugin", "3.5.0"),
     ("org.apache.maven.plugins", "maven-jar-plugin", "3.5.0"),
     ("org.apache.maven.plugins", "maven-compiler-plugin", "3.15.0"),
     ("org.apache.maven.plugins", "maven-surefire-plugin", "3.5.6"),
 )
+BOOTSTRAP_PLUGIN = "org.apache.maven.plugins:maven-dependency-plugin:3.10.0"
 DYNAMIC = re.compile(r"(?i)(?:SNAPSHOT|LATEST|RELEASE|\[|\]|\(|\)|\+|\*)")
 GENERATED_RUNTIME_LIBS = {"spring-boot-jarmode-tools-4.1.0.jar"}
 MAVEN_NAMESPACE = {"m": "http://maven.apache.org/POM/4.0.0"}
@@ -173,6 +175,41 @@ def plugin_resolution_graph(output: str, repository: Path) -> list[dict[str, Any
     return sorted(roots, key=lambda item: item["root"])
 
 
+def bootstrap_plugin_artifacts(lock: dict[str, Any]) -> list[dict[str, str]]:
+    if lock.get("bootstrapPlugin") != BOOTSTRAP_PLUGIN:
+        raise ValueError("BACKEND_LOCK_BOOTSTRAP_PLUGIN_INVALID")
+    matches = [
+        item
+        for item in lock.get("pluginResolution", [])
+        if isinstance(item, dict) and item.get("root") == BOOTSTRAP_PLUGIN
+    ]
+    if len(matches) != 1 or not isinstance(matches[0].get("artifacts"), list):
+        raise ValueError("BACKEND_LOCK_BOOTSTRAP_PLUGIN_RESOLUTION_MISSING")
+    artifacts = matches[0]["artifacts"]
+    if not artifacts:
+        raise ValueError("BACKEND_LOCK_BOOTSTRAP_PLUGIN_RESOLUTION_MISSING")
+    for artifact in artifacts:
+        if not isinstance(artifact, dict):
+            raise ValueError("BACKEND_LOCK_BOOTSTRAP_PLUGIN_ARTIFACT_INVALID")
+        fields = str(artifact.get("coordinate") or "").split(":")
+        if len(fields) not in {4, 5} or fields[2] != "jar" or DYNAMIC.search(fields[-1]):
+            raise ValueError("BACKEND_LOCK_BOOTSTRAP_PLUGIN_ARTIFACT_INVALID")
+        group, name, version = fields[0], fields[1], fields[-1]
+        classifier = f"-{fields[3]}" if len(fields) == 5 else ""
+        base = (
+            f"{CENTRAL}{group.replace('.', '/')}/{name}/{version}/"
+            f"{name}-{version}{classifier}"
+        )
+        pom_base = f"{CENTRAL}{group.replace('.', '/')}/{name}/{version}/{name}-{version}"
+        if artifact.get("sourceUri") != f"{base}.jar" or artifact.get("pomSourceUri") != f"{pom_base}.pom":
+            raise ValueError("BACKEND_LOCK_BOOTSTRAP_PLUGIN_SOURCE_INVALID")
+        if not re.fullmatch(r"[0-9a-f]{64}", str(artifact.get("binarySha256") or "")):
+            raise ValueError("BACKEND_LOCK_BOOTSTRAP_PLUGIN_DIGEST_INVALID")
+        if not re.fullmatch(r"[0-9a-f]{64}", str(artifact.get("pomSha256") or "")):
+            raise ValueError("BACKEND_LOCK_BOOTSTRAP_PLUGIN_DIGEST_INVALID")
+    return artifacts
+
+
 def resolve_plugin_graph(project_root: Path) -> list[dict[str, Any]]:
     result = subprocess.run(
         [
@@ -241,10 +278,19 @@ def validate_backend_lock(lock: dict[str, Any], project_root: Path) -> list[str]
         issues.append("BACKEND_LOCK_PLUGIN_RESOLUTION_MISSING")
     else:
         try:
-            if resolution != resolve_plugin_graph(project_root):
+            lifecycle_resolution = [
+                item
+                for item in resolution
+                if isinstance(item, dict) and item.get("root") != BOOTSTRAP_PLUGIN
+            ]
+            if lifecycle_resolution != resolve_plugin_graph(project_root):
                 issues.append("BACKEND_LOCK_PLUGIN_RESOLUTION_DRIFT")
         except ValueError as error:
             issues.append(str(error))
+    try:
+        bootstrap_plugin_artifacts(lock)
+    except ValueError as error:
+        issues.append(str(error))
     if extensions != []:
         issues.append("BACKEND_LOCK_EXTENSION_SET_INVALID")
     runtime_graph = lock.get("runtimeGraph")

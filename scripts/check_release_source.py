@@ -121,6 +121,7 @@ def source_scope_issues(files: list[dict[str, str]]) -> list[str]:
         "scripts/install-release-tools.sh",
         "scripts/install-formal-web-browsers.sh",
         "scripts/promote-release.sh",
+        "scripts/prepare_locked_maven_plugin.py",
         "scripts/read_promotion.py",
         "scripts/rollback-release.sh",
         "scripts/run-formal-web-evidence.sh",
