@@ -151,7 +151,10 @@ def assemble_release_manifest_input(
 
     source_inventory_path = source_root / "contracts/release/release-source-inventory-1.0.0.json"
     source_inventory = load_json(source_inventory_path)
-    if not isinstance(source_inventory, dict) or source_inventory.get("sourceCommit") != build_manifest.get("sourceCommit"):
+    if (
+        not isinstance(source_inventory, dict)
+        or source_inventory.get("normalizedManifestSha256") != build_manifest.get("sourceManifestSha256")
+    ):
         raise ValueError("RELEASE_ASSEMBLY_SOURCE_INVENTORY_SUBJECT_MISMATCH")
 
     build_artifacts = {
