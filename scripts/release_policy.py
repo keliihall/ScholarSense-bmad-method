@@ -131,12 +131,24 @@ def promotion_record_set_issues(records: list[dict[str, Any]]) -> list[str]:
                 if not record.get(field):
                     issues.append(f"PROMOTION_PARTIAL_STATE: record[{index}].{field}")
     for key, values in grouped.items():
-        manifests = {value.get("manifestSha256") for value in values}
-        if len(manifests) > 1:
+        material = {
+            (
+                value.get("manifestSha256"),
+                value.get("artifactOciDigest"),
+                value.get("evidenceIndexSha256"),
+            )
+            for value in values
+        }
+        if len(material) > 1:
             issues.append(f"PROMOTION_IDEMPOTENCY_CONFLICT: {key[0]}+{key[1]}")
         winner_count = sum(value.get("result") == "promoted" for value in values)
         if winner_count > 1:
             issues.append(f"PROMOTION_CONCURRENT_MULTIPLE_WINNERS: {key[0]}+{key[1]}")
+        for value in values:
+            digest = value.get("artifactOciDigest")
+            target_uri = value.get("targetArtifactUri")
+            if target_uri is not None and isinstance(digest, str) and not str(target_uri).endswith(f"@{digest}"):
+                issues.append(f"PROMOTION_STORE_LEDGER_DRIFT: {key[0]}+{key[1]}")
     return sorted(set(issues))
 
 
