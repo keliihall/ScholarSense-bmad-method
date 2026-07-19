@@ -26,6 +26,17 @@ class DeliveryQualityTest(unittest.TestCase):
             self.assertTrue(path.is_file(), f"missing {relative}")
             self.assertTrue(path.stat().st_mode & 0o111, f"not executable: {relative}")
 
+    def test_frontend_replay_copies_every_production_root_it_scans(self) -> None:
+        verifier = (PROJECT_ROOT / "scripts/verify_frontend.sh").read_text(encoding="utf-8")
+        for relative in PRODUCTION_ROOTS:
+            if relative == "backend/src/main":
+                expected = 'cp -R "$ROOT_DIR/backend/src/main" "$replay_root/backend/src/main"'
+            elif relative == "frontend":
+                expected = 'cp -R "$ROOT_DIR/frontend/." "$replay_root/frontend/"'
+            else:
+                expected = f'cp -R "$ROOT_DIR/{relative}" "$replay_root/{relative}"'
+            self.assertIn(expected, verifier, f"isolated replay omits production root: {relative}")
+
     def test_production_tree_is_clean(self) -> None:
         self.assertEqual([], scan(PROJECT_ROOT))
 

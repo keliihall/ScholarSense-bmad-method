@@ -52,13 +52,18 @@ class ReleaseSourceInventoryTest(unittest.TestCase):
         paths = {item["path"] for item in actual["files"]}
         for required in (
             ".github/workflows/platform-probe.yml",
+            ".github/workflows/ci.yml",
+            ".github/workflows/release.yml",
             "backend/mvnw",
             "backend/mvnw.cmd",
             "backend/.mvn/wrapper/maven-wrapper.properties",
             "backend/pom.xml",
             "frontend/package-lock.json",
             "release/manifests.py",
+            "release/verifier.py",
             "scripts/check_release_manifests.py",
+            "scripts/check_release_workflows.py",
+            "scripts/verify-release.sh",
         ):
             self.assertIn(required, paths)
 

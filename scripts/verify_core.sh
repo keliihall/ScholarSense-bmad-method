@@ -20,6 +20,7 @@ echo "[verify-core] audit and standard-library regression"
   "$TOOLCHAIN" python3 scripts/check_release_source.py .
   "$TOOLCHAIN" python3 scripts/check_cisb.py .
   "$TOOLCHAIN" python3 scripts/check_workflow_security.py
+  "$TOOLCHAIN" python3 scripts/check_release_workflows.py .
   "$TOOLCHAIN" python3 scripts/check_release_contracts.py .
   "$TOOLCHAIN" python3 scripts/check_backend_lock.py .
 )

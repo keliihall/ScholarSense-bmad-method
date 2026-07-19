@@ -8,6 +8,12 @@
       "sourceUri": "https://github.com/sigstore/cosign/releases/download/v3.1.2/cosign-linux-amd64"
     },
     {
+      "name": "cosign-linux-amd64-bundle",
+      "version": "v3.1.2",
+      "binarySha256": "fdaa1c168d67041cd0d8f5782f8136ac5d148827b6911ba8bb577cbc7e13de2c",
+      "sourceUri": "https://github.com/sigstore/cosign/releases/download/v3.1.2/cosign-linux-amd64.sigstore.json"
+    },
+    {
       "name": "cosign-macos-arm64",
       "version": "v3.1.2",
       "binarySha256": "dec1c3f802320b19c2fbcf2dc7bcfb3f258e1c181a046c23a1a074bdf932f10a",
@@ -24,6 +30,12 @@
       "version": "v0.72.0",
       "binarySha256": "bbb64b9695866ce4a7a8f5c9592002c5961cab378577fa3f8a040df362b9b2ea",
       "sourceUri": "https://github.com/aquasecurity/trivy/releases/download/v0.72.0/trivy_0.72.0_Linux-64bit.tar.gz"
+    },
+    {
+      "name": "trivy-linux-amd64-bundle",
+      "version": "v0.72.0",
+      "binarySha256": "fccbe7d4877af44f27e205528626dfeb3ff6efac57c22061f1fccb59e8a80007",
+      "sourceUri": "https://github.com/aquasecurity/trivy/releases/download/v0.72.0/trivy_0.72.0_Linux-64bit.tar.gz.sigstore.json"
     },
     {
       "name": "trivy-macos-arm64-archive",

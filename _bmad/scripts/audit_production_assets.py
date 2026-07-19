@@ -1047,7 +1047,11 @@ def _workspace_asset_candidates(
     deployment.update(root.glob("*.tf.json"))
 
     try:
-        first_level = sorted(root.iterdir(), key=lambda path: path.name)
+        with os.scandir(root) as iterator:
+            first_level = sorted(
+                (Path(entry.path) for entry in iterator),
+                key=lambda path: path.name,
+            )
     except OSError as exc:
         raise AuditError("无法枚举工作区根级生产资产候选") from exc
     root_children = {path.name: path for path in first_level}
@@ -1086,11 +1090,13 @@ def _workspace_asset_candidates(
         if project_root.name in WORKSPACE_DISCOVERY_PRUNED_DIRECTORIES:
             continue
         try:
-            children = {
-                child.name: child
-                for child in project_root.iterdir()
-            }
-        except OSError:
+            _require_directory_read_and_traverse(mode, project_root.name)
+            with os.scandir(project_root) as iterator:
+                children = {
+                    entry.name: Path(entry.path)
+                    for entry in iterator
+                }
+        except (AuditError, OSError):
             # 无法排除其中包含后端、CI 或部署指纹；保守地绑定到三类
             # 负面事实，使后续快照形成可定位的 blocked 交接。
             backend.add(project_root)
