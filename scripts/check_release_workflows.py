@@ -121,6 +121,9 @@ def validate_release_workflows(project_root: Path) -> list[str]:
         build = bodies.get("build-cas", "")
         if "fetch-depth: 0" not in build:
             issues.append("RELEASE_BUILD_FULL_SOURCE_HISTORY_MISSING")
+        sbom = bodies.get("sbom-scan", "")
+        if "mkdir -p release-out/artifact" not in sbom:
+            issues.append("RELEASE_SBOM_READBACK_PARENT_CREATION_MISSING")
         promotion = bodies.get("promotion", "")
         if "environment: ${{ inputs.target_environment }}" not in promotion:
             issues.append("RELEASE_PROMOTION_PROTECTED_ENVIRONMENT_MISSING")

@@ -121,7 +121,7 @@ jobs:
           ORAS_PASSWORD: ${{ github.token }}
         run: |
           "$RUNNER_TEMP/release-tools/oras" login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
-          mkdir release-out/artifact
+          mkdir -p release-out/artifact
           "$RUNNER_TEMP/release-tools/oras" pull "${{ needs.build-cas.outputs.artifact-uri }}" --output release-out/artifact
       - name: Acquire and freeze the vulnerability database snapshot
         run: |
