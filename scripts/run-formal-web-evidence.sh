@@ -55,7 +55,7 @@ python3 -B "$ROOT_DIR/release/verifier.py" attestation-query \
   "https://slsa.dev/provenance/v1" "https://cyclonedx.org/bom"
 "$TOOLS/cosign" verify-blob \
   --bundle "$ATTESTATION_ROOT/scholarsense-frontend.sigstore.json" \
-  --certificate-identity "https://github.com/keliihall/ScholarSense-bmad-method/.github/workflows/release.yml@refs/heads/main" \
+  --certificate-identity "https://github.com/keliihall/ScholarSense-bmad-method/.github/workflows/artifact-signing.yml@refs/heads/main" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
   "$BUILD_ROOT/scholarsense-frontend.tar.gz"
 
@@ -66,7 +66,7 @@ python3 -B "$ROOT_DIR/release/formal_web.py" safe_extract_frontend \
 BROWSER_INSTALL_ROOT="${FORMAL_BROWSER_INSTALL_ROOT:-$HOME/Library/Caches/ScholarSense/formal-browser-install/TEST-ENV-1.0.0}"
 "$ROOT_DIR/scripts/install-formal-web-browsers.sh" "$BROWSER_INSTALL_ROOT"
 
-node "$ROOT_DIR/frontend/scripts/run-formal-web-evidence.mjs" \
+"$ROOT_DIR/_bmad/scripts/with_pab_toolchain.sh" node "$ROOT_DIR/frontend/scripts/run-formal-web-evidence.mjs" \
   --served-root "$WORK_DIR/served" \
   --browsers "$BROWSER_INSTALL_ROOT/browsers.json" \
   --golden-root "$WORK_DIR/golden" \

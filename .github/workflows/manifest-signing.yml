@@ -34,12 +34,14 @@ jobs:
         id: publish
         env:
           ORAS_PASSWORD: ${{ github.token }}
+          MANIFEST_URI: ${{ inputs.manifest_uri }}
+          RELEASE_VERSION: ${{ inputs.release_version }}
         run: |
           "$RUNNER_TEMP/release-tools/oras" login ghcr.io --username "$GITHUB_ACTOR" --password-stdin <<< "$ORAS_PASSWORD"
           mkdir -p release-out/manifest release-out/manifest-signature
-          "$RUNNER_TEMP/release-tools/oras" pull "${{ inputs.manifest_uri }}" --output release-out/manifest
+          "$RUNNER_TEMP/release-tools/oras" pull "$MANIFEST_URI" --output release-out/manifest
           manifest="release-out/manifest/release-out/release-manifest.json"
           "$RUNNER_TEMP/release-tools/cosign" sign-blob --yes --bundle release-out/manifest-signature/release-manifest.sigstore.json "$manifest"
-          target="ghcr.io/keliihall/scholarsense-release-evidence:manifest-signature-${{ inputs.release_version }}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          target="ghcr.io/keliihall/scholarsense-release-evidence:manifest-signature-${RELEASE_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/manifest-signature/release-manifest.sigstore.json:application/vnd.dev.sigstore.bundle.v0.3+json --format go-template='{{.digest}}')"
           printf 'signature-uri=ghcr.io/keliihall/scholarsense-release-evidence@%s\n' "$digest" >> "$GITHUB_OUTPUT"

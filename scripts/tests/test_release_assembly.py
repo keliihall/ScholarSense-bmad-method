@@ -92,11 +92,14 @@ class ReleaseAssemblyTest(unittest.TestCase):
                 "2026-07-19T10:30:00+08:00",
             )
             manifest = create_release_manifest(payload)
-            self.assertIn("backend-sbom-spdx", {item["id"] for item in manifest["evidence"]})
-            self.assertIn("frontend-sbom-spdx", {item["id"] for item in manifest["evidence"]})
+            kinds_by_id = {item["id"]: item["kind"] for item in manifest["evidence"]}
+            self.assertEqual("sbom-cyclonedx", kinds_by_id["backend-sbom-cyclonedx"])
+            self.assertEqual("sbom-spdx", kinds_by_id["backend-sbom-spdx"])
+            self.assertEqual("sbom-cyclonedx", kinds_by_id["frontend-sbom-cyclonedx"])
+            self.assertEqual("sbom-spdx", kinds_by_id["frontend-sbom-spdx"])
             self.assertEqual("1.1.0", manifest["releaseVersion"])
             self.assertEqual(2, len(manifest["artifacts"]))
-            self.assertGreaterEqual(len(manifest["evidence"]), 14)
+            self.assertGreaterEqual(len(manifest["evidence"]), 16)
             self.assertTrue(all(item["uri"].startswith("oci://ghcr.io/") for item in manifest["evidence"]))
 
     def test_rejects_artifact_or_source_inventory_subject_drift(self) -> None:

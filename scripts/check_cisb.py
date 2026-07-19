@@ -15,6 +15,17 @@ from release_json import load_json
 PLACEHOLDER = re.compile(r"(?i)(?:^|[^a-z])(?:tbd|todo|unknown|no_vcs|latest|equivalent|placeholder|pending)(?:$|[^a-z])")
 COMMIT_OID = re.compile(r"^[0-9a-f]{40}$")
 SEMVER = re.compile(r"^v?\d+\.\d+\.\d+$")
+JOB = re.compile(r"(?ms)^  ([a-z][a-z0-9-]*):\n(.*?)(?=^  [a-z][a-z0-9-]*:\n|\Z)")
+IDENTITY_JOB = re.compile(
+    r"^repo:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+:ref:refs/heads/[A-Za-z0-9._/-]+"
+    r"#workflow:(?P<workflow>[A-Za-z0-9_.-]+\.ya?ml)#job:(?P<job>[a-z][a-z0-9-]*)$"
+)
+WEB_QA_GATE = re.compile(
+    r"^\.github/workflows/(?P<workflow>[A-Za-z0-9_.-]+\.ya?ml)#job:(?P<job>[a-z][a-z0-9-]*)$"
+)
+WRITE_PERMISSION = re.compile(
+    r"(?m)^      (?:contents|packages|actions|checks|pull-requests|issues|id-token|attestations|artifact-metadata):\s*write\s*$"
+)
 
 
 def load_json_document(path: Path) -> dict[str, Any]:
@@ -39,6 +50,28 @@ def _is_concrete(value: Any) -> bool:
     if isinstance(value, str) and PLACEHOLDER.search(value):
         return False
     return True
+
+
+def _workflow_jobs(project_root: Path, workflow_name: str) -> dict[str, str]:
+    path = project_root / ".github/workflows" / workflow_name
+    try:
+        content = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return {}
+    marker = content.find("\njobs:\n")
+    if marker < 0:
+        return {}
+    return dict(JOB.findall(content[marker + 1 :]))
+
+
+def _identity_job_issues(document: dict[str, Any], project_root: Path, field: str) -> list[str]:
+    value = _get(document, field)
+    match = IDENTITY_JOB.fullmatch(value) if isinstance(value, str) else None
+    if match is None:
+        return [f"CISB_IDENTITY_JOB_INVALID: {field}"]
+    if match.group("job") not in _workflow_jobs(project_root, match.group("workflow")):
+        return [f"CISB_IDENTITY_JOB_NOT_FOUND: {field}"]
+    return []
 
 
 def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
@@ -71,6 +104,7 @@ def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
         "formalWebRunner.cleanup",
         "identities.build",
         "identities.attestation",
+        "identities.webQa",
         "identities.artifactSigner",
         "identities.manifestSigner",
         "identities.promotion",
@@ -149,6 +183,26 @@ def validate_cisb(document: dict[str, Any], project_root: Path) -> list[str]:
         issues.append("CISB_MANIFEST_SIGNER_IDENTITY_MISMATCH")
     if _get(document, "goldenApproval.policy") != "single-accountable-plus-independent-automated-web-qa":
         issues.append("CISB_GOLDEN_APPROVAL_POLICY_INVALID")
+
+    for field in ("identities.build", "identities.attestation", "identities.webQa", "identities.verifier"):
+        issues.extend(_identity_job_issues(document, project_root, field))
+    web_qa_gate = _get(document, "goldenApproval.webQaGate")
+    gate_match = WEB_QA_GATE.fullmatch(web_qa_gate) if isinstance(web_qa_gate, str) else None
+    if gate_match is None:
+        issues.append("CISB_WEB_QA_GATE_INVALID")
+    else:
+        jobs = _workflow_jobs(project_root, gate_match.group("workflow"))
+        body = jobs.get(gate_match.group("job"), "")
+        expected_identity_suffix = (
+            f"#workflow:{gate_match.group('workflow')}#job:{gate_match.group('job')}"
+        )
+        if (
+            not body
+            or "scripts/run-formal-web-evidence.sh" not in body
+            or WRITE_PERMISSION.search(body)
+            or not str(_get(document, "identities.webQa") or "").endswith(expected_identity_suffix)
+        ):
+            issues.append("CISB_WEB_QA_GATE_NOT_INDEPENDENT")
 
     workflow_value = _get(document, "ci.workflow")
     if isinstance(workflow_value, str) and _is_concrete(workflow_value):

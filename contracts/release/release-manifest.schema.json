@@ -16,7 +16,7 @@
     "controlledInputs": {"type": "array", "minItems": 16, "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/reference"}},
     "locks": {"type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true, "items": {"$ref": "#/$defs/reference"}},
     "artifacts": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"$ref": "#/$defs/artifact"}},
-    "evidence": {"type": "array", "minItems": 14, "uniqueItems": true, "items": {"$ref": "#/$defs/evidence"}},
+    "evidence": {"type": "array", "minItems": 16, "uniqueItems": true, "items": {"$ref": "#/$defs/evidence"}},
     "frozenAt": {"type": "string", "format": "date-time"}
   },
   "required": ["version", "releaseVersion", "sourceCommit", "sourceInventory", "sourceArchive", "buildManifest", "buildAttempts", "canonicalizationProfile", "baselineApprovals", "runtimeEvidence", "controlledInputs", "locks", "artifacts", "evidence", "frozenAt"],
@@ -94,7 +94,7 @@
       "type": "object",
       "properties": {
         "id": {"type": "string", "minLength": 1},
-        "kind": {"type": "string", "enum": ["artifact-signature", "brand-asset-manifest", "formal-web-report", "provenance", "sbom", "sbom-attestation", "ui-token-manifest", "visual-baseline", "vulnerability-scan"]},
+        "kind": {"type": "string", "enum": ["artifact-signature", "brand-asset-manifest", "formal-web-report", "provenance", "sbom-attestation", "sbom-cyclonedx", "sbom-spdx", "ui-token-manifest", "visual-baseline", "vulnerability-scan"]},
         "version": {"type": "string", "minLength": 1},
         "uri": {"type": "string", "minLength": 1},
         "mediaType": {"type": "string", "minLength": 3},

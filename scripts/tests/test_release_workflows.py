@@ -30,7 +30,9 @@ class ReleaseWorkflowContractTest(unittest.TestCase):
     def test_dispatch_inputs_are_never_interpolated_into_privileged_shell_source(self) -> None:
         release = (PROJECT_ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         rollback = (PROJECT_ROOT / ".github/workflows/rollback.yml").read_text(encoding="utf-8")
-        for workflow in (release, rollback):
+        artifact_signing = (PROJECT_ROOT / ".github/workflows/artifact-signing.yml").read_text(encoding="utf-8")
+        manifest_signing = (PROJECT_ROOT / ".github/workflows/manifest-signing.yml").read_text(encoding="utf-8")
+        for workflow in (release, rollback, artifact_signing, manifest_signing):
             lines = workflow.splitlines()
             for index, line in enumerate(lines):
                 if not line.lstrip().startswith("run:"):
@@ -42,6 +44,29 @@ class ReleaseWorkflowContractTest(unittest.TestCase):
                         break
                     block.append(candidate)
                 self.assertNotIn("${{ inputs.", "\n".join(block))
+
+    def test_golden_candidate_build_enforces_the_frozen_hosted_runner_image(self) -> None:
+        workflow_names = (
+            "ci.yml",
+            "release.yml",
+            "artifact-signing.yml",
+            "manifest-signing.yml",
+            "rollback.yml",
+            "golden-approval.yml",
+        )
+        golden = (PROJECT_ROOT / ".github/workflows/golden-approval.yml").read_text(encoding="utf-8")
+        guard = 'run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"'
+        self.assertIn(guard, golden)
+        with tempfile.TemporaryDirectory() as directory:
+            workflows = Path(directory) / ".github/workflows"
+            workflows.mkdir(parents=True)
+            for name in workflow_names:
+                content = (PROJECT_ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
+                if name == "golden-approval.yml":
+                    content = content.replace(guard, "run: true", 1)
+                (workflows / name).write_text(content, encoding="utf-8")
+            issues = validate_release_workflows(Path(directory))
+        self.assertIn("GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING", issues)
 
     def test_checker_rejects_pr_write_oidc_order_bypass_and_secret_execution(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

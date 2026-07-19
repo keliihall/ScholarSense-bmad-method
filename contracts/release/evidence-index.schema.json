@@ -33,7 +33,7 @@
       "type": "object",
       "properties": {
         "id": {"type": "string", "minLength": 1},
-        "kind": {"type": "string", "enum": ["artifact", "artifact-signature", "brand-asset-manifest", "formal-web-report", "provenance", "sbom", "sbom-attestation", "ui-token-manifest", "visual-baseline", "vulnerability-scan"]},
+        "kind": {"type": "string", "enum": ["artifact", "artifact-signature", "brand-asset-manifest", "formal-web-report", "provenance", "sbom-attestation", "sbom-cyclonedx", "sbom-spdx", "ui-token-manifest", "visual-baseline", "vulnerability-scan"]},
         "stage": {"type": "string", "enum": ["artifact", "artifact-evidence", "artifact-signature"]},
         "version": {"type": "string", "minLength": 1},
         "uri": {"type": "string", "minLength": 1},

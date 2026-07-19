@@ -4,7 +4,7 @@ baseline_commit: NO_VCS
 
 # Story 1.1d：固化 CI、供应链与质量门
 
-Status: done
+Status: in-progress
 
 > 状态说明：静态 G-01/G-05/PAB-1.0.0 已批准，1.1a—1.1c 已完成；当前工作区仍不是 Git 仓库，且没有 CI、受控制品库、attestation store、受保护环境或提升端点。`ready-for-dev` 只表示可开始“U1 本地可复现构建合同”，不表示完成平台已具备。Git/CI/store/attestation/promotion 平台基线冻结并产生真实证据前，本 Story 不得进入 `review`/`done`，也不得把本地报告冒充 provenance、签名或生产提升证据。
 
@@ -273,6 +273,17 @@ Status: done
 - [x] [Review][Patch] 拆分 build/test 与 publish，使构建和正式 Web 测试 job 不持有写权限 [.github/workflows/release.yml:38]
 - [x] [Review][Patch] 发布与 Golden 路径的 Java/Node/npm/Maven 命令统一经 PAB toolchain wrapper [.github/workflows/release.yml:120]
 - [x] [Review][Patch] 修复真实 ORAS promotion 并发时 `prepare` 删除另一胜者 tag 的竞态 [release/promotion.py:602]
+
+#### 定向复核（2026-07-19）
+
+- [ ] [Review][Patch] 修正 signer 拆分后 formal Web 仍验证旧 `release.yml` 证书身份的必然阻断回归 [scripts/run-formal-web-evidence.sh:58]
+- [ ] [Review][Patch] 消除 reusable signer 中 `release_version` 再次插入特权 Shell 源码的命令注入路径 [.github/workflows/artifact-signing.yml:91]
+- [ ] [Review][Patch] 将 CISB 的 build/attestation/WebQA job 身份绑定拆分后的真实 DAG，并让 checker 拒绝不存在或错指的 job [contracts/release/ci-supply-chain-baseline-1.0.0.json:46]
+- [ ] [Review][Patch] 统一唯一人类 UX/Brand owner + 独立自动 WebQA 的 AC、VGB 与语义门，且不得将 `formal-web` publisher 冒充 WebQA 执行主体 [contracts/release/visual-baseline-vgb-1.0.0.json:5]
+- [ ] [Review][Patch] 使 ReleaseManifest schema/semantic checker 分别强制 CycloneDX 与 SPDX 引用，拒绝只有单一泛化 `sbom` 证据的清单 [release/manifests.py:220]
+- [ ] [Review][Patch] 将正式 Web 入口的裸 `node` 执行收回 PAB toolchain wrapper [scripts/run-formal-web-evidence.sh:69]
+- [ ] [Review][Patch] 在 Golden 候选构建中强制 CISB 冻结的 hosted runner `ImageVersion`，并增加漂移负例 [.github/workflows/golden-approval.yml:17]
+- [ ] [Review][Patch] 在新 signer/job DAG 上完成真实受保护 release/promotion replay，回读验证 signer identity、SPDX attestation 与实际 approvals API 路径后再恢复 `done` [_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md:467]
 
 ## Dev Notes
 

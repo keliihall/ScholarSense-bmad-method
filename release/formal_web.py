@@ -261,8 +261,12 @@ def visual_baseline_issues(document: Any, test_environment: Any) -> list[str]:
             issues.append(f"FORMAL_WEB_VGB_{field.upper()}_INVALID")
     if document.get("testEnvironmentSha256") != test_environment.get("contentSha256"):
         issues.append("FORMAL_WEB_VGB_TEST_ENVIRONMENT_MISMATCH")
-    if not document.get("approvedByUxBrand") or not document.get("approvedByWebQa"):
-        issues.append("FORMAL_WEB_VGB_APPROVAL_MISSING")
+    if document.get("approvedByUxBrand") != "github-user:24710825:keliihall":
+        issues.append("FORMAL_WEB_VGB_UX_BRAND_OWNER_MISMATCH")
+    if document.get("automatedWebQaGate") != "automated-gate:.github/workflows/release.yml#job:formal-web-test":
+        issues.append("FORMAL_WEB_VGB_AUTOMATED_WEB_QA_GATE_MISMATCH")
+    if document.get("approvalPolicy") != "single-accountable-plus-independent-automated-web-qa":
+        issues.append("FORMAL_WEB_VGB_APPROVAL_POLICY_MISMATCH")
 
     viewport_records = {
         item.get("id"): item

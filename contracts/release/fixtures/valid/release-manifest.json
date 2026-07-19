@@ -110,12 +110,14 @@
       "id": "supply-chain-evidence",
       "status": "passed",
       "evidenceIds": [
-        "backend-sbom",
+        "backend-sbom-cyclonedx",
+        "backend-sbom-spdx",
         "backend-vulnerability-scan",
         "backend-provenance",
         "backend-sbom-attestation",
         "backend-artifact-signature",
-        "frontend-sbom",
+        "frontend-sbom-cyclonedx",
+        "frontend-sbom-spdx",
         "frontend-vulnerability-scan",
         "frontend-provenance",
         "frontend-sbom-attestation",
@@ -346,14 +348,25 @@
   ],
   "evidence": [
     {
-      "id": "backend-sbom",
-      "version": "1.0.0",
+      "id": "backend-sbom-cyclonedx",
+      "version": "CYCLONEDX-1.7",
       "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:2222222222222222222222222222222222222222222222222222222222222222",
       "mediaType": "application/json",
       "size": 1,
       "binarySha256": "2222222222222222222222222222222222222222222222222222222222222222",
       "ociDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
-      "kind": "sbom",
+      "kind": "sbom-cyclonedx",
+      "subjectBinarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    {
+      "id": "backend-sbom-spdx",
+      "version": "SPDX-2.3",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:1212121212121212121212121212121212121212121212121212121212121212",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "1212121212121212121212121212121212121212121212121212121212121212",
+      "ociDigest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+      "kind": "sbom-spdx",
       "subjectBinarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
     },
     {
@@ -401,14 +414,25 @@
       "subjectBinarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
     },
     {
-      "id": "frontend-sbom",
-      "version": "1.0.0",
+      "id": "frontend-sbom-cyclonedx",
+      "version": "CYCLONEDX-1.7",
       "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:7777777777777777777777777777777777777777777777777777777777777777",
       "mediaType": "application/json",
       "size": 1,
       "binarySha256": "7777777777777777777777777777777777777777777777777777777777777777",
       "ociDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
-      "kind": "sbom",
+      "kind": "sbom-cyclonedx",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    {
+      "id": "frontend-sbom-spdx",
+      "version": "SPDX-2.3",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:1313131313131313131313131313131313131313131313131313131313131313",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "1313131313131313131313131313131313131313131313131313131313131313",
+      "ociDigest": "sha256:1313131313131313131313131313131313131313131313131313131313131313",
+      "kind": "sbom-spdx",
       "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111"
     },
     {

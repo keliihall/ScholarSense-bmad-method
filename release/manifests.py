@@ -43,7 +43,14 @@ REQUIRED_CONTROLLED_INPUT_IDS = frozenset(
 )
 REQUIRED_LOCK_IDS = frozenset({"backend-lock", "frontend-lock", "toolchain-lock"})
 COMMON_EVIDENCE_KINDS = frozenset(
-    {"artifact-signature", "provenance", "sbom", "sbom-attestation", "vulnerability-scan"}
+    {
+        "artifact-signature",
+        "provenance",
+        "sbom-attestation",
+        "sbom-cyclonedx",
+        "sbom-spdx",
+        "vulnerability-scan",
+    }
 )
 FRONTEND_EVIDENCE_KINDS = frozenset(
     {"brand-asset-manifest", "formal-web-report", "ui-token-manifest", "visual-baseline"}

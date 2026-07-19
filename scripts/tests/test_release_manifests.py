@@ -57,7 +57,14 @@ def _release_input() -> tuple[dict, dict]:
         item["size"] = source["size"]
         artifacts.append(item)
     evidence = []
-    common = ("sbom", "vulnerability-scan", "provenance", "sbom-attestation", "artifact-signature")
+    common = (
+        "sbom-cyclonedx",
+        "sbom-spdx",
+        "vulnerability-scan",
+        "provenance",
+        "sbom-attestation",
+        "artifact-signature",
+    )
     frontend_only = ("formal-web-report", "visual-baseline", "ui-token-manifest", "brand-asset-manifest")
     counter = 2
     for subject_id, subject_digest in artifact_digests.items():
@@ -138,6 +145,15 @@ class ReleaseManifestLifecycleTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "RELEASE_EVIDENCE_SUBJECT_UNKNOWN"):
             create_release_manifest(rebound)
 
+    def test_manifest_rejects_a_single_generic_sbom_reference(self) -> None:
+        payload, _build = _release_input()
+        generic = copy.deepcopy(payload)
+        for item in generic["evidence"]:
+            if item["kind"] in {"sbom-cyclonedx", "sbom-spdx"}:
+                item["kind"] = "sbom"
+        with self.assertRaisesRegex(ValueError, "RELEASE_(EVIDENCE_KIND_INVALID|REQUIRED_EVIDENCE_MISSING)"):
+            create_release_manifest(generic)
+
     def test_baseline_approval_and_runtime_applicability_are_separate_and_honest(self) -> None:
         payload, _build = _release_input()
         manifest = create_release_manifest(payload)
@@ -152,7 +168,7 @@ class ReleaseManifestLifecycleTest(unittest.TestCase):
 
     def test_runtime_gate_links_are_kind_and_subject_scoped(self) -> None:
         payload, build = _release_input()
-        payload["runtimeEvidence"][1]["evidenceIds"].append("backend-sbom")
+        payload["runtimeEvidence"][1]["evidenceIds"].append("backend-sbom-cyclonedx")
         with self.assertRaisesRegex(ValueError, "RELEASE_RUNTIME_EVIDENCE_SEMANTICS_INVALID"):
             create_release_manifest(payload)
 

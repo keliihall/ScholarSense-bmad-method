@@ -201,6 +201,12 @@ def validate_release_workflows(project_root: Path) -> list[str]:
         order, bodies = _jobs(golden)
         if order != ["build-candidate", "capture-goldens"]:
             issues.append("GOLDEN_APPROVAL_JOB_ORDER_INVALID")
+        build_candidate = bodies.get("build-candidate", "")
+        if (
+            "EXPECTED_RUNNER_IMAGE_VERSION: 20260714.240.1" not in golden
+            or 'test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"' not in build_candidate
+        ):
+            issues.append("GOLDEN_APPROVAL_HOSTED_RUNNER_IMAGE_GUARD_MISSING")
         capture = bodies.get("capture-goldens", "")
         if not re.search(r"(?m)^    needs:\s*build-candidate\s*$", capture):
             issues.append("GOLDEN_APPROVAL_BUILD_DEPENDENCY_MISSING")

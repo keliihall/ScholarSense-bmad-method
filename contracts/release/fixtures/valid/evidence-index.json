@@ -1,14 +1,14 @@
 {
   "version": "EVIDENCE-INDEX-1.0.0",
   "releaseVersion": "1.0.0",
-  "subjectManifestSha256": "bc3d0df7f8d17d0e3f56b2f02a0509b1da6c25284844ca50d073c7a9e244afd0",
+  "subjectManifestSha256": "cc8ade3ef1b1ca02c860f00ed4720a5e59b746a312ca6ad98ebb5cedf77ce2cd",
   "releaseManifest": {
     "id": "release-manifest",
     "version": "RELEASE-MANIFEST-1.0.0",
     "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:8704d0bd89b77a92a44a249eb6bd4e5c79a93aa5862963c1d125e9179f834241",
     "mediaType": "application/json",
     "size": 1,
-    "binarySha256": "bc3d0df7f8d17d0e3f56b2f02a0509b1da6c25284844ca50d073c7a9e244afd0",
+    "binarySha256": "cc8ade3ef1b1ca02c860f00ed4720a5e59b746a312ca6ad98ebb5cedf77ce2cd",
     "ociDigest": "sha256:8704d0bd89b77a92a44a249eb6bd4e5c79a93aa5862963c1d125e9179f834241"
   },
   "manifestSignature": {
@@ -21,7 +21,7 @@
     "size": 1,
     "binarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     "ociDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    "subjectBinarySha256": "bc3d0df7f8d17d0e3f56b2f02a0509b1da6c25284844ca50d073c7a9e244afd0",
+    "subjectBinarySha256": "cc8ade3ef1b1ca02c860f00ed4720a5e59b746a312ca6ad98ebb5cedf77ce2cd",
     "dependsOn": [
       "release-manifest"
     ]
@@ -54,15 +54,30 @@
       "dependsOn": []
     },
     {
-      "id": "backend-sbom",
-      "kind": "sbom",
+      "id": "backend-sbom-cyclonedx",
+      "kind": "sbom-cyclonedx",
       "stage": "artifact-evidence",
-      "version": "1.0.0",
+      "version": "CYCLONEDX-1.7",
       "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:2222222222222222222222222222222222222222222222222222222222222222",
       "mediaType": "application/json",
       "size": 1,
       "binarySha256": "2222222222222222222222222222222222222222222222222222222222222222",
       "ociDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "subjectBinarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "dependsOn": [
+        "backend"
+      ]
+    },
+    {
+      "id": "backend-sbom-spdx",
+      "kind": "sbom-spdx",
+      "stage": "artifact-evidence",
+      "version": "SPDX-2.3",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:1212121212121212121212121212121212121212121212121212121212121212",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "1212121212121212121212121212121212121212121212121212121212121212",
+      "ociDigest": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
       "subjectBinarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "dependsOn": [
         "backend"
@@ -114,15 +129,30 @@
       ]
     },
     {
-      "id": "frontend-sbom",
-      "kind": "sbom",
+      "id": "frontend-sbom-cyclonedx",
+      "kind": "sbom-cyclonedx",
       "stage": "artifact-evidence",
-      "version": "1.0.0",
+      "version": "CYCLONEDX-1.7",
       "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:7777777777777777777777777777777777777777777777777777777777777777",
       "mediaType": "application/json",
       "size": 1,
       "binarySha256": "7777777777777777777777777777777777777777777777777777777777777777",
       "ociDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "dependsOn": [
+        "frontend"
+      ]
+    },
+    {
+      "id": "frontend-sbom-spdx",
+      "kind": "sbom-spdx",
+      "stage": "artifact-evidence",
+      "version": "SPDX-2.3",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:1313131313131313131313131313131313131313131313131313131313131313",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "1313131313131313131313131313131313131313131313131313131313131313",
+      "ociDigest": "sha256:1313131313131313131313131313131313131313131313131313131313131313",
       "subjectBinarySha256": "1111111111111111111111111111111111111111111111111111111111111111",
       "dependsOn": [
         "frontend"
@@ -271,7 +301,7 @@
   "versionBindings": [
     {
       "releaseVersion": "1.0.0",
-      "manifestSha256": "bc3d0df7f8d17d0e3f56b2f02a0509b1da6c25284844ca50d073c7a9e244afd0"
+      "manifestSha256": "cc8ade3ef1b1ca02c860f00ed4720a5e59b746a312ca6ad98ebb5cedf77ce2cd"
     }
   ],
   "createdAt": "2026-07-19T08:01:00+08:00"

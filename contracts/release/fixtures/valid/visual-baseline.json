@@ -2,7 +2,7 @@
   "version": "VGB-1.0.0",
   "status": "approved",
   "approvedByUxBrand": "fixture-UX",
-  "approvedByWebQa": "fixture-Web-QA",
+  "automatedWebQaGate": "automated-gate:.github/workflows/release.yml#job:formal-web-test",
   "effectiveAt": "2026-07-19T01:00:00Z",
   "approvedArtifactSha256": "811cf79679aa946f52cf7c17451932cf89ef89e4a934b0fdd9e72e27b66ea5a2",
   "testEnvironmentVersion": "TEST-ENV-1.0.0",

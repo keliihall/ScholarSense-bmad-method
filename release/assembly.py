@@ -200,8 +200,8 @@ def assemble_release_manifest_input(
         subject = subject_digests[identity]
         evidence.extend(
             [
-                _reference(f"{identity}-sbom", "1.0.0", sbom_uri, sbom_root / f"{identity}.cdx.json", kind="sbom", subject_sha256=subject),
-                _reference(f"{identity}-sbom-spdx", "SPDX-2.3", sbom_uri, sbom_root / f"{identity}.spdx.json", kind="sbom", subject_sha256=subject),
+                _reference(f"{identity}-sbom-cyclonedx", "CYCLONEDX-1.7", sbom_uri, sbom_root / f"{identity}.cdx.json", kind="sbom-cyclonedx", subject_sha256=subject),
+                _reference(f"{identity}-sbom-spdx", "SPDX-2.3", sbom_uri, sbom_root / f"{identity}.spdx.json", kind="sbom-spdx", subject_sha256=subject),
                 _reference(f"{identity}-vulnerability-scan", "1.0.0", sbom_uri, sbom_root / "sbom-evidence.json", kind="vulnerability-scan", subject_sha256=subject),
                 _reference(f"{identity}-provenance", "1.0.0", attestation_uri, attestation_root / f"scholarsense-{identity}.attestations.json", kind="provenance", subject_sha256=subject),
                 _reference(f"{identity}-sbom-attestation", "1.0.0", attestation_uri, attestation_root / f"scholarsense-{identity}.attestations.json", kind="sbom-attestation", subject_sha256=subject),
@@ -217,7 +217,14 @@ def assemble_release_manifest_input(
         ]
     )
     frontend_kinds = {"formal-web-report", "visual-baseline", "ui-token-manifest", "brand-asset-manifest"}
-    supply_chain_kinds = {"artifact-signature", "provenance", "sbom", "sbom-attestation", "vulnerability-scan"}
+    supply_chain_kinds = {
+        "artifact-signature",
+        "provenance",
+        "sbom-attestation",
+        "sbom-cyclonedx",
+        "sbom-spdx",
+        "vulnerability-scan",
+    }
     return {
         "releaseVersion": release_version,
         "buildManifest": build_manifest,

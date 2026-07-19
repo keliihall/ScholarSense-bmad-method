@@ -12,6 +12,7 @@ concurrency:
 env:
   CANDIDATE_REPOSITORY: ghcr.io/keliihall/scholarsense-release-candidate
   GOLDEN_REPOSITORY: ghcr.io/keliihall/scholarsense-visual-goldens
+  EXPECTED_RUNNER_IMAGE_VERSION: 20260714.240.1
 
 jobs:
   build-candidate:
@@ -25,6 +26,8 @@ jobs:
       frontend-sha256: ${{ steps.publish.outputs.frontend-sha256 }}
       build-manifest-sha256: ${{ steps.publish.outputs.build-manifest-sha256 }}
     steps:
+      - name: Enforce frozen hosted runner image
+        run: test "${ImageVersion:-missing}" = "$EXPECTED_RUNNER_IMAGE_VERSION"
       - name: Checkout immutable protected source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:

@@ -309,16 +309,35 @@ class FormalWebContractTest(unittest.TestCase):
         self.assertIn('chmod -R u+w "$WORK_DIR"', shell)
         self.assertNotIn("$RUNNER_TEMP/golden-browsers", workflow)
         self.assertNotIn("formal-browser-install.json", combined)
+        baseline = load_json(PROJECT_ROOT / "contracts/release/ci-supply-chain-baseline-1.0.0.json")
+        self.assertIn(baseline["signing"]["artifactCertificateIdentity"], shell)
+        self.assertNotIn(
+            "ScholarSense-bmad-method/.github/workflows/release.yml@refs/heads/main",
+            shell,
+        )
+
+    def test_formal_web_node_runs_through_the_pab_toolchain_wrapper(self) -> None:
+        shell = (PROJECT_ROOT / "scripts/run-formal-web-evidence.sh").read_text(encoding="utf-8")
+        self.assertIn('"$ROOT_DIR/_bmad/scripts/with_pab_toolchain.sh" node', shell)
+        self.assertFalse(any(line.startswith("node ") for line in shell.splitlines()))
 
     def test_visual_baseline_does_not_claim_two_human_reviewers(self) -> None:
         self.assertEqual("github-user:24710825:keliihall", self.vgb["approvedByUxBrand"])
         self.assertEqual(
-            "automated-gate:.github/workflows/release.yml#job:formal-web",
-            self.vgb["approvedByWebQa"],
+            "automated-gate:.github/workflows/release.yml#job:formal-web-test",
+            self.vgb["automatedWebQaGate"],
         )
+        self.assertNotIn("approvedByWebQa", self.vgb)
         self.assertEqual(
             "single-accountable-plus-independent-automated-web-qa",
             self.vgb["approvalPolicy"],
+        )
+
+        publisher = json.loads(json.dumps(self.vgb))
+        publisher["automatedWebQaGate"] = "automated-gate:.github/workflows/release.yml#job:formal-web"
+        self.assertIn(
+            "FORMAL_WEB_VGB_AUTOMATED_WEB_QA_GATE_MISMATCH",
+            visual_baseline_issues(publisher, self.test_environment),
         )
 
 
