@@ -4,30 +4,66 @@
   "type": "object",
   "properties": {
     "version": {"const": "FORMAL-WEB-REPORT-1.0.0"},
+    "subjectArtifactUri": {"type": "string", "pattern": "^ghcr\\.io/[a-z0-9_.-]+/[a-z0-9_./-]+@sha256:[0-9a-f]{64}$"},
     "subjectArtifactSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "buildManifestSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "testEnvironmentSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "visualBaselineSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "runnerImageSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "matrix": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/cell"}, "uniqueItems": true},
-    "result": {"type": "string", "enum": ["passed", "failed", "not-run"]},
+    "matrix": {"type": "array", "minItems": 8, "maxItems": 8, "items": {"$ref": "#/$defs/cell"}, "uniqueItems": true},
+    "scope": {"$ref": "#/$defs/scope"},
+    "result": {"const": "passed"},
     "createdAt": {"type": "string", "format": "date-time"}
   },
-  "required": ["version", "subjectArtifactSha256", "buildManifestSha256", "testEnvironmentSha256", "runnerImageSha256", "matrix", "result", "createdAt"],
+  "required": ["version", "subjectArtifactUri", "subjectArtifactSha256", "buildManifestSha256", "testEnvironmentSha256", "visualBaselineSha256", "runnerImageSha256", "matrix", "scope", "result", "createdAt"],
   "additionalProperties": false,
   "$defs": {
+    "checks": {
+      "type": "object",
+      "properties": {
+        "artifactServed": {"const": "passed"},
+        "resources": {"const": "passed"},
+        "console": {"const": "passed"},
+        "network": {"const": "passed"},
+        "keyboardFocus": {"const": "passed"},
+        "axe": {"const": "passed"},
+        "zoom200": {"const": "passed"},
+        "reflow320": {"const": "passed"},
+        "uiTokens": {"const": "passed"},
+        "brandAssets": {"const": "passed"}
+      },
+      "required": ["artifactServed", "resources", "console", "network", "keyboardFocus", "axe", "zoom200", "reflow320", "uiTokens", "brandAssets"],
+      "additionalProperties": false
+    },
     "cell": {
       "type": "object",
       "properties": {
+        "id": {"type": "string", "pattern": "^(chrome|edge)-(current|previous)-(desktop-reference|desktop-minimum)$"},
         "browser": {"type": "string", "enum": ["chrome", "edge"]},
+        "channel": {"type": "string", "enum": ["current", "previous"]},
         "major": {"type": "integer", "minimum": 149, "maximum": 150},
-        "viewport": {"type": "string", "minLength": 3},
+        "browserVersion": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "viewport": {"type": "string", "enum": ["desktop-reference", "desktop-minimum"]},
         "executableSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "actualScreenshotPath": {"type": "string", "pattern": "^screenshots/goldens/(chrome|edge)-(current|previous)-(desktop-reference|desktop-minimum)\\.png$"},
         "actualScreenshotSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "goldenScreenshotSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-        "diffPixels": {"type": "integer", "minimum": 0},
-        "result": {"type": "string", "enum": ["passed", "failed"]}
+        "diffPixels": {"const": 0},
+        "checks": {"$ref": "#/$defs/checks"},
+        "result": {"const": "passed"}
       },
-      "required": ["browser", "major", "viewport", "executableSha256", "actualScreenshotSha256", "goldenScreenshotSha256", "diffPixels", "result"],
+      "required": ["id", "browser", "channel", "major", "browserVersion", "viewport", "executableSha256", "actualScreenshotPath", "actualScreenshotSha256", "goldenScreenshotSha256", "diffPixels", "checks", "result"],
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "productionEntry": {"const": "/scholarsense/"},
+        "downstreamBusinessPages": {"const": "not-in-scope-before-their-own-stories"},
+        "appApplicability": {"const": "not-applicable"},
+        "appRuntimeEvidenceClaim": {"const": "none"}
+      },
+      "required": ["productionEntry", "downstreamBusinessPages", "appApplicability", "appRuntimeEvidenceClaim"],
       "additionalProperties": false
     }
   }

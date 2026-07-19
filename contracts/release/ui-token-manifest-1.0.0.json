@@ -1,0 +1,14 @@
+{
+  "version": "UI-TOKEN-MANIFEST-1.0.0",
+  "sourceSha256": "3d8cd8552bb2816f43b0bb7d06200d500850a2936b3b9e7f5aea2a46e5bc8081",
+  "tokens": [
+    {"name": "--ss-mobile-primary", "value": "#d03d37"},
+    {"name": "--ss-radius-large", "value": "8px"},
+    {"name": "--ss-radius-medium", "value": "4px"},
+    {"name": "--ss-radius-small", "value": "2px"},
+    {"name": "--ss-space", "value": "4px"},
+    {"name": "--ss-web-primary", "value": "#af251b"},
+    {"name": "--ss-web-primary-hover", "value": "#c53227"},
+    {"name": "--ss-web-primary-pressed", "value": "#a7180d"}
+  ]
+}

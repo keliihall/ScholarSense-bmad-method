@@ -20,10 +20,34 @@
       "sourceUri": "https://github.com/sigstore/cosign/releases/download/v3.1.2/cosign-darwin-arm64"
     },
     {
+      "name": "cosign-macos-arm64-bundle",
+      "version": "v3.1.2",
+      "binarySha256": "ffbec621bbef3c1e02f05633e74892bd874f2b1157ea57bcb0c7449113966500",
+      "sourceUri": "https://github.com/sigstore/cosign/releases/download/v3.1.2/cosign-darwin-arm64.sigstore.json"
+    },
+    {
       "name": "oras-linux-amd64-archive",
       "version": "v1.3.3",
       "binarySha256": "9ce999f8d2de03fc03968b29d743077a58783e545e5eaa53917ca177352d0e59",
       "sourceUri": "https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_linux_amd64.tar.gz"
+    },
+    {
+      "name": "oras-macos-arm64-archive",
+      "version": "v1.3.3",
+      "binarySha256": "f33fc12753c54172b0d0d19eaa0318d3f90fe9b094d96e8b259c881713c92e1c",
+      "sourceUri": "https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_darwin_arm64.tar.gz"
+    },
+    {
+      "name": "oras-1.3.3-checksums",
+      "version": "v1.3.3",
+      "binarySha256": "5cf7ff102a941bdb35e8eabfc8cbe937c5387d20e7a2ee75dc4be90410e462cd",
+      "sourceUri": "https://github.com/oras-project/oras/releases/download/v1.3.3/oras_1.3.3_checksums.txt"
+    },
+    {
+      "name": "github-actions-runner-macos-arm64",
+      "version": "v2.335.1",
+      "binarySha256": "e1a9bc7a3661e06fa0b129d15c2064fe65dc81a431001d8958a9db1409b73769",
+      "sourceUri": "https://github.com/actions/runner/releases/download/v2.335.1/actions-runner-osx-arm64-2.335.1.tar.gz"
     },
     {
       "name": "trivy-linux-amd64-archive",

@@ -13,6 +13,7 @@
     {"id": "promotion-record", "schema": "promotion-record.schema.json", "valid": "fixtures/valid/promotion-record.json", "invalid": "fixtures/invalid/promotion-record.json"},
     {"id": "release-source-inventory", "schema": "release-source-inventory.schema.json", "valid": "release-source-inventory-1.0.0.json", "invalid": "fixtures/invalid/release-source-inventory.json"},
     {"id": "formal-web-report", "schema": "formal-web-report.schema.json", "valid": "fixtures/valid/formal-web-report.json", "invalid": "fixtures/invalid/formal-web-report.json"},
+    {"id": "formal-web-runner", "schema": "formal-web-runner.schema.json", "valid": "formal-web-runner-1.0.0.json", "invalid": "fixtures/invalid/formal-web-runner.json"},
     {"id": "visual-baseline", "schema": "visual-baseline.schema.json", "valid": "fixtures/valid/visual-baseline.json", "invalid": "fixtures/invalid/visual-baseline.json"},
     {"id": "ui-token-manifest", "schema": "ui-token-manifest.schema.json", "valid": "fixtures/valid/ui-token-manifest.json", "invalid": "fixtures/invalid/ui-token-manifest.json"},
     {"id": "brand-asset-manifest", "schema": "brand-asset-manifest.schema.json", "valid": "fixtures/valid/brand-asset-manifest.json", "invalid": "fixtures/invalid/brand-asset-manifest.json"}

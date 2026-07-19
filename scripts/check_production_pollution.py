@@ -46,6 +46,10 @@ APPROVED_TEST_LOOPBACKS = {
         "--host 127.0.0.1 --port 4173",
         "127.0.0.1:4173",
     ),
+    "frontend/scripts/formal-web-harness.mjs": (
+        "server.listen(0, '127.0.0.1'",
+        "http://127.0.0.1:${address.port}",
+    ),
 }
 NPMRC_FORBIDDEN = re.compile(
     r"(?im)^\s*(?://[^\s]+/:)?(?:_authToken|_password|username|cache|userconfig)\s*="

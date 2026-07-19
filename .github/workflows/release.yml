@@ -43,6 +43,8 @@ jobs:
       packages: write
     outputs:
       artifact-uri: ${{ steps.publish.outputs.artifact-uri }}
+      frontend-sha256: ${{ steps.publish.outputs.frontend-sha256 }}
+      build-manifest-sha256: ${{ steps.publish.outputs.build-manifest-sha256 }}
     steps:
       - name: Checkout immutable protected source
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -86,6 +88,8 @@ jobs:
           cmp release-out/build/scholarsense-frontend.tar.gz release-out/readback/release-out/build/scholarsense-frontend.tar.gz
           cmp release-out/build/build-manifest.json release-out/readback/release-out/build/build-manifest.json
           printf 'artifact-uri=%s\n' "$uri" >> "$GITHUB_OUTPUT"
+          printf 'frontend-sha256=%s\n' "$(sha256sum release-out/build/scholarsense-frontend.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          printf 'build-manifest-sha256=%s\n' "$(sha256sum release-out/build/build-manifest.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
   sbom-scan:
     needs: build-cas
@@ -224,23 +228,43 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ github.sha }}
+      - name: Install exact Node 24.18.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.0
+      - name: Install frozen browser-harness dependencies without lifecycle scripts
+        run: npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
       - name: Verify and test only frozen frontend bytes
         env:
           ORAS_PASSWORD: ${{ github.token }}
-        run: ./scripts/run-formal-web-evidence.sh "${{ needs.build-cas.outputs.artifact-uri }}" "${{ needs.artifact-attestation.outputs.attestation-uri }}" release-out/formal-web
+        run: |
+          ./scripts/run-formal-web-evidence.sh \
+            "${{ needs.build-cas.outputs.artifact-uri }}" \
+            "${{ needs.build-cas.outputs.frontend-sha256 }}" \
+            "${{ needs.build-cas.outputs.build-manifest-sha256 }}" \
+            "1361a3f0fdeb6e747c5c1f6bfc682863d2a96240cd2136ec23c2370e52593fbb" \
+            "${{ needs.artifact-attestation.outputs.attestation-uri }}" \
+            release-out/formal-web
       - name: Publish formal Web evidence
         id: publish
         env:
           ORAS_PASSWORD: ${{ github.token }}
         run: |
-          tools="$RUNNER_TEMP/release-tools"
+          tools="$RUNNER_TEMP/release-tools-publish"
+          config="$RUNNER_TEMP/formal-publish-oras-config.json"
           ./scripts/install-release-tools-macos.sh "$tools" oci
-          "$tools/oras" login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
+          "$tools/oras" --registry-config "$config" login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
+          cd release-out/formal-web
           files=()
-          while IFS= read -r file; do files+=("$file:application/json"); done < <(find release-out/formal-web -type f -name '*.json' -print | sort)
+          while IFS= read -r file; do files+=("$file:application/json"); done < <(find . -type f -name '*.json' -print | sort)
+          while IFS= read -r file; do files+=("$file:image/png"); done < <(find . -type f -name '*.png' -print | sort)
           target="${EVIDENCE_REPOSITORY}:web-${{ inputs.release_version }}-${{ github.run_id }}-${{ github.run_attempt }}"
-          digest="$("$tools/oras" push "$target" "${files[@]}" --format go-template='{{.digest}}')"
-          printf 'web-uri=%s@%s\n' "$EVIDENCE_REPOSITORY" "$digest" >> "$GITHUB_OUTPUT"
+          digest="$("$tools/oras" --registry-config "$config" push "$target" "${files[@]}" --format go-template='{{.digest}}')"
+          uri="${EVIDENCE_REPOSITORY}@${digest}"
+          mkdir "$RUNNER_TEMP/formal-web-readback"
+          "$tools/oras" --registry-config "$config" pull "$uri" --output "$RUNNER_TEMP/formal-web-readback"
+          while IFS= read -r file; do cmp "$file" "$RUNNER_TEMP/formal-web-readback/${file#./}"; done < <(find . -type f -print | sort)
+          printf 'web-uri=%s\n' "$uri" >> "$GITHUB_OUTPUT"
 
   release-manifest:
     needs: [build-cas, sbom-scan, artifact-attestation, formal-web]

@@ -55,6 +55,11 @@ def validate_release_workflows(project_root: Path) -> list[str]:
     issues.extend(release_read_issues)
     rollback, rollback_read_issues = _read(root / ".github/workflows/rollback.yml", "ROLLBACK_WORKFLOW_MISSING")
     issues.extend(rollback_read_issues)
+    golden, golden_read_issues = _read(
+        root / ".github/workflows/golden-approval.yml",
+        "GOLDEN_APPROVAL_WORKFLOW_MISSING",
+    )
+    issues.extend(golden_read_issues)
     if ci:
         if "pull_request:" not in ci:
             issues.append("CI_PULL_REQUEST_TRIGGER_MISSING")
@@ -121,6 +126,44 @@ def validate_release_workflows(project_root: Path) -> list[str]:
         verifier = bodies.get("independent-verifier", "")
         if WRITE_PERMISSION.search(verifier):
             issues.append("RELEASE_INDEPENDENT_VERIFIER_WRITE_PERMISSION_FORBIDDEN")
+        formal = bodies.get("formal-web", "")
+        for required in (
+            "runs-on: [self-hosted, macOS, ARM64, scholarsense-test-env-1]",
+            "actions/setup-node@",
+            "npm ci --prefix frontend --ignore-scripts",
+            "scripts/run-formal-web-evidence.sh",
+            "-name '*.png'",
+        ):
+            if required not in formal:
+                issues.append(f"RELEASE_FORMAL_WEB_GATE_INCOMPLETE: {required}")
+        for forbidden in ("capture-formal-web-goldens", "update-snapshots", "--update-snapshots"):
+            if forbidden in formal:
+                issues.append(f"RELEASE_FORMAL_WEB_ORACLE_MUTATION_FORBIDDEN: {forbidden}")
+    if golden:
+        if "workflow_dispatch:" not in golden or "pull_request:" in golden or "pull_request_target:" in golden:
+            issues.append("GOLDEN_APPROVAL_TRIGGER_INVALID")
+        if "github.ref == 'refs/heads/main'" not in golden:
+            issues.append("GOLDEN_APPROVAL_PROTECTED_REF_GUARD_MISSING")
+        order, bodies = _jobs(golden)
+        if order != ["build-candidate", "capture-goldens"]:
+            issues.append("GOLDEN_APPROVAL_JOB_ORDER_INVALID")
+        capture = bodies.get("capture-goldens", "")
+        if not re.search(r"(?m)^    needs:\s*build-candidate\s*$", capture):
+            issues.append("GOLDEN_APPROVAL_BUILD_DEPENDENCY_MISSING")
+        for required in (
+            "runs-on: [self-hosted, macOS, ARM64, scholarsense-test-env-1]",
+            "environment: stage",
+            "capture-formal-web-goldens.mjs",
+            "safe_extract_frontend",
+            "--registry-config",
+        ):
+            if required not in capture:
+                issues.append(f"GOLDEN_APPROVAL_GATE_INCOMPLETE: {required}")
+        if not re.search(r"(?m)^      packages:\s*write\s*$", capture):
+            issues.append("GOLDEN_APPROVAL_STORE_PERMISSION_MISSING")
+        for forbidden in ("run-formal-web-evidence.mjs", "update-snapshots", "--update-snapshots"):
+            if forbidden in capture:
+                issues.append(f"GOLDEN_APPROVAL_MUTATION_PATH_INVALID: {forbidden}")
     if rollback:
         if "workflow_dispatch:" not in rollback or "pull_request:" in rollback or "pull_request_target:" in rollback:
             issues.append("ROLLBACK_TRIGGER_INVALID")

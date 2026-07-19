@@ -1,0 +1,12 @@
+{
+  "version": "BRAND-ASSET-MANIFEST-1.0.0",
+  "assets": [
+    {
+      "name": "scholarsense-inline-favicon",
+      "uri": "urn:scholarsense:frontend:inline-favicon:1.0.0",
+      "mediaType": "image/svg+xml",
+      "binarySha256": "6c54f0a3a3750426ee37c4013f6fa2c8aed581274042a4d0c2cf0bc9a4396537",
+      "license": "ScholarSense-project"
+    }
+  ]
+}

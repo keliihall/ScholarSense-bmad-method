@@ -1,0 +1,141 @@
+name: protected-visual-golden-approval
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: visual-golden-vgb-1.0.0
+  cancel-in-progress: false
+
+env:
+  CANDIDATE_REPOSITORY: ghcr.io/keliihall/scholarsense-release-candidate
+  GOLDEN_REPOSITORY: ghcr.io/keliihall/scholarsense-visual-goldens
+
+jobs:
+  build-candidate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      artifact-uri: ${{ steps.publish.outputs.artifact-uri }}
+      frontend-sha256: ${{ steps.publish.outputs.frontend-sha256 }}
+      build-manifest-sha256: ${{ steps.publish.outputs.build-manifest-sha256 }}
+    steps:
+      - name: Checkout immutable protected source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - name: Install exact JDK 25
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Install exact Node 24.18.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.0
+      - name: Build the candidate once through the deterministic release gate
+        run: |
+          ./scripts/bootstrap.sh
+          ./scripts/build-release.sh release-out/golden-build
+      - name: Install digest-verified OCI client
+        run: ./scripts/install-release-tools.sh "$RUNNER_TEMP/release-tools" oci
+      - name: Publish and read back the frozen candidate
+        id: publish
+        env:
+          ORAS_PASSWORD: ${{ github.token }}
+        run: |
+          config="$RUNNER_TEMP/oras-config.json"
+          oras="$RUNNER_TEMP/release-tools/oras"
+          "$oras" --registry-config "$config" login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
+          target="${CANDIDATE_REPOSITORY}:golden-vgb-1.0.0-${{ github.run_id }}-${{ github.run_attempt }}"
+          digest="$("$oras" --registry-config "$config" push "$target" \
+            release-out/golden-build/scholarsense-frontend.tar.gz:application/gzip \
+            release-out/golden-build/build-manifest.json:application/vnd.scholarsense.build-manifest.v1+json \
+            --format go-template='{{.digest}}')"
+          uri="${CANDIDATE_REPOSITORY}@${digest}"
+          mkdir release-out/golden-readback
+          "$oras" --registry-config "$config" pull "$uri" --output release-out/golden-readback
+          cmp release-out/golden-build/scholarsense-frontend.tar.gz release-out/golden-readback/release-out/golden-build/scholarsense-frontend.tar.gz
+          cmp release-out/golden-build/build-manifest.json release-out/golden-readback/release-out/golden-build/build-manifest.json
+          printf 'artifact-uri=%s\n' "$uri" >> "$GITHUB_OUTPUT"
+          printf 'frontend-sha256=%s\n' "$(sha256sum release-out/golden-build/scholarsense-frontend.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          printf 'build-manifest-sha256=%s\n' "$(sha256sum release-out/golden-build/build-manifest.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+  capture-goldens:
+    needs: build-candidate
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, macOS, ARM64, scholarsense-test-env-1]
+    environment: stage
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      golden-uri: ${{ steps.publish.outputs.golden-uri }}
+      candidate-cells-sha256: ${{ steps.publish.outputs.candidate-cells-sha256 }}
+    steps:
+      - name: Checkout immutable capture harness and controlled inputs
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.sha }}
+      - name: Install exact Node 24.18.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.18.0
+      - name: Install frozen browser-harness dependencies without lifecycle scripts
+        run: npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+      - name: Verify exact ephemeral runner identity
+        run: python3 scripts/check_formal_web_runner.py --require-actions
+      - name: Fetch and safely extract only the frozen candidate
+        env:
+          ORAS_PASSWORD: ${{ github.token }}
+          ARTIFACT_URI: ${{ needs.build-candidate.outputs.artifact-uri }}
+          EXPECTED_SHA256: ${{ needs.build-candidate.outputs.frontend-sha256 }}
+        run: |
+          ./scripts/install-release-tools-macos.sh "$RUNNER_TEMP/golden-tools" oci
+          config="$RUNNER_TEMP/golden-oras-config.json"
+          oras="$RUNNER_TEMP/golden-tools/oras"
+          "$oras" --registry-config "$config" login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
+          mkdir "$RUNNER_TEMP/golden-artifact"
+          "$oras" --registry-config "$config" pull "$ARTIFACT_URI" --output "$RUNNER_TEMP/golden-artifact"
+          build="$RUNNER_TEMP/golden-artifact/release-out/golden-build"
+          test "$(shasum -a 256 "$build/build-manifest.json" | cut -d' ' -f1)" = "${{ needs.build-candidate.outputs.build-manifest-sha256 }}"
+          python3 release/formal_web.py safe_extract_frontend \
+            "$build/scholarsense-frontend.tar.gz" "$RUNNER_TEMP/golden-served" "$EXPECTED_SHA256"
+      - name: Install four exact digest-verified browser binaries
+        run: ./scripts/install-formal-web-browsers.sh "$RUNNER_TEMP/golden-browsers"
+      - name: Capture the eight-cell candidate oracle
+        env:
+          EXPECTED_SHA256: ${{ needs.build-candidate.outputs.frontend-sha256 }}
+        run: |
+          node frontend/scripts/capture-formal-web-goldens.mjs \
+            --served-root "$RUNNER_TEMP/golden-served" \
+            --browsers "$RUNNER_TEMP/golden-browsers/formal-browser-install.json" \
+            --subject-sha256 "$EXPECTED_SHA256" \
+            --output "$RUNNER_TEMP/golden-capture"
+      - name: Publish and read back the immutable golden candidate
+        id: publish
+        env:
+          ORAS_PASSWORD: ${{ github.token }}
+        run: |
+          config="$RUNNER_TEMP/golden-oras-config.json"
+          oras="$RUNNER_TEMP/golden-tools/oras"
+          cd "$RUNNER_TEMP/golden-capture"
+          files=(candidate-cells.json:application/vnd.scholarsense.visual-golden-cells.v1+json)
+          while IFS= read -r file; do files+=("$file:image/png"); done < <(find goldens -type f -name '*.png' -print | sort)
+          target="${GOLDEN_REPOSITORY}:vgb-1.0.0-candidate-${{ github.run_id }}-${{ github.run_attempt }}"
+          digest="$("$oras" --registry-config "$config" push "$target" "${files[@]}" --format go-template='{{.digest}}')"
+          uri="${GOLDEN_REPOSITORY}@${digest}"
+          mkdir "$RUNNER_TEMP/golden-readback"
+          "$oras" --registry-config "$config" pull "$uri" --output "$RUNNER_TEMP/golden-readback"
+          cmp candidate-cells.json "$RUNNER_TEMP/golden-readback/candidate-cells.json"
+          while IFS= read -r file; do cmp "$file" "$RUNNER_TEMP/golden-readback/$file"; done < <(find goldens -type f -name '*.png' -print | sort)
+          printf 'golden-uri=%s\n' "$uri" >> "$GITHUB_OUTPUT"
+          printf 'candidate-cells-sha256=%s\n' "$(shasum -a 256 candidate-cells.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          printf '### VGB-1.0.0 candidate\n\n- Golden URI: `%s`\n- Cells digest: `%s`\n' \
+            "$uri" "$(shasum -a 256 candidate-cells.json | cut -d' ' -f1)" >> "$GITHUB_STEP_SUMMARY"
