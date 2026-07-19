@@ -220,12 +220,14 @@ class PromotionProductionSurfaceTest(unittest.TestCase):
         self.assertIn("independent-verifier", body)
         self.assertIn("environment: ${{ inputs.target_environment }}", body)
         self.assertIn("scripts/promote-release.sh", body)
+        self.assertIn("GH_TOKEN: ${{ github.token }}", body)
         self.assertNotIn("id-token: write", body)
 
     def test_rollback_workflow_reuses_history_without_a_build_job(self) -> None:
         workflow = (PROJECT_ROOT / ".github/workflows/rollback.yml").read_text(encoding="utf-8")
         self.assertIn("environment: production", workflow)
         self.assertIn("scripts/rollback-release.sh", workflow)
+        self.assertIn("GH_TOKEN: ${{ github.token }}", workflow)
         self.assertIn("scripts/verify-release.sh", (PROJECT_ROOT / "scripts/rollback-release.sh").read_text(encoding="utf-8"))
         self.assertNotIn("scripts/build-release.sh", workflow)
         self.assertNotIn("build-cas:", workflow)
@@ -236,10 +238,31 @@ class _FakeOrasRunner:
     def __init__(self) -> None:
         self.descriptors: dict[str, str] = {}
         self.commands: list[list[str]] = []
+        self.package_versions: list[dict] = []
 
     def run(self, arguments, *, environment=None, stdin=None) -> CommandResult:
         command = list(arguments)
         self.commands.append(command)
+        if command[:2] == ["gh", "api"] and "--method" not in command:
+            return CommandResult(0, json.dumps([self.package_versions]), "")
+        if command[:4] == ["gh", "api", "--method", "DELETE"]:
+            version_id = int(command[-1].rsplit("/", 1)[1])
+            version = next(item for item in self.package_versions if item["id"] == version_id)
+            for tag in version["metadata"]["container"]["tags"]:
+                suffix = f":{tag}"
+                for uri in list(self.descriptors):
+                    if uri.endswith(suffix):
+                        self.descriptors.pop(uri, None)
+            self.package_versions = [item for item in self.package_versions if item["id"] != version_id]
+            return CommandResult(0, "", "")
+        if command[1:3] == ["repo", "tags"]:
+            repository = command[3]
+            tags = sorted(
+                uri.removeprefix(f"{repository}:")
+                for uri in self.descriptors
+                if uri.startswith(f"{repository}:")
+            )
+            return CommandResult(0, "\n".join(tags), "")
         if command[1:3] == ["manifest", "fetch"]:
             digest = self.descriptors.get(command[3])
             return CommandResult(0, json.dumps({"digest": digest}), "") if digest else CommandResult(1, "", "missing")
@@ -265,6 +288,7 @@ class _FakeGitHubRunner:
         self.commits: dict[str, dict] = {}
         self.refs: dict[str, str] = {}
         self.counter = 0
+        self.ref_read_error: str | None = None
 
     def oid(self, label: str) -> str:
         self.counter += 1
@@ -294,6 +318,8 @@ class _FakeGitHubRunner:
             self.refs[ref] = payload["sha"]
             return CommandResult(0, json.dumps({"ref": payload["ref"]}), "")
         if method == "GET" and endpoint.startswith("git/ref/"):
+            if self.ref_read_error is not None:
+                return CommandResult(1, "", self.ref_read_error)
             ref = endpoint.removeprefix("git/ref/")
             oid = self.refs.get(ref)
             return CommandResult(0, json.dumps({"object": {"sha": oid}}), "") if oid else CommandResult(1, "", "missing")
@@ -343,6 +369,60 @@ class PromotionRealAdapterUnitTest(unittest.TestCase):
             store.copy_by_digest(selected.artifact_uri, "ghcr.io/keliihall/scholarsense-release-stage", tag)
         self.assertFalse(any(len(item) > 1 and item[1] == "copy" for item in runner.commands))
 
+    def test_ghcr_cleanup_deletes_only_the_single_tagged_package_version(self) -> None:
+        runner = _FakeOrasRunner()
+        digest = evidence().artifact_oci_digest
+        tag = "ghcr.io/keliihall/scholarsense-release-stage:release-1.0.0-aaaaaaaaaaaaaaaa"
+        runner.descriptors[tag] = digest
+        runner.package_versions = [{
+            "id": 42,
+            "name": digest,
+            "metadata": {"container": {"tags": ["release-1.0.0-aaaaaaaaaaaaaaaa"]}},
+        }]
+        store = OrasDigestStore(Path("/controlled/oras"), runner)
+
+        store.delete_tag(tag)
+
+        self.assertIsNone(store.tag_digest(tag))
+        self.assertTrue(any(command[:4] == ["gh", "api", "--method", "DELETE"] for command in runner.commands))
+        self.assertFalse(any(command[1:4] == ["manifest", "delete", "--force"] for command in runner.commands))
+
+    def test_ghcr_prepare_removes_only_unledgered_tags_for_the_same_release(self) -> None:
+        runner = _FakeOrasRunner()
+        digest = evidence().artifact_oci_digest
+        repository = "ghcr.io/keliihall/scholarsense-release-stage"
+        stale = f"{repository}:release-1.0.0-aaaaaaaaaaaaaaaa"
+        other = f"{repository}:release-2.0.0-bbbbbbbbbbbbbbbb"
+        runner.descriptors.update({stale: digest, other: digest})
+        runner.package_versions = [{
+            "id": 42,
+            "name": digest,
+            "metadata": {"container": {"tags": ["release-1.0.0-aaaaaaaaaaaaaaaa"]}},
+        }]
+        store = OrasDigestStore(Path("/controlled/oras"), runner)
+
+        store.prepare("1.0.0", repository)
+
+        self.assertIsNone(store.tag_digest(stale))
+        self.assertEqual(digest, store.tag_digest(other))
+
+    def test_ghcr_cleanup_refuses_to_delete_a_shared_package_version(self) -> None:
+        runner = _FakeOrasRunner()
+        digest = evidence().artifact_oci_digest
+        tag = "ghcr.io/keliihall/scholarsense-release-stage:release-1.0.0-aaaaaaaaaaaaaaaa"
+        runner.descriptors[tag] = digest
+        runner.package_versions = [{
+            "id": 42,
+            "name": digest,
+            "metadata": {"container": {"tags": ["release-1.0.0-aaaaaaaaaaaaaaaa", "retain"]}},
+        }]
+        store = OrasDigestStore(Path("/controlled/oras"), runner)
+
+        with self.assertRaisesRegex(PromotionError, "PROMOTION_PARTIAL_TAG_SHARED_VERSION"):
+            store.delete_tag(tag)
+
+        self.assertEqual(digest, store.tag_digest(tag))
+
     def test_git_ref_ledger_is_create_only_and_reads_canonical_record(self) -> None:
         runner = _FakeGitHubRunner()
         ledger = GitRefLedger("keliihall/ScholarSense-bmad-method", runner=runner)
@@ -377,6 +457,14 @@ class PromotionRealAdapterUnitTest(unittest.TestCase):
         runner.blobs[blob_oid] = "not-base64!"
 
         with self.assertRaisesRegex(PromotionError, "PROMOTION_LEDGER_RECORD_INVALID"):
+            ledger.read("1.0.0", "stage")
+
+    def test_git_ref_ledger_does_not_treat_auth_failure_as_a_missing_record(self) -> None:
+        runner = _FakeGitHubRunner()
+        runner.ref_read_error = "authentication required"
+        ledger = GitRefLedger("keliihall/ScholarSense-bmad-method", runner=runner)
+
+        with self.assertRaisesRegex(PromotionError, "PROMOTION_LEDGER_REF_READ_FAILED"):
             ledger.read("1.0.0", "stage")
 
 

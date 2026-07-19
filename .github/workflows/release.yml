@@ -405,6 +405,7 @@ jobs:
       - name: Re-verify current remote evidence, promote by digest, and reconcile ledger
         env:
           ORAS_PASSWORD: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           ARTIFACT_URI: ${{ needs.build-cas.outputs.artifact-uri }}
           SBOM_URI: ${{ needs.sbom-scan.outputs.sbom-uri }}
           ATTESTATION_URI: ${{ needs.artifact-attestation.outputs.attestation-uri }}

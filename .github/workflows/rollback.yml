@@ -37,6 +37,7 @@ jobs:
       - name: Re-fetch historical evidence, run current gates, and replay digest
         env:
           ORAS_PASSWORD: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           PROMOTION_APPROVER: protected-environment:production
         run: |
           ./scripts/rollback-release.sh \

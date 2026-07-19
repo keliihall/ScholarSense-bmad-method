@@ -27,6 +27,9 @@ from release_json import canonical_bytes, parse_json_bytes  # noqa: E402
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 OCI_DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
 OCI_URI = re.compile(r"^ghcr\.io/[a-z0-9_.-]+/[a-z0-9_./-]+@sha256:[0-9a-f]{64}$")
+GHCR_TAG_URI = re.compile(
+    r"^ghcr\.io/(?P<owner>[a-z0-9_.-]+)/(?P<package>[a-z0-9_.-]+):(?P<tag>[A-Za-z0-9_.-]+)$"
+)
 SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 RUN_ID = re.compile(r"^[0-9]+$")
 LEDGER_URI = re.compile(
@@ -120,6 +123,8 @@ class EvidenceVerifierPort(Protocol):
 
 
 class DigestStorePort(Protocol):
+    def prepare(self, release_version: str, target_repository: str) -> None: ...
+
     def copy_by_digest(self, source_uri: str, target_repository: str, target_tag: str) -> StoreCopy: ...
 
     def artifact_exists(self, uri: str) -> bool: ...
@@ -327,6 +332,9 @@ class PromotionService:
         if issues:
             raise PromotionError(issues[0])
         target_repository = self.target_repositories[request.target_environment]
+        existing_before_copy = self.ledger.read(request.release_version, request.target_environment)
+        if existing_before_copy is None:
+            self.store.prepare(request.release_version, target_repository)
         tag_uri = self.target_tag_uri(request)
         copied: StoreCopy | None = None
         durable = False
@@ -428,6 +436,9 @@ class _InMemoryStore:
         self.target_artifacts: set[str] = set()
         self.target_tags: dict[str, str] = {}
         self._lock = threading.Lock()
+
+    def prepare(self, _release_version: str, _target_repository: str) -> None:
+        return
 
     def copy_by_digest(self, source_uri: str, target_repository: str, target_tag: str) -> StoreCopy:
         with self._lock:
@@ -570,9 +581,10 @@ class CommandRunner:
 class OrasDigestStore:
     """Real GHCR adapter: source and durable identity are always OCI digests."""
 
-    def __init__(self, oras: Path, runner: CommandRunner | None = None) -> None:
+    def __init__(self, oras: Path, runner: CommandRunner | None = None, gh: str = "gh") -> None:
         self.oras = str(oras)
         self.runner = runner or CommandRunner()
+        self.gh = gh
 
     def _descriptor(self, uri: str) -> str | None:
         result = self.runner.run([self.oras, "manifest", "fetch", uri, "--descriptor"])
@@ -586,6 +598,20 @@ class OrasDigestStore:
         if not isinstance(digest, str) or not OCI_DIGEST.fullmatch(digest):
             raise PromotionError("PROMOTION_STORE_DESCRIPTOR_INVALID")
         return digest
+
+    def prepare(self, release_version: str, target_repository: str) -> None:
+        if not SEMVER.fullmatch(release_version) or target_repository not in TARGET_REPOSITORIES.values():
+            raise PromotionError("PROMOTION_STORE_PREPARE_INPUT_INVALID")
+        listed = self.runner.run([self.oras, "repo", "tags", target_repository])
+        if listed.returncode != 0:
+            lowered = listed.stderr.lower()
+            if "not found" in lowered or "name_unknown" in lowered:
+                return
+            raise PromotionError("PROMOTION_STORE_TAG_LIST_FAILED")
+        prefix = f"release-{release_version}-"
+        tags = sorted(line.strip() for line in listed.stdout.splitlines() if line.strip().startswith(prefix))
+        for tag in tags:
+            self.delete_tag(f"{target_repository}:{tag}")
 
     def copy_by_digest(self, source_uri: str, target_repository: str, target_tag: str) -> StoreCopy:
         source_digest = _uri_digest(source_uri)
@@ -614,8 +640,42 @@ class OrasDigestStore:
         return self._descriptor(tag_uri)
 
     def delete_tag(self, tag_uri: str) -> None:
-        result = self.runner.run([self.oras, "manifest", "delete", "--force", tag_uri])
-        if result.returncode != 0:
+        match = GHCR_TAG_URI.fullmatch(tag_uri)
+        if match is None:
+            raise PromotionError("PROMOTION_PARTIAL_TAG_URI_INVALID")
+        digest = self._descriptor(tag_uri)
+        if digest is None:
+            return
+        owner = match.group("owner")
+        package = match.group("package")
+        tag = match.group("tag")
+        endpoint = f"/users/{owner}/packages/container/{package}/versions?per_page=100"
+        listed = self.runner.run([self.gh, "api", "--paginate", "--slurp", endpoint])
+        if listed.returncode != 0:
+            raise PromotionError("PROMOTION_PARTIAL_TAG_VERSION_LIST_FAILED")
+        try:
+            pages = json.loads(listed.stdout)
+            versions = [item for page in pages for item in page]
+            matches = [
+                item for item in versions
+                if item.get("name") == digest
+                and tag in item.get("metadata", {}).get("container", {}).get("tags", [])
+            ]
+        except (AttributeError, TypeError, json.JSONDecodeError) as error:
+            raise PromotionError("PROMOTION_PARTIAL_TAG_VERSION_LIST_INVALID") from error
+        if len(matches) != 1 or not isinstance(matches[0].get("id"), int):
+            raise PromotionError("PROMOTION_PARTIAL_TAG_VERSION_NOT_UNIQUE")
+        tags = matches[0].get("metadata", {}).get("container", {}).get("tags", [])
+        if tags != [tag]:
+            raise PromotionError("PROMOTION_PARTIAL_TAG_SHARED_VERSION")
+        deleted = self.runner.run([
+            self.gh,
+            "api",
+            "--method",
+            "DELETE",
+            f"/users/{owner}/packages/container/{package}/versions/{matches[0]['id']}",
+        ])
+        if deleted.returncode != 0 or self._descriptor(tag_uri) is not None:
             raise PromotionError("PROMOTION_PARTIAL_TAG_CLEANUP_FAILED")
 
 
@@ -696,7 +756,9 @@ class GitRefLedger:
         relative_ref = self._ref(release_version, target_environment).removeprefix("refs/")
         ref_result = self._api(f"git/ref/{relative_ref}")
         if ref_result.returncode != 0:
-            return None
+            if "HTTP 404" in ref_result.stderr or ref_result.stderr == "missing":
+                return None
+            raise PromotionError("PROMOTION_LEDGER_REF_READ_FAILED")
         ref = self._json(ref_result, "PROMOTION_LEDGER_REF_INVALID")
         try:
             commit_oid = ref["object"]["sha"]
