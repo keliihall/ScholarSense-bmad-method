@@ -124,6 +124,8 @@ def validate_release_workflows(project_root: Path) -> list[str]:
         sbom = bodies.get("sbom-scan", "")
         if "mkdir -p release-out/artifact" not in sbom:
             issues.append("RELEASE_SBOM_READBACK_PARENT_CREATION_MISSING")
+        if "npm ci --prefix frontend --ignore-scripts" not in sbom:
+            issues.append("RELEASE_SBOM_NPM_CACHE_PREWARM_MISSING")
         promotion = bodies.get("promotion", "")
         if "environment: ${{ inputs.target_environment }}" not in promotion:
             issues.append("RELEASE_PROMOTION_PROTECTED_ENVIRONMENT_MISSING")

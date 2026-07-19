@@ -116,6 +116,8 @@ jobs:
           node-version: 24.18.0
       - name: Install upstream-bundle-verified security tools
         run: ./scripts/install-release-tools.sh "$RUNNER_TEMP/release-tools" security
+      - name: Prewarm exact frontend dependency cache without lifecycle scripts
+        run: npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
       - name: Authenticate and fetch selected artifact digest
         env:
           ORAS_PASSWORD: ${{ github.token }}

@@ -22,6 +22,8 @@ cd frontend
 
 The command fails closed when the brand/channel is absent from the manifest, the current OS differs from `os.brandMatrixTarget`, the artifact digest differs, the optional executable digest differs, or the launched browser's full version differs. A PASS prints the exact approved record identifier and the actual artifact/executable SHA-256 values; it remains an optional preflight, not a formal brand-matrix report.
 
+The protected release workflow uses a different `run-formal-web-evidence` entrypoint. It downloads the selected frontend archive from its immutable candidate-store URI, verifies its expected SHA-256 and upstream evidence, rejects unsafe archive paths, and serves only those extracted read-only bytes. It does not run Vite or read the checkout's `dist`. The exact CISB-approved ephemeral macOS ARM64 runner executes Chrome/Edge 150/149 across the required viewport, zoom/reflow, keyboard/focus, axe, visual, resource, console, and network matrix. If that runner or any exact browser executable cannot be verified, release fails closed. Portal business-page and school App/WebView acceptance remain downstream scope; the App baseline is explicitly `not-applicable`, not simulated evidence.
+
 Ownership boundaries remain:
 
 - `src/app` owns composition-level router, theme, and client configuration extension points;

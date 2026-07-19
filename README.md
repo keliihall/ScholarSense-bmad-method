@@ -11,7 +11,13 @@
 ./scripts/verify.sh
 ```
 
-`bootstrap.sh` 验证固定工具链、Maven Wrapper、结构/配置/前端基线，并在隔离临时目录预热精确 npm lock 和 Playwright Chromium 缓存；它不安装全局 npm 包，也不复制原型依赖。`verify.sh` 会清理后端生成物，运行全部后端与 Python 回归，再在两个新的隔离目录分别离线执行前端安装、类型检查、单测、构建预算、三 viewport 浏览器和 axe 无障碍基线；lock、依赖树或构建摘要任一不一致都会失败。临时 `node_modules`、`dist` 与测试报告不会进入源树。
+`bootstrap.sh` 验证固定工具链、Maven Wrapper、结构/配置/前端基线，并在隔离临时目录预热精确 npm lock 和 Playwright Chromium 缓存；它不安装全局 npm 包，也不复制原型依赖。`verify.sh` 先运行非递归 `verify-core`，清理后端生成物并完成后端、Python、前端离线回归，再在两个 clean Git root 中重放生产构建并比较最终制品和 BuildManifest 摘要。lock、依赖树、源码或构建摘要任一不一致都会失败；本地重放输出位于临时目录并在退出时删除。
+
+## 发布与证据边界
+
+本地 `verify.sh` 不签名、不生成受信 provenance，也不提升制品。受信发布只能从受保护 `main` 手动启动 `protected-release` 工作流；它按不可变 URI 顺序生成候选制品、SBOM/扫描、artifact attestation/签名、精确 macOS 正式 Web 证据、ReleaseManifest、manifest 外置签名和 EvidenceIndex，经独立复验后才允许 protected environment 审批与 digest-only 提升。回退使用独立 `protected-rollback` 工作流重新验证历史 ledger 指向的既有 digest，不重建或改写历史。
+
+正式 Web 门直接验证候选 store 中冻结的前端归档；源码预览、普通 hosted runner 或本地品牌预检均不能替代其证据。动态发布输出只存在于 GHCR、GitHub attestation/ledger 或忽略的 `release-out/`，不得提交到源码树。
 
 ## 生产边界
 
@@ -25,7 +31,6 @@
 
 ## 已知交接边界
 
-- Story 1.1d：Git 来源、CI、SBOM、provenance、签名、漏洞/许可证运行证据和制品提升。
 - Story 1.2：门户 SSO、真实业务应用壳与 Web/WCAG 正式验收。
 - Story 7.x：移动宿主业务验收；学校 App owner 基线已由用户在 1.1c 明确批准为不适用。
 

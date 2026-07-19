@@ -21,3 +21,5 @@ The Maven coordinates remain `0.1.0-SNAPSHOT`, but the only runnable release art
 - 错误只返回稳定代码与字段名，不回显配置值。
 
 完整启动和验证命令由仓库根 README 与 `scripts/` 质量入口统一提供。
+
+本地 `verify.sh` 会通过两个 clean root 重放该 JAR 的确定性构建，但不会创建受信发布声明。只有受保护 release workflow 才能把 JAR digest 与其 SBOM、漏洞/许可证结果、GitHub provenance、artifact 签名、ReleaseManifest 和 EvidenceIndex 绑定，并在独立复验后执行 digest-only 提升。回退只能重新验证并重放已有的已签名 digest；不得从 Maven `SNAPSHOT` 坐标、文件名或裸 tag 推断发布身份。

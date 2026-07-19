@@ -125,15 +125,21 @@ class ReleaseBuildContractTest(unittest.TestCase):
     def test_build_entry_is_non_recursive_and_uses_only_backend_wrapper(self) -> None:
         entry = PROJECT_ROOT / "scripts/build-release.sh"
         core = PROJECT_ROOT / "scripts/verify_core.sh"
+        top_level = PROJECT_ROOT / "scripts/verify.sh"
         self.assertTrue(entry.is_file() and os.access(entry, os.X_OK))
         self.assertTrue(core.is_file() and os.access(core, os.X_OK))
         content = entry.read_text(encoding="utf-8")
         core_content = core.read_text(encoding="utf-8")
+        top_level_content = top_level.read_text(encoding="utf-8")
         implementation = (PROJECT_ROOT / "release/build_release.py").read_text(encoding="utf-8")
         self.assertNotIn("verify.sh", content)
         self.assertNotIn("/mvnw", content.replace("backend/mvnw", ""))
         self.assertNotIn("build-release", core_content)
         self.assertNotIn("verify.sh", core_content)
+        self.assertLess(
+            top_level_content.index("scripts/verify_core.sh"),
+            top_level_content.index("scripts/build-release.sh"),
+        )
         self.assertIn('"update-ref", "refs/remotes/origin/main", remote_main', implementation)
 
 
