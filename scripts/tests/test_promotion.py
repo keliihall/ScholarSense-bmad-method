@@ -292,6 +292,7 @@ class _FakeGitHubRunner:
         self.refs: dict[str, str] = {}
         self.counter = 0
         self.ref_read_error: str | None = None
+        self.wrap_blob_content = False
 
     def oid(self, label: str) -> str:
         self.counter += 1
@@ -336,6 +337,8 @@ class _FakeGitHubRunner:
             return CommandResult(1, "", "missing")
         if method == "GET" and endpoint.startswith("git/blobs/"):
             content = self.blobs.get(endpoint.removeprefix("git/blobs/"))
+            if content and self.wrap_blob_content:
+                content = "\n".join(content[index:index + 60] for index in range(0, len(content), 60)) + "\n"
             return CommandResult(0, json.dumps({"encoding": "base64", "content": content}), "") if content else CommandResult(1, "", "missing")
         return CommandResult(1, "", "unexpected")
 
@@ -473,6 +476,21 @@ class PromotionRealAdapterUnitTest(unittest.TestCase):
 
         with self.assertRaisesRegex(PromotionError, "PROMOTION_LEDGER_RECORD_INVALID"):
             ledger.read("1.0.0", "stage")
+
+    def test_git_ref_ledger_reads_github_line_wrapped_base64_blob_content(self) -> None:
+        runner = _FakeGitHubRunner()
+        ledger = GitRefLedger("keliihall/ScholarSense-bmad-method", runner=runner)
+        adapter = InMemoryPromotionAdapter(
+            verifier_identity="protected-release-independent-verifier",
+            receipt_ttl=timedelta(minutes=15),
+        )
+        adapter.seed_candidate(evidence().artifact_uri)
+        adapter.seed_evidence(evidence())
+        record = adapter.promote(request(), NOW).record
+        self.assertTrue(ledger.create("1.0.0", "stage", record))
+        runner.wrap_blob_content = True
+
+        self.assertEqual(record, ledger.read("1.0.0", "stage"))
 
     def test_git_ref_ledger_does_not_treat_auth_failure_as_a_missing_record(self) -> None:
         runner = _FakeGitHubRunner()
