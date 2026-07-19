@@ -29,7 +29,7 @@ from sbom import (  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CONTRACTS = PROJECT_ROOT / "contracts/release"
-PROOF = PROJECT_ROOT / "release-out/task2-proof"
+BUILT_BACKEND = PROJECT_ROOT / "backend/target/scholarsense-backend.jar"
 
 
 class SbomContractTest(unittest.TestCase):
@@ -64,7 +64,7 @@ class SbomContractTest(unittest.TestCase):
     def test_backend_artifact_reconciles_lock_and_embedded_jarmode(self) -> None:
         components = backend_components(
             load_json(CONTRACTS / "backend-lock-1.0.0.json"),
-            PROOF / "scholarsense-backend.jar",
+            BUILT_BACKEND,
         )
         self.assertEqual(42, len(components))
         purls = {component["purl"] for component in components}
@@ -140,10 +140,10 @@ class SbomContractTest(unittest.TestCase):
         self.assertIn("MPL-2.0", obligations)
 
     def test_aggregate_release_covers_artifacts_runtime_frontend_plugins_and_wrapper(self) -> None:
-        manifest = load_json(PROOF / "build-manifest.json")
+        manifest = load_json(CONTRACTS / "fixtures/valid/build-manifest.json")
         npm = npm_components(load_json(PROJECT_ROOT / "frontend/package-lock.json"))
         backend_lock = load_json(CONTRACTS / "backend-lock-1.0.0.json")
-        backend = backend_components(backend_lock, PROOF / "scholarsense-backend.jar")
+        backend = backend_components(backend_lock, BUILT_BACKEND)
         aggregate = aggregate_components(manifest, backend, npm, backend_lock)
         self.assertEqual(207, len(aggregate))
         kinds = {item["kind"] for item in aggregate}
