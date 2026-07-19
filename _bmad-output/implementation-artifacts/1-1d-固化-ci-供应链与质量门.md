@@ -4,7 +4,7 @@ baseline_commit: NO_VCS
 
 # Story 1.1d：固化 CI、供应链与质量门
 
-Status: in-progress
+Status: review
 
 > 状态说明：静态 G-01/G-05/PAB-1.0.0 已批准，1.1a—1.1c 已完成；当前工作区仍不是 Git 仓库，且没有 CI、受控制品库、attestation store、受保护环境或提升端点。`ready-for-dev` 只表示可开始“U1 本地可复现构建合同”，不表示完成平台已具备。Git/CI/store/attestation/promotion 平台基线冻结并产生真实证据前，本 Story 不得进入 `review`/`done`，也不得把本地报告冒充 provenance、签名或生产提升证据。
 
@@ -276,14 +276,14 @@ Status: in-progress
 
 #### 定向复核（2026-07-19）
 
-- [ ] [Review][Patch] 修正 signer 拆分后 formal Web 仍验证旧 `release.yml` 证书身份的必然阻断回归 [scripts/run-formal-web-evidence.sh:58]
-- [ ] [Review][Patch] 消除 reusable signer 中 `release_version` 再次插入特权 Shell 源码的命令注入路径 [.github/workflows/artifact-signing.yml:91]
-- [ ] [Review][Patch] 将 CISB 的 build/attestation/WebQA job 身份绑定拆分后的真实 DAG，并让 checker 拒绝不存在或错指的 job [contracts/release/ci-supply-chain-baseline-1.0.0.json:46]
-- [ ] [Review][Patch] 统一唯一人类 UX/Brand owner + 独立自动 WebQA 的 AC、VGB 与语义门，且不得将 `formal-web` publisher 冒充 WebQA 执行主体 [contracts/release/visual-baseline-vgb-1.0.0.json:5]
-- [ ] [Review][Patch] 使 ReleaseManifest schema/semantic checker 分别强制 CycloneDX 与 SPDX 引用，拒绝只有单一泛化 `sbom` 证据的清单 [release/manifests.py:220]
-- [ ] [Review][Patch] 将正式 Web 入口的裸 `node` 执行收回 PAB toolchain wrapper [scripts/run-formal-web-evidence.sh:69]
-- [ ] [Review][Patch] 在 Golden 候选构建中强制 CISB 冻结的 hosted runner `ImageVersion`，并增加漂移负例 [.github/workflows/golden-approval.yml:17]
-- [ ] [Review][Patch] 在新 signer/job DAG 上完成真实受保护 release/promotion replay，回读验证 signer identity、SPDX attestation 与实际 approvals API 路径后再恢复 `done` [_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md:467]
+- [x] [Review][Patch] 修正 signer 拆分后 formal Web 仍验证旧 `release.yml` 证书身份的必然阻断回归 [scripts/run-formal-web-evidence.sh:58]
+- [x] [Review][Patch] 消除 reusable signer 中 `release_version` 再次插入特权 Shell 源码的命令注入路径 [.github/workflows/artifact-signing.yml:91]
+- [x] [Review][Patch] 将 CISB 的 build/attestation/WebQA job 身份绑定拆分后的真实 DAG，并让 checker 拒绝不存在或错指的 job [contracts/release/ci-supply-chain-baseline-1.0.0.json:46]
+- [x] [Review][Patch] 统一唯一人类 UX/Brand owner + 独立自动 WebQA 的 AC、VGB 与语义门，且不得将 `formal-web` publisher 冒充 WebQA 执行主体 [contracts/release/visual-baseline-vgb-1.0.0.json:5]
+- [x] [Review][Patch] 使 ReleaseManifest schema/semantic checker 分别强制 CycloneDX 与 SPDX 引用，拒绝只有单一泛化 `sbom` 证据的清单 [release/manifests.py:220]
+- [x] [Review][Patch] 将正式 Web 入口的裸 `node` 执行收回 PAB toolchain wrapper [scripts/run-formal-web-evidence.sh:69]
+- [x] [Review][Patch] 在 Golden 候选构建中强制 CISB 冻结的 hosted runner `ImageVersion`，并增加漂移负例 [.github/workflows/golden-approval.yml:17]
+- [x] [Review][Patch] 在新 signer/job DAG 上完成真实受保护 release/promotion replay，回读验证 signer identity、SPDX attestation 与实际 approvals API 路径后再恢复 `done` [_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md:467]
 
 ## Dev Notes
 
@@ -478,6 +478,10 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19T20:20:00+08:00—20:23:00+08:00：Review 修复回归完成。后端 36/36、Python 188/188、两轮前端各 unit 27/27、Playwright 20 pass/4 skip；CISB、7 个 workflow security、release lifecycle、contract/schema/source inventory 全部 PASS。顶层 `verify.sh` 的 core 与两轮前端重放通过，随后按设计在未提交源码处以 `SOURCE_WORKSPACE_DIRTY` fail closed；需在可追溯提交后完成最后一次 release replay。
 - 2026-07-19：Review 决策由用户批准并澄清“没有两名 reviewer”。合同现冻结为唯一人类责任主体 `github-user:24710825:keliihall` 加独立自动 WebQA 门；PromotionRecord 的实际批准者取 GitHub Actions run approvals API。artifact 与 manifest 仅由两个不同 reusable workflow identity 签名，旧内联 signer job 已删除。
 - 2026-07-19T20:31:00+08:00—20:38:00+08:00：最终 `./scripts/verify.sh` 在 clean commit `93734fa53565c977b3b83fc678f8d2a0cd6e2ecd` 上退出 0。顶层及两个隔离 release attempt 的后端 36/36、审计 145/145、Python 188/188、两轮前端 unit 27/27 与 Playwright 20 pass/4 skip 全绿；CISB、7 workflow security、release lifecycle、contracts/schema/source inventory 全部 PASS。两次 clean 构建得到相同 `artifactSet=9f8488d543a978a53412118072616305684ca01867de882b54e1418b5394d8ea`。
+- 2026-07-19T20:45:00+08:00—21:08:00+08:00：完成 8 项定向复核的 RED→GREEN。修正 artifact/manifest signer SAN、reusable workflow 输入传递、CISB 真实 job DAG、独立 `formal-web-test` WebQA、CycloneDX/SPDX 分列证据、PAB Node 入口及 hosted runner `ImageVersion` 门；`./scripts/verify.sh` 在 commit `d200d5ad9165de0e8081df5105db773874332ed4` 全绿，后端 36/36、审计 145/145、Python 192/192、前端每轮 unit 27/27 与 Playwright 20 pass/4 skip，artifact set 仍为 `9f8488…d8ea`。
+- 2026-07-19T21:08:00+08:00—21:19:00+08:00：PR #27 cold-cache CI run `29689454021` 全绿并经受保护主线合并为 `9c89446e8e8f6cfd6ca5c5dcbc5d0788ae12e92c`。首次 CI 暴露 Maven runtime dependency 未在 offline verify 前预热，新增 `test_bootstrap_prewarms_runtime_dependencies_before_offline_verification` 并修复 `scripts/bootstrap.sh`；未放宽离线门。
+- 2026-07-19T21:36:00+08:00—22:17:00+08:00：protected release run `29689873567` 终态 attempt 3 成功，source `9c89446…92c`、release `1.1.2`、target `stage`。attempt 1 因一次性 runner 名称不符冻结前缀而 `FORMAL_WEB_RUNNER_NAME_DRIFT` fail closed；attempt 2 在身份门通过后因 ORAS 拉取的瞬时 `unexpected EOF` 失败；均未进入未验证的 promotion，也未修改代码或放宽策略。
+- 2026-07-19T22:17:00+08:00—22:33:00+08:00：真实证据回读完成。artifact/manifest 证书 SAN 分别精确命中 `artifact-signing.yml@refs/heads/main` 与 `manifest-signing.yml@refs/heads/main`，OIDC issuer 均为 GitHub Actions；backend/frontend 实际字节的 SPDX predicate、source digest/ref 与 signer 强制验证通过。approvals API 回读 `keliihall` 已批准 `stage`；ledger `promotion-ledger/1.1.2-stage` 指向 `32acc27296ea1e5879dd80620ec70edd4e9e6ee5`；一次性 runner 自注销后 repository runner 数为 0。
 
 ### Completion Notes List
 
@@ -508,11 +512,12 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19，Task 8.5 完成：verification、README、Story evidence 和文件清单已更新，Story 转为 `review`。原始 AC 已全部满足，按收敛要求停止继续扩展。
 - 2026-07-19：26 项 Review Findings 已全部修复并有回归覆盖。关键收敛包括真实 workflow/runner/signer 身份、GitHub 实际审批历史、cryptographic attestation、stage→production 绑定、全局版本绑定、完整 SBOM/Maven 图、正式 Web TOCTOU/像素/network 门、当前策略 rollback、读写 job 分离及 ORAS 并发安全。
 - 2026-07-19：最终统一验证与双 clean release replay 全绿；Story 与 sprint 同步转为 `done`。
+- 2026-07-19：定向复核 8 项全部完成；PR #27 cold-cache CI、protected release `1.1.2`、独立 verifier、stage approval/promotion/readback、signer identity 与 SPDX attestation 均有真实证据。按 `bmad-dev-story` 交付边界将 Story 与 sprint 转为 `review`，由后续 review 步骤决定 `done`。
 
 ### File List
 
 - `_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md`（开工验证、HALT 与文件记录）
-- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Story 最终状态同步为 `done`）
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Story 开发交付状态同步为 `review`）
 - `.gitignore`（排除 release 临时输出、审计锁和编辑过程文件）
 - `.github/CODEOWNERS`（发布供应链关键路径责任人）
 - `.github/workflows/platform-probe.yml`（真实 store/attestation/signing/promotion/verifier 能力探测）
@@ -653,11 +658,12 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - `contracts/release/fixtures/index.json`（Task 7.2—7.5：新增正式 Web fixture 登记）
 - `contracts/release/release-source-inventory-1.0.0.json`、`scripts/check_release_source.py`、`scripts/tests/test_release_source_inventory.py`（Task 7/8：每个受保护 source commit 的自排除 inventory 绑定与回归）
 - `_bmad-output/implementation-artifacts/1-1d-verification.md`（Task 8.5：完整本地/CI/release/promotion/readback/rollback 证据与失败审计）
-- `_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md`（Task/Review checkbox、日志、完成说明、文件清单与 `done` 状态）
-- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Story 状态同步为 `done`）
+- `_bmad-output/implementation-artifacts/1-1d-固化-ci-供应链与质量门.md`（Task/Review checkbox、日志、完成说明、文件清单与 `review` 状态）
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`（Story 状态同步为 `review`）
 - `.github/workflows/artifact-signing.yml`（Review：独立 artifact provenance、CycloneDX/SPDX attestation 与 artifact signer identity）
 - `.github/workflows/manifest-signing.yml`（Review：独立 manifest signer identity）
 - `release/version_binding.py`（Review：`releaseVersion` 到 manifest digest 的全局 create-only 绑定）
+- `scripts/bootstrap.sh`、`scripts/tests/test_delivery_quality.py`（定向复核：cold-cache CI 在离线验证前预热受锁 runtime dependencies）
 
 ## Change Log
 
@@ -678,3 +684,4 @@ GPT-5 Codex（create-story context）；GPT-5 Codex（bmad-dev-story implementat
 - 2026-07-19：归档 `1-1d-verification.md`，Task 7/8 及全部 subtasks 标记完成，Story 与 sprint 状态转为 `review`；Clean completion，不再扩展范围。
 - 2026-07-19：完成 3 项 Review 决策与 23 项 Review 补丁；按用户澄清取消“两名人工 reviewer”假设，冻结为 `keliihall` 唯一人类责任主体 + 独立自动 WebQA，并采用 GitHub run approvals API 记录实际环境批准者。
 - 2026-07-19：clean commit `93734fa53565c977b3b83fc678f8d2a0cd6e2ecd` 上最终 `./scripts/verify.sh` 全绿，双 clean release artifact set 一致；Story 状态转为 `done`。
+- 2026-07-19：完成 8 项定向 Review patch 与 cold-cache 回归，经 PR #27 合并到受保护 main；protected release `29689873567` attempt 3 全 DAG、stage approval/promotion/readback、signer identity、SPDX attestation 与 runner cleanup 回读全部通过，Story 与 sprint 转为 `review`。
