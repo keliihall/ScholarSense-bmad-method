@@ -220,6 +220,8 @@ class FormalWebContractTest(unittest.TestCase):
             self.assertNotIn(forbidden, combined)
         self.assertIn("safe_extract_frontend", combined)
         self.assertIn("visual-baseline-vgb-1.0.0.json", combined)
+        self.assertIn("browsers.json", combined)
+        self.assertNotIn("formal-browser-install.json", combined)
 
 
 if __name__ == "__main__":
