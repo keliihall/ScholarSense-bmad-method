@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/identity/current-session.schema.json",
+  "title": "Current identity session projection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["authenticated", "sessionPseudonym", "sessionVersion", "expiresAt", "warningAt", "profileVersion"],
+  "properties": {
+    "authenticated": {"const": true},
+    "sessionPseudonym": {"type": "string", "pattern": "^sp_[A-Za-z0-9_-]{20,86}$"},
+    "sessionVersion": {"type": "integer", "minimum": 1},
+    "expiresAt": {"type": "string", "format": "date-time"},
+    "warningAt": {"type": "string", "format": "date-time"},
+    "profileVersion": {"const": "ISP-1.0.0"}
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "commandType": "logout",
+  "sessionVersion": 3,
+  "idempotencyKey": "idem_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ",
+  "csrfToken": "bG9nb3V0LWNzcmYtdG9rZW4tbWluaW11bS0zMg",
+  "origin": "https://app.stage.invalid"
+}

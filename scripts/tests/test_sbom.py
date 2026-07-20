@@ -73,9 +73,11 @@ class SbomContractTest(unittest.TestCase):
             load_json(CONTRACTS / "backend-lock-1.0.0.json"),
             BUILT_BACKEND,
         )
-        self.assertEqual(42, len(components))
+        self.assertEqual(74, len(components))
         purls = {component["purl"] for component in components}
         self.assertIn("pkg:maven/org.springframework.boot/spring-boot-jarmode-tools@4.1.0", purls)
+        self.assertIn("pkg:maven/org.postgresql/postgresql@42.7.12", purls)
+        self.assertNotIn("pkg:maven/org.postgresql/postgresql@42.7.11", purls)
         self.assertTrue(all(component["hashes"] for component in components))
         self.assertEqual("UNKNOWN", _backend_license("pkg:maven/example/unreviewed@1.0.0"))
 
@@ -153,7 +155,7 @@ class SbomContractTest(unittest.TestCase):
         backend_lock = load_json(CONTRACTS / "backend-lock-1.0.0.json")
         backend = backend_components(backend_lock, BUILT_BACKEND)
         aggregate = aggregate_components(manifest, backend, npm, backend_lock)
-        self.assertEqual(208, len(aggregate))
+        self.assertEqual(240, len(aggregate))
         kinds = {item["kind"] for item in aggregate}
         self.assertTrue(
             {"release-artifact", "maven-runtime", "maven-generated-runtime", "npm", "maven-plugin", "maven-wrapper"}

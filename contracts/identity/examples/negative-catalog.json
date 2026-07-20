@@ -1,0 +1,18 @@
+{
+  "version": "IDENTITY-NEGATIVE-CATALOG-1.0.0",
+  "cases": [
+    {"id": "host-origin-forbidden", "expectedCode": "HOST_ORIGIN_FORBIDDEN"},
+    {"id": "host-source-forbidden", "expectedCode": "HOST_SOURCE_FORBIDDEN"},
+    {"id": "host-message-unknown-field", "expectedCode": "HOST_MESSAGE_INVALID"},
+    {"id": "host-event-unknown", "expectedCode": "HOST_MESSAGE_INVALID"},
+    {"id": "host-message-expired", "expectedCode": "HOST_MESSAGE_INVALID"},
+    {"id": "host-nonce-replayed", "expectedCode": "HOST_MESSAGE_REPLAYED"},
+    {"id": "host-message-replayed", "expectedCode": "HOST_MESSAGE_REPLAYED"},
+    {"id": "host-bootstrap-already-used", "expectedCode": "HOST_BOOTSTRAP_ALREADY_USED"},
+    {"id": "continuation-open-redirect", "expectedCode": "CONTINUATION_INVALID_OR_EXPIRED"},
+    {"id": "continuation-expired", "expectedCode": "CONTINUATION_INVALID_OR_EXPIRED"},
+    {"id": "csrf-invalid", "expectedCode": "IDENTITY_SESSION_REQUIRED"},
+    {"id": "identity-session-version-conflict", "expectedCode": "IDENTITY_SESSION_VERSION_CONFLICT"},
+    {"id": "idempotency-key-mismatch", "expectedCode": "IDENTITY_IDEMPOTENCY_MISMATCH"}
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/identity/continuation.schema.json",
+  "title": "Opaque single-use continuation result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["continuationCode", "expiresAt", "authorizationUri"],
+  "properties": {
+    "continuationCode": {"type": "string", "pattern": "^ct_[A-Za-z0-9_-]{43,86}$"},
+    "expiresAt": {"type": "string", "format": "date-time"},
+    "authorizationUri": {"type": "string", "pattern": "^/oauth2/authorization/[A-Za-z0-9._-]+$"}
+  }
+}

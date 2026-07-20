@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "HIP-1.0.0",
+  "eventType": "host.acknowledged",
+  "messageId": "018f20f2-8f66-7b18-8a67-fd76c9cf1263",
+  "correlationId": "portal-entry-002",
+  "requestMessageId": "018f20f2-8f66-7b18-8a67-fd76c9cf1262",
+  "issuedAt": "2026-07-20T02:10:02+08:00",
+  "status": "accepted"
+}

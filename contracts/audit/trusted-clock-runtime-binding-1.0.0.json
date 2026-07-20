@@ -1,0 +1,13 @@
+{
+  "$schema": "./trusted-clock-runtime-binding.schema.json",
+  "version": "AUDIT-CLOCK-BINDING-1.0.0",
+  "performanceProfileVersion": "PP-1.0.0",
+  "performanceProfilePath": "contracts/performance/performance-profile-pp-1.0.0.json#/clock",
+  "clockSource": "server-synchronized-ntp",
+  "synchronizationEvidence": {
+    "requiredFields": ["sourceId", "profileVersion", "offsetMs", "observedAt", "freshUntil", "evidenceRef"],
+    "collectionBoundary": "outside-business-transaction",
+    "freshnessPolicy": "freshUntil-exclusive"
+  },
+  "status": "binding-required"
+}

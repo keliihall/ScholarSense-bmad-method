@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/host/host-response.schema.json",
+  "title": "HIP-1.0.0 host acknowledgement or failure",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "eventType", "messageId", "correlationId", "requestMessageId", "issuedAt", "status"],
+  "properties": {
+    "schemaVersion": {"const": "HIP-1.0.0"},
+    "eventType": {"enum": ["host.acknowledged", "host.failed"]},
+    "messageId": {"type": "string", "pattern": "^[0-9a-f-]{36}$"},
+    "correlationId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"},
+    "requestMessageId": {"type": "string", "pattern": "^[0-9a-f-]{36}$"},
+    "issuedAt": {"type": "string", "format": "date-time"},
+    "status": {"enum": ["accepted", "rejected"]},
+    "errorCode": {
+      "enum": ["HOST_ORIGIN_FORBIDDEN", "HOST_SOURCE_FORBIDDEN", "HOST_MESSAGE_INVALID", "HOST_MESSAGE_REPLAYED", "IDENTITY_DEPENDENCY_UNAVAILABLE"]
+    }
+  }
+}

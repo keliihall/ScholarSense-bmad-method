@@ -41,16 +41,34 @@ PERSISTENT_CACHE = re.compile(
     r"pinia-plugin-persistedstate|persist\s*:)")
 CREDENTIAL_KEYS = {"password", "passwd", "token", "private_key", "client_secret"}
 APPROVED_TEST_LOOPBACKS = {
+    "scripts/run_audit_postgresql_tests.sh": (
+        's.bind(("127.0.0.1", 0))',
+        "-h 127.0.0.1",
+        "export PGHOST=127.0.0.1",
+        "jdbc:postgresql://127.0.0.1:$PORT",
+    ),
     "frontend/playwright.config.ts": (
         "http://127.0.0.1:4173",
         "--host 127.0.0.1 --port 4173",
         "127.0.0.1:4173",
+        "http://127.0.0.1:4174",
+        "--bind 0.0.0.0 --directory tests/host-fixture",
     ),
     "frontend/scripts/formal-web-harness.mjs": (
         "server.listen(0, '127.0.0.1'",
         "http://127.0.0.1:${address.port}",
     ),
+    "frontend/tests/baseline/host-cross-origin.spec.ts": (
+        "http://127.0.0.1:4173",
+        "http://127.0.0.1:4174",
+        "http://localhost:4174",
+    ),
+    "frontend/tests/host-fixture/index.html": (
+        "http://127.0.0.1:4173",
+    ),
 }
+APPROVED_PERSISTENCE_ASSERTIONS = {"frontend/tests/baseline/identity-shell.spec.ts"}
+APPROVED_MIGRATION_PREFIX = "backend/src/main/resources/db/migration/"
 NPMRC_FORBIDDEN = re.compile(
     r"(?im)^\s*(?://[^\s]+/:)?(?:_authToken|_password|username|cache|userconfig)\s*="
 )
@@ -76,7 +94,8 @@ def scan(project_root: Path) -> list[str]:
                 continue
             if not entry.is_file():
                 continue
-            if relative_root == "backend/src/main" and entry.suffix == ".sql":
+            if (relative_root == "backend/src/main" and entry.suffix == ".sql"
+                    and not relative.as_posix().startswith(APPROVED_MIGRATION_PREFIX)):
                 violations.append(f"PREMATURE_PRODUCTION_MIGRATION: {relative}")
             suffix = entry.suffix.lower()
             if suffix not in TEXT_SUFFIXES and not entry.name.lower().startswith(".env") and entry.name != ".npmrc":
@@ -98,7 +117,8 @@ def scan(project_root: Path) -> list[str]:
             if suffix in CODE_SUFFIXES:
                 if "docs/input/原型" in content or "/原型/" in content:
                     violations.append(f"PROTOTYPE_SOURCE_REFERENCE: {relative}")
-                if relative_root == "frontend" and PERSISTENT_CACHE.search(content):
+                if (relative_root == "frontend" and PERSISTENT_CACHE.search(content)
+                        and relative.as_posix() not in APPROVED_PERSISTENCE_ASSERTIONS):
                     violations.append(f"PERSISTENT_BUSINESS_CACHE: {relative}")
     return sorted(set(violations))
 

@@ -197,6 +197,59 @@ class ReleaseManifestLifecycleTest(unittest.TestCase):
 
 
 class EvidenceIndexLifecycleTest(unittest.TestCase):
+    def test_host_sso_evidence_payload_schema_is_digest_bound_and_secret_closed(self) -> None:
+        schema = load_json(CONTRACTS / "host-sso-runtime-evidence.schema.json")
+        valid = load_json(CONTRACTS / "fixtures/valid/host-sso-runtime-evidence.json")
+        self.assertEqual([], schema_issues(valid, schema))
+        leaked = copy.deepcopy(valid)
+        leaked["portalConfiguration"]["clientSecret"] = "must-never-be-recorded"
+        self.assertTrue(schema_issues(leaked, schema))
+
+    def test_generator_carries_host_sso_runtime_evidence_bound_to_the_frontend_artifact(self) -> None:
+        payload, build = _release_input()
+        frontend_digest = next(
+            item["binarySha256"] for item in payload["artifacts"] if item["id"] == "frontend"
+        )
+        host_sso = _reference(
+            "host-sso-runtime-evidence",
+            "HOST-SSO-RUNTIME-EVIDENCE-1.0.0",
+            "e" * 64,
+            kind="host-sso-runtime-evidence",
+        )
+        host_sso["subjectBinarySha256"] = frontend_digest
+        payload["evidence"].append(host_sso)
+        manifest = create_release_manifest(payload)
+        self.assertEqual([], schema_issues(
+            manifest, load_json(CONTRACTS / "release-manifest.schema.json")
+        ))
+        digest = canonical_sha256(manifest)
+        signature = _reference(
+            "manifest-signature", "COSIGN-BUNDLE-0.3", "f" * 64,
+            kind="manifest-signature",
+        )
+        signature.update({"subjectBinarySha256": digest, "dependsOn": ["release-manifest"]})
+        index = create_evidence_index(
+            manifest,
+            _reference("release-manifest", "RELEASE-MANIFEST-1.0.0", digest),
+            signature,
+            "2026-07-20T10:00:00+08:00",
+        )
+        self.assertEqual([], schema_issues(
+            index, load_json(CONTRACTS / "evidence-index.schema.json")
+        ))
+        node = next(item for item in index["evidence"] if item["id"] == host_sso["id"])
+        self.assertEqual("artifact-evidence", node["stage"])
+        self.assertEqual(["frontend"], node["dependsOn"])
+
+        rebound = copy.deepcopy(manifest)
+        next(
+            item for item in rebound["evidence"] if item["id"] == host_sso["id"]
+        )["subjectBinarySha256"] = build["artifacts"][0]["binarySha256"]
+        self.assertIn(
+            "RELEASE_HOST_SSO_EVIDENCE_SUBJECT_INVALID: host-sso-runtime-evidence",
+            release_manifest_issues(rebound, build),
+        )
+
     def test_manifest_signature_is_created_after_freeze_and_index_subject_is_manifest_digest(self) -> None:
         payload, _build = _release_input()
         manifest = create_release_manifest(payload)

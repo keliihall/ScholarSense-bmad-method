@@ -1,5 +1,5 @@
 # generated: 2026-07-17T20:58:14+0800
-# last_updated: 2026-07-19T04:55:11+0800
+# last_updated: 2026-07-20T15:06:31+0800
 # project: ScholarSense-bmad-method
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - 回顾产生的行动项追加到 action_items，sprint-status 会呈现未完成项
 
 generated: 2026-07-17T20:58:14+0800
-last_updated: 2026-07-20T00:56:55+0800
+last_updated: 2026-07-20T15:06:31+0800
 project: ScholarSense-bmad-method
 project_key: NOKEY
 tracking_system: file-system
@@ -53,8 +53,8 @@ development_status:
   1-1b-建立模块化生产工程骨架: done
   1-1c-批准生产前端与性能-profile-adr: done
   1-1d-固化-ci-供应链与质量门: done
-  1-2-接入统一门户-sso-与可恢复应用壳: backlog
-  1-3-建立模块内原子审计事实: backlog
+  1-2-接入统一门户-sso-与可恢复应用壳: done
+  1-3-建立模块内原子审计事实: done
   1-4-归集不可变审计账本并检测篡改: backlog
   1-5-提供授权审计检索-归档与销毁证明: backlog
   1-6a-同步权威身份与组织: backlog

@@ -265,7 +265,7 @@ def main(argv: list[str]) -> int:
     if issues:
         print("\n".join(issues), file=sys.stderr)
         return 1
-    print("sbom: PASS (backend=42 frontend=156 aggregate=207)")
+    print("sbom: PASS")
     return 0
 
 

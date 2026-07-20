@@ -219,7 +219,7 @@ def build_release(root: Path, destination: Path) -> dict[str, Any]:
             environment.update(FIXED_BUILD_ENVIRONMENT)
             environment["FRONTEND_RELEASE_OUTPUT"] = str(attempt / "release-out/frontend-dist")
             environment["RELEASE_BUILD_ATTEMPT"] = str(number)
-            _run([str(attempt / "scripts/verify_core.sh")], attempt, environment)
+            _run([str(attempt / "scripts/verify_core.sh"), "--review"], attempt, environment)
             backend = attempt / f"backend/target/{BACKEND_NAME}"
             frontend = attempt / f"release-out/{FRONTEND_NAME}"
             create_normalized_tar_gz(attempt / "release-out/frontend-dist", frontend)

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "HIP-1.0.0",
+  "eventType": "host.challenge",
+  "messageId": "018f20f2-8f66-7b18-8a67-fd76c9cf1260",
+  "correlationId": "host-bootstrap:018f20f2-8f66-7b18-8a67-fd76c9cf1260",
+  "issuedAt": "2026-07-20T02:09:59+08:00",
+  "payload": {
+    "bootstrapCode": "hb_NjA2MzJkNzgtYjI1Yy00Mjc4LTk0MjQtNDUzNjQ4ZDc5YjI3",
+    "audience": "scholarsense-web",
+    "origin": "https://portal.stage.invalid",
+    "expiresAt": "2026-07-20T02:10:59+08:00"
+  }
+}

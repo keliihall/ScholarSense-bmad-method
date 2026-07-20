@@ -1,0 +1,20 @@
+{
+  "version": "HOST-INTEGRATION-1.0.0",
+  "status": "approved-controlled-completion",
+  "identityRuntimeProfile": "contracts/identity/identity-runtime-profile-1.0.0.json",
+  "staticResponseOwner": "deploy/base/nginx-scholarsense.conf.template",
+  "renderedStaticResponseOwner": "deploy/base/nginx-scholarsense.conf",
+  "externalEvidenceWaiver": "deploy/base/story-1.2-external-evidence-waiver-1.0.0.json",
+  "frameAncestors": ["https://portal.stage.invalid"],
+  "portalIframeSandbox": ["allow-scripts", "allow-forms", "allow-same-origin"],
+  "handshakeTimeoutSeconds": 5,
+  "messageReplayWindowSeconds": 300,
+  "prohibitions": [
+    "wildcard-frame-ancestor",
+    "wildcard-target-origin",
+    "x-frame-options-deny",
+    "x-frame-options-sameorigin",
+    "sandbox-top-navigation",
+    "sandbox-popups"
+  ]
+}

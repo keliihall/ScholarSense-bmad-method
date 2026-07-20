@@ -1,0 +1,30 @@
+{
+  "version": "IDENTITY-CONTRACT-LOCK-1.0.0",
+  "sourceBaselineCommit": "a0c8a9cba10d963c41623d27a8480dbbbddea393",
+  "files": [
+    {"path": "contracts/host/examples/valid/acknowledged.json", "sha256": "fc38d80c8876991a8d2a275c40f5d069f38ac1b32e0de11650fa0b84eca2be27"},
+    {"path": "contracts/host/examples/valid/failed.json", "sha256": "28e47c88d154a6bdc4f4a2830f6d70863ce0020b621276348c506beaa36cfc74"},
+    {"path": "contracts/host/examples/valid/host-challenge.json", "sha256": "4bb209abdbfb097a72271c4273d75b478b8de220a9e2cd509263b8fb5b05a13a"},
+    {"path": "contracts/host/examples/valid/host-ready.json", "sha256": "aa38404cae75dfd01ae3b5a62b45e78179d7f46b3782002bbdb0c5af2d4fb47a"},
+    {"path": "contracts/host/examples/valid/navigate-requested.json", "sha256": "63a3f7e3eb762dfc30a77201f7a808d60772788052139c0ea36068cd61d5a9b7"},
+    {"path": "contracts/host/host-challenge.schema.json", "sha256": "9dd7c6c85923ae5c11d39feed5968e92bbabb0b85dea3a4f282959c13e87041d"},
+    {"path": "contracts/host/host-envelope.schema.json", "sha256": "e36073dced00f077ca11530e3642a0055643589d952d3434e02fd8e71d2fe4d5"},
+    {"path": "contracts/host/host-response.schema.json", "sha256": "564691a4881e45b0a1ac51fd20f6d9cdecf09fcb3347b3bc801c51c0ca68ef1a"},
+    {"path": "contracts/identity/bootstrap-exchange.schema.json", "sha256": "6312a2202a5b9d0aab151c536cab57c972895234059fa375cb88dc9615ab5338"},
+    {"path": "contracts/identity/continuation.schema.json", "sha256": "2c54fc83156b9dcf51f5a1681c3913a0258511c55113e7a760bc64c7973a5633"},
+    {"path": "contracts/identity/current-session.schema.json", "sha256": "a2991ec350ae548c49ec7b5e08fb6fea556313841225bb455ed1c3f42e7d2c5f"},
+    {"path": "contracts/identity/error-envelope.schema.json", "sha256": "120373fb60044780f7f5de08dd2e31a274c8e69925c3af10156fd2c7b8e07b3a"},
+    {"path": "contracts/identity/examples/negative-catalog.json", "sha256": "4180154a9e8ac5a754908a4b7261baca0aa089021dc147e3a25f17e5e7093c8c"},
+    {"path": "contracts/identity/examples/valid/account-switch-request.json", "sha256": "fc1f191dc1e130b29489db81978c9a24737ac82d18ebbf4318a9542a23a0136f"},
+    {"path": "contracts/identity/examples/valid/bootstrap-exchange-request.json", "sha256": "5f832a11db41ddce3459a60f870159fe5338f01ef309e71f7ee9320d21d3abd0"},
+    {"path": "contracts/identity/examples/valid/continuation.json", "sha256": "bb22503444a3527bb572121b2033fead0fd3aff243c05520c3571f245cc5e9fe"},
+    {"path": "contracts/identity/examples/valid/current-session.json", "sha256": "754699fab0323d039d3e7e235f108407465a730463d2424795c441b536d891e5"},
+    {"path": "contracts/identity/examples/valid/logout-request.json", "sha256": "911897dcc830abf091670152bc239b75be82cddae7203e18ad55a097d28a8275"},
+    {"path": "contracts/identity/examples/valid/reauthentication-request.json", "sha256": "6267913433e6185aafd16b8f9e570a9e2d9ff12b7793f5891d7761abf3f88c2e"},
+    {"path": "contracts/identity/examples/valid/version-conflict-error.json", "sha256": "b5d8a8927868c2405eb626d6da92b5a3e53b26a3fbd345df9d1ac0c4791a7650"},
+    {"path": "contracts/identity/identity-runtime-profile-1.0.0.json", "sha256": "24a5aeaeae4aac1bf40a86ccebcb8a7515f846997e97565ef22d1e770c51bf25"},
+    {"path": "contracts/identity/identity-runtime-profile.schema.json", "sha256": "539c9e605528a117738f80a80dd7f986ab17293c78d1698a7838f9dfe53471f6"},
+    {"path": "contracts/identity/reauthentication.schema.json", "sha256": "e56ab409316f8c55af80be08016efcd7233ddbcd81f9f076f735cc74ea69c4d2"},
+    {"path": "contracts/identity/session-command.schema.json", "sha256": "a9d9d876123aa256b440ff680eb99ea71ba436ae3eb1b736c6a2cc492f31b639"}
+  ]
+}

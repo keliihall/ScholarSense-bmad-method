@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/audit/identity-access-vocabulary.schema.json",
+  "title": "Identity-access audit vocabulary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "module", "roleIds", "scopeCodes", "purposes", "projectionScopes", "objectTypes", "aggregateTypes", "notApplicableReasons", "policyVersions"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "version": {"const": "IDENTITY-AUDIT-VOCABULARY-1.0.0"},
+    "module": {"const": "identity-access"},
+    "roleIds": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_-]{1,31}$"}},
+    "scopeCodes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_.-]{1,63}$"}},
+    "purposes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_.-]{1,63}$"}},
+    "projectionScopes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_.-]{1,63}$"}},
+    "objectTypes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z][a-z0-9.-]{1,63}$"}},
+    "aggregateTypes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z][a-z0-9.-]{1,63}$"}},
+    "notApplicableReasons": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"}},
+    "policyVersions": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{2,63}$"}}
+  }
+}

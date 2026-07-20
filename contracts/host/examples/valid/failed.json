@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "HIP-1.0.0",
+  "eventType": "host.failed",
+  "messageId": "018f20f2-8f66-7b18-8a67-fd76c9cf1264",
+  "correlationId": "portal-entry-003",
+  "requestMessageId": "018f20f2-8f66-7b18-8a67-fd76c9cf1262",
+  "issuedAt": "2026-07-20T02:10:03+08:00",
+  "status": "rejected",
+  "errorCode": "HOST_MESSAGE_REPLAYED"
+}

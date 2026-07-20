@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "HIP-1.0.0",
+  "eventType": "navigate.requested",
+  "messageId": "018f20f2-8f66-7b18-8a67-fd76c9cf1262",
+  "correlationId": "portal-entry-002",
+  "issuedAt": "2026-07-20T02:10:01+08:00",
+  "nonce": "c2Vjb25kLW1pbmltdW0tdGhpcnR5LXR3by1ub25jZQ",
+  "payload": {
+    "targetRouteId": "shell.session"
+  }
+}

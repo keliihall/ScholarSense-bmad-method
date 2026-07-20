@@ -21,11 +21,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 class CrossCuttingCommandContractTest {
 
     @Test
-    void fixtureRemainsOutsideProductionSourceAndMigrations() throws Exception {
+    void fixtureRemainsOutsideProductionSourceWhileOwnedStoryMigrationExists() throws Exception {
         assertFalse(Files.exists(Path.of(
                 "src/main/java/cn/edu/suda/scholarsense/contractfixture")));
         try (var walk = Files.walk(Path.of("src/main/resources/db/migration"))) {
-            assertEquals(0, walk.filter(path -> path.toString().endsWith(".sql")).count());
+            assertEquals(2, walk.filter(path -> path.toString().endsWith(".sql")).count());
         }
     }
 

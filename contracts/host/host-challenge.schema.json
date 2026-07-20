@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/host/host-challenge.schema.json",
+  "title": "HIP-1.0.0 iframe-to-portal bootstrap challenge",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "eventType", "messageId", "correlationId", "issuedAt", "payload"],
+  "properties": {
+    "schemaVersion": {"const": "HIP-1.0.0"},
+    "eventType": {"const": "host.challenge"},
+    "messageId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "correlationId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"},
+    "issuedAt": {"type": "string", "format": "date-time"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bootstrapCode", "audience", "origin", "expiresAt"],
+      "properties": {
+        "bootstrapCode": {"type": "string", "pattern": "^hb_[A-Za-z0-9_-]{43,86}$"},
+        "audience": {"const": "scholarsense-web"},
+        "origin": {"type": "string", "pattern": "^https://[A-Za-z0-9.-]+$"},
+        "expiresAt": {"type": "string", "format": "date-time"}
+      }
+    }
+  }
+}

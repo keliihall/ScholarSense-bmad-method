@@ -1,0 +1,29 @@
+{
+  "version": "STORY-1.2-EXTERNAL-EVIDENCE-WAIVER-1.0.0",
+  "status": "approved",
+  "authority": "explicit-user-instruction",
+  "authorizedAt": "2026-07-20T09:30:00+08:00",
+  "storyKey": "1-2-接入统一门户-sso-与可恢复应用壳",
+  "sourceBaselineCommit": "a0c8a9cba10d963c41623d27a8480dbbbddea393",
+  "disposition": "waive-only-requirements-that-need-external-support",
+  "waivedRequirements": [
+    "production-static-config-deployment",
+    "real-portal-idp-sandbox",
+    "production-kms-shared-database-bindings",
+    "frozen-chrome-edge-matrix",
+    "independent-runtime-evidence-signatures"
+  ],
+  "compensatingControls": [
+    "controlled-cross-origin-browser-harness",
+    "deterministic-mock-idp-protocol-tests",
+    "rendered-static-response-owner",
+    "two-clean-offline-replays",
+    "sensitive-value-pollution-gate"
+  ],
+  "prohibitions": [
+    "do-not-claim-real-school-environment-execution",
+    "do-not-fabricate-credentials-signatures-or-browser-results",
+    "do-not-use-this-waiver-as-production-promotion-evidence"
+  ],
+  "effectiveUntilExternalSupportAvailable": true
+}

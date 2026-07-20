@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/identity/error-envelope.schema.json",
+  "title": "Stable identity-access error envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["code", "message", "traceId", "fieldErrors"],
+  "properties": {
+    "code": {
+      "enum": [
+        "IDENTITY_SESSION_REQUIRED",
+        "IDENTITY_SESSION_EXPIRED",
+        "IDENTITY_DEPENDENCY_UNAVAILABLE",
+        "IDENTITY_SESSION_VERSION_CONFLICT",
+        "IDENTITY_IDEMPOTENCY_MISMATCH",
+        "HOST_ORIGIN_FORBIDDEN",
+        "HOST_SOURCE_FORBIDDEN",
+        "HOST_MESSAGE_INVALID",
+        "HOST_MESSAGE_REPLAYED",
+        "HOST_BOOTSTRAP_EXPIRED",
+        "HOST_BOOTSTRAP_ALREADY_USED",
+        "CONTINUATION_INVALID_OR_EXPIRED"
+      ]
+    },
+    "message": {"type": "string", "minLength": 1, "maxLength": 160},
+    "traceId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$"},
+    "fieldErrors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "code", "message"],
+        "properties": {
+          "field": {"type": "string"},
+          "code": {"type": "string"},
+          "message": {"type": "string"}
+        }
+      }
+    },
+    "currentVersion": {"type": "integer", "minimum": 1},
+    "latestOperator": {"type": "string"},
+    "latestChangedAt": {"type": "string", "format": "date-time"}
+  }
+}

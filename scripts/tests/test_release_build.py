@@ -136,6 +136,13 @@ class ReleaseBuildContractTest(unittest.TestCase):
         self.assertNotIn("/mvnw", content.replace("backend/mvnw", ""))
         self.assertNotIn("build-release", core_content)
         self.assertNotIn("verify.sh", core_content)
+        self.assertIn('MODE="${1:-}"', core_content)
+        self.assertIn('if [[ "$MODE" == "--review" ]]', core_content)
+        self.assertIn('check_identity_runtime_evidence.py . --review', core_content)
+        self.assertIn('check_host_deployment.py . --review', core_content)
+        self.assertIn('scripts/verify_core.sh" --review', top_level_content)
+        self.assertIn('[str(attempt / "scripts/verify_core.sh"), "--review"]',
+                      (PROJECT_ROOT / "release" / "build_release.py").read_text())
         self.assertLess(
             top_level_content.index("scripts/verify_core.sh"),
             top_level_content.index("scripts/build-release.sh"),

@@ -55,6 +55,7 @@ COMMON_EVIDENCE_KINDS = frozenset(
 FRONTEND_EVIDENCE_KINDS = frozenset(
     {"brand-asset-manifest", "formal-web-report", "ui-token-manifest", "visual-baseline"}
 )
+HOST_SSO_EVIDENCE_KIND = "host-sso-runtime-evidence"
 BLOCKING_RUNTIME_IDS = frozenset({"formal-web-evidence", "supply-chain-evidence"})
 RUNTIME_IDS = frozenset({"app-webview", "formal-web-evidence", "future-app-device", "supply-chain-evidence"})
 FORBIDDEN_RELEASE_KEYS = frozenset(
@@ -223,7 +224,12 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         if subject not in artifact_by_digest:
             issues.append(f"RELEASE_EVIDENCE_SUBJECT_UNKNOWN: {evidence.get('id')}")
         elif isinstance(kind, str):
-            kinds_by_subject[artifact_by_digest[subject]].add(kind)
+            subject_id = artifact_by_digest[subject]
+            kinds_by_subject[subject_id].add(kind)
+            if kind == HOST_SSO_EVIDENCE_KIND and subject_id != "frontend":
+                issues.append(
+                    f"RELEASE_HOST_SSO_EVIDENCE_SUBJECT_INVALID: {evidence.get('id')}"
+                )
     for artifact_id in sorted(artifact_ids):
         required = set(COMMON_EVIDENCE_KINDS)
         if artifact_id == "frontend":

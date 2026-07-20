@@ -1,0 +1,9 @@
+{
+  "code": "IDENTITY_SESSION_VERSION_CONFLICT",
+  "message": "会话已变更，请刷新后重试。",
+  "traceId": "trace-018f20f2-8f66-7b18",
+  "fieldErrors": [],
+  "currentVersion": 4,
+  "latestOperator": "session-command",
+  "latestChangedAt": "2026-07-20T02:10:00+08:00"
+}

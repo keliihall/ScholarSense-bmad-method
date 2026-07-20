@@ -12,7 +12,9 @@ public record RuntimeConfiguration(
         String secretReference,
         String storageNamespace,
         URI externalBaseUri,
-        int httpPort) {
+        int httpPort,
+        boolean identityEnabled,
+        String clockSourceReference) {
 
     public static RuntimeConfiguration from(Map<String, String> values) {
         RuntimeEnvironment environment = RuntimeEnvironment.parse(required(values, "SCHOLARSENSE_ENV"));
@@ -28,6 +30,23 @@ public record RuntimeConfiguration(
         URI externalBaseUri = externalUri(
                 required(values, "SCHOLARSENSE_EXTERNAL_BASE_URI"), environment);
         int httpPort = httpPort(values.get("SCHOLARSENSE_HTTP_PORT"));
+        boolean identityEnabled = strictBoolean(values.get("SCHOLARSENSE_IDENTITY_ENABLED"));
+        if (identityEnabled && role != RuntimeRole.WEB_API) {
+            throw new ConfigurationException(
+                    "CONFIG_ROLE_CAPABILITY_MISMATCH",
+                    "SCHOLARSENSE_IDENTITY_ENABLED",
+                    "identity access can only be enabled for web-api");
+        }
+        String clockSourceReference = null;
+        String clockSourceValue = values.get("SCHOLARSENSE_CLOCK_SOURCE_REF");
+        if (identityEnabled) {
+            clockSourceReference = environmentReference(
+                    required(values, "SCHOLARSENSE_CLOCK_SOURCE_REF"),
+                    "SCHOLARSENSE_CLOCK_SOURCE_REF", "config", environment);
+        } else if (clockSourceValue != null && !clockSourceValue.isBlank()) {
+            clockSourceReference = environmentReference(
+                    clockSourceValue.trim(), "SCHOLARSENSE_CLOCK_SOURCE_REF", "config", environment);
+        }
         return new RuntimeConfiguration(
                 environment,
                 role,
@@ -36,7 +55,9 @@ public record RuntimeConfiguration(
                 secretReference,
                 storageNamespace,
                 externalBaseUri,
-                httpPort);
+                httpPort,
+                identityEnabled,
+                clockSourceReference);
     }
 
     private static String required(Map<String, String> values, String field) {
@@ -122,5 +143,16 @@ public record RuntimeConfiguration(
             throw new ConfigurationException(
                     "CONFIG_INVALID", "SCHOLARSENSE_HTTP_PORT", "must be an integer from 0 to 65535");
         }
+    }
+
+    private static boolean strictBoolean(String value) {
+        if (value == null || value.isBlank() || "false".equals(value)) {
+            return false;
+        }
+        if ("true".equals(value)) {
+            return true;
+        }
+        throw new ConfigurationException(
+                "CONFIG_INVALID", "SCHOLARSENSE_IDENTITY_ENABLED", "must be true or false");
     }
 }

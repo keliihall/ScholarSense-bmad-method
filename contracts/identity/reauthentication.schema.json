@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/identity/reauthentication.schema.json",
+  "title": "Create an opaque reauthentication continuation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["targetRouteId", "origin"],
+  "properties": {
+    "targetRouteId": {"type": "string", "pattern": "^shell\\.(home|session)$"},
+    "opaqueContext": {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$"},
+    "origin": {"type": "string", "pattern": "^https://[A-Za-z0-9.-]+$"}
+  }
+}

@@ -1,0 +1,10 @@
+# Render only after the approved identity runtime profile supplies one exact HTTPS portal origin.
+# @@PORTAL_ORIGIN@@ is intentionally rejected by the review gate until that binding exists.
+location /scholarsense/ {
+    root /srv/scholarsense/frontend;
+    try_files $uri $uri/ /scholarsense/index.html;
+    add_header Content-Security-Policy "frame-ancestors @@PORTAL_ORIGIN@@" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    # X-Frame-Options is deliberately absent because the approved host is cross-origin.
+}

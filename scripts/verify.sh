@@ -13,7 +13,7 @@ trap cleanup EXIT INT TERM
 
 "$ROOT_DIR/scripts/bootstrap.sh"
 
-"$ROOT_DIR/scripts/verify_core.sh"
+"$ROOT_DIR/scripts/verify_core.sh" --review
 
 echo "[verify] clean two-attempt release replay"
 "$ROOT_DIR/scripts/build-release.sh" "$REPLAY_ROOT/release"
