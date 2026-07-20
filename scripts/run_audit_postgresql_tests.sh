@@ -16,8 +16,12 @@ fi
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/scholarsense-audit-pg18.XXXXXX")"
 DATA="$WORK/data"
+SOCKET_DIR="$WORK/socket"
+POSTGRES_LOG="$WORK/postgres.log"
 PORT="$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')"
 USER_NAME="$(id -un)"
+
+mkdir -m 0700 "$SOCKET_DIR"
 
 cleanup() {
   if [[ -f "$DATA/postmaster.pid" ]]; then
@@ -28,7 +32,14 @@ cleanup() {
 trap cleanup EXIT
 
 "$PG_BIN/initdb" -L "$PG_SHARE" -D "$DATA" --no-locale --encoding=UTF8 --auth=trust >/dev/null
-"$PG_BIN/pg_ctl" -D "$DATA" -o "-F -p $PORT -h 127.0.0.1" -w start >/dev/null
+if ! "$PG_BIN/pg_ctl" -D "$DATA" -l "$POSTGRES_LOG" \
+  -o "-F -p $PORT -h 127.0.0.1 -k $SOCKET_DIR" -w start >/dev/null; then
+  echo "audit-postgresql: server startup failed; PostgreSQL log follows" >&2
+  if [[ -f "$POSTGRES_LOG" ]]; then
+    sed 's/^/audit-postgresql: /' "$POSTGRES_LOG" >&2
+  fi
+  exit 1
+fi
 
 export PGHOST=127.0.0.1 PGPORT="$PORT" PGUSER="$USER_NAME"
 "$PG_BIN/createdb" scholarsense_audit_clean
