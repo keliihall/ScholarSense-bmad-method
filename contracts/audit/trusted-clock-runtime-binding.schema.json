@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/audit/trusted-clock-runtime-binding.schema.json",
+  "title": "ScholarSense trusted clock runtime binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "performanceProfileVersion", "performanceProfilePath", "clockSource", "synchronizationEvidence", "status"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "version": {"const": "AUDIT-CLOCK-BINDING-1.0.0"},
+    "performanceProfileVersion": {"const": "PP-1.0.0"},
+    "performanceProfilePath": {"const": "contracts/performance/performance-profile-pp-1.0.0.json#/clock"},
+    "clockSource": {"const": "server-synchronized-ntp"},
+    "synchronizationEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiredFields", "collectionBoundary", "freshnessPolicy"],
+      "properties": {
+        "requiredFields": {"type": "array", "uniqueItems": true, "items": {"enum": ["sourceId", "profileVersion", "offsetMs", "observedAt", "freshUntil", "evidenceRef"]}},
+        "collectionBoundary": {"const": "outside-business-transaction"},
+        "freshnessPolicy": {"const": "freshUntil-exclusive"}
+      }
+    },
+    "status": {"enum": ["binding-required", "evidence-verified"]}
+  }
+}

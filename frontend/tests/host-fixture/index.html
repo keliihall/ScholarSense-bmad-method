@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head><meta charset="utf-8"><title>Portal cross-origin contract fixture</title></head>
+  <body>
+    <h1>Portal contract fixture</h1>
+    <iframe
+      id="scholarsense-frame"
+      title="ScholarSense"
+      sandbox="allow-scripts allow-forms allow-same-origin"
+      src="http://127.0.0.1:4173/scholarsense/"
+    ></iframe>
+    <script>
+      window.hostResponses = [];
+      window.hostChallenges = [];
+      window.addEventListener('message', (event) => {
+        if (event.origin !== 'http://127.0.0.1:4173') return;
+        if (event.data?.eventType === 'host.challenge') window.hostChallenges.push(event.data);
+        else window.hostResponses.push(event.data);
+      });
+    </script>
+  </body>
+</html>

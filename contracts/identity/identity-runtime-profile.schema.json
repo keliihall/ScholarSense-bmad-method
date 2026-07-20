@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/identity/identity-runtime-profile.schema.json",
+  "title": "ScholarSense portal and identity runtime evidence profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "status",
+    "sourceBaselineCommit",
+    "hostIntegrationProfileVersion",
+    "identitySessionPolicyVersion",
+    "auditClockBindingVersion",
+    "auditClockBindingContract",
+    "clockBindingStatus",
+    "testEnvironmentVersion",
+    "cookiePolicy",
+    "requiredRuntimeBindings",
+    "runtimeBindings",
+    "missingRequirements",
+    "evidence",
+    "crossSiteDecision",
+    "externalEvidenceWaiver"
+  ],
+  "properties": {
+    "version": {"const": "IDENTITY-RUNTIME-PROFILE-1.0.0"},
+    "status": {"enum": ["pending", "controlled-complete", "complete"]},
+    "sourceBaselineCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "hostIntegrationProfileVersion": {"const": "HIP-1.0.0"},
+    "identitySessionPolicyVersion": {"const": "ISP-1.0.0"},
+    "auditClockBindingVersion": {"const": "AUDIT-CLOCK-BINDING-1.0.0"},
+    "auditClockBindingContract": {"const": "contracts/audit/trusted-clock-runtime-binding-1.0.0.json"},
+    "clockBindingStatus": {"enum": ["runtime-evidence-required", "evidence-verified"]},
+    "testEnvironmentVersion": {"const": "TEST-ENV-1.0.0"},
+    "cookiePolicy": {"const": "__Host-; Secure; HttpOnly; SameSite=Lax; Path=/; no Domain"},
+    "requiredRuntimeBindings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "runtimeBindings": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^(config|secret|evidence)://"}
+    },
+    "missingRequirements": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^evidence://signed/"}
+    },
+    "crossSiteDecision": {"enum": ["pending-runtime-hostnames", "same-site", "cross-site-top-level-authentication"]},
+    "externalEvidenceWaiver": {
+      "const": "deploy/base/story-1.2-external-evidence-waiver-1.0.0.json"
+    }
+  }
+}

@@ -1,6 +1,8 @@
 # Module-owned migrations
 
-This tree reserves migration ownership; Story 1.1b intentionally contains no SQL or business tables.
+This tree enforces migration ownership. `identity-access` now owns executable session and
+module-local audit migrations; inactive modules retain owner-only placeholders and must not receive
+empty audit tables before their first audited behavior.
 
 Future migrations must:
 
@@ -10,5 +12,6 @@ Future migrations must:
 - never reference another module's schema/table directly or create a cross-module foreign key;
 - obtain a new global sequence number; sequence reuse is rejected even across owner directories.
 
-Flyway or another migration runtime is not selected by this Story. The contract is enforced by the JDK test suite without a third-party architecture/migration library.
-
+The contract is enforced by the JDK suite and by `scripts/run_audit_postgresql_tests.sh` against
+PostgreSQL 18.4. The audit conformance template proves the future module pattern without creating
+production tables for inactive modules.

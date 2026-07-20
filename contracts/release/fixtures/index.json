@@ -10,6 +10,7 @@
     {"id": "build-manifest", "schema": "build-manifest.schema.json", "valid": "fixtures/valid/build-manifest.json", "invalid": "fixtures/invalid/build-manifest.json"},
     {"id": "release-manifest", "schema": "release-manifest.schema.json", "valid": "fixtures/valid/release-manifest.json", "invalid": "fixtures/invalid/release-manifest.json"},
     {"id": "evidence-index", "schema": "evidence-index.schema.json", "valid": "fixtures/valid/evidence-index.json", "invalid": "fixtures/invalid/evidence-index.json"},
+    {"id": "host-sso-runtime-evidence", "schema": "host-sso-runtime-evidence.schema.json", "valid": "fixtures/valid/host-sso-runtime-evidence.json", "invalid": "fixtures/invalid/host-sso-runtime-evidence.json"},
     {"id": "promotion-record", "schema": "promotion-record.schema.json", "valid": "fixtures/valid/promotion-record.json", "invalid": "fixtures/invalid/promotion-record.json"},
     {"id": "release-source-inventory", "schema": "release-source-inventory.schema.json", "valid": "release-source-inventory-1.0.0.json", "invalid": "fixtures/invalid/release-source-inventory.json"},
     {"id": "formal-web-report", "schema": "formal-web-report.schema.json", "valid": "fixtures/valid/formal-web-report.json", "invalid": "fixtures/invalid/formal-web-report.json"},

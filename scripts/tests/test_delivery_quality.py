@@ -143,7 +143,7 @@ class DeliveryQualityTest(unittest.TestCase):
             "LOCAL_MACHINE_PATH_LITERAL": ("deploy/base/bad.json", '{"path":"/Users/example/private"}\n'),
             "RAW_CREDENTIAL_LITERAL": ("deploy/base/bad.env.example", "password=changeme\n"),
             "PREMATURE_PRODUCTION_MIGRATION": (
-                "backend/src/main/resources/db/migration/identity-access/V000001__identity-access__bad.sql",
+                "backend/src/main/resources/db/ad-hoc.sql",
                 "-- forbidden in this Story\n",
             ),
         }
@@ -190,7 +190,7 @@ class DeliveryQualityTest(unittest.TestCase):
                 encoding="utf-8",
             )
             self.assertFalse(any(value.startswith("LOCAL_ENDPOINT_LITERAL") for value in scan(root)), scan(root))
-            config.write_text("export const baseURL = 'http://127.0.0.1:4174/';\n", encoding="utf-8")
+            config.write_text("export const baseURL = 'http://127.0.0.1:4175/';\n", encoding="utf-8")
             self.assertTrue(any(value.startswith("LOCAL_ENDPOINT_LITERAL") for value in scan(root)), scan(root))
 
         with self.fixture() as root:

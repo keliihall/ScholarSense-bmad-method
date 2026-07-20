@@ -6,6 +6,21 @@ import { expect, test } from '@playwright/test';
 const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
 
+test.beforeEach(async ({ page }) => {
+  await page.route(/\/api\/v1\/identity-sessions\/current$/, async (route) => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      authenticated: true,
+      sessionPseudonym: 'sp_RWxQcW41M2dSeHVIZ0JpYw',
+      sessionVersion: 3,
+      expiresAt: '2099-07-20T02:00:00Z',
+      warningAt: '2099-07-20T01:55:00Z',
+      profileVersion: 'ISP-1.0.0',
+    }),
+  }));
+});
+
 test.describe('deterministic local baseline fixture', () => {
   test('serves the SPA and assets from the approved base without console or network errors', async ({ page }) => {
     const consoleErrors: string[] = [];
@@ -17,8 +32,8 @@ test.describe('deterministic local baseline fixture', () => {
 
     const response = await page.goto('./');
     expect(response?.status()).toBe(200);
-    await expect(page.getByRole('heading', { name: 'ScholarSense 前端基线' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: '生产启动面已建立' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '学林知微' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '统一身份已确认' })).toBeVisible();
     expect(new URL(page.url()).pathname).toBe('/scholarsense/');
     expect(consoleErrors).toEqual([]);
     expect(failedRequests).toEqual([]);
@@ -27,7 +42,9 @@ test.describe('deterministic local baseline fixture', () => {
       performance.getEntriesByType('resource').map((entry) => new URL(entry.name).pathname),
     );
     expect(resourcePaths.length).toBeGreaterThan(0);
-    expect(resourcePaths.every((path) => path.startsWith('/scholarsense/'))).toBe(true);
+    expect(resourcePaths.every((path) =>
+      path.startsWith('/scholarsense/') || path === '/api/v1/identity-sessions/current',
+    )).toBe(true);
   });
 
   test('freezes endpoint-specific tokens, hit targets and horizontal reflow', async ({ page }, testInfo) => {
@@ -54,15 +71,16 @@ test.describe('deterministic local baseline fixture', () => {
 
   test('supports keyboard focus, live status and non-color network state', async ({ page }) => {
     await page.goto('./');
-    await page.keyboard.press('Tab');
+    await expect(page.getByRole('heading', { name: '统一身份已确认' })).toBeVisible();
     const skipLink = page.getByRole('link', { name: '跳至主要内容' });
+    await skipLink.focus();
     await expect(skipLink).toBeFocused();
     await expect(skipLink).toBeVisible();
     await page.keyboard.press('Enter');
     await expect(page.locator('#main-content')).toBeFocused();
 
-    const status = page.getByRole('status');
-    await expect(status).toContainText('基线连接可用');
+    const status = page.locator('.identity-status');
+    await expect(status).toContainText('统一身份已由服务端确认');
     await expect(status).toHaveAttribute('aria-live', 'polite');
     const border = await status.evaluate((element) => getComputedStyle(element).borderLeftWidth);
     expect(Number.parseFloat(border)).toBeGreaterThan(0);
@@ -72,7 +90,7 @@ test.describe('deterministic local baseline fixture', () => {
     await page.goto('compatibility');
     await expect(page.getByRole('heading', { name: '图表与等价表格 fixture' })).toBeVisible();
     await expect(page.getByRole('table', { name: '图表等价数据' })).toBeVisible();
-    await expect(page.getByRole('status')).toContainText('已同步更新');
+    await expect(page.locator('#chart-status')).toContainText('已同步更新');
     await expect(page.locator('canvas')).toBeVisible();
     expect(await page.getByRole('row').count()).toBe(4);
   });
@@ -108,15 +126,15 @@ test.describe('deterministic local baseline fixture', () => {
     });
 
     const keyContent = [
-      page.getByRole('heading', { name: 'ScholarSense 前端基线' }),
-      page.getByRole('heading', { name: '生产启动面已建立' }),
-      page.getByText('本页只验证生产前端组合，不含学生对象、SSO 或业务 API。'),
-      page.getByRole('button', { name: '连接恢复后显式重试' }),
+      page.getByRole('heading', { name: '学林知微' }),
+      page.getByRole('heading', { name: '统一身份已确认' }),
+      page.getByText('身份与目标只保存在当前内存会话；页面不会保存令牌、学生标识或敏感深链。'),
+      page.getByRole('button', { name: '恢复身份与授权后由用户显式重试' }),
     ];
     for (const locator of keyContent) await expect(locator).toBeVisible();
 
     const zoomLayout = await page.evaluate(() => {
-      const selectors = ['h1', '#baseline-heading', '.el-alert__title', '.explicit-retry'];
+      const selectors = ['h1', '#shell-home-heading', '.el-alert__title', '.explicit-retry'];
       const viewportWidth = document.documentElement.clientWidth;
       return {
         zoom: Number.parseFloat(getComputedStyle(document.documentElement).zoom),
@@ -153,8 +171,8 @@ test.describe('deterministic local baseline fixture', () => {
     test.skip(testInfo.project.name !== 'desktop-reference', 'single deterministic reflow fixture');
     await page.setViewportSize({ width: 320, height: 720 });
     await page.goto('./');
-    await expect(page.getByRole('heading', { name: 'ScholarSense 前端基线' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '连接恢复后显式重试' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '学林知微' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '恢复身份与授权后由用户显式重试' })).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
   });

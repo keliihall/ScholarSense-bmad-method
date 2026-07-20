@@ -1,0 +1,7 @@
+{
+  "commandType": "account-switch",
+  "sessionVersion": 3,
+  "idempotencyKey": "idem_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPR",
+  "csrfToken": "c3dpdGNoLWNzcmYtdG9rZW4tbWluaW11bS0zMg",
+  "origin": "https://app.stage.invalid"
+}

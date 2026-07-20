@@ -33,6 +33,20 @@ class ScholarSenseApplicationSmokeTest {
     }
 
     @Test
+    void workerCannotLoadTheIdentityLoginSurface() {
+        Map<String, String> environment = new HashMap<>(RuntimeConfigurationTest.validEnvironment("worker"));
+        environment.put("SCHOLARSENSE_IDENTITY_ENABLED", "true");
+
+        try {
+            ScholarSenseApplication.run(environment);
+        } catch (ConfigurationException error) {
+            assertEquals("CONFIG_ROLE_CAPABILITY_MISMATCH", error.code());
+            return;
+        }
+        throw new AssertionError("worker unexpectedly loaded identity access");
+    }
+
+    @Test
     void springArgumentsCannotOverrideControlledRolePortOrActuatorExposure() {
         Map<String, String> environment = new HashMap<>(RuntimeConfigurationTest.validEnvironment("web-api"));
         environment.put("SCHOLARSENSE_HTTP_PORT", "0");

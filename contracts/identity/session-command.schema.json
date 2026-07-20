@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/identity/session-command.schema.json",
+  "title": "Logout or account-switch command",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["commandType", "sessionVersion", "idempotencyKey", "csrfToken", "origin"],
+  "properties": {
+    "commandType": {"enum": ["logout", "account-switch"]},
+    "sessionVersion": {"type": "integer", "minimum": 1},
+    "idempotencyKey": {"type": "string", "pattern": "^idem_[A-Za-z0-9_-]{43}$"},
+    "csrfToken": {"type": "string", "pattern": "^[A-Za-z0-9_-]{32,128}$"},
+    "origin": {"type": "string", "pattern": "^https://[A-Za-z0-9.-]+$"}
+  }
+}

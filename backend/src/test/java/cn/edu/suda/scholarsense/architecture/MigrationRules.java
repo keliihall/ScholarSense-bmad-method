@@ -34,6 +34,18 @@ final class MigrationRules {
                     + "(?:if\\s+not\\s+exists\\s+)?(?:" + IDENTIFIER + "\\s+)?on|"
                     + "\\btruncate(?:\\s+table)?|\\bcomment\\s+on\\s+table|\\breindex\\s+table)"
                     + "\\s+(?:(" + IDENTIFIER + ")\\s*\\.\\s*)?(" + IDENTIFIER + ")");
+    private static final Pattern PRIVILEGE_STATEMENT = Pattern.compile(
+            "(?is)^\\s*(grant|revoke)\\s+.+?\\s+on\\s+(.+?)\\s+(to|from)\\s+(.+?)\\s*$");
+    private static final Pattern EXACT_IDENTIFIER = Pattern.compile(
+            "(?i)^\\s*(" + IDENTIFIER + ")\\s*$");
+    private static final Pattern EXACT_QUALIFIED_IDENTIFIER = Pattern.compile(
+            "(?i)^\\s*(?:(" + IDENTIFIER + ")\\s*\\.\\s*)?(" + IDENTIFIER + ")\\s*$");
+    private static final Pattern ALL_TABLES_IN_SCHEMA = Pattern.compile(
+            "(?is)^all\\s+tables\\s+in\\s+schema\\s+(.+)$");
+    private static final Pattern SCHEMA_OBJECTS = Pattern.compile(
+            "(?is)^schema\\s+(.+)$");
+    private static final Pattern TABLE_OBJECTS = Pattern.compile(
+            "(?is)^(?:table\\s+)?(.+)$");
     private static final Set<String> SQL_KEYWORDS = Set.of(
             "where", "join", "left", "right", "full", "inner", "outer", "cross", "on",
             "group", "order", "limit", "offset", "returning", "set", "values", "union");
@@ -137,10 +149,16 @@ final class MigrationRules {
         }
 
         String content = Files.readString(sql, StandardCharsets.UTF_8);
-        String parsedContent = sqlCodeOnly(content);
+        String code = sqlCodeOnly(content);
+        inspectPrivileges(code, expected, relative, violations);
+        String parsedContent = privilegeStatementsRemoved(code);
         inspectQualifiedIdentifiers(parsedContent, expected, relative, violations);
         Matcher table = TABLE_REFERENCE.matcher(parsedContent);
         while (table.find()) {
+            String schema = table.group(1) == null ? expected.schema() : identifier(table.group(1));
+            if (schema.equals("pg_catalog") || schema.equals("information_schema")) {
+                continue;
+            }
             String tableName = identifier(table.group(2));
             if (!tableName.startsWith(expected.tablePrefix())) {
                 violations.add("TABLE_PREFIX_MISMATCH: " + relative + " -> " + tableName);
@@ -164,6 +182,103 @@ final class MigrationRules {
             String tableName = identifier(foreign.group(2));
             if (!schema.equals(expected.schema()) || !tableName.startsWith(expected.tablePrefix())) {
                 violations.add("CROSS_MODULE_FOREIGN_KEY: " + relative + " -> " + foreign.group());
+            }
+        }
+    }
+
+    private static void inspectPrivileges(
+            String content, Ownership expected, Path relative, List<String> violations) {
+        for (String rawStatement : content.split(";")) {
+            String statement = rawStatement.strip();
+            if (!statement.toLowerCase(Locale.ROOT).matches("(?s)^(grant|revoke)\\b.*")) {
+                continue;
+            }
+            Matcher privilege = PRIVILEGE_STATEMENT.matcher(statement);
+            if (!privilege.matches()) {
+                if (statement.toLowerCase(Locale.ROOT).contains(" on ")) {
+                    violations.add("PRIVILEGE_STATEMENT_UNPARSEABLE: " + relative);
+                }
+                continue;
+            }
+            String objectClause = privilege.group(2).strip();
+            Matcher allTables = ALL_TABLES_IN_SCHEMA.matcher(objectClause);
+            Matcher schemas = SCHEMA_OBJECTS.matcher(objectClause);
+            if (allTables.matches()) {
+                inspectSchemaObjects(allTables.group(1), expected, relative, violations);
+            } else if (schemas.matches()) {
+                inspectSchemaObjects(schemas.group(1), expected, relative, violations);
+            } else {
+                Matcher tables = TABLE_OBJECTS.matcher(objectClause);
+                if (!tables.matches()) {
+                    violations.add("PRIVILEGE_OBJECT_UNPARSEABLE: " + relative + " -> " + objectClause);
+                } else {
+                    inspectTableObjects(tables.group(1), expected, relative, violations);
+                }
+            }
+            inspectGrantees(privilege.group(1), privilege.group(4), expected, relative, violations);
+        }
+    }
+
+    private static void inspectSchemaObjects(
+            String rawObjects,
+            Ownership expected,
+            Path relative,
+            List<String> violations) {
+        for (String raw : rawObjects.split(",")) {
+            Matcher candidate = EXACT_IDENTIFIER.matcher(raw);
+            if (!candidate.matches()) {
+                violations.add("PRIVILEGE_OBJECT_UNPARSEABLE: " + relative + " -> " + raw.strip());
+                continue;
+            }
+            String schema = identifier(candidate.group(1));
+            if (!schema.equals(expected.schema())) {
+                violations.add("PRIVILEGE_OBJECT_CROSS_OWNER: " + relative + " -> " + schema);
+            }
+        }
+    }
+
+    private static void inspectTableObjects(
+            String rawObjects,
+            Ownership expected,
+            Path relative,
+            List<String> violations) {
+        for (String raw : rawObjects.split(",")) {
+            Matcher candidate = EXACT_QUALIFIED_IDENTIFIER.matcher(raw);
+            if (!candidate.matches()) {
+                violations.add("PRIVILEGE_OBJECT_UNPARSEABLE: " + relative + " -> " + raw.strip());
+                continue;
+            }
+            String schema = candidate.group(1) == null
+                    ? expected.schema() : identifier(candidate.group(1));
+            String table = identifier(candidate.group(2));
+            if (!schema.equals(expected.schema()) || !table.startsWith(expected.tablePrefix())) {
+                violations.add("PRIVILEGE_OBJECT_CROSS_OWNER: " + relative + " -> "
+                        + schema + "." + table);
+            }
+        }
+    }
+
+    private static void inspectGrantees(
+            String operation,
+            String rawGrantees,
+            Ownership expected,
+            Path relative,
+            List<String> violations) {
+        String moduleStem = expected.module().replace('-', '_');
+        String firstSegment = expected.module().split("-", 2)[0];
+        for (String raw : rawGrantees.split(",")) {
+            Matcher candidate = EXACT_IDENTIFIER.matcher(raw);
+            if (!candidate.matches()) {
+                violations.add("PRIVILEGE_GRANTEE_UNPARSEABLE: " + relative + " -> " + raw.strip());
+                continue;
+            }
+            String grantee = identifier(candidate.group(1));
+            boolean publicRevoke = "revoke".equalsIgnoreCase(operation) && "public".equals(grantee);
+            boolean owned = grantee.startsWith("scholarsense_" + moduleStem + "_")
+                    || grantee.startsWith("scholarsense_" + firstSegment + "_")
+                    || grantee.startsWith("scholarsense_" + expected.schema() + "_");
+            if (!publicRevoke && !owned) {
+                violations.add("PRIVILEGE_GRANTEE_CROSS_OWNER: " + relative + " -> " + grantee);
             }
         }
     }
@@ -262,6 +377,10 @@ final class MigrationRules {
             }
         }
         return result.toString();
+    }
+
+    private static String privilegeStatementsRemoved(String content) {
+        return content.replaceAll("(?is)\\b(?:grant|revoke)\\b[^;]*;", " ");
     }
 
     private static String identifier(String token) {

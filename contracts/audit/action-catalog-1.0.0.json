@@ -1,0 +1,41 @@
+{
+  "$schema": "./action-catalog.schema.json",
+  "version": "AUDIT-ACTION-CATALOG-1.0.0",
+  "outcomes": ["accepted", "rejected"],
+  "reasonCodes": [
+    "AUTHORIZATION_ALLOWED",
+    "HOST_MESSAGE_INVALID",
+    "HOST_MESSAGE_REPLAYED",
+    "HOST_ORIGIN_FORBIDDEN",
+    "HOST_SOURCE_FORBIDDEN",
+    "IDENTITY_IDEMPOTENCY_MISMATCH",
+    "IDENTITY_LOGIN_COMPLETED",
+    "IDENTITY_LOCAL_COMMIT_FAILED",
+    "IDENTITY_REMOTE_PROVIDER_UNAVAILABLE",
+    "IDENTITY_SESSION_ACCOUNT_SWITCHED",
+    "IDENTITY_SESSION_EXPIRED",
+    "IDENTITY_SESSION_LOGGED_OUT",
+    "IDENTITY_SESSION_REFRESHED",
+    "IDENTITY_SESSION_REQUIRED",
+    "IDENTITY_SESSION_VERSION_CONFLICT",
+    "IDENTITY_TOKEN_REUSE_DETECTED",
+    "RESERVED_NOT_IMPLEMENTED"
+  ],
+  "actions": [
+    {"code": "identity.session.login", "ownerModule": "identity-access", "activationStory": "1-2", "status": "active", "allowedOutcomes": ["accepted"], "allowedReasonCodes": ["IDENTITY_LOGIN_COMPLETED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "IDENTITY_LOGIN_COMPLETED"}]},
+    {"code": "identity.session.refresh", "ownerModule": "identity-access", "activationStory": "1-2", "status": "active", "allowedOutcomes": ["accepted", "rejected"], "allowedReasonCodes": ["IDENTITY_SESSION_REFRESHED", "IDENTITY_TOKEN_REUSE_DETECTED", "IDENTITY_SESSION_VERSION_CONFLICT", "IDENTITY_SESSION_REQUIRED", "IDENTITY_SESSION_EXPIRED", "IDENTITY_REMOTE_PROVIDER_UNAVAILABLE", "IDENTITY_LOCAL_COMMIT_FAILED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "IDENTITY_SESSION_REFRESHED"}, {"outcome": "rejected", "reasonCode": "IDENTITY_TOKEN_REUSE_DETECTED"}, {"outcome": "rejected", "reasonCode": "IDENTITY_SESSION_VERSION_CONFLICT"}, {"outcome": "rejected", "reasonCode": "IDENTITY_SESSION_REQUIRED"}, {"outcome": "rejected", "reasonCode": "IDENTITY_SESSION_EXPIRED"}, {"outcome": "rejected", "reasonCode": "IDENTITY_REMOTE_PROVIDER_UNAVAILABLE"}, {"outcome": "rejected", "reasonCode": "IDENTITY_LOCAL_COMMIT_FAILED"}]},
+    {"code": "identity.session.logout", "ownerModule": "identity-access", "activationStory": "1-2", "status": "active", "allowedOutcomes": ["accepted", "rejected"], "allowedReasonCodes": ["IDENTITY_SESSION_LOGGED_OUT", "IDENTITY_SESSION_VERSION_CONFLICT", "IDENTITY_IDEMPOTENCY_MISMATCH", "IDENTITY_SESSION_REQUIRED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "IDENTITY_SESSION_LOGGED_OUT"}, {"outcome": "rejected", "reasonCode": "IDENTITY_SESSION_VERSION_CONFLICT"}, {"outcome": "rejected", "reasonCode": "IDENTITY_IDEMPOTENCY_MISMATCH"}, {"outcome": "rejected", "reasonCode": "IDENTITY_SESSION_REQUIRED"}]},
+    {"code": "identity.session.account-switch", "ownerModule": "identity-access", "activationStory": "1-2", "status": "active", "allowedOutcomes": ["accepted", "rejected"], "allowedReasonCodes": ["IDENTITY_SESSION_ACCOUNT_SWITCHED", "IDENTITY_SESSION_VERSION_CONFLICT", "IDENTITY_IDEMPOTENCY_MISMATCH", "IDENTITY_SESSION_REQUIRED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "IDENTITY_SESSION_ACCOUNT_SWITCHED"}, {"outcome": "rejected", "reasonCode": "IDENTITY_SESSION_VERSION_CONFLICT"}, {"outcome": "rejected", "reasonCode": "IDENTITY_IDEMPOTENCY_MISMATCH"}, {"outcome": "rejected", "reasonCode": "IDENTITY_SESSION_REQUIRED"}]},
+    {"code": "identity.host.input.reject", "ownerModule": "identity-access", "activationStory": "1-2", "status": "active", "allowedOutcomes": ["rejected"], "allowedReasonCodes": ["HOST_ORIGIN_FORBIDDEN", "HOST_SOURCE_FORBIDDEN", "HOST_MESSAGE_INVALID", "HOST_MESSAGE_REPLAYED"], "allowedResults": [{"outcome": "rejected", "reasonCode": "HOST_ORIGIN_FORBIDDEN"}, {"outcome": "rejected", "reasonCode": "HOST_SOURCE_FORBIDDEN"}, {"outcome": "rejected", "reasonCode": "HOST_MESSAGE_INVALID"}, {"outcome": "rejected", "reasonCode": "HOST_MESSAGE_REPLAYED"}]},
+    {"code": "identity.session.view", "ownerModule": "identity-access", "activationStory": "1-3", "status": "active", "allowedOutcomes": ["accepted", "rejected"], "allowedReasonCodes": ["AUTHORIZATION_ALLOWED", "IDENTITY_SESSION_REQUIRED", "IDENTITY_SESSION_EXPIRED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "AUTHORIZATION_ALLOWED"}, {"outcome": "rejected", "reasonCode": "IDENTITY_SESSION_REQUIRED"}, {"outcome": "rejected", "reasonCode": "IDENTITY_SESSION_EXPIRED"}]},
+    {"code": "audit.search.execute", "ownerModule": "audit-operations", "activationStory": "1-5", "status": "reserved", "allowedOutcomes": ["accepted", "rejected"], "allowedReasonCodes": ["RESERVED_NOT_IMPLEMENTED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}, {"outcome": "rejected", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}]},
+    {"code": "report.export.download", "ownerModule": "reporting", "activationStory": "3-14c", "status": "reserved", "allowedOutcomes": ["accepted", "rejected"], "allowedReasonCodes": ["RESERVED_NOT_IMPLEMENTED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}, {"outcome": "rejected", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}]},
+    {"code": "clue.follow-up.record", "ownerModule": "clue-care", "activationStory": "3-8", "status": "reserved", "allowedOutcomes": ["accepted", "rejected"], "allowedReasonCodes": ["RESERVED_NOT_IMPLEMENTED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}, {"outcome": "rejected", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}]},
+    {"code": "collaboration.transfer.submit", "ownerModule": "collaboration", "activationStory": "5-1", "status": "reserved", "allowedOutcomes": ["accepted", "rejected"], "allowedReasonCodes": ["RESERVED_NOT_IMPLEMENTED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}, {"outcome": "rejected", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}]},
+    {"code": "rule.version.publish", "ownerModule": "rule-governance", "activationStory": "3-1b", "status": "reserved", "allowedOutcomes": ["accepted", "rejected"], "allowedReasonCodes": ["RESERVED_NOT_IMPLEMENTED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}, {"outcome": "rejected", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}]},
+    {"code": "rule.whitelist.change", "ownerModule": "rule-governance", "activationStory": "3-3b", "status": "reserved", "allowedOutcomes": ["accepted", "rejected"], "allowedReasonCodes": ["RESERVED_NOT_IMPLEMENTED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}, {"outcome": "rejected", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}]},
+    {"code": "report.dashboard.drill-down", "ownerModule": "reporting", "activationStory": "3-11", "status": "reserved", "allowedOutcomes": ["accepted", "rejected"], "allowedReasonCodes": ["RESERVED_NOT_IMPLEMENTED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}, {"outcome": "rejected", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}]},
+    {"code": "ingestion.quality.fuse", "ownerModule": "ingestion-quality", "activationStory": "2-5a", "status": "reserved", "allowedOutcomes": ["accepted", "rejected"], "allowedReasonCodes": ["RESERVED_NOT_IMPLEMENTED"], "allowedResults": [{"outcome": "accepted", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}, {"outcome": "rejected", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}]},
+    {"code": "authorization.access.deny", "ownerModule": "identity-access", "activationStory": "1-7", "status": "reserved", "allowedOutcomes": ["rejected"], "allowedReasonCodes": ["RESERVED_NOT_IMPLEMENTED"], "allowedResults": [{"outcome": "rejected", "reasonCode": "RESERVED_NOT_IMPLEMENTED"}]}
+  ]
+}

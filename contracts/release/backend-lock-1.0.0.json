@@ -1,4 +1,5 @@
 {
+  "bootstrapPlugin": "org.apache.maven.plugins:maven-dependency-plugin:3.10.0",
   "dependencies": [
     {
       "binarySha256": "b65e05076a5c1aadb659b4fe4bc5fee31cb26cd70390292eb03e4a7a24cff10f",
@@ -14,6 +15,41 @@
       "binarySha256": "53ca085f4a150f703f49e1aabd935bd03b43e1ea3d55d135438292af22cef56b",
       "coordinate": "com.fasterxml.jackson.core:jackson-annotations:2.21",
       "sourceUri": "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.21/jackson-annotations-2.21.jar"
+    },
+    {
+      "binarySha256": "75fbda45456f123fb6e2028a6189442d8d0730b357adce4c0a6d7e789f70669b",
+      "coordinate": "com.fasterxml:classmate:1.7.3",
+      "sourceUri": "https://repo.maven.apache.org/maven2/com/fasterxml/classmate/1.7.3/classmate-1.7.3.jar"
+    },
+    {
+      "binarySha256": "4fccff8382aafc589962c4edb262f6aa595e34f1e11e61057d1c6a96e8fc7323",
+      "coordinate": "com.github.stephenc.jcip:jcip-annotations:1.0-1",
+      "sourceUri": "https://repo.maven.apache.org/maven2/com/github/stephenc/jcip/jcip-annotations/1.0-1/jcip-annotations-1.0-1.jar"
+    },
+    {
+      "binarySha256": "60349793e006fba96b532cb0c21e10e969fe0db8d87f91c3b9eaf82ba2998895",
+      "coordinate": "com.nimbusds:content-type:2.3",
+      "sourceUri": "https://repo.maven.apache.org/maven2/com/nimbusds/content-type/2.3/content-type-2.3.jar"
+    },
+    {
+      "binarySha256": "e8c1c594e2425bdbea2d860de55c69b69fc5d59454452449a0f0913c2a5b8a31",
+      "coordinate": "com.nimbusds:lang-tag:1.7",
+      "sourceUri": "https://repo.maven.apache.org/maven2/com/nimbusds/lang-tag/1.7/lang-tag-1.7.jar"
+    },
+    {
+      "binarySha256": "64d613d91140bad0dab8f0c41960f919ec8705a9ced9418146598b4b3ae71349",
+      "coordinate": "com.nimbusds:nimbus-jose-jwt:10.9",
+      "sourceUri": "https://repo.maven.apache.org/maven2/com/nimbusds/nimbus-jose-jwt/10.9/nimbus-jose-jwt-10.9.jar"
+    },
+    {
+      "binarySha256": "b66e74746dcf516d77f20344e6fbcbcffe1b483b5cf1ad41ea81cec83cb27b3c",
+      "coordinate": "com.nimbusds:oauth2-oidc-sdk:11.37.2",
+      "sourceUri": "https://repo.maven.apache.org/maven2/com/nimbusds/oauth2-oidc-sdk/11.37.2/oauth2-oidc-sdk-11.37.2.jar"
+    },
+    {
+      "binarySha256": "f1e612fa27345be3107a85431e8a8aeb205c15364ab2f2d411e40a9d7bb08095",
+      "coordinate": "com.zaxxer:HikariCP:7.0.2",
+      "sourceUri": "https://repo.maven.apache.org/maven2/com/zaxxer/HikariCP/7.0.2/HikariCP-7.0.2.jar"
     },
     {
       "binarySha256": "f8ead8943401081dea0aa824b5b1ba40a0e4ed297a572a0f02258150a0b62357",
@@ -46,6 +82,21 @@
       "sourceUri": "https://repo.maven.apache.org/maven2/jakarta/annotation/jakarta.annotation-api/3.0.0/jakarta.annotation-api-3.0.0.jar"
     },
     {
+      "binarySha256": "63ce00156388c365f3ac1be71fcfaf114682fc0c452020b5df6e7ec236e142ab",
+      "coordinate": "jakarta.validation:jakarta.validation-api:3.1.1",
+      "sourceUri": "https://repo.maven.apache.org/maven2/jakarta/validation/jakarta.validation-api/3.1.1/jakarta.validation-api-3.1.1.jar"
+    },
+    {
+      "binarySha256": "222c9f547bb20a99fc486403a398352d1306fb671b38abd7ecab6401df170e61",
+      "coordinate": "net.minidev:accessors-smart:2.6.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/net/minidev/accessors-smart/2.6.0/accessors-smart-2.6.0.jar"
+    },
+    {
+      "binarySha256": "1ae4b561458afb540be8ec5c6dbb4f2e715a319a7ae64854998aaf924770d61b",
+      "coordinate": "net.minidev:json-smart:2.6.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/net/minidev/json-smart/2.6.0/json-smart-2.6.0.jar"
+    },
+    {
       "binarySha256": "c4b642a7f047275215de117e0e3847eb2c7711d84a0aa7433e7b3c096daf341d",
       "coordinate": "org.apache.logging.log4j:log4j-api:2.25.4",
       "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/logging/log4j/log4j-api/2.25.4/log4j-api-2.25.4.jar"
@@ -76,9 +127,29 @@
       "sourceUri": "https://repo.maven.apache.org/maven2/org/hdrhistogram/HdrHistogram/2.2.2/HdrHistogram-2.2.2.jar"
     },
     {
+      "binarySha256": "4dea20c780d12e8ad6e1fe7d695460af74f8668df9eb58910991919194412188",
+      "coordinate": "org.hibernate.validator:hibernate-validator:9.1.0.Final",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/hibernate/validator/hibernate-validator/9.1.0.Final/hibernate-validator-9.1.0.Final.jar"
+    },
+    {
+      "binarySha256": "7c12ee575508f81e22b1db9334b969d0ec54ef0fd1dcba24eeab1a44235fc366",
+      "coordinate": "org.jboss.logging:jboss-logging:3.6.3.Final",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/jboss/logging/jboss-logging/3.6.3.Final/jboss-logging-3.6.3.Final.jar"
+    },
+    {
       "binarySha256": "1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab",
       "coordinate": "org.jspecify:jspecify:1.0.0",
       "sourceUri": "https://repo.maven.apache.org/maven2/org/jspecify/jspecify/1.0.0/jspecify-1.0.0.jar"
+    },
+    {
+      "binarySha256": "8cadd43ac5eb6d09de05faecca38b917a040bb9139c7edeb4cc81c740b713281",
+      "coordinate": "org.ow2.asm:asm:9.7.1",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.7.1/asm-9.7.1.jar"
+    },
+    {
+      "binarySha256": "31fbf6f06b2217fb51d5100cee51b22625cc81640da0679b47914e54c1e6377c",
+      "coordinate": "org.postgresql:postgresql:42.7.12",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/postgresql/postgresql/42.7.12/postgresql-42.7.12.jar"
     },
     {
       "binarySha256": "cbb7d1aaaa9e871eb1a06594abd911bf97027152976edf1edc315be75239204e",
@@ -121,6 +192,11 @@
       "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-jackson/4.1.0/spring-boot-jackson-4.1.0.jar"
     },
     {
+      "binarySha256": "3b5aab97e72d8a15a40546c31365ed2090cf25451e18762add8ed22cbb4ead43",
+      "coordinate": "org.springframework.boot:spring-boot-jdbc:4.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-jdbc/4.1.0/spring-boot-jdbc-4.1.0.jar"
+    },
+    {
       "binarySha256": "2030f79dbc59c9d84f1f4d6d2a423b46a8ba5cc277cbda75ac54a436b3ea96fb",
       "coordinate": "org.springframework.boot:spring-boot-micrometer-metrics:4.1.0",
       "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-micrometer-metrics/4.1.0/spring-boot-micrometer-metrics-4.1.0.jar"
@@ -131,14 +207,44 @@
       "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-micrometer-observation/4.1.0/spring-boot-micrometer-observation-4.1.0.jar"
     },
     {
+      "binarySha256": "d9d926224c738bd6152718c078134e3aea1057db4d6a452c37ad120893e0e4d6",
+      "coordinate": "org.springframework.boot:spring-boot-persistence:4.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-persistence/4.1.0/spring-boot-persistence-4.1.0.jar"
+    },
+    {
+      "binarySha256": "cdf7e36a52b80b0b139f82e05ea9db0e58c8711c207b25fb85dcc48bd891fae2",
+      "coordinate": "org.springframework.boot:spring-boot-security-oauth2-client:4.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-security-oauth2-client/4.1.0/spring-boot-security-oauth2-client-4.1.0.jar"
+    },
+    {
+      "binarySha256": "5e30a3ea1d62c5ef2af5a8bcf31237583f216f40dbb0b76ec2eda72981ea2bac",
+      "coordinate": "org.springframework.boot:spring-boot-security:4.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-security/4.1.0/spring-boot-security-4.1.0.jar"
+    },
+    {
       "binarySha256": "5f694a7c6c357a87032bc92db0e7e0e03b64010f77892e5992c86b10f568a5ae",
       "coordinate": "org.springframework.boot:spring-boot-servlet:4.1.0",
       "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-servlet/4.1.0/spring-boot-servlet-4.1.0.jar"
     },
     {
+      "binarySha256": "2826a5380675337f4c5b3e90db02279e68a2c9a7eb2b2ac312828c05fb827a9a",
+      "coordinate": "org.springframework.boot:spring-boot-sql:4.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-sql/4.1.0/spring-boot-sql-4.1.0.jar"
+    },
+    {
       "binarySha256": "011e662eb6f9f4a80c5dacf914cfca8a25a33fcd753736ec453dcf701337dd24",
       "coordinate": "org.springframework.boot:spring-boot-tomcat:4.1.0",
       "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-tomcat/4.1.0/spring-boot-tomcat-4.1.0.jar"
+    },
+    {
+      "binarySha256": "5402dfeef5d6633b485d6ce8d1cfb2116c7a55e70f8f5dbd31b69ca43e006f13",
+      "coordinate": "org.springframework.boot:spring-boot-transaction:4.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-transaction/4.1.0/spring-boot-transaction-4.1.0.jar"
+    },
+    {
+      "binarySha256": "38e3409dc8050e14afcfe14b7bb09f10d1077c7fbd33150ba2698d53dd79b4cc",
+      "coordinate": "org.springframework.boot:spring-boot-validation:4.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-validation/4.1.0/spring-boot-validation-4.1.0.jar"
     },
     {
       "binarySha256": "a8541ccbd29f5a8db7e6092fa83463aa4d1c002fac07b8b5babe118ad6c4a3d3",
@@ -154,6 +260,51 @@
       "binarySha256": "b23951a3a7f867e38db4729b8594e1b72374516f386b1dd9cf4d5317d6d3f91f",
       "coordinate": "org.springframework.boot:spring-boot:4.1.0",
       "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot/4.1.0/spring-boot-4.1.0.jar"
+    },
+    {
+      "binarySha256": "3234035bb5ccd45a9367ce526723d6b8da501c5c3f725b54a98354f922c2e978",
+      "coordinate": "org.springframework.security:spring-security-config:7.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/security/spring-security-config/7.1.0/spring-security-config-7.1.0.jar"
+    },
+    {
+      "binarySha256": "f8cecce9e65db9fe9ea42ca92b04d6e4e4320ff9d492aa60b753716ea397262c",
+      "coordinate": "org.springframework.security:spring-security-core:7.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/security/spring-security-core/7.1.0/spring-security-core-7.1.0.jar"
+    },
+    {
+      "binarySha256": "6f6957548a28451712e53b94a3e77057735b2fcec04c99ca6dd555b574453a98",
+      "coordinate": "org.springframework.security:spring-security-crypto:7.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/security/spring-security-crypto/7.1.0/spring-security-crypto-7.1.0.jar"
+    },
+    {
+      "binarySha256": "6a90451711b3623f7f705ae5d555131b18be1e8f7299d7fc423fcf2e7b87128b",
+      "coordinate": "org.springframework.security:spring-security-oauth2-client:7.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/security/spring-security-oauth2-client/7.1.0/spring-security-oauth2-client-7.1.0.jar"
+    },
+    {
+      "binarySha256": "68c6bfbace2a429cdd277ce848f8a1a6ea8e33bb386fa2ba19636821457c376f",
+      "coordinate": "org.springframework.security:spring-security-oauth2-core:7.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/security/spring-security-oauth2-core/7.1.0/spring-security-oauth2-core-7.1.0.jar"
+    },
+    {
+      "binarySha256": "a1620a4424e40035dc33d3a53d98a9e978a96d98334a43aaef0bbd60268d0f8c",
+      "coordinate": "org.springframework.security:spring-security-oauth2-jose:7.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/security/spring-security-oauth2-jose/7.1.0/spring-security-oauth2-jose-7.1.0.jar"
+    },
+    {
+      "binarySha256": "1deee612104ce85ec815076b80578cd8e82c07067e122068f09fbfef860b3cb1",
+      "coordinate": "org.springframework.security:spring-security-web:7.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/security/spring-security-web/7.1.0/spring-security-web-7.1.0.jar"
+    },
+    {
+      "binarySha256": "cb1f4a0be9bbd208263eb89e8324c20d63db8679bb5a92a03fb91a56db1168a4",
+      "coordinate": "org.springframework.session:spring-session-core:4.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/session/spring-session-core/4.1.0/spring-session-core-4.1.0.jar"
+    },
+    {
+      "binarySha256": "60c08c9c885def3ef7eaf69388b72ac65d55c0be0e80ff9281f5c04e2179f8a1",
+      "coordinate": "org.springframework.session:spring-session-jdbc:4.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/session/spring-session-jdbc/4.1.0/spring-session-jdbc-4.1.0.jar"
     },
     {
       "binarySha256": "1178f039e087884174e2affc46e484f4a8bd7f2a4e011d33dd9137709f740f80",
@@ -181,6 +332,16 @@
       "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/spring-expression/7.0.8/spring-expression-7.0.8.jar"
     },
     {
+      "binarySha256": "7d6bbf130ed919d5f4f01ec0ea771ab59ac3936ab29f50fd3a705c0119871e32",
+      "coordinate": "org.springframework:spring-jdbc:7.0.8",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/spring-jdbc/7.0.8/spring-jdbc-7.0.8.jar"
+    },
+    {
+      "binarySha256": "57e8fdb6de949e7ec2617683fec03af0253bdbdf4bf3d2651a926a94413df283",
+      "coordinate": "org.springframework:spring-tx:7.0.8",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/spring-tx/7.0.8/spring-tx-7.0.8.jar"
+    },
+    {
       "binarySha256": "4d4ed7ecb0453d25d735ea27d025ea36b003c3d29cb7d006bedd6d5188a2f5c0",
       "coordinate": "org.springframework:spring-web:7.0.8",
       "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/spring-web/7.0.8/spring-web-7.0.8.jar"
@@ -206,49 +367,7 @@
       "sourceUri": "https://repo.maven.apache.org/maven2/tools/jackson/core/jackson-databind/3.1.4/jackson-databind-3.1.4.jar"
     }
   ],
-  "plugins": [
-    {
-      "binarySha256": "a15977e3457ff8cd803c1a37e1e53aad76e4609cd23bbca8e8f783e5c78e5fa8",
-      "coordinate": "org.apache.maven.plugins:maven-clean-plugin:3.5.0",
-      "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-clean-plugin/3.5.0/maven-clean-plugin-3.5.0.jar"
-    },
-    {
-      "binarySha256": "6ea0ca0558ccf248c514aa94908d1f895a92e9b4e4604c1bb29f7a4ab1b833f0",
-      "coordinate": "org.apache.maven.plugins:maven-compiler-plugin:3.15.0",
-      "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-compiler-plugin/3.15.0/maven-compiler-plugin-3.15.0.jar"
-    },
-    {
-      "coordinate": "org.apache.maven.plugins:maven-dependency-plugin:3.10.0",
-      "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-dependency-plugin/3.10.0/maven-dependency-plugin-3.10.0.jar",
-      "binarySha256": "f5c804d7cdecb3591e04e1dd423600c2f0d13605ee6d4a5d1393a5bc5a3b9070"
-    },
-    {
-      "binarySha256": "7562657fc3492649dee836ffdda07990aaf46f4133cad048c4dcd7330bfd3917",
-      "coordinate": "org.apache.maven.plugins:maven-jar-plugin:3.5.0",
-      "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-jar-plugin/3.5.0/maven-jar-plugin-3.5.0.jar"
-    },
-    {
-      "binarySha256": "2c923c63a197565a3e78f2b16d762d0f49bb83250dd2b1e6286704ea0f447060",
-      "coordinate": "org.apache.maven.plugins:maven-resources-plugin:3.5.0",
-      "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-resources-plugin/3.5.0/maven-resources-plugin-3.5.0.jar"
-    },
-    {
-      "binarySha256": "5fea3d2f0ad1d790717d66aa31d995c22ca528612316f8380d67c40367af3464",
-      "coordinate": "org.apache.maven.plugins:maven-surefire-plugin:3.5.6",
-      "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-surefire-plugin/3.5.6/maven-surefire-plugin-3.5.6.jar"
-    },
-    {
-      "binarySha256": "7f1eeff2bb35c91bcedb89c7b1e4269e2cdedf4dc281692c66cba07dc967f25f",
-      "coordinate": "org.springframework.boot:spring-boot-maven-plugin:4.1.0",
-      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-maven-plugin/4.1.0/spring-boot-maven-plugin-4.1.0.jar"
-    }
-  ],
-  "version": "BACKEND-LOCK-1.0.0",
-  "wrapper": {
-    "binarySha256": "5af3b743dd8b876b5c45da33b676251e5f1687712644abb4ee519ca56e1d89ce",
-    "coordinate": "org.apache.maven:apache-maven:3.9.16",
-    "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.16/apache-maven-3.9.16-bin.zip"
-  },
+  "extensions": [],
   "pluginResolution": [
     {
       "artifacts": [
@@ -373,310 +492,310 @@
       "root": "org.apache.maven.plugins:maven-compiler-plugin:3.15.0"
     },
     {
-      "root": "org.apache.maven.plugins:maven-dependency-plugin:3.10.0",
       "artifacts": [
         {
-          "coordinate": "com.github.cliftonlabs:json-simple:jar:3.0.2",
-          "sourceUri": "https://repo.maven.apache.org/maven2/com/github/cliftonlabs/json-simple/3.0.2/json-simple-3.0.2.jar",
           "binarySha256": "fda65a9ad0e1ac0c88987106e89aa4d8b2a2495e7e042371efa83813f65b7295",
+          "coordinate": "com.github.cliftonlabs:json-simple:jar:3.0.2",
+          "pomSha256": "b0dacb1479cd4dbe0810d1aa335bf0fb9bc3c4ff55369c87597ba68f5879fe4f",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/com/github/cliftonlabs/json-simple/3.0.2/json-simple-3.0.2.pom",
-          "pomSha256": "b0dacb1479cd4dbe0810d1aa335bf0fb9bc3c4ff55369c87597ba68f5879fe4f"
+          "sourceUri": "https://repo.maven.apache.org/maven2/com/github/cliftonlabs/json-simple/3.0.2/json-simple-3.0.2.jar"
         },
         {
-          "coordinate": "com.github.luben:zstd-jni:jar:1.5.7-6",
-          "sourceUri": "https://repo.maven.apache.org/maven2/com/github/luben/zstd-jni/1.5.7-6/zstd-jni-1.5.7-6.jar",
           "binarySha256": "8d6feb1da335f3ab13c584c613e23c7b3c61b392e37956872057baf8f0ca1d6f",
+          "coordinate": "com.github.luben:zstd-jni:jar:1.5.7-6",
+          "pomSha256": "794d9b995ed59165c54243dcc73fe9483d7fe1af7fb80fcd89a5ae5b693f3eb7",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/com/github/luben/zstd-jni/1.5.7-6/zstd-jni-1.5.7-6.pom",
-          "pomSha256": "794d9b995ed59165c54243dcc73fe9483d7fe1af7fb80fcd89a5ae5b693f3eb7"
+          "sourceUri": "https://repo.maven.apache.org/maven2/com/github/luben/zstd-jni/1.5.7-6/zstd-jni-1.5.7-6.jar"
         },
         {
-          "coordinate": "commons-beanutils:commons-beanutils:jar:1.9.4",
-          "sourceUri": "https://repo.maven.apache.org/maven2/commons-beanutils/commons-beanutils/1.9.4/commons-beanutils-1.9.4.jar",
           "binarySha256": "7d938c81789028045c08c065e94be75fc280527620d5bd62b519d5838532368a",
+          "coordinate": "commons-beanutils:commons-beanutils:jar:1.9.4",
+          "pomSha256": "c35cca7b61d4678d9578cbc0b901b8717b539abf9254441da78b8fe60de064d0",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/commons-beanutils/commons-beanutils/1.9.4/commons-beanutils-1.9.4.pom",
-          "pomSha256": "c35cca7b61d4678d9578cbc0b901b8717b539abf9254441da78b8fe60de064d0"
+          "sourceUri": "https://repo.maven.apache.org/maven2/commons-beanutils/commons-beanutils/1.9.4/commons-beanutils-1.9.4.jar"
         },
         {
-          "coordinate": "commons-codec:commons-codec:jar:1.19.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.19.0/commons-codec-1.19.0.jar",
           "binarySha256": "5c3881e4f556855e9c532927ee0c9dfde94cc66760d5805c031a59887070af5f",
+          "coordinate": "commons-codec:commons-codec:jar:1.19.0",
+          "pomSha256": "e0f3269fa23de0c83130c5659f5f9514cc5422c0bcdf45f2eae004a78b9fca34",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.19.0/commons-codec-1.19.0.pom",
-          "pomSha256": "e0f3269fa23de0c83130c5659f5f9514cc5422c0bcdf45f2eae004a78b9fca34"
+          "sourceUri": "https://repo.maven.apache.org/maven2/commons-codec/commons-codec/1.19.0/commons-codec-1.19.0.jar"
         },
         {
-          "coordinate": "commons-collections:commons-collections:jar:3.2.2",
-          "sourceUri": "https://repo.maven.apache.org/maven2/commons-collections/commons-collections/3.2.2/commons-collections-3.2.2.jar",
           "binarySha256": "eeeae917917144a68a741d4c0dff66aa5c5c5fd85593ff217bced3fc8ca783b8",
+          "coordinate": "commons-collections:commons-collections:jar:3.2.2",
+          "pomSha256": "d5d81fcc288c0d8c711c302007cada4aa9a226ed1a112d4baa64cb1d6322170b",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/commons-collections/commons-collections/3.2.2/commons-collections-3.2.2.pom",
-          "pomSha256": "d5d81fcc288c0d8c711c302007cada4aa9a226ed1a112d4baa64cb1d6322170b"
+          "sourceUri": "https://repo.maven.apache.org/maven2/commons-collections/commons-collections/3.2.2/commons-collections-3.2.2.jar"
         },
         {
-          "coordinate": "commons-io:commons-io:jar:2.21.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/commons-io/commons-io/2.21.0/commons-io-2.21.0.jar",
           "binarySha256": "7d643a2afea8b058b762aa6fb90e5b256f6c729739f8b3784c3370ddc609e88d",
+          "coordinate": "commons-io:commons-io:jar:2.21.0",
+          "pomSha256": "ae47795e721803ec8ff1deed74be28a811a02713bd5a3ab0ac67c2b58cb635ab",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/commons-io/commons-io/2.21.0/commons-io-2.21.0.pom",
-          "pomSha256": "ae47795e721803ec8ff1deed74be28a811a02713bd5a3ab0ac67c2b58cb635ab"
+          "sourceUri": "https://repo.maven.apache.org/maven2/commons-io/commons-io/2.21.0/commons-io-2.21.0.jar"
         },
         {
-          "coordinate": "commons-logging:commons-logging:jar:1.2",
-          "sourceUri": "https://repo.maven.apache.org/maven2/commons-logging/commons-logging/1.2/commons-logging-1.2.jar",
           "binarySha256": "daddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636",
+          "coordinate": "commons-logging:commons-logging:jar:1.2",
+          "pomSha256": "c91ab5aa570d86f6fd07cc158ec6bc2c50080402972ee9179fe24100739fbb20",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/commons-logging/commons-logging/1.2/commons-logging-1.2.pom",
-          "pomSha256": "c91ab5aa570d86f6fd07cc158ec6bc2c50080402972ee9179fe24100739fbb20"
+          "sourceUri": "https://repo.maven.apache.org/maven2/commons-logging/commons-logging/1.2/commons-logging-1.2.jar"
         },
         {
-          "coordinate": "org.apache.commons:commons-compress:jar:1.28.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.jar",
           "binarySha256": "e1522945218456f3649a39bc4afd70ce4bd466221519dba7d378f2141a4642ca",
+          "coordinate": "org.apache.commons:commons-compress:jar:1.28.0",
+          "pomSha256": "033f4c78d632da88d0eb8ead974fc14a264392cebf12ab6c68d6cea7adf0c64a",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.pom",
-          "pomSha256": "033f4c78d632da88d0eb8ead974fc14a264392cebf12ab6c68d6cea7adf0c64a"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.jar"
         },
         {
-          "coordinate": "org.apache.commons:commons-digester3:jar:3.2",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-digester3/3.2/commons-digester3-3.2.jar",
           "binarySha256": "1c150e3d2df4b4237b47e28fea2079fb0da324578d5cca6a5fed2e37a62082ec",
+          "coordinate": "org.apache.commons:commons-digester3:jar:3.2",
+          "pomSha256": "5bb8a198adb597c30204b4f1c336fdb3d2816536403e9ad3349ab200032e5445",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-digester3/3.2/commons-digester3-3.2.pom",
-          "pomSha256": "5bb8a198adb597c30204b4f1c336fdb3d2816536403e9ad3349ab200032e5445"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-digester3/3.2/commons-digester3-3.2.jar"
         },
         {
-          "coordinate": "org.apache.commons:commons-lang3:jar:3.20.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0.jar",
           "binarySha256": "69e5c9fa35da7a51a5fd2099dfe56a2d8d32cf233e2f6d770e796146440263f4",
+          "coordinate": "org.apache.commons:commons-lang3:jar:3.20.0",
+          "pomSha256": "7ca83b2709c1e7a9e03b576cd41422190379489a80866e542f8c8b955411a2aa",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0.pom",
-          "pomSha256": "7ca83b2709c1e7a9e03b576cd41422190379489a80866e542f8c8b955411a2aa"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-lang3/3.20.0/commons-lang3-3.20.0.jar"
         },
         {
-          "coordinate": "org.apache.commons:commons-text:jar:1.12.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-text/1.12.0/commons-text-1.12.0.jar",
           "binarySha256": "de023257ff166044a56bd1aa9124e843cd05dac5806cc705a9311f3556d5a15f",
+          "coordinate": "org.apache.commons:commons-text:jar:1.12.0",
+          "pomSha256": "b2d4341c921981cb35d5570f4fc9732a08a34b1528dee84c0507c7f2719a334f",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-text/1.12.0/commons-text-1.12.0.pom",
-          "pomSha256": "b2d4341c921981cb35d5570f4fc9732a08a34b1528dee84c0507c7f2719a334f"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/commons/commons-text/1.12.0/commons-text-1.12.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.doxia:doxia-core:jar:2.0.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-core/2.0.0/doxia-core-2.0.0.jar",
           "binarySha256": "939183cf5ced6741745b2475a4adf78ca85885ee0dad6dae28dd3f25bd447ff3",
+          "coordinate": "org.apache.maven.doxia:doxia-core:jar:2.0.0",
+          "pomSha256": "f3e804d91571075e6367cff9020641d79d66bc46a6c13a62fcba1d369cd8936d",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-core/2.0.0/doxia-core-2.0.0.pom",
-          "pomSha256": "f3e804d91571075e6367cff9020641d79d66bc46a6c13a62fcba1d369cd8936d"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-core/2.0.0/doxia-core-2.0.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.doxia:doxia-integration-tools:jar:2.0.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-integration-tools/2.0.0/doxia-integration-tools-2.0.0.jar",
           "binarySha256": "4aee72f9b30b507964c2f52b63f70e7b41fb9d957359cb5dc13c428abb4b6189",
+          "coordinate": "org.apache.maven.doxia:doxia-integration-tools:jar:2.0.0",
+          "pomSha256": "b3707bdb06778745b0304985c340a9847eeda20f4ca7f2902faf6c266cc29653",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-integration-tools/2.0.0/doxia-integration-tools-2.0.0.pom",
-          "pomSha256": "b3707bdb06778745b0304985c340a9847eeda20f4ca7f2902faf6c266cc29653"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-integration-tools/2.0.0/doxia-integration-tools-2.0.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.doxia:doxia-module-apt:jar:2.0.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-apt/2.0.0/doxia-module-apt-2.0.0.jar",
           "binarySha256": "f4a846c448ca85358279184a310f6ee3f46fa39688f74a72961c1bfe222f28a6",
+          "coordinate": "org.apache.maven.doxia:doxia-module-apt:jar:2.0.0",
+          "pomSha256": "15d5d2bcd6fe003c4d181f1b9e88b3e09611e85385246105fc5977301f2c7e96",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-apt/2.0.0/doxia-module-apt-2.0.0.pom",
-          "pomSha256": "15d5d2bcd6fe003c4d181f1b9e88b3e09611e85385246105fc5977301f2c7e96"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-apt/2.0.0/doxia-module-apt-2.0.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.doxia:doxia-module-xdoc:jar:2.0.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-xdoc/2.0.0/doxia-module-xdoc-2.0.0.jar",
           "binarySha256": "7956aca14f8adbc48bac86b218701dd44cc990063a69edbfca363b105994a474",
+          "coordinate": "org.apache.maven.doxia:doxia-module-xdoc:jar:2.0.0",
+          "pomSha256": "c2e591fac5e62327c13a267c41ec21d1330e5fcbb943c56fbd6803132e7b1115",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-xdoc/2.0.0/doxia-module-xdoc-2.0.0.pom",
-          "pomSha256": "c2e591fac5e62327c13a267c41ec21d1330e5fcbb943c56fbd6803132e7b1115"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-xdoc/2.0.0/doxia-module-xdoc-2.0.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.doxia:doxia-module-xhtml5:jar:2.0.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-xhtml5/2.0.0/doxia-module-xhtml5-2.0.0.jar",
           "binarySha256": "c91557679a0eb9fde3175055628ceb7b8fd5ab6d308340770d236fb06265dc26",
+          "coordinate": "org.apache.maven.doxia:doxia-module-xhtml5:jar:2.0.0",
+          "pomSha256": "3c6bff4151d35b94c3afb4a0c9377c262ced4eb2dd1009970396d4c79eb73e6e",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-xhtml5/2.0.0/doxia-module-xhtml5-2.0.0.pom",
-          "pomSha256": "3c6bff4151d35b94c3afb4a0c9377c262ced4eb2dd1009970396d4c79eb73e6e"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-xhtml5/2.0.0/doxia-module-xhtml5-2.0.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.doxia:doxia-sink-api:jar:2.0.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-sink-api/2.0.0/doxia-sink-api-2.0.0.jar",
           "binarySha256": "fba33eaee3b01547bcd14b05ebc37f7dacef1819ad9ee7a5b27899afd3472cf4",
+          "coordinate": "org.apache.maven.doxia:doxia-sink-api:jar:2.0.0",
+          "pomSha256": "4b05895d1cd65013d4b8e7eeb09cde6b567b4c31729fe5c77c0f0898b5e04b88",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-sink-api/2.0.0/doxia-sink-api-2.0.0.pom",
-          "pomSha256": "4b05895d1cd65013d4b8e7eeb09cde6b567b4c31729fe5c77c0f0898b5e04b88"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-sink-api/2.0.0/doxia-sink-api-2.0.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.doxia:doxia-site-model:jar:2.0.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-site-model/2.0.0/doxia-site-model-2.0.0.jar",
           "binarySha256": "f6ec9ef75a41d1b826e5ecf02d92c5de90a6bc70ea93d5340988703223bf2205",
+          "coordinate": "org.apache.maven.doxia:doxia-site-model:jar:2.0.0",
+          "pomSha256": "25a17abcbd162cf65dfae5bd7400611d19e424d679e132e9a9228346c6d78d42",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-site-model/2.0.0/doxia-site-model-2.0.0.pom",
-          "pomSha256": "25a17abcbd162cf65dfae5bd7400611d19e424d679e132e9a9228346c6d78d42"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-site-model/2.0.0/doxia-site-model-2.0.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.doxia:doxia-site-renderer:jar:2.0.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-site-renderer/2.0.0/doxia-site-renderer-2.0.0.jar",
           "binarySha256": "6cdee370194f4b9f742d12ef46528042f480d9bdf3de832de2792e1ae9ffc68d",
+          "coordinate": "org.apache.maven.doxia:doxia-site-renderer:jar:2.0.0",
+          "pomSha256": "3add9e92edb232902aaf8f663b48d9f8dbec1792436f4f9c36f3665b86266d8d",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-site-renderer/2.0.0/doxia-site-renderer-2.0.0.pom",
-          "pomSha256": "3add9e92edb232902aaf8f663b48d9f8dbec1792436f4f9c36f3665b86266d8d"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-site-renderer/2.0.0/doxia-site-renderer-2.0.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.doxia:doxia-skin-model:jar:2.0.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-skin-model/2.0.0/doxia-skin-model-2.0.0.jar",
           "binarySha256": "3ced0d90353f49e8eb1458f54664b93ec117d79b9789a576da41e2f6f99723e0",
+          "coordinate": "org.apache.maven.doxia:doxia-skin-model:jar:2.0.0",
+          "pomSha256": "10bbc5674fab0fa2bbcf8f7696796d3e1b92ab31525330921fbdb8da74fe1472",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-skin-model/2.0.0/doxia-skin-model-2.0.0.pom",
-          "pomSha256": "10bbc5674fab0fa2bbcf8f7696796d3e1b92ab31525330921fbdb8da74fe1472"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-skin-model/2.0.0/doxia-skin-model-2.0.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.plugins:maven-dependency-plugin:jar:3.10.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-dependency-plugin/3.10.0/maven-dependency-plugin-3.10.0.jar",
           "binarySha256": "f5c804d7cdecb3591e04e1dd423600c2f0d13605ee6d4a5d1393a5bc5a3b9070",
+          "coordinate": "org.apache.maven.plugins:maven-dependency-plugin:jar:3.10.0",
+          "pomSha256": "d53783d7849e34bd389ec69763200be42c5c7e0ad25ed108e744c34e9d3e60cc",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-dependency-plugin/3.10.0/maven-dependency-plugin-3.10.0.pom",
-          "pomSha256": "d53783d7849e34bd389ec69763200be42c5c7e0ad25ed108e744c34e9d3e60cc"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-dependency-plugin/3.10.0/maven-dependency-plugin-3.10.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.reporting:maven-reporting-api:jar:4.0.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/reporting/maven-reporting-api/4.0.0/maven-reporting-api-4.0.0.jar",
           "binarySha256": "cb2cbde3c9c7288f7398a250dcf3c90cf92714cff301f22b298e1091b5def33c",
+          "coordinate": "org.apache.maven.reporting:maven-reporting-api:jar:4.0.0",
+          "pomSha256": "2032531f05994121c2fdb5df7235ed548f53d294d0b7ac45e797148d85a30ee2",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/reporting/maven-reporting-api/4.0.0/maven-reporting-api-4.0.0.pom",
-          "pomSha256": "2032531f05994121c2fdb5df7235ed548f53d294d0b7ac45e797148d85a30ee2"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/reporting/maven-reporting-api/4.0.0/maven-reporting-api-4.0.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.reporting:maven-reporting-impl:jar:4.0.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/reporting/maven-reporting-impl/4.0.0/maven-reporting-impl-4.0.0.jar",
           "binarySha256": "e9e70fdb26ff8b1f15435e3a68866a25c85b1694007e0fbdfe84e48e946fe463",
+          "coordinate": "org.apache.maven.reporting:maven-reporting-impl:jar:4.0.0",
+          "pomSha256": "e049cf5b77d09c24e83db9fd8f5019bdf86dc37a3357f5634c56fb157ecda248",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/reporting/maven-reporting-impl/4.0.0/maven-reporting-impl-4.0.0.pom",
-          "pomSha256": "e049cf5b77d09c24e83db9fd8f5019bdf86dc37a3357f5634c56fb157ecda248"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/reporting/maven-reporting-impl/4.0.0/maven-reporting-impl-4.0.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.shared:maven-artifact-transfer:jar:0.13.1",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-artifact-transfer/0.13.1/maven-artifact-transfer-0.13.1.jar",
           "binarySha256": "1ac88accde99ed71e65253bd130868c0e654f940f01ade073b895eb2f817cf06",
+          "coordinate": "org.apache.maven.shared:maven-artifact-transfer:jar:0.13.1",
+          "pomSha256": "e4b15a1e7cfbfe480408cfbaa148d66ea3324bf19e9ac6d6c17053bdb18ac4cd",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-artifact-transfer/0.13.1/maven-artifact-transfer-0.13.1.pom",
-          "pomSha256": "e4b15a1e7cfbfe480408cfbaa148d66ea3324bf19e9ac6d6c17053bdb18ac4cd"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-artifact-transfer/0.13.1/maven-artifact-transfer-0.13.1.jar"
         },
         {
-          "coordinate": "org.apache.maven.shared:maven-common-artifact-filters:jar:3.4.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-common-artifact-filters/3.4.0/maven-common-artifact-filters-3.4.0.jar",
           "binarySha256": "931a77aa9dad6c91f10fcfafa70adc7608c004576b4924c74ecbffb27568a880",
+          "coordinate": "org.apache.maven.shared:maven-common-artifact-filters:jar:3.4.0",
+          "pomSha256": "c93581d69b337c1fcc0957c727c430180b6387276ef1d3c2976c175e93765eb1",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-common-artifact-filters/3.4.0/maven-common-artifact-filters-3.4.0.pom",
-          "pomSha256": "c93581d69b337c1fcc0957c727c430180b6387276ef1d3c2976c175e93765eb1"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-common-artifact-filters/3.4.0/maven-common-artifact-filters-3.4.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.shared:maven-dependency-analyzer:jar:1.17.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-dependency-analyzer/1.17.0/maven-dependency-analyzer-1.17.0.jar",
           "binarySha256": "2710707f61af4556ccd9fb21ceb8f59119afcb8637b100ddabb3225bd948b9be",
+          "coordinate": "org.apache.maven.shared:maven-dependency-analyzer:jar:1.17.0",
+          "pomSha256": "691d70cd2fbf7ce0f33a1c258d9c188bdde0816dbe94ded670eda8c2eab472f3",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-dependency-analyzer/1.17.0/maven-dependency-analyzer-1.17.0.pom",
-          "pomSha256": "691d70cd2fbf7ce0f33a1c258d9c188bdde0816dbe94ded670eda8c2eab472f3"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-dependency-analyzer/1.17.0/maven-dependency-analyzer-1.17.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.shared:maven-dependency-tree:jar:3.3.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-dependency-tree/3.3.0/maven-dependency-tree-3.3.0.jar",
           "binarySha256": "a3353f6a82feb950d5e7e64b0cd4ceadea7eb62112e447172e34974a510316f4",
+          "coordinate": "org.apache.maven.shared:maven-dependency-tree:jar:3.3.0",
+          "pomSha256": "06d3cdd58a0bcec206558ade256147aade63a166b042ef53215df6c51206d920",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-dependency-tree/3.3.0/maven-dependency-tree-3.3.0.pom",
-          "pomSha256": "06d3cdd58a0bcec206558ade256147aade63a166b042ef53215df6c51206d920"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-dependency-tree/3.3.0/maven-dependency-tree-3.3.0.jar"
         },
         {
-          "coordinate": "org.apache.maven.shared:maven-shared-utils:jar:3.4.2",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-shared-utils/3.4.2/maven-shared-utils-3.4.2.jar",
           "binarySha256": "b613357e1bad4dfc1dead801691c9460f9585fe7c6b466bc25186212d7d18487",
+          "coordinate": "org.apache.maven.shared:maven-shared-utils:jar:3.4.2",
+          "pomSha256": "a941745d7faeb8dc9a75edc2c330c994b7440b9a44d21142716b6053967a41c1",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-shared-utils/3.4.2/maven-shared-utils-3.4.2.pom",
-          "pomSha256": "a941745d7faeb8dc9a75edc2c330c994b7440b9a44d21142716b6053967a41c1"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/shared/maven-shared-utils/3.4.2/maven-shared-utils-3.4.2.jar"
         },
         {
-          "coordinate": "org.apache.maven:maven-archiver:jar:3.6.2",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/maven-archiver/3.6.2/maven-archiver-3.6.2.jar",
           "binarySha256": "1f895a587df4844d9b7565e8e9a6352afe1d55532458a0dbeb746bc1d02e9216",
+          "coordinate": "org.apache.maven:maven-archiver:jar:3.6.2",
+          "pomSha256": "8b117b0dc205a71abda33463f8c7ff891513cfb92241d8a011f9e8ac5ea21e77",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/maven-archiver/3.6.2/maven-archiver-3.6.2.pom",
-          "pomSha256": "8b117b0dc205a71abda33463f8c7ff891513cfb92241d8a011f9e8ac5ea21e77"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/maven-archiver/3.6.2/maven-archiver-3.6.2.jar"
         },
         {
-          "coordinate": "org.apache.velocity.tools:velocity-tools-generic:jar:3.1",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/velocity/tools/velocity-tools-generic/3.1/velocity-tools-generic-3.1.jar",
           "binarySha256": "8258cfdcaa16127f35ffe610a3fa4f76b7ebe51b88922c73c4ee39ce8f378ce5",
+          "coordinate": "org.apache.velocity.tools:velocity-tools-generic:jar:3.1",
+          "pomSha256": "a6f50cb3f413875c039652269d2a89f8878d0d9fc8cc662fc13591ca20d84758",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/velocity/tools/velocity-tools-generic/3.1/velocity-tools-generic-3.1.pom",
-          "pomSha256": "a6f50cb3f413875c039652269d2a89f8878d0d9fc8cc662fc13591ca20d84758"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/velocity/tools/velocity-tools-generic/3.1/velocity-tools-generic-3.1.jar"
         },
         {
-          "coordinate": "org.apache.velocity:velocity-engine-core:jar:2.4.1",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/velocity/velocity-engine-core/2.4.1/velocity-engine-core-2.4.1.jar",
           "binarySha256": "1c19157d1171d560088e485be97c93a7a2f7e9f56e517f0a30273c5c39df6231",
+          "coordinate": "org.apache.velocity:velocity-engine-core:jar:2.4.1",
+          "pomSha256": "ac7cd94f0d9fb39bcba3b28287c4c40005dc0f53a986fb587e4f67a4ccb3e5b6",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/apache/velocity/velocity-engine-core/2.4.1/velocity-engine-core-2.4.1.pom",
-          "pomSha256": "ac7cd94f0d9fb39bcba3b28287c4c40005dc0f53a986fb587e4f67a4ccb3e5b6"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/velocity/velocity-engine-core/2.4.1/velocity-engine-core-2.4.1.jar"
         },
         {
-          "coordinate": "org.codehaus.plexus:plexus-archiver:jar:4.11.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-archiver/4.11.0/plexus-archiver-4.11.0.jar",
           "binarySha256": "d24c3ca2185009d81b1ce3ee90cff1cfeab53b70fadbb3ae0c02a867d7c96034",
+          "coordinate": "org.codehaus.plexus:plexus-archiver:jar:4.11.0",
+          "pomSha256": "22a5a7c25e445560604cb0e1e5cc3d3af2669a0549c3d7db8265dcf8d8ebb4e3",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-archiver/4.11.0/plexus-archiver-4.11.0.pom",
-          "pomSha256": "22a5a7c25e445560604cb0e1e5cc3d3af2669a0549c3d7db8265dcf8d8ebb4e3"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-archiver/4.11.0/plexus-archiver-4.11.0.jar"
         },
         {
-          "coordinate": "org.codehaus.plexus:plexus-component-annotations:jar:2.0.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-component-annotations/2.0.0/plexus-component-annotations-2.0.0.jar",
           "binarySha256": "405eef6fc9188241ec88579c3e473f5c8997455c69bcd62e142492aca15106bc",
+          "coordinate": "org.codehaus.plexus:plexus-component-annotations:jar:2.0.0",
+          "pomSha256": "dcf193612b315713771e267b42de2d44de090be5945b2577345ed5ab8de2d271",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-component-annotations/2.0.0/plexus-component-annotations-2.0.0.pom",
-          "pomSha256": "dcf193612b315713771e267b42de2d44de090be5945b2577345ed5ab8de2d271"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-component-annotations/2.0.0/plexus-component-annotations-2.0.0.jar"
         },
         {
-          "coordinate": "org.codehaus.plexus:plexus-i18n:jar:1.1.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-i18n/1.1.0/plexus-i18n-1.1.0.jar",
           "binarySha256": "995c0792669a031c94d91960a5beb60e1516abcec17a104f9f47470b36e56e27",
+          "coordinate": "org.codehaus.plexus:plexus-i18n:jar:1.1.0",
+          "pomSha256": "4915a0a3683e9afad03db155ee85050396bbcdc240a83bf04aba58701b36d8ba",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-i18n/1.1.0/plexus-i18n-1.1.0.pom",
-          "pomSha256": "4915a0a3683e9afad03db155ee85050396bbcdc240a83bf04aba58701b36d8ba"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-i18n/1.1.0/plexus-i18n-1.1.0.jar"
         },
         {
-          "coordinate": "org.codehaus.plexus:plexus-interpolation:jar:1.27",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-interpolation/1.27/plexus-interpolation-1.27.jar",
           "binarySha256": "3fb4fb6143fdf964024c3cb738551524b9ea84e5c211cd660c559ad0703e5230",
+          "coordinate": "org.codehaus.plexus:plexus-interpolation:jar:1.27",
+          "pomSha256": "d54fbcbc4399e352322874a4128b9d28fe9fe1583f89ec361de242ea38d33f9b",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-interpolation/1.27/plexus-interpolation-1.27.pom",
-          "pomSha256": "d54fbcbc4399e352322874a4128b9d28fe9fe1583f89ec361de242ea38d33f9b"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-interpolation/1.27/plexus-interpolation-1.27.jar"
         },
         {
-          "coordinate": "org.codehaus.plexus:plexus-io:jar:3.6.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-io/3.6.0/plexus-io-3.6.0.jar",
           "binarySha256": "fc0f3effea7514e4f214df1afb672f54c982e78e5ca3b32b34196c7d056a1aa4",
+          "coordinate": "org.codehaus.plexus:plexus-io:jar:3.6.0",
+          "pomSha256": "653432ed213573b6b209deb7346dc2ed89f20e647dbdb6fc868051b334b31d27",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-io/3.6.0/plexus-io-3.6.0.pom",
-          "pomSha256": "653432ed213573b6b209deb7346dc2ed89f20e647dbdb6fc868051b334b31d27"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-io/3.6.0/plexus-io-3.6.0.jar"
         },
         {
-          "coordinate": "org.codehaus.plexus:plexus-utils:jar:4.0.2",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-utils/4.0.2/plexus-utils-4.0.2.jar",
           "binarySha256": "8957274e75fe2c278b1428dd16a0daeee1dd38152cb6eff816177ac28fccb697",
+          "coordinate": "org.codehaus.plexus:plexus-utils:jar:4.0.2",
+          "pomSha256": "5151c13bdd7cc3a5569583a7f4267392f013ffd3115eab8db5f86de420a366af",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-utils/4.0.2/plexus-utils-4.0.2.pom",
-          "pomSha256": "5151c13bdd7cc3a5569583a7f4267392f013ffd3115eab8db5f86de420a366af"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-utils/4.0.2/plexus-utils-4.0.2.jar"
         },
         {
-          "coordinate": "org.codehaus.plexus:plexus-velocity:jar:2.2.0",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-velocity/2.2.0/plexus-velocity-2.2.0.jar",
           "binarySha256": "3e7e902f492c973cf210ddb8267843a3b65e83f5067467e2f4d9af0051f6b8b9",
+          "coordinate": "org.codehaus.plexus:plexus-velocity:jar:2.2.0",
+          "pomSha256": "6f6a9b05f40e8e84af4aa9576f6b1e435ded6d5b56931b2a269b697bf72ce49d",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-velocity/2.2.0/plexus-velocity-2.2.0.pom",
-          "pomSha256": "6f6a9b05f40e8e84af4aa9576f6b1e435ded6d5b56931b2a269b697bf72ce49d"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-velocity/2.2.0/plexus-velocity-2.2.0.jar"
         },
         {
-          "coordinate": "org.codehaus.plexus:plexus-xml:jar:3.0.1",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-xml/3.0.1/plexus-xml-3.0.1.jar",
           "binarySha256": "c1a510a87a62bd2d74ac1472dd31c3f9e9b0b8b8568f37d77c0f135415bebd05",
+          "coordinate": "org.codehaus.plexus:plexus-xml:jar:3.0.1",
+          "pomSha256": "3242ddc20873f71b381c333b22afb9cf3596d6a63b6683036a16bd51bc8721a4",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-xml/3.0.1/plexus-xml-3.0.1.pom",
-          "pomSha256": "3242ddc20873f71b381c333b22afb9cf3596d6a63b6683036a16bd51bc8721a4"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-xml/3.0.1/plexus-xml-3.0.1.jar"
         },
         {
-          "coordinate": "org.eclipse.sisu:org.eclipse.sisu.inject:jar:0.9.0.M4",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/eclipse/sisu/org.eclipse.sisu.inject/0.9.0.M4/org.eclipse.sisu.inject-0.9.0.M4.jar",
           "binarySha256": "1cbd7a965a5e2a9ea823bab311962a4e5aa5c240705bdbad5a52b40ffdfa1004",
+          "coordinate": "org.eclipse.sisu:org.eclipse.sisu.inject:jar:0.9.0.M4",
+          "pomSha256": "33966b3abd12908001b707688dfb7c09908b1e86556dc3fac1e85122a686f059",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/eclipse/sisu/org.eclipse.sisu.inject/0.9.0.M4/org.eclipse.sisu.inject-0.9.0.M4.pom",
-          "pomSha256": "33966b3abd12908001b707688dfb7c09908b1e86556dc3fac1e85122a686f059"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/eclipse/sisu/org.eclipse.sisu.inject/0.9.0.M4/org.eclipse.sisu.inject-0.9.0.M4.jar"
         },
         {
-          "coordinate": "org.ow2.asm:asm:jar:9.9.1",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.9.1/asm-9.9.1.jar",
           "binarySha256": "6f3828a215c920059a5efa2fb55c233d6c54ec5cadca99ce1b1bdd10077c7ddd",
+          "coordinate": "org.ow2.asm:asm:jar:9.9.1",
+          "pomSha256": "aca68dee9ba2f6cd90ffde728efdc7e3ebfcf59f3f41fbfe248d2d01d5b866af",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.9.1/asm-9.9.1.pom",
-          "pomSha256": "aca68dee9ba2f6cd90ffde728efdc7e3ebfcf59f3f41fbfe248d2d01d5b866af"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/ow2/asm/asm/9.9.1/asm-9.9.1.jar"
         },
         {
-          "coordinate": "org.sonatype.plexus:plexus-build-api:jar:0.0.7",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/sonatype/plexus/plexus-build-api/0.0.7/plexus-build-api-0.0.7.jar",
           "binarySha256": "934171640fbd3d2495c50b79b0d9adb11e2c83e65bad157df8fe34bcac0ff798",
+          "coordinate": "org.sonatype.plexus:plexus-build-api:jar:0.0.7",
+          "pomSha256": "e067317a47ed9e84b2ba85a76d3cf72980e2b0dc873a90b9cbfe74fe80c37c17",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/sonatype/plexus/plexus-build-api/0.0.7/plexus-build-api-0.0.7.pom",
-          "pomSha256": "e067317a47ed9e84b2ba85a76d3cf72980e2b0dc873a90b9cbfe74fe80c37c17"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/sonatype/plexus/plexus-build-api/0.0.7/plexus-build-api-0.0.7.jar"
         },
         {
-          "coordinate": "org.tukaani:xz:jar:1.11",
-          "sourceUri": "https://repo.maven.apache.org/maven2/org/tukaani/xz/1.11/xz-1.11.jar",
           "binarySha256": "0a4077f6aeae2865532a564807af8d30c26acc6f63b7928d93bd7ab1f2190449",
+          "coordinate": "org.tukaani:xz:jar:1.11",
+          "pomSha256": "7bd2fe2f145c8479824757ab76130c0815a7b55850714ef0c28b39bd5d692ca4",
           "pomSourceUri": "https://repo.maven.apache.org/maven2/org/tukaani/xz/1.11/xz-1.11.pom",
-          "pomSha256": "7bd2fe2f145c8479824757ab76130c0815a7b55850714ef0c28b39bd5d692ca4"
+          "sourceUri": "https://repo.maven.apache.org/maven2/org/tukaani/xz/1.11/xz-1.11.jar"
         }
-      ]
+      ],
+      "root": "org.apache.maven.plugins:maven-dependency-plugin:3.10.0"
     },
     {
       "artifacts": [
@@ -2212,947 +2331,1158 @@
       "root": "org.springframework.boot:spring-boot-maven-plugin:4.1.0"
     }
   ],
-  "extensions": [],
+  "plugins": [
+    {
+      "binarySha256": "a15977e3457ff8cd803c1a37e1e53aad76e4609cd23bbca8e8f783e5c78e5fa8",
+      "coordinate": "org.apache.maven.plugins:maven-clean-plugin:3.5.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-clean-plugin/3.5.0/maven-clean-plugin-3.5.0.jar"
+    },
+    {
+      "binarySha256": "6ea0ca0558ccf248c514aa94908d1f895a92e9b4e4604c1bb29f7a4ab1b833f0",
+      "coordinate": "org.apache.maven.plugins:maven-compiler-plugin:3.15.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-compiler-plugin/3.15.0/maven-compiler-plugin-3.15.0.jar"
+    },
+    {
+      "binarySha256": "f5c804d7cdecb3591e04e1dd423600c2f0d13605ee6d4a5d1393a5bc5a3b9070",
+      "coordinate": "org.apache.maven.plugins:maven-dependency-plugin:3.10.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-dependency-plugin/3.10.0/maven-dependency-plugin-3.10.0.jar"
+    },
+    {
+      "binarySha256": "7562657fc3492649dee836ffdda07990aaf46f4133cad048c4dcd7330bfd3917",
+      "coordinate": "org.apache.maven.plugins:maven-jar-plugin:3.5.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-jar-plugin/3.5.0/maven-jar-plugin-3.5.0.jar"
+    },
+    {
+      "binarySha256": "2c923c63a197565a3e78f2b16d762d0f49bb83250dd2b1e6286704ea0f447060",
+      "coordinate": "org.apache.maven.plugins:maven-resources-plugin:3.5.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-resources-plugin/3.5.0/maven-resources-plugin-3.5.0.jar"
+    },
+    {
+      "binarySha256": "5fea3d2f0ad1d790717d66aa31d995c22ca528612316f8380d67c40367af3464",
+      "coordinate": "org.apache.maven.plugins:maven-surefire-plugin:3.5.6",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-surefire-plugin/3.5.6/maven-surefire-plugin-3.5.6.jar"
+    },
+    {
+      "binarySha256": "7f1eeff2bb35c91bcedb89c7b1e4269e2cdedf4dc281692c66cba07dc967f25f",
+      "coordinate": "org.springframework.boot:spring-boot-maven-plugin:4.1.0",
+      "sourceUri": "https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-maven-plugin/4.1.0/spring-boot-maven-plugin-4.1.0.jar"
+    }
+  ],
   "runtimeGraph": {
-    "groupId": "cn.edu.suda",
     "artifactId": "scholarsense-backend",
-    "version": "0.1.0-SNAPSHOT",
-    "type": "jar",
-    "scope": "",
-    "classifier": "",
-    "optional": "false",
     "children": [
       {
-        "groupId": "org.springframework.boot",
         "artifactId": "spring-boot-starter-actuator",
-        "version": "4.1.0",
-        "type": "jar",
-        "scope": "compile",
-        "classifier": "",
-        "optional": "false",
         "children": [
           {
-            "groupId": "org.springframework.boot",
             "artifactId": "spring-boot-starter",
-            "version": "4.1.0",
-            "type": "jar",
-            "scope": "compile",
-            "classifier": "",
-            "optional": "false",
             "children": [
               {
-                "groupId": "org.springframework.boot",
                 "artifactId": "spring-boot-starter-logging",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false",
                 "children": [
                   {
-                    "groupId": "ch.qos.logback",
                     "artifactId": "logback-classic",
-                    "version": "1.5.34",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false",
                     "children": [
                       {
-                        "groupId": "ch.qos.logback",
                         "artifactId": "logback-core",
-                        "version": "1.5.34",
-                        "type": "jar",
-                        "scope": "compile",
                         "classifier": "",
-                        "optional": "false"
-                      },
-                      {
-                        "groupId": "org.slf4j",
-                        "artifactId": "slf4j-api",
-                        "version": "2.0.18",
-                        "type": "jar",
+                        "groupId": "ch.qos.logback",
+                        "optional": "false",
                         "scope": "compile",
-                        "classifier": "",
-                        "optional": "false"
+                        "type": "jar",
+                        "version": "1.5.34"
                       }
-                    ]
+                    ],
+                    "classifier": "",
+                    "groupId": "ch.qos.logback",
+                    "optional": "false",
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "1.5.34"
                   },
                   {
-                    "groupId": "org.apache.logging.log4j",
                     "artifactId": "log4j-to-slf4j",
-                    "version": "2.25.4",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false",
                     "children": [
                       {
-                        "groupId": "org.apache.logging.log4j",
                         "artifactId": "log4j-api",
-                        "version": "2.25.4",
-                        "type": "jar",
-                        "scope": "compile",
                         "classifier": "",
-                        "optional": "false"
-                      },
-                      {
-                        "groupId": "org.slf4j",
-                        "artifactId": "slf4j-api",
-                        "version": "2.0.18",
-                        "type": "jar",
+                        "groupId": "org.apache.logging.log4j",
+                        "optional": "false",
                         "scope": "compile",
-                        "classifier": "",
-                        "optional": "false"
+                        "type": "jar",
+                        "version": "2.25.4"
                       }
-                    ]
+                    ],
+                    "classifier": "",
+                    "groupId": "org.apache.logging.log4j",
+                    "optional": "false",
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "2.25.4"
                   },
                   {
-                    "groupId": "org.slf4j",
                     "artifactId": "jul-to-slf4j",
-                    "version": "2.0.18",
-                    "type": "jar",
-                    "scope": "compile",
                     "classifier": "",
+                    "groupId": "org.slf4j",
                     "optional": "false",
-                    "children": [
-                      {
-                        "groupId": "org.slf4j",
-                        "artifactId": "slf4j-api",
-                        "version": "2.0.18",
-                        "type": "jar",
-                        "scope": "compile",
-                        "classifier": "",
-                        "optional": "false"
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "groupId": "org.springframework.boot",
-                "artifactId": "spring-boot-autoconfigure",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false",
-                "children": [
-                  {
-                    "groupId": "org.springframework.boot",
-                    "artifactId": "spring-boot",
-                    "version": "4.1.0",
-                    "type": "jar",
                     "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
+                    "type": "jar",
+                    "version": "2.0.18"
                   }
-                ]
+                ],
+                "classifier": "",
+                "groupId": "org.springframework.boot",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "4.1.0"
               },
               {
-                "groupId": "jakarta.annotation",
+                "artifactId": "spring-boot-autoconfigure",
+                "classifier": "",
+                "groupId": "org.springframework.boot",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "4.1.0"
+              },
+              {
                 "artifactId": "jakarta.annotation-api",
-                "version": "3.0.0",
-                "type": "jar",
-                "scope": "compile",
                 "classifier": "",
-                "optional": "false"
+                "groupId": "jakarta.annotation",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "3.0.0"
               },
               {
-                "groupId": "org.yaml",
                 "artifactId": "snakeyaml",
-                "version": "2.6",
-                "type": "jar",
-                "scope": "compile",
                 "classifier": "",
-                "optional": "false"
+                "groupId": "org.yaml",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "2.6"
               }
-            ]
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
           },
           {
-            "groupId": "org.springframework.boot",
             "artifactId": "spring-boot-starter-micrometer-metrics",
-            "version": "4.1.0",
-            "type": "jar",
-            "scope": "compile",
-            "classifier": "",
-            "optional": "false",
             "children": [
               {
-                "groupId": "org.springframework.boot",
-                "artifactId": "spring-boot-starter",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false"
-              },
-              {
-                "groupId": "org.springframework.boot",
                 "artifactId": "spring-boot-micrometer-metrics",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false",
                 "children": [
                   {
-                    "groupId": "org.springframework.boot",
-                    "artifactId": "spring-boot",
-                    "version": "4.1.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "org.springframework.boot",
                     "artifactId": "spring-boot-micrometer-observation",
-                    "version": "4.1.0",
-                    "type": "jar",
-                    "scope": "compile",
                     "classifier": "",
-                    "optional": "false",
-                    "children": [
-                      {
-                        "groupId": "org.springframework.boot",
-                        "artifactId": "spring-boot",
-                        "version": "4.1.0",
-                        "type": "jar",
-                        "scope": "compile",
-                        "classifier": "",
-                        "optional": "false"
-                      },
-                      {
-                        "groupId": "io.micrometer",
-                        "artifactId": "micrometer-observation",
-                        "version": "1.17.0",
-                        "type": "jar",
-                        "scope": "compile",
-                        "classifier": "",
-                        "optional": "false"
-                      }
-                    ]
-                  },
-                  {
-                    "groupId": "io.micrometer",
-                    "artifactId": "micrometer-core",
-                    "version": "1.17.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "groupId": "org.springframework.boot",
-            "artifactId": "spring-boot-actuator-autoconfigure",
-            "version": "4.1.0",
-            "type": "jar",
-            "scope": "compile",
-            "classifier": "",
-            "optional": "false",
-            "children": [
-              {
-                "groupId": "org.springframework.boot",
-                "artifactId": "spring-boot-autoconfigure",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false"
-              },
-              {
-                "groupId": "org.springframework.boot",
-                "artifactId": "spring-boot-actuator",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false",
-                "children": [
-                  {
                     "groupId": "org.springframework.boot",
-                    "artifactId": "spring-boot",
-                    "version": "4.1.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "groupId": "org.springframework.boot",
-            "artifactId": "spring-boot-health",
-            "version": "4.1.0",
-            "type": "jar",
-            "scope": "compile",
-            "classifier": "",
-            "optional": "false",
-            "children": [
-              {
-                "groupId": "org.springframework.boot",
-                "artifactId": "spring-boot",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false",
-                "children": [
-                  {
-                    "groupId": "org.springframework",
-                    "artifactId": "spring-core",
-                    "version": "7.0.8",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "org.springframework",
-                    "artifactId": "spring-context",
-                    "version": "7.0.8",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
                     "optional": "false",
-                    "children": [
-                      {
-                        "groupId": "org.springframework",
-                        "artifactId": "spring-aop",
-                        "version": "7.0.8",
-                        "type": "jar",
-                        "scope": "compile",
-                        "classifier": "",
-                        "optional": "false"
-                      },
-                      {
-                        "groupId": "org.springframework",
-                        "artifactId": "spring-beans",
-                        "version": "7.0.8",
-                        "type": "jar",
-                        "scope": "compile",
-                        "classifier": "",
-                        "optional": "false"
-                      },
-                      {
-                        "groupId": "org.springframework",
-                        "artifactId": "spring-core",
-                        "version": "7.0.8",
-                        "type": "jar",
-                        "scope": "compile",
-                        "classifier": "",
-                        "optional": "false"
-                      },
-                      {
-                        "groupId": "org.springframework",
-                        "artifactId": "spring-expression",
-                        "version": "7.0.8",
-                        "type": "jar",
-                        "scope": "compile",
-                        "classifier": "",
-                        "optional": "false"
-                      },
-                      {
-                        "groupId": "io.micrometer",
-                        "artifactId": "micrometer-observation",
-                        "version": "1.17.0",
-                        "type": "jar",
-                        "scope": "compile",
-                        "classifier": "",
-                        "optional": "false"
-                      }
-                    ]
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "4.1.0"
                   }
-                ]
+                ],
+                "classifier": "",
+                "groupId": "org.springframework.boot",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "4.1.0"
               }
-            ]
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
           },
           {
-            "groupId": "io.micrometer",
+            "artifactId": "spring-boot-actuator-autoconfigure",
+            "children": [
+              {
+                "artifactId": "spring-boot-actuator",
+                "classifier": "",
+                "groupId": "org.springframework.boot",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "4.1.0"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
+          },
+          {
+            "artifactId": "spring-boot-health",
+            "children": [
+              {
+                "artifactId": "spring-boot",
+                "classifier": "",
+                "groupId": "org.springframework.boot",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "4.1.0"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
+          },
+          {
             "artifactId": "micrometer-observation",
-            "version": "1.17.0",
-            "type": "jar",
-            "scope": "compile",
-            "classifier": "",
-            "optional": "false",
             "children": [
               {
-                "groupId": "org.jspecify",
                 "artifactId": "jspecify",
-                "version": "1.0.0",
-                "type": "jar",
-                "scope": "compile",
                 "classifier": "",
-                "optional": "false"
+                "groupId": "org.jspecify",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "1.0.0"
               },
               {
-                "groupId": "io.micrometer",
                 "artifactId": "micrometer-commons",
-                "version": "1.17.0",
-                "type": "jar",
-                "scope": "compile",
                 "classifier": "",
+                "groupId": "io.micrometer",
                 "optional": "false",
-                "children": [
-                  {
-                    "groupId": "org.jspecify",
-                    "artifactId": "jspecify",
-                    "version": "1.0.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  }
-                ]
+                "scope": "compile",
+                "type": "jar",
+                "version": "1.17.0"
               }
-            ]
+            ],
+            "classifier": "",
+            "groupId": "io.micrometer",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.17.0"
           },
           {
-            "groupId": "io.micrometer",
             "artifactId": "micrometer-jakarta9",
-            "version": "1.17.0",
-            "type": "jar",
-            "scope": "compile",
-            "classifier": "",
-            "optional": "false",
             "children": [
               {
-                "groupId": "org.jspecify",
-                "artifactId": "jspecify",
-                "version": "1.0.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false"
-              },
-              {
-                "groupId": "io.micrometer",
                 "artifactId": "micrometer-core",
-                "version": "1.17.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false",
                 "children": [
                   {
-                    "groupId": "org.jspecify",
-                    "artifactId": "jspecify",
-                    "version": "1.0.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "io.micrometer",
-                    "artifactId": "micrometer-commons",
-                    "version": "1.17.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "io.micrometer",
-                    "artifactId": "micrometer-observation",
-                    "version": "1.17.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "org.hdrhistogram",
                     "artifactId": "HdrHistogram",
-                    "version": "2.2.2",
-                    "type": "jar",
-                    "scope": "runtime",
                     "classifier": "",
-                    "optional": "false"
+                    "groupId": "org.hdrhistogram",
+                    "optional": "false",
+                    "scope": "runtime",
+                    "type": "jar",
+                    "version": "2.2.2"
                   }
-                ]
-              },
-              {
-                "groupId": "io.micrometer",
-                "artifactId": "micrometer-commons",
-                "version": "1.17.0",
-                "type": "jar",
-                "scope": "compile",
+                ],
                 "classifier": "",
-                "optional": "false"
-              },
-              {
                 "groupId": "io.micrometer",
-                "artifactId": "micrometer-observation",
-                "version": "1.17.0",
-                "type": "jar",
+                "optional": "false",
                 "scope": "compile",
-                "classifier": "",
-                "optional": "false"
+                "type": "jar",
+                "version": "1.17.0"
               }
-            ]
+            ],
+            "classifier": "",
+            "groupId": "io.micrometer",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "1.17.0"
           }
-        ]
+        ],
+        "classifier": "",
+        "groupId": "org.springframework.boot",
+        "optional": "false",
+        "scope": "compile",
+        "type": "jar",
+        "version": "4.1.0"
       },
       {
-        "groupId": "org.springframework.boot",
         "artifactId": "spring-boot-starter-webmvc",
-        "version": "4.1.0",
-        "type": "jar",
-        "scope": "compile",
-        "classifier": "",
-        "optional": "false",
         "children": [
           {
-            "groupId": "org.springframework.boot",
-            "artifactId": "spring-boot-starter",
-            "version": "4.1.0",
-            "type": "jar",
-            "scope": "compile",
-            "classifier": "",
-            "optional": "false"
-          },
-          {
-            "groupId": "org.springframework.boot",
             "artifactId": "spring-boot-starter-jackson",
-            "version": "4.1.0",
-            "type": "jar",
-            "scope": "compile",
-            "classifier": "",
-            "optional": "false",
             "children": [
               {
-                "groupId": "org.springframework.boot",
-                "artifactId": "spring-boot-starter",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false"
-              },
-              {
-                "groupId": "org.springframework.boot",
                 "artifactId": "spring-boot-jackson",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false",
                 "children": [
                   {
-                    "groupId": "org.springframework.boot",
-                    "artifactId": "spring-boot",
-                    "version": "4.1.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "tools.jackson.core",
                     "artifactId": "jackson-databind",
-                    "version": "3.1.4",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false",
                     "children": [
                       {
-                        "groupId": "com.fasterxml.jackson.core",
                         "artifactId": "jackson-annotations",
-                        "version": "2.21",
-                        "type": "jar",
-                        "scope": "compile",
                         "classifier": "",
-                        "optional": "false"
+                        "groupId": "com.fasterxml.jackson.core",
+                        "optional": "false",
+                        "scope": "compile",
+                        "type": "jar",
+                        "version": "2.21"
                       },
                       {
-                        "groupId": "tools.jackson.core",
                         "artifactId": "jackson-core",
-                        "version": "3.1.4",
-                        "type": "jar",
-                        "scope": "compile",
                         "classifier": "",
-                        "optional": "false"
+                        "groupId": "tools.jackson.core",
+                        "optional": "false",
+                        "scope": "compile",
+                        "type": "jar",
+                        "version": "3.1.4"
                       }
-                    ]
+                    ],
+                    "classifier": "",
+                    "groupId": "tools.jackson.core",
+                    "optional": "false",
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "3.1.4"
                   }
-                ]
+                ],
+                "classifier": "",
+                "groupId": "org.springframework.boot",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "4.1.0"
               }
-            ]
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
           },
           {
-            "groupId": "org.springframework.boot",
             "artifactId": "spring-boot-starter-tomcat",
-            "version": "4.1.0",
-            "type": "jar",
-            "scope": "compile",
-            "classifier": "",
-            "optional": "false",
             "children": [
               {
-                "groupId": "org.springframework.boot",
-                "artifactId": "spring-boot-starter",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false"
-              },
-              {
-                "groupId": "org.springframework.boot",
                 "artifactId": "spring-boot-starter-tomcat-runtime",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false",
                 "children": [
                   {
-                    "groupId": "org.springframework.boot",
-                    "artifactId": "spring-boot-tomcat",
-                    "version": "4.1.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "org.springframework.boot",
                     "artifactId": "spring-boot-web-server",
-                    "version": "4.1.0",
-                    "type": "jar",
-                    "scope": "compile",
                     "classifier": "",
-                    "optional": "false"
+                    "groupId": "org.springframework.boot",
+                    "optional": "false",
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "4.1.0"
                   },
                   {
-                    "groupId": "jakarta.annotation",
-                    "artifactId": "jakarta.annotation-api",
-                    "version": "3.0.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "org.apache.tomcat.embed",
                     "artifactId": "tomcat-embed-core",
-                    "version": "11.0.22",
-                    "type": "jar",
-                    "scope": "compile",
                     "classifier": "",
-                    "optional": "false"
+                    "groupId": "org.apache.tomcat.embed",
+                    "optional": "false",
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "11.0.22"
                   },
                   {
-                    "groupId": "org.apache.tomcat.embed",
-                    "artifactId": "tomcat-embed-el",
-                    "version": "11.0.22",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "org.apache.tomcat.embed",
                     "artifactId": "tomcat-embed-websocket",
-                    "version": "11.0.22",
-                    "type": "jar",
-                    "scope": "compile",
                     "classifier": "",
-                    "optional": "false",
-                    "children": [
-                      {
-                        "groupId": "org.apache.tomcat.embed",
-                        "artifactId": "tomcat-embed-core",
-                        "version": "11.0.22",
-                        "type": "jar",
-                        "scope": "compile",
-                        "classifier": "",
-                        "optional": "false"
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "groupId": "org.springframework.boot",
-                "artifactId": "spring-boot-tomcat",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false",
-                "children": [
-                  {
-                    "groupId": "org.springframework.boot",
-                    "artifactId": "spring-boot-web-server",
-                    "version": "4.1.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
                     "groupId": "org.apache.tomcat.embed",
-                    "artifactId": "tomcat-embed-core",
-                    "version": "11.0.22",
-                    "type": "jar",
+                    "optional": "false",
                     "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "jakarta.annotation",
-                    "artifactId": "jakarta.annotation-api",
-                    "version": "3.0.0",
                     "type": "jar",
-                    "scope": "runtime",
-                    "classifier": "",
-                    "optional": "false"
+                    "version": "11.0.22"
                   }
-                ]
+                ],
+                "classifier": "",
+                "groupId": "org.springframework.boot",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "4.1.0"
+              },
+              {
+                "artifactId": "spring-boot-tomcat",
+                "classifier": "",
+                "groupId": "org.springframework.boot",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "4.1.0"
               }
-            ]
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
           },
           {
-            "groupId": "org.springframework.boot",
             "artifactId": "spring-boot-http-converter",
-            "version": "4.1.0",
-            "type": "jar",
-            "scope": "compile",
-            "classifier": "",
-            "optional": "false",
             "children": [
               {
-                "groupId": "org.springframework.boot",
-                "artifactId": "spring-boot",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
-                "classifier": "",
-                "optional": "false"
-              },
-              {
-                "groupId": "org.springframework",
                 "artifactId": "spring-web",
-                "version": "7.0.8",
-                "type": "jar",
-                "scope": "compile",
                 "classifier": "",
+                "groupId": "org.springframework",
                 "optional": "false",
-                "children": [
-                  {
-                    "groupId": "org.springframework",
-                    "artifactId": "spring-beans",
-                    "version": "7.0.8",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false",
-                    "children": [
-                      {
-                        "groupId": "org.springframework",
-                        "artifactId": "spring-core",
-                        "version": "7.0.8",
-                        "type": "jar",
-                        "scope": "compile",
-                        "classifier": "",
-                        "optional": "false"
-                      }
-                    ]
-                  },
-                  {
-                    "groupId": "org.springframework",
-                    "artifactId": "spring-core",
-                    "version": "7.0.8",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "io.micrometer",
-                    "artifactId": "micrometer-observation",
-                    "version": "1.17.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  }
-                ]
+                "scope": "compile",
+                "type": "jar",
+                "version": "7.0.8"
               }
-            ]
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
           },
           {
-            "groupId": "org.springframework.boot",
             "artifactId": "spring-boot-webmvc",
-            "version": "4.1.0",
-            "type": "jar",
-            "scope": "compile",
-            "classifier": "",
-            "optional": "false",
             "children": [
               {
-                "groupId": "org.springframework.boot",
                 "artifactId": "spring-boot-servlet",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "compile",
                 "classifier": "",
+                "groupId": "org.springframework.boot",
                 "optional": "false",
-                "children": [
-                  {
-                    "groupId": "org.springframework.boot",
-                    "artifactId": "spring-boot",
-                    "version": "4.1.0",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "org.springframework",
-                    "artifactId": "spring-web",
-                    "version": "7.0.8",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  }
-                ]
-              },
-              {
-                "groupId": "org.springframework",
-                "artifactId": "spring-web",
-                "version": "7.0.8",
-                "type": "jar",
                 "scope": "compile",
-                "classifier": "",
-                "optional": "false"
+                "type": "jar",
+                "version": "4.1.0"
               },
               {
-                "groupId": "org.springframework",
                 "artifactId": "spring-webmvc",
-                "version": "7.0.8",
-                "type": "jar",
-                "scope": "compile",
                 "classifier": "",
+                "groupId": "org.springframework",
                 "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "7.0.8"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
+          }
+        ],
+        "classifier": "",
+        "groupId": "org.springframework.boot",
+        "optional": "false",
+        "scope": "compile",
+        "type": "jar",
+        "version": "4.1.0"
+      },
+      {
+        "artifactId": "spring-boot-starter-security",
+        "children": [
+          {
+            "artifactId": "spring-boot-security",
+            "children": [
+              {
+                "artifactId": "spring-security-config",
+                "classifier": "",
+                "groupId": "org.springframework.security",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "7.1.0"
+              },
+              {
+                "artifactId": "spring-security-web",
+                "classifier": "",
+                "groupId": "org.springframework.security",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "7.1.0"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
+          },
+          {
+            "artifactId": "spring-aop",
+            "children": [
+              {
+                "artifactId": "spring-beans",
+                "classifier": "",
+                "groupId": "org.springframework",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "7.0.8"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.springframework",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "7.0.8"
+          }
+        ],
+        "classifier": "",
+        "groupId": "org.springframework.boot",
+        "optional": "false",
+        "scope": "compile",
+        "type": "jar",
+        "version": "4.1.0"
+      },
+      {
+        "artifactId": "spring-boot-starter-oauth2-client",
+        "children": [
+          {
+            "artifactId": "spring-boot-security-oauth2-client",
+            "children": [
+              {
+                "artifactId": "spring-security-oauth2-client",
                 "children": [
                   {
-                    "groupId": "org.springframework",
-                    "artifactId": "spring-aop",
-                    "version": "7.0.8",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false",
+                    "artifactId": "oauth2-oidc-sdk",
                     "children": [
                       {
-                        "groupId": "org.springframework",
-                        "artifactId": "spring-beans",
-                        "version": "7.0.8",
-                        "type": "jar",
-                        "scope": "compile",
+                        "artifactId": "jcip-annotations",
                         "classifier": "",
-                        "optional": "false"
+                        "groupId": "com.github.stephenc.jcip",
+                        "optional": "false",
+                        "scope": "compile",
+                        "type": "jar",
+                        "version": "1.0-1"
                       },
                       {
-                        "groupId": "org.springframework",
-                        "artifactId": "spring-core",
-                        "version": "7.0.8",
-                        "type": "jar",
-                        "scope": "compile",
+                        "artifactId": "content-type",
                         "classifier": "",
-                        "optional": "false"
-                      }
-                    ]
-                  },
-                  {
-                    "groupId": "org.springframework",
-                    "artifactId": "spring-beans",
-                    "version": "7.0.8",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "org.springframework",
-                    "artifactId": "spring-context",
-                    "version": "7.0.8",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "org.springframework",
-                    "artifactId": "spring-core",
-                    "version": "7.0.8",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false"
-                  },
-                  {
-                    "groupId": "org.springframework",
-                    "artifactId": "spring-expression",
-                    "version": "7.0.8",
-                    "type": "jar",
-                    "scope": "compile",
-                    "classifier": "",
-                    "optional": "false",
-                    "children": [
+                        "groupId": "com.nimbusds",
+                        "optional": "false",
+                        "scope": "compile",
+                        "type": "jar",
+                        "version": "2.3"
+                      },
                       {
-                        "groupId": "org.springframework",
-                        "artifactId": "spring-core",
-                        "version": "7.0.8",
-                        "type": "jar",
-                        "scope": "compile",
+                        "artifactId": "lang-tag",
                         "classifier": "",
-                        "optional": "false"
+                        "groupId": "com.nimbusds",
+                        "optional": "false",
+                        "scope": "compile",
+                        "type": "jar",
+                        "version": "1.7"
                       }
-                    ]
-                  },
-                  {
-                    "groupId": "org.springframework",
-                    "artifactId": "spring-web",
-                    "version": "7.0.8",
-                    "type": "jar",
-                    "scope": "compile",
+                    ],
                     "classifier": "",
-                    "optional": "false"
+                    "groupId": "com.nimbusds",
+                    "optional": "false",
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "11.37.2"
                   }
-                ]
+                ],
+                "classifier": "",
+                "groupId": "org.springframework.security",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "7.1.0"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
+          },
+          {
+            "artifactId": "spring-security-oauth2-jose",
+            "children": [
+              {
+                "artifactId": "spring-security-core",
+                "children": [
+                  {
+                    "artifactId": "spring-security-crypto",
+                    "classifier": "",
+                    "groupId": "org.springframework.security",
+                    "optional": "false",
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "7.1.0"
+                  }
+                ],
+                "classifier": "",
+                "groupId": "org.springframework.security",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "7.1.0"
               },
               {
-                "groupId": "org.springframework.boot",
-                "artifactId": "spring-boot-http-converter",
-                "version": "4.1.0",
-                "type": "jar",
-                "scope": "runtime",
+                "artifactId": "spring-security-oauth2-core",
                 "classifier": "",
-                "optional": "false"
+                "groupId": "org.springframework.security",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "7.1.0"
+              },
+              {
+                "artifactId": "nimbus-jose-jwt",
+                "classifier": "",
+                "groupId": "com.nimbusds",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "10.9"
               }
-            ]
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.security",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "7.1.0"
           }
-        ]
+        ],
+        "classifier": "",
+        "groupId": "org.springframework.boot",
+        "optional": "false",
+        "scope": "compile",
+        "type": "jar",
+        "version": "4.1.0"
+      },
+      {
+        "artifactId": "spring-boot-starter-jdbc",
+        "children": [
+          {
+            "artifactId": "spring-boot-jdbc",
+            "children": [
+              {
+                "artifactId": "spring-boot-sql",
+                "classifier": "",
+                "groupId": "org.springframework.boot",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "4.1.0"
+              },
+              {
+                "artifactId": "spring-boot-transaction",
+                "children": [
+                  {
+                    "artifactId": "spring-boot-persistence",
+                    "classifier": "",
+                    "groupId": "org.springframework.boot",
+                    "optional": "false",
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "4.1.0"
+                  }
+                ],
+                "classifier": "",
+                "groupId": "org.springframework.boot",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "4.1.0"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
+          },
+          {
+            "artifactId": "HikariCP",
+            "children": [
+              {
+                "artifactId": "slf4j-api",
+                "classifier": "",
+                "groupId": "org.slf4j",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "2.0.18"
+              }
+            ],
+            "classifier": "",
+            "groupId": "com.zaxxer",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "7.0.2"
+          }
+        ],
+        "classifier": "",
+        "groupId": "org.springframework.boot",
+        "optional": "false",
+        "scope": "compile",
+        "type": "jar",
+        "version": "4.1.0"
+      },
+      {
+        "artifactId": "spring-boot-starter-validation",
+        "children": [
+          {
+            "artifactId": "spring-boot-validation",
+            "children": [
+              {
+                "artifactId": "tomcat-embed-el",
+                "classifier": "",
+                "groupId": "org.apache.tomcat.embed",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "11.0.22"
+              },
+              {
+                "artifactId": "hibernate-validator",
+                "children": [
+                  {
+                    "artifactId": "jakarta.validation-api",
+                    "classifier": "",
+                    "groupId": "jakarta.validation",
+                    "optional": "false",
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "3.1.1"
+                  },
+                  {
+                    "artifactId": "jboss-logging",
+                    "classifier": "",
+                    "groupId": "org.jboss.logging",
+                    "optional": "false",
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "3.6.3.Final"
+                  },
+                  {
+                    "artifactId": "classmate",
+                    "classifier": "",
+                    "groupId": "com.fasterxml",
+                    "optional": "false",
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "1.7.3"
+                  }
+                ],
+                "classifier": "",
+                "groupId": "org.hibernate.validator",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "9.1.0.Final"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
+          }
+        ],
+        "classifier": "",
+        "groupId": "org.springframework.boot",
+        "optional": "false",
+        "scope": "compile",
+        "type": "jar",
+        "version": "4.1.0"
+      },
+      {
+        "artifactId": "spring-session-jdbc",
+        "children": [
+          {
+            "artifactId": "spring-session-core",
+            "children": [
+              {
+                "artifactId": "commons-logging",
+                "classifier": "",
+                "groupId": "commons-logging",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "1.3.6"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.springframework.session",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "4.1.0"
+          },
+          {
+            "artifactId": "spring-context",
+            "children": [
+              {
+                "artifactId": "spring-expression",
+                "classifier": "",
+                "groupId": "org.springframework",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "7.0.8"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.springframework",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "7.0.8"
+          },
+          {
+            "artifactId": "spring-jdbc",
+            "children": [
+              {
+                "artifactId": "spring-tx",
+                "classifier": "",
+                "groupId": "org.springframework",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "7.0.8"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.springframework",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "7.0.8"
+          }
+        ],
+        "classifier": "",
+        "groupId": "org.springframework.session",
+        "optional": "false",
+        "scope": "compile",
+        "type": "jar",
+        "version": "4.1.0"
+      },
+      {
+        "artifactId": "postgresql",
+        "classifier": "",
+        "groupId": "org.postgresql",
+        "optional": "false",
+        "scope": "runtime",
+        "type": "jar",
+        "version": "42.7.12"
+      },
+      {
+        "artifactId": "spring-boot-starter-test",
+        "children": [
+          {
+            "artifactId": "spring-boot-test",
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "4.1.0"
+          },
+          {
+            "artifactId": "spring-boot-test-autoconfigure",
+            "classifier": "",
+            "groupId": "org.springframework.boot",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "4.1.0"
+          },
+          {
+            "artifactId": "json-path",
+            "classifier": "",
+            "groupId": "com.jayway.jsonpath",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "2.10.0"
+          },
+          {
+            "artifactId": "jakarta.xml.bind-api",
+            "children": [
+              {
+                "artifactId": "jakarta.activation-api",
+                "classifier": "",
+                "groupId": "jakarta.activation",
+                "optional": "false",
+                "scope": "test",
+                "type": "jar",
+                "version": "2.1.4"
+              }
+            ],
+            "classifier": "",
+            "groupId": "jakarta.xml.bind",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "4.0.5"
+          },
+          {
+            "artifactId": "json-smart",
+            "children": [
+              {
+                "artifactId": "accessors-smart",
+                "children": [
+                  {
+                    "artifactId": "asm",
+                    "classifier": "",
+                    "groupId": "org.ow2.asm",
+                    "optional": "false",
+                    "scope": "compile",
+                    "type": "jar",
+                    "version": "9.7.1"
+                  }
+                ],
+                "classifier": "",
+                "groupId": "net.minidev",
+                "optional": "false",
+                "scope": "compile",
+                "type": "jar",
+                "version": "2.6.0"
+              }
+            ],
+            "classifier": "",
+            "groupId": "net.minidev",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "2.6.0"
+          },
+          {
+            "artifactId": "assertj-core",
+            "children": [
+              {
+                "artifactId": "byte-buddy",
+                "classifier": "",
+                "groupId": "net.bytebuddy",
+                "optional": "false",
+                "scope": "test",
+                "type": "jar",
+                "version": "1.18.10"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.assertj",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "3.27.7"
+          },
+          {
+            "artifactId": "awaitility",
+            "classifier": "",
+            "groupId": "org.awaitility",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "4.3.0"
+          },
+          {
+            "artifactId": "hamcrest",
+            "classifier": "",
+            "groupId": "org.hamcrest",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "3.0"
+          },
+          {
+            "artifactId": "junit-jupiter",
+            "children": [
+              {
+                "artifactId": "junit-jupiter-api",
+                "children": [
+                  {
+                    "artifactId": "opentest4j",
+                    "classifier": "",
+                    "groupId": "org.opentest4j",
+                    "optional": "false",
+                    "scope": "test",
+                    "type": "jar",
+                    "version": "1.3.0"
+                  },
+                  {
+                    "artifactId": "junit-platform-commons",
+                    "classifier": "",
+                    "groupId": "org.junit.platform",
+                    "optional": "false",
+                    "scope": "test",
+                    "type": "jar",
+                    "version": "6.0.3"
+                  },
+                  {
+                    "artifactId": "apiguardian-api",
+                    "classifier": "",
+                    "groupId": "org.apiguardian",
+                    "optional": "false",
+                    "scope": "test",
+                    "type": "jar",
+                    "version": "1.1.2"
+                  }
+                ],
+                "classifier": "",
+                "groupId": "org.junit.jupiter",
+                "optional": "false",
+                "scope": "test",
+                "type": "jar",
+                "version": "6.0.3"
+              },
+              {
+                "artifactId": "junit-jupiter-params",
+                "classifier": "",
+                "groupId": "org.junit.jupiter",
+                "optional": "false",
+                "scope": "test",
+                "type": "jar",
+                "version": "6.0.3"
+              },
+              {
+                "artifactId": "junit-jupiter-engine",
+                "children": [
+                  {
+                    "artifactId": "junit-platform-engine",
+                    "classifier": "",
+                    "groupId": "org.junit.platform",
+                    "optional": "false",
+                    "scope": "test",
+                    "type": "jar",
+                    "version": "6.0.3"
+                  }
+                ],
+                "classifier": "",
+                "groupId": "org.junit.jupiter",
+                "optional": "false",
+                "scope": "test",
+                "type": "jar",
+                "version": "6.0.3"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.junit.jupiter",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "6.0.3"
+          },
+          {
+            "artifactId": "mockito-core",
+            "children": [
+              {
+                "artifactId": "byte-buddy-agent",
+                "classifier": "",
+                "groupId": "net.bytebuddy",
+                "optional": "false",
+                "scope": "test",
+                "type": "jar",
+                "version": "1.18.10"
+              },
+              {
+                "artifactId": "objenesis",
+                "classifier": "",
+                "groupId": "org.objenesis",
+                "optional": "false",
+                "scope": "test",
+                "type": "jar",
+                "version": "3.3"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.mockito",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "5.23.0"
+          },
+          {
+            "artifactId": "mockito-junit-jupiter",
+            "classifier": "",
+            "groupId": "org.mockito",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "5.23.0"
+          },
+          {
+            "artifactId": "jsonassert",
+            "children": [
+              {
+                "artifactId": "android-json",
+                "classifier": "",
+                "groupId": "com.vaadin.external.google",
+                "optional": "false",
+                "scope": "test",
+                "type": "jar",
+                "version": "0.0.20131108.vaadin1"
+              }
+            ],
+            "classifier": "",
+            "groupId": "org.skyscreamer",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "1.5.3"
+          },
+          {
+            "artifactId": "spring-core",
+            "classifier": "",
+            "groupId": "org.springframework",
+            "optional": "false",
+            "scope": "compile",
+            "type": "jar",
+            "version": "7.0.8"
+          },
+          {
+            "artifactId": "spring-test",
+            "classifier": "",
+            "groupId": "org.springframework",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "7.0.8"
+          },
+          {
+            "artifactId": "xmlunit-core",
+            "classifier": "",
+            "groupId": "org.xmlunit",
+            "optional": "false",
+            "scope": "test",
+            "type": "jar",
+            "version": "2.11.0"
+          }
+        ],
+        "classifier": "",
+        "groupId": "org.springframework.boot",
+        "optional": "false",
+        "scope": "test",
+        "type": "jar",
+        "version": "4.1.0"
       }
-    ]
+    ],
+    "classifier": "",
+    "groupId": "cn.edu.suda",
+    "optional": "false",
+    "scope": "",
+    "type": "jar",
+    "version": "0.1.0-SNAPSHOT"
   },
-  "runtimeGraphSupplement": [
-    "commons-logging:commons-logging:1.3.6",
-    "org.slf4j:slf4j-api:2.0.18",
-    "org.springframework:spring-core:7.0.8"
-  ],
-  "bootstrapPlugin": "org.apache.maven.plugins:maven-dependency-plugin:3.10.0"
+  "runtimeGraphSupplement": [],
+  "version": "BACKEND-LOCK-1.0.0",
+  "wrapper": {
+    "binarySha256": "5af3b743dd8b876b5c45da33b676251e5f1687712644abb4ee519ca56e1d89ce",
+    "coordinate": "org.apache.maven:apache-maven:3.9.16",
+    "sourceUri": "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.16/apache-maven-3.9.16-bin.zip"
+  }
 }

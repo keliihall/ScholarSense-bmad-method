@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/release/host-sso-runtime-evidence.schema.json",
+  "type": "object",
+  "properties": {
+    "version": {"const": "HOST-SSO-RUNTIME-EVIDENCE-1.0.0"},
+    "status": {"const": "passed"},
+    "sourceCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "candidateDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "buildManifestSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "testEnvironmentVersion": {"const": "TEST-ENV-1.0.0"},
+    "staticDeploymentConfig": {"$ref": "#/$defs/fileDigest"},
+    "portalConfiguration": {
+      "type": "object",
+      "properties": {
+        "origin": {"type": "string", "pattern": "^https://[^/]+$"},
+        "sandbox": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {"enum": ["allow-scripts", "allow-forms", "allow-same-origin"]}
+        },
+        "issuerSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "clientRegistrationSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "redirectRegistrationSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "required": ["origin", "sandbox", "issuerSha256", "clientRegistrationSha256", "redirectRegistrationSha256"],
+      "additionalProperties": false
+    },
+    "browserExecutables": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "properties": {
+          "browser": {"enum": ["chrome", "edge"]},
+          "version": {"type": "string", "minLength": 1},
+          "executableSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        },
+        "required": ["browser", "version", "executableSha256"],
+        "additionalProperties": false
+      }
+    },
+    "redactedTraceSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "redactionStatus": {"const": "passed"},
+    "signatureBundleSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "collectedAt": {"type": "string", "format": "date-time"}
+  },
+  "required": [
+    "version",
+    "status",
+    "sourceCommit",
+    "candidateDigest",
+    "buildManifestSha256",
+    "testEnvironmentVersion",
+    "staticDeploymentConfig",
+    "portalConfiguration",
+    "browserExecutables",
+    "redactedTraceSha256",
+    "redactionStatus",
+    "signatureBundleSha256",
+    "collectedAt"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "fileDigest": {
+      "type": "object",
+      "properties": {
+        "path": {"const": "deploy/base/nginx-scholarsense.conf"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "required": ["path", "sha256"],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "version": "AUDIT-CONTRACT-LOCK-1.0.0",
+  "sourceBaselineCommit": "a0c8a9cba10d963c41623d27a8480dbbbddea393",
+  "files": [
+    {"path": "contracts/audit/action-catalog-1.0.0.json", "sha256": "b50e39b42f40125ed3c6abe771bd0c76f58615b7df210101b54e5bc51bf3200e"},
+    {"path": "contracts/audit/action-catalog.schema.json", "sha256": "bd7af31d842ce59be90f55ee95d0373444d8bebc08192cd77ff98f2b1cf4dde2"},
+    {"path": "contracts/audit/audit-storage-semantics-1.0.0.json", "sha256": "0a55377683c6a26361c8be5f2e8201bea57b3b838f44a00344a62d4136fa05b0"},
+    {"path": "contracts/audit/fixtures/negative-fixtures-1.0.0.json", "sha256": "4069dab2512446dc5bd7bff6ba332e60184d13d527d31cb55e20ba952eff33cc"},
+    {"path": "contracts/audit/fixtures/valid/local-audit-fact.json", "sha256": "5039376829347d8086f17858fdb07c00f4e32621fbfca6c6ba4c9329a8be9f76"},
+    {"path": "contracts/audit/fixtures/valid/local-audit-outbox.json", "sha256": "c85c947fa065aea513863c17408f32ba4ede88197b8a86f889f2200ff960e6de"},
+    {"path": "contracts/audit/identity-access-vocabulary-1.0.0.json", "sha256": "87a96c1ae2d56b0f865fb061a879100a5d8776b4b4d51307860eebd80ef1c0da"},
+    {"path": "contracts/audit/identity-access-vocabulary.schema.json", "sha256": "a63bdc0698f4fc14647f77994c9d25020905090419b24ba957b2c814f9716c17"},
+    {"path": "contracts/audit/local-audit-fact.schema.json", "sha256": "4f3ab9afeb3b31a73eb7aaa7cd7917ddae61e669ea0a0f381b31b80d5f50c87e"},
+    {"path": "contracts/audit/local-audit-field-profile-1.0.0.json", "sha256": "f32bb2243898bf23bc4e7399b4c385cc3d65fff2338109a465617f5732d30eaa"},
+    {"path": "contracts/audit/local-audit-outbox.schema.json", "sha256": "f6d5790ae385f8a814d749f4f55855f28b789aed849917255139aea58dd6e28b"},
+    {"path": "contracts/audit/trusted-clock-runtime-binding-1.0.0.json", "sha256": "e1622e1fa8818b463ae568ecc1f76b478c0b977e5e23276332222cf92ae6c4e3"},
+    {"path": "contracts/audit/trusted-clock-runtime-binding.schema.json", "sha256": "e3e2a5a4a139054d3b3080ddbe7999640e225d52d67ed063afc7fab8fdfa14c8"}
+  ]
+}

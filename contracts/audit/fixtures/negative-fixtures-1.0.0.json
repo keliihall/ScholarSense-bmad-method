@@ -1,0 +1,12 @@
+{
+  "version": "AUDIT-NEGATIVE-FIXTURES-1.0.0",
+  "baseFixture": "contracts/audit/fixtures/valid/local-audit-fact.json",
+  "cases": [
+    {"id": "unknown-field", "operation": "add", "path": "rawStudentId", "value": "forbidden", "expectedCode": "AUDIT_FIXTURE_SCHEMA_REJECTED"},
+    {"id": "uuid-v4", "operation": "replace", "path": "auditId", "value": "550e8400-e29b-41d4-a716-446655440000", "expectedCode": "AUDIT_ID_NOT_UUID_V7"},
+    {"id": "non-utc-time", "operation": "replace", "path": "occurredAt", "value": "2026-07-20T10:00:00+08:00", "expectedCode": "AUDIT_TIME_NOT_UTC"},
+    {"id": "unknown-action", "operation": "replace", "path": "action", "value": "identity.session.unregistered", "expectedCode": "AUDIT_ACTION_UNREGISTERED"},
+    {"id": "raw-actor", "operation": "replace", "path": "actorSearchToken", "value": "student-2026000001", "expectedCode": "AUDIT_SEARCH_TOKEN_INVALID"},
+    {"id": "clock-offset-over-limit", "operation": "replace", "path": "timeSourceProfile.offsetMs", "value": 101, "expectedCode": "AUDIT_FIXTURE_SCHEMA_REJECTED"}
+  ]
+}

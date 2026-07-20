@@ -1,0 +1,16 @@
+{
+  "$schema": "./identity-access-vocabulary.schema.json",
+  "version": "IDENTITY-AUDIT-VOCABULARY-1.0.0",
+  "module": "identity-access",
+  "roleIds": [],
+  "scopeCodes": ["CURRENT_SESSION"],
+  "purposes": ["HOST_INTEGRATION_SECURITY", "SESSION_CONTINUITY", "SESSION_CONTROL", "SESSION_ESTABLISHMENT"],
+  "projectionScopes": ["CURRENT_SESSION"],
+  "objectTypes": ["identity-session"],
+  "aggregateTypes": ["identity-session"],
+  "notApplicableReasons": ["NO_ROLE_MODEL", "PRE_AUTHENTICATION", "SERVICE_OPERATION"],
+  "policyVersions": {
+    "hostIntegrationProfile": "HIP-1.0.0",
+    "identitySessionPolicy": "ISP-1.0.0"
+  }
+}

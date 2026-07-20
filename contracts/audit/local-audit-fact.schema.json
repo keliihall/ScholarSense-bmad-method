@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/audit/local-audit-fact.schema.json",
+  "title": "ScholarSense LocalAuditFact v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "auditId",
+    "schemaVersion",
+    "producerModule",
+    "actorType",
+    "actorSearchToken",
+    "roleIds",
+    "authorizationContext",
+    "action",
+    "objectType",
+    "objectSearchToken",
+    "outcome",
+    "reasonCode",
+    "purpose",
+    "projectionScope",
+    "occurredAt",
+    "recordedAt",
+    "timeSourceProfile",
+    "sourceIpSearchToken",
+    "tokenizationProfileVersion",
+    "keyVersion",
+    "traceId",
+    "aggregateType",
+    "aggregateIdSearchToken",
+    "aggregateVersion",
+    "idempotencyKeyDigest",
+    "policyVersions",
+    "retentionScheduleVersion"
+  ],
+  "properties": {
+    "auditId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "schemaVersion": {"const": "LOCAL-AUDIT-FACT-1.0.0"},
+    "producerModule": {"enum": ["identity-access", "subject-registry", "ingestion-quality", "rule-governance", "signal-evaluation", "clue-care", "collaboration", "reporting", "audit-operations"]},
+    "actorType": {"enum": ["user", "anonymous", "service"]},
+    "actorSearchToken": {"type": ["string", "null"], "pattern": "^ast_v1_k[0-9]+_[0-9a-f]{64}$"},
+    "roleIds": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_-]{1,31}$"}},
+    "authorizationContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "policyVersion", "scopeCodes", "grantSearchTokens", "notApplicableReason"],
+      "properties": {
+        "decision": {"enum": ["allow", "deny", "not-applicable"]},
+        "policyVersion": {"type": ["string", "null"], "pattern": "^[A-Z][A-Z0-9.-]{2,63}$"},
+        "scopeCodes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_.-]{1,63}$"}},
+        "grantSearchTokens": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^gst_v1_k[0-9]+_[0-9a-f]{64}$"}},
+        "notApplicableReason": {"type": ["string", "null"], "enum": [null, "PRE_AUTHENTICATION", "NO_ROLE_MODEL", "SERVICE_OPERATION"]}
+      }
+    },
+    "action": {"type": "string", "pattern": "^[a-z][a-z0-9.-]{2,127}$"},
+    "objectType": {"type": ["string", "null"], "pattern": "^[a-z][a-z0-9.-]{1,63}$"},
+    "objectSearchToken": {"type": ["string", "null"], "pattern": "^ost_v1_k[0-9]+_[0-9a-f]{64}$"},
+    "outcome": {"enum": ["accepted", "rejected"]},
+    "reasonCode": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"},
+    "purpose": {"type": ["string", "null"], "pattern": "^[A-Z][A-Z0-9_.-]{1,63}$"},
+    "projectionScope": {"type": ["string", "null"], "pattern": "^[A-Z][A-Z0-9_.-]{1,63}$"},
+    "occurredAt": {"type": "string", "format": "date-time"},
+    "recordedAt": {"type": "string", "format": "date-time"},
+    "timeSourceProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceId", "profileVersion", "offsetMs", "observedAt", "freshUntil", "evidenceRef"],
+      "properties": {
+        "sourceId": {"type": "string", "pattern": "^[a-z][a-z0-9.-]{2,63}$"},
+        "profileVersion": {"const": "AUDIT-CLOCK-BINDING-1.0.0"},
+        "offsetMs": {"type": "integer", "minimum": -100, "maximum": 100},
+        "observedAt": {"type": "string", "format": "date-time"},
+        "freshUntil": {"type": "string", "format": "date-time"},
+        "evidenceRef": {"type": "string", "pattern": "^evidence://signed/[A-Za-z0-9._/-]{3,240}$"}
+      }
+    },
+    "sourceIpSearchToken": {"type": ["string", "null"], "pattern": "^ipt_v1_k[0-9]+_[0-9a-f]{64}$"},
+    "tokenizationProfileVersion": {"const": "AUDIT-TOKENIZATION-1.0.0"},
+    "keyVersion": {"type": "string", "pattern": "^k[0-9]+$"},
+    "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "aggregateType": {"type": ["string", "null"], "pattern": "^[a-z][a-z0-9.-]{1,63}$"},
+    "aggregateIdSearchToken": {"type": ["string", "null"], "pattern": "^agt_v1_k[0-9]+_[0-9a-f]{64}$"},
+    "aggregateVersion": {"type": ["integer", "null"], "minimum": 1},
+    "idempotencyKeyDigest": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "policyVersions": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{2,63}$"}
+    },
+    "retentionScheduleVersion": {"const": "RS-1.0.0"}
+  }
+}

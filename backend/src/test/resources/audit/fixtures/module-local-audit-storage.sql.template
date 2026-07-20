@@ -1,0 +1,105 @@
+-- Executable v1 ownership/least-privilege fixture. Instantiate only with a real audited behavior.
+create table ${schema}.${prefix}local_audit_fact (
+    audit_id uuid primary key,
+    schema_version varchar(64) not null,
+    producer_module varchar(64) not null,
+    actor_type varchar(32) not null,
+    actor_search_token varchar(160),
+    role_ids jsonb not null,
+    authorization_context jsonb not null,
+    action varchar(128) not null,
+    object_type varchar(64),
+    object_search_token varchar(160),
+    outcome varchar(32) not null,
+    reason_code varchar(128) not null,
+    purpose varchar(64),
+    projection_scope varchar(64),
+    occurred_at timestamptz not null,
+    recorded_at timestamptz not null,
+    time_source_profile jsonb not null,
+    source_ip_search_token varchar(160),
+    tokenization_profile_version varchar(64) not null,
+    key_version varchar(32) not null,
+    trace_id char(32) not null,
+    aggregate_type varchar(64),
+    aggregate_id_search_token varchar(160),
+    aggregate_version bigint,
+    idempotency_key_digest char(64),
+    policy_versions jsonb not null,
+    retention_schedule_version varchar(64) not null,
+    constraint ${prefix}local_audit_fact_shape_ck check (
+        schema_version = 'LOCAL-AUDIT-FACT-1.0.0'
+        and producer_module = '${module}'
+        and actor_type in ('user', 'anonymous', 'service')
+        and jsonb_typeof(role_ids) = 'array'
+        and jsonb_typeof(authorization_context) = 'object'
+        and action ~ '^[a-z][a-z0-9.-]{2,127}$'
+        and outcome in ('accepted', 'rejected')
+        and reason_code ~ '^[A-Z][A-Z0-9_]{2,127}$'
+        and jsonb_typeof(time_source_profile) = 'object'
+        and tokenization_profile_version = 'AUDIT-TOKENIZATION-1.0.0'
+        and key_version ~ '^k[0-9]+$'
+        and trace_id ~ '^[0-9a-f]{32}$'
+        and jsonb_typeof(policy_versions) = 'object'
+        and retention_schedule_version = 'RS-1.0.0'
+        and (aggregate_version is null or aggregate_version >= 1)
+        and (idempotency_key_digest is null or idempotency_key_digest ~ '^[0-9a-f]{64}$')
+        and (actor_type <> 'anonymous' or (
+            actor_search_token is null
+            and role_ids = '[]'::jsonb
+            and object_type is null
+            and object_search_token is null
+            and aggregate_type is null
+            and aggregate_id_search_token is null
+            and authorization_context ->> 'decision' = 'not-applicable'
+            and authorization_context -> 'policyVersion' = 'null'::jsonb
+            and authorization_context -> 'scopeCodes' = '[]'::jsonb
+            and authorization_context -> 'grantSearchTokens' = '[]'::jsonb
+        ))
+    ),
+    constraint ${prefix}local_audit_fact_time_ck check (recorded_at >= occurred_at),
+    constraint ${prefix}local_audit_fact_uuid_v7_ck check (
+        substring(audit_id::text, 15, 1) = '7'
+        and substring(audit_id::text, 20, 1) ~ '^[89ab]$'
+    )
+);
+
+create table ${schema}.${prefix}local_audit_outbox (
+    event_id uuid primary key,
+    audit_id uuid not null unique,
+    event_type varchar(128) not null,
+    schema_version varchar(64) not null,
+    envelope jsonb not null,
+    created_at timestamptz not null,
+    delivery_status varchar(32) not null default 'pending',
+    attempts integer not null default 0,
+    next_attempt_at timestamptz not null,
+    last_error_code varchar(128),
+    claimed_at timestamptz,
+    foreign key (audit_id) references ${schema}.${prefix}local_audit_fact(audit_id),
+    constraint ${prefix}local_audit_outbox_event_type_ck
+        check (event_type = '${module}.local-audit-fact.recorded.v1'),
+    constraint ${prefix}local_audit_outbox_schema_ck
+        check (schema_version = 'LOCAL-AUDIT-OUTBOX-1.0.0'),
+    constraint ${prefix}local_audit_outbox_delivery_ck
+        check (delivery_status in ('pending', 'retrying', 'confirmed', 'failed')),
+    constraint ${prefix}local_audit_outbox_attempts_ck check (attempts >= 0),
+    constraint ${prefix}local_audit_outbox_envelope_ck check (jsonb_typeof(envelope) = 'object'),
+    constraint ${prefix}local_audit_outbox_uuid_v7_ck check (
+        substring(event_id::text, 15, 1) = '7'
+        and substring(event_id::text, 20, 1) ~ '^[89ab]$'
+    )
+);
+
+grant usage on schema ${schema}
+    to scholarsense_${schema}_online, scholarsense_${schema}_audit_delivery;
+revoke all privileges on ${schema}.${prefix}local_audit_fact
+    from public, scholarsense_${schema}_online, scholarsense_${schema}_audit_delivery;
+revoke all privileges on ${schema}.${prefix}local_audit_outbox
+    from public, scholarsense_${schema}_online, scholarsense_${schema}_audit_delivery;
+grant select, insert on ${schema}.${prefix}local_audit_fact to scholarsense_${schema}_online;
+grant select, insert on ${schema}.${prefix}local_audit_outbox to scholarsense_${schema}_online;
+grant select on ${schema}.${prefix}local_audit_outbox to scholarsense_${schema}_audit_delivery;
+grant update (delivery_status, attempts, next_attempt_at, last_error_code, claimed_at)
+    on ${schema}.${prefix}local_audit_outbox
+    to scholarsense_${schema}_audit_delivery;

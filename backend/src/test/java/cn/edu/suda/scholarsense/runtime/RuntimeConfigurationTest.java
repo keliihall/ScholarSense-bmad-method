@@ -109,6 +109,22 @@ class RuntimeConfigurationTest {
         assertEquals("SCHOLARSENSE_ACCOUNT_REF", error.field());
     }
 
+    @Test
+    void identityRuntimeRequiresAControlledClockSourceBindingAndRejectsStaticSyncClaims() {
+        Map<String, String> missing = new HashMap<>(validEnvironment("web-api"));
+        missing.put("SCHOLARSENSE_IDENTITY_ENABLED", "true");
+        missing.put("SCHOLARSENSE_CLOCK_SYNCHRONIZED", "true");
+
+        ConfigurationException error = assertThrows(
+                ConfigurationException.class, () -> RuntimeConfiguration.from(missing));
+        assertEquals("CONFIG_REQUIRED", error.code());
+        assertEquals("SCHOLARSENSE_CLOCK_SOURCE_REF", error.field());
+
+        missing.put("SCHOLARSENSE_CLOCK_SOURCE_REF", "config://test/campus-ntp-a");
+        RuntimeConfiguration configuration = RuntimeConfiguration.from(missing);
+        assertEquals("config://test/campus-ntp-a", configuration.clockSourceReference());
+    }
+
     static Map<String, String> validEnvironment(String role) {
         return validEnvironment("test", role);
     }

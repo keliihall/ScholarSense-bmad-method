@@ -1,0 +1,24 @@
+{
+  "version": "HOST-SSO-RUNTIME-EVIDENCE-1.0.0",
+  "status": "passed",
+  "sourceCommit": "not-a-commit",
+  "candidateDigest": "latest",
+  "buildManifestSha256": "missing",
+  "testEnvironmentVersion": "TEST-ENV-1.0.0",
+  "staticDeploymentConfig": {
+    "path": "deploy/base/nginx-scholarsense.conf",
+    "sha256": "missing"
+  },
+  "portalConfiguration": {
+    "origin": "http://wildcard.invalid/path",
+    "sandbox": ["allow-scripts"],
+    "issuerSha256": "missing",
+    "clientRegistrationSha256": "missing",
+    "redirectRegistrationSha256": "missing"
+  },
+  "browserExecutables": [],
+  "redactedTraceSha256": "missing",
+  "redactionStatus": "passed",
+  "signatureBundleSha256": "missing",
+  "collectedAt": "not-a-date"
+}

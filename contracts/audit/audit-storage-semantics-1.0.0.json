@@ -1,0 +1,12 @@
+{
+  "version": "AUDIT-STORAGE-SEMANTICS-1.0.0",
+  "localFactMutation": "append-only-no-update-delete-truncate-for-online-writer",
+  "deliveryStateLocation": "separate-local-audit-outbox",
+  "factDeliveryFields": [],
+  "producerSequence": "not-defined-v1",
+  "localSurrogate": "gap-allowed-storage-only",
+  "centralCollectionStory": "1-4",
+  "centralCollectionRule": "collect-unaggregated-set-idempotently-by-auditId-and-eventId",
+  "ledgerSequenceOwner": "audit-operations",
+  "centralLedgerImplemented": false
+}

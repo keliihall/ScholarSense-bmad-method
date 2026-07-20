@@ -94,7 +94,7 @@
       "type": "object",
       "properties": {
         "id": {"type": "string", "minLength": 1},
-        "kind": {"type": "string", "enum": ["artifact-signature", "brand-asset-manifest", "formal-web-report", "provenance", "sbom-attestation", "sbom-cyclonedx", "sbom-spdx", "ui-token-manifest", "visual-baseline", "vulnerability-scan"]},
+        "kind": {"type": "string", "enum": ["artifact-signature", "brand-asset-manifest", "formal-web-report", "host-sso-runtime-evidence", "provenance", "sbom-attestation", "sbom-cyclonedx", "sbom-spdx", "ui-token-manifest", "visual-baseline", "vulnerability-scan"]},
         "version": {"type": "string", "minLength": 1},
         "uri": {"type": "string", "minLength": 1},
         "mediaType": {"type": "string", "minLength": 3},

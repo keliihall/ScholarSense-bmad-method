@@ -1,0 +1,35 @@
+{
+  "version": "HOST-SSO-RUNTIME-EVIDENCE-1.0.0",
+  "status": "passed",
+  "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "candidateDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "buildManifestSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "testEnvironmentVersion": "TEST-ENV-1.0.0",
+  "staticDeploymentConfig": {
+    "path": "deploy/base/nginx-scholarsense.conf",
+    "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "portalConfiguration": {
+    "origin": "https://portal.stage.invalid",
+    "sandbox": ["allow-scripts", "allow-forms", "allow-same-origin"],
+    "issuerSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "clientRegistrationSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "redirectRegistrationSha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "browserExecutables": [
+    {
+      "browser": "chrome",
+      "version": "150.0.7871.124",
+      "executableSha256": "2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    {
+      "browser": "edge",
+      "version": "150.0.4078.65",
+      "executableSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    }
+  ],
+  "redactedTraceSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "redactionStatus": "passed",
+  "signatureBundleSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "collectedAt": "2026-07-20T10:00:00+08:00"
+}

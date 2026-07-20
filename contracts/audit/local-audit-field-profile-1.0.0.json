@@ -1,0 +1,32 @@
+{
+  "version": "LOCAL-AUDIT-FIELD-PROFILE-1.0.0",
+  "rules": [
+    {"field": "auditId", "required": true, "nullable": false, "representation": "plaintext-nonsensitive", "notApplicable": "forbidden"},
+    {"field": "schemaVersion", "required": true, "nullable": false, "representation": "plaintext-nonsensitive", "notApplicable": "forbidden"},
+    {"field": "producerModule", "required": true, "nullable": false, "representation": "plaintext-nonsensitive", "notApplicable": "forbidden"},
+    {"field": "actorType", "required": true, "nullable": false, "representation": "plaintext-nonsensitive", "notApplicable": "forbidden"},
+    {"field": "actorSearchToken", "required": true, "nullable": true, "representation": "domain-separated-search-token", "notApplicable": "anonymous-or-service"},
+    {"field": "roleIds", "required": true, "nullable": false, "representation": "plaintext-controlled-code", "notApplicable": "empty-array"},
+    {"field": "authorizationContext", "required": true, "nullable": false, "representation": "plaintext-controlled-codes-and-search-tokens", "notApplicable": "explicit-reason"},
+    {"field": "action", "required": true, "nullable": false, "representation": "plaintext-catalog-code", "notApplicable": "forbidden"},
+    {"field": "objectType", "required": true, "nullable": true, "representation": "plaintext-controlled-code", "notApplicable": "pre-auth-or-no-object"},
+    {"field": "objectSearchToken", "required": true, "nullable": true, "representation": "domain-separated-search-token", "notApplicable": "pre-auth-or-no-object"},
+    {"field": "outcome", "required": true, "nullable": false, "representation": "plaintext-catalog-code", "notApplicable": "forbidden"},
+    {"field": "reasonCode", "required": true, "nullable": false, "representation": "plaintext-catalog-code", "notApplicable": "forbidden"},
+    {"field": "purpose", "required": true, "nullable": true, "representation": "plaintext-controlled-code", "notApplicable": "explicit-null"},
+    {"field": "projectionScope", "required": true, "nullable": true, "representation": "plaintext-controlled-code", "notApplicable": "explicit-null"},
+    {"field": "occurredAt", "required": true, "nullable": false, "representation": "plaintext-utc-time", "notApplicable": "forbidden"},
+    {"field": "recordedAt", "required": true, "nullable": false, "representation": "plaintext-utc-time", "notApplicable": "forbidden"},
+    {"field": "timeSourceProfile", "required": true, "nullable": false, "representation": "plaintext-controlled-evidence-metadata", "notApplicable": "forbidden"},
+    {"field": "sourceIpSearchToken", "required": true, "nullable": true, "representation": "domain-separated-search-token", "notApplicable": "source-unavailable"},
+    {"field": "tokenizationProfileVersion", "required": true, "nullable": false, "representation": "plaintext-nonsensitive", "notApplicable": "forbidden"},
+    {"field": "keyVersion", "required": true, "nullable": false, "representation": "plaintext-key-version-only", "notApplicable": "forbidden"},
+    {"field": "traceId", "required": true, "nullable": false, "representation": "plaintext-technical-correlation", "notApplicable": "forbidden"},
+    {"field": "aggregateType", "required": true, "nullable": true, "representation": "plaintext-controlled-code", "notApplicable": "no-aggregate"},
+    {"field": "aggregateIdSearchToken", "required": true, "nullable": true, "representation": "domain-separated-search-token", "notApplicable": "no-aggregate"},
+    {"field": "aggregateVersion", "required": true, "nullable": true, "representation": "plaintext-nonsensitive", "notApplicable": "no-aggregate"},
+    {"field": "idempotencyKeyDigest", "required": true, "nullable": true, "representation": "one-way-digest", "notApplicable": "non-command"},
+    {"field": "policyVersions", "required": true, "nullable": false, "representation": "plaintext-version-map", "notApplicable": "empty-object"},
+    {"field": "retentionScheduleVersion", "required": true, "nullable": false, "representation": "plaintext-nonsensitive", "notApplicable": "forbidden"}
+  ]
+}
