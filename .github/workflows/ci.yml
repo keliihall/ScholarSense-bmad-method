@@ -31,6 +31,26 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24.18.0
+      - name: Install exact PostgreSQL 18.4
+        env:
+          PGDG_PACKAGE_VERSION: 18.4-1.pgdg24.04+1
+        run: |
+          sudo install -d -m 0755 /usr/share/postgresql-common/pgdg
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo tee /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc >/dev/null
+          echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt-archive.postgresql.org/pub/repos/apt noble-pgdg-archive main' \
+            | sudo tee /etc/apt/sources.list.d/pgdg-archive.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            "postgresql-18=$PGDG_PACKAGE_VERSION" \
+            "postgresql-client-18=$PGDG_PACKAGE_VERSION"
+          test "$(/usr/lib/postgresql/18/bin/postgres --version)" = 'postgres (PostgreSQL) 18.4 (Ubuntu 18.4-1.pgdg24.04+1)'
+          test -f /usr/share/postgresql/18/postgres.bki
+          printf '%s\n' \
+            'SCHOLARSENSE_POSTGRES18_BIN=/usr/lib/postgresql/18/bin' \
+            'SCHOLARSENSE_POSTGRES18_SHARE=/usr/share/postgresql/18' \
+            >> "$GITHUB_ENV"
       - name: Bootstrap and run the complete local quality gate
         run: ./scripts/verify.sh
       - name: Recheck release schemas, policies, fixtures, and tamper cases
