@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "AUDIT-AVAILABILITY-1.0.0",
+  "state": "blocked",
+  "policyVersion": "AUDIT-INGESTION-POLICY-1.0.0",
+  "reasonCodes": ["AUDIT_LEDGER_ENTRY_HASH_MISMATCH"],
+  "observedAt": "2026-07-20T02:00:15Z",
+  "freshUntil": "2026-07-20T02:01:00Z",
+  "traceId": "0123456789abcdef0123456789abcdef"
+}

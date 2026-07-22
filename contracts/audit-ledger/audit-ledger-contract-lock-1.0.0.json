@@ -1,0 +1,24 @@
+{
+  "version": "AUDIT-LEDGER-CONTRACT-LOCK-1.0.0",
+  "sourceBaselineCommit": "681c24b217cb956dbcc99cbb43bd2c8d962f6377",
+  "files": [
+    {"path": "contracts/audit-ledger/alert.schema.json", "sha256": "bd65f9f438fc397a6595565b8f075779086a2322d30fc634602a17b4fd988079"},
+    {"path": "contracts/audit-ledger/audit-ingestion-policy-1.0.0.json", "sha256": "428fd9ff633c8bce430a0a4c4c69e4fb66178e40494ea5a24a6c613c2677201a"},
+    {"path": "contracts/audit-ledger/audit-ingestion-policy.schema.json", "sha256": "881fde315fec19822c8e167fa9c257233d61dc9bdf3ed609fccf177a427e1c9e"},
+    {"path": "contracts/audit-ledger/availability.schema.json", "sha256": "8cac317eae7026672fd10147cd225d13f74bf86e6b49354192d3a8d3ee100614"},
+    {"path": "contracts/audit-ledger/canonical-hash-golden-vectors-1.0.0.json", "sha256": "3fef90b5dd1c70d8ad8f2a6b84e917bbc73aa7265a29682d844b1c6ecf02ffa5"},
+    {"path": "contracts/audit-ledger/fixtures/negative-fixtures-1.0.0.json", "sha256": "116d0a418a4872a8f22692d402fee4ddc04b5bd7d320a453b87211f8818ce920"},
+    {"path": "contracts/audit-ledger/fixtures/valid/alert.json", "sha256": "3ecf136f2c81a0c43b58ad56000704407abd9adde2970e0323d85d7e6a08246a"},
+    {"path": "contracts/audit-ledger/fixtures/valid/availability.json", "sha256": "9aa3384ea324eaf950340dcef40a6612f5a2e1bd3cec94bfed81eba72da25a60"},
+    {"path": "contracts/audit-ledger/fixtures/valid/ingress-result.json", "sha256": "7e2226f534661efe04a2088bfc0cebcb40829ab38a5e561ef8a245f82a93a0de"},
+    {"path": "contracts/audit-ledger/fixtures/valid/integrity-finding.json", "sha256": "3f875faa05fd3809a53eefb38347051ebdf9b627fad3158ec01672578c7d33ea"},
+    {"path": "contracts/audit-ledger/fixtures/valid/ledger-record.json", "sha256": "b2a9323d36c301db53703f3e906ba06ddb6589ed33dfa1571e296553ac68ce42"},
+    {"path": "contracts/audit-ledger/fixtures/valid/verification-run.json", "sha256": "706bdb969f4df238a0993f8e110524b36a40bf3076cbc5c39be0dddbceee53a4"},
+    {"path": "contracts/audit-ledger/hash-profile-1.0.0.json", "sha256": "7384a70da2764f95e303050b482c9fb6b3a68be478e786d5b3fbe6166088ab94"},
+    {"path": "contracts/audit-ledger/hash-profile.schema.json", "sha256": "ed7e4df1a5f9cea218d0ffd0a2a3374b347f01a137a15aeb8e8e8d205eaf737a"},
+    {"path": "contracts/audit-ledger/ingress-result.schema.json", "sha256": "e971b1fb523cc77ea25d8c7b66d2e0d0edc353402accfa088bca43f547e77e8b"},
+    {"path": "contracts/audit-ledger/integrity-finding.schema.json", "sha256": "3cf1fa8627952725e9d922575844d1cbd20454b26f1d029ec8cc599dd1d0a777"},
+    {"path": "contracts/audit-ledger/ledger-record.schema.json", "sha256": "07a02ece46c0e2fc32c46379907c30184d60b7c3c17650a27186e034f8d8d721"},
+    {"path": "contracts/audit-ledger/verification-run.schema.json", "sha256": "0591e10c42637d8588e4ffaf70b5eda9d71bcac9bbe42d75a5d45b8e32428767"}
+  ]
+}

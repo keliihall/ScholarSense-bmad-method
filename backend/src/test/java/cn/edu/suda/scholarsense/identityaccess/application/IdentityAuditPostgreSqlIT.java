@@ -16,6 +16,7 @@ import java.sql.Statement;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +37,6 @@ import tools.jackson.databind.ObjectMapper;
 
 /** Real PostgreSQL 18.4 evidence. This class is run only by scripts/run_audit_postgresql_tests.sh. */
 class IdentityAuditPostgreSqlIT {
-    private static final Instant NOW = Instant.parse("2026-07-20T02:00:00Z");
     private static final String REQUEST_DIGEST = "a".repeat(64);
 
     private DataSource dataSource;
@@ -44,11 +44,13 @@ class IdentityAuditPostgreSqlIT {
     private JdbcIdentityAccessStore store;
     private JdbcIdentityAuditAdapter audit;
     private JdbcSessionTransactionAdapter transactions;
+    private Instant now;
 
     @BeforeEach
     void setUp() {
         dataSource = dataSource(requiredProperty("scholarsense.audit.pg.url"));
         jdbc = new JdbcTemplate(dataSource);
+        now = Instant.now().truncatedTo(ChronoUnit.MICROS);
         var manager = new DataSourceTransactionManager(dataSource);
         transactions = new JdbcSessionTransactionAdapter(new TransactionTemplate(manager));
         store = new JdbcIdentityAccessStore(jdbc);
@@ -104,6 +106,9 @@ class IdentityAuditPostgreSqlIT {
                 "select status from identity_access.ia_identity_session where session_id='session-atomic'",
                 String.class));
         assertAtomicCounts(1, 1, 1, 1);
+        assertEquals(1L, scalarLong(
+                "select count(*) from identity_access.ia_idempotency_result "
+                        + "where expires_at > clock_timestamp()"));
         String factText = jdbc.queryForObject(
                 "select row_to_json(f)::text from identity_access.ia_local_audit_fact f", String.class);
         assertNotNull(factText);
@@ -257,13 +262,13 @@ class IdentityAuditPostgreSqlIT {
     private SessionCommandService service(IdentitySessionRepository sessions) {
         return new SessionCommandService(
                 sessions, store, AuditTestSupport.factory(), audit, store, transactions,
-                Clock.fixed(NOW.plusSeconds(30), ZoneOffset.UTC));
+                Clock.fixed(now.plusSeconds(30), ZoneOffset.UTC));
     }
 
     private void seedSession(String sessionId) {
         store.save(IdentitySession.authenticate(
                 sessionId, "sp_01234567890123456789", "actor-raw-account", "browser-binding",
-                "https://app.test.invalid", "refresh-family", "refresh-digest", NOW));
+                "https://app.test.invalid", "refresh-family", "refresh-digest", now));
     }
 
     private static SessionCommand command(String sessionId, String key, String trace) {

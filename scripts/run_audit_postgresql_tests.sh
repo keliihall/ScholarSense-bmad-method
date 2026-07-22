@@ -47,9 +47,13 @@ export PGHOST=127.0.0.1 PGPORT="$PORT" PGUSER="$USER_NAME"
 
 V1="$ROOT/backend/src/main/resources/db/migration/identity-access/V000001__identity-access__session_boundary.sql"
 V2="$ROOT/backend/src/main/resources/db/migration/identity-access/V000002__identity-access__local_audit_v1.sql"
+V3="$ROOT/backend/src/main/resources/db/migration/audit-operations/V000003__audit-operations__immutable_ledger_v1.sql"
+V4="$ROOT/backend/src/main/resources/db/migration/identity-access/V000004__identity-access__audit_delivery_attempts_bigint.sql"
 
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V1" >/dev/null
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V2" >/dev/null
+"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V3" >/dev/null
+"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V4" >/dev/null
 
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V1" >/dev/null
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade <<'SQL' >/dev/null
@@ -62,11 +66,25 @@ values (
   'legacy-ip', 'trace-legacy-upgrade', 'ISP-1.0.0');
 SQL
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V2" >/dev/null
+"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V3" >/dev/null
+"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V4" >/dev/null
+
+for database in scholarsense_audit_clean scholarsense_audit_upgrade; do
+  attempts_type=$("$PG_BIN/psql" -At -d "$database" -c "
+    select data_type from information_schema.columns
+    where table_schema='identity_access'
+      and table_name='ia_local_audit_outbox'
+      and column_name='attempts'")
+  if [[ "$attempts_type" != "bigint" ]]; then
+    echo "audit-postgresql: attempts fencing type mismatch in $database" >&2
+    exit 1
+  fi
+done
 
 "$ROOT/_bmad/scripts/with_pab_toolchain.sh" mvn -q -f "$ROOT/backend/pom.xml" \
-  -Dtest=IdentityAuditPostgreSqlIT \
+  -Dtest=IdentityAuditPostgreSqlIT,AuditLedgerPostgreSqlIT \
   -Dscholarsense.audit.pg.url="jdbc:postgresql://127.0.0.1:$PORT/scholarsense_audit_clean" \
   -Dscholarsense.audit.pg.upgrade-url="jdbc:postgresql://127.0.0.1:$PORT/scholarsense_audit_upgrade" \
   -Dscholarsense.audit.pg.user="$USER_NAME" test
 
-echo "audit-postgresql: PASS (PostgreSQL 18.4; clean + V000001 upgrade + transaction/privilege probes)"
+echo "audit-postgresql: PASS (PostgreSQL 18.4; clean + V000001/V000002/V000003/V000004 upgrade + concurrency/rollback/replay/privilege/tamper probes)"

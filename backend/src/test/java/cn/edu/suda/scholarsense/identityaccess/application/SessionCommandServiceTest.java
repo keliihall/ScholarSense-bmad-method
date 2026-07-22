@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -152,6 +153,31 @@ class SessionCommandServiceTest {
 
         assertEquals(SessionStatus.ACTIVE, sessions.findById("session-1").orElseThrow().status());
         assertFalse(idempotency.find("session-1", SessionCommandType.ACCOUNT_SWITCH, SWITCH_KEY).isPresent());
+        assertEquals(0, outbox.requests.size());
+    }
+
+    @Test
+    void unavailableAuditLedgerBlocksBeforeTheCommandTransactionAndAllSideEffects() {
+        var transactions = new AtomicInteger();
+        var guarded = new SessionCommandService(
+                sessions, idempotency, AuditTestSupport.factory(), audit, outbox,
+                work -> {
+                    transactions.incrementAndGet();
+                    return work.get();
+                },
+                Clock.fixed(NOW.plusSeconds(30), ZoneOffset.UTC),
+                "school-idp",
+                traceId -> { throw new IdentityAccessException(
+                        "AUDIT_AVAILABILITY_BLOCKED", "audit evidence is unavailable"); });
+
+        IdentityAccessException failure = assertThrows(IdentityAccessException.class, () -> guarded.execute(
+                new SessionCommand(SessionCommandType.LOGOUT, "session-1", 1, LOGOUT_KEY,
+                        "request-digest-a", "ip-pseudo", TRACE)));
+
+        assertEquals("AUDIT_AVAILABILITY_BLOCKED", failure.code());
+        assertEquals(0, transactions.get());
+        assertEquals(SessionStatus.ACTIVE, sessions.findById("session-1").orElseThrow().status());
+        assertEquals(0, audit.facts.size());
         assertEquals(0, outbox.requests.size());
     }
 

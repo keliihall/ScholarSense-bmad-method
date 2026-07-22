@@ -11,6 +11,14 @@ from pathlib import Path
 
 
 ENVIRONMENTS = ("dev", "test", "stage", "prod")
+AUDIT_REFERENCE_RESOURCES = {
+    "SCHOLARSENSE_AUDIT_INGESTION_POLICY_REF": "audit-ingestion-policy-1-0-0",
+    "SCHOLARSENSE_AUDIT_HASH_PROFILE_REF": "audit-ledger-hash-1-0-0",
+    "SCHOLARSENSE_AUDIT_COLLECTOR_REF": "audit-collector-1-0-0",
+    "SCHOLARSENSE_AUDIT_VERIFIER_REF": "audit-verifier-1-0-0",
+    "SCHOLARSENSE_AUDIT_ALERT_TRANSPORT_REF": "audit-alert-structured-log-1-0-0",
+    "SCHOLARSENSE_AUDIT_METRIC_BINDING_REF": "audit-micrometer-1-0-0",
+}
 RUNTIME_KEYS = {
     "SCHOLARSENSE_ENV",
     "SCHOLARSENSE_ROLE",
@@ -20,12 +28,21 @@ RUNTIME_KEYS = {
     "SCHOLARSENSE_STORAGE_NAMESPACE",
     "SCHOLARSENSE_EXTERNAL_BASE_URI",
     "SCHOLARSENSE_HTTP_PORT",
+    "SCHOLARSENSE_IDENTITY_ENABLED",
+    "SCHOLARSENSE_AUDIT_LEDGER_ENABLED",
+    "SCHOLARSENSE_CLOCK_SOURCE_REF",
+    *AUDIT_REFERENCE_RESOURCES,
 }
 SENSITIVE_CLIENT_NAME = re.compile(r"(?:SECRET|TOKEN|PASSWORD|PRIVATE|DATABASE|ACCOUNT|STORAGE)", re.IGNORECASE)
 REFERENCE_PATTERNS = {
     "SCHOLARSENSE_ACCOUNT_REF": r"^account://(dev|test|stage|prod)/[a-z0-9-]+$",
     "SCHOLARSENSE_DATABASE_REF": r"^database://(dev|test|stage|prod)/[a-z0-9-]+$",
     "SCHOLARSENSE_SECRET_REF": r"^secret://(dev|test|stage|prod)/[a-z0-9-]+$",
+    "SCHOLARSENSE_CLOCK_SOURCE_REF": r"^config://(dev|test|stage|prod)/[a-z0-9-]+$",
+    **{
+        key: rf"^config://(dev|test|stage|prod)/{resource}$"
+        for key, resource in AUDIT_REFERENCE_RESOURCES.items()
+    },
 }
 STORAGE_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*-(dev|test|stage|prod)$"
 EXTERNAL_URI_PATTERN = r"^https://(dev|test|stage|prod)(?:\.[a-z0-9-]+)*\.invalid(?:/[^#]*)?$"
@@ -69,7 +86,11 @@ def _check_runtime_schema(schema, violations: list[str]) -> None:
         violations.append("RUNTIME_SCHEMA_DRAFT_INVALID")
     if schema.get("type") != "object" or schema.get("additionalProperties") is not False:
         violations.append("RUNTIME_SCHEMA_OBJECT_BOUNDARY_INVALID")
-    if set(schema.get("required", [])) != RUNTIME_KEYS - {"SCHOLARSENSE_HTTP_PORT"}:
+    optional = {
+        "SCHOLARSENSE_HTTP_PORT", "SCHOLARSENSE_CLOCK_SOURCE_REF",
+        *AUDIT_REFERENCE_RESOURCES,
+    }
+    if set(schema.get("required", [])) != RUNTIME_KEYS - optional:
         violations.append("RUNTIME_SCHEMA_REQUIRED_SET_INVALID")
     if set(schema.get("properties", {})) != RUNTIME_KEYS:
         violations.append("RUNTIME_SCHEMA_PROPERTY_SET_INVALID")
@@ -79,6 +100,9 @@ def _check_runtime_schema(schema, violations: list[str]) -> None:
         violations.append("RUNTIME_SCHEMA_ENVIRONMENT_INVALID")
     if properties["SCHOLARSENSE_ROLE"] != {"type": "string", "enum": ["web-api", "worker"]}:
         violations.append("RUNTIME_SCHEMA_ROLE_INVALID")
+    for key in ("SCHOLARSENSE_IDENTITY_ENABLED", "SCHOLARSENSE_AUDIT_LEDGER_ENABLED"):
+        if properties[key] != {"type": "string", "enum": ["true", "false"]}:
+            violations.append(f"RUNTIME_SCHEMA_CAPABILITY_INVALID: {key}")
     for key, expected in REFERENCE_PATTERNS.items():
         if properties[key].get("type") != "string" or properties[key].get("pattern") != expected:
             violations.append(f"RUNTIME_SCHEMA_REFERENCE_PATTERN_INVALID: {key}")
@@ -102,6 +126,15 @@ def _check_runtime_schema(schema, violations: list[str]) -> None:
         violations.append("RUNTIME_SCHEMA_PORT_RANGE_INVALID")
     if port.get("type") != "string" or port.get("default") != "8080":
         violations.append("RUNTIME_SCHEMA_PORT_CONTRACT_INVALID")
+    audit_required = set()
+    for rule in schema.get("allOf", []):
+        condition = rule.get("if", {}).get("properties", {}).get(
+            "SCHOLARSENSE_AUDIT_LEDGER_ENABLED", {}
+        )
+        if condition.get("const") == "true":
+            audit_required.update(rule.get("then", {}).get("required", []))
+    if audit_required != set(AUDIT_REFERENCE_RESOURCES):
+        violations.append("RUNTIME_SCHEMA_AUDIT_BINDINGS_INVALID")
 
 
 def _check_example(path: Path, environment: str, violations: list[str]) -> None:
@@ -126,10 +159,17 @@ def _check_example(path: Path, environment: str, violations: list[str]) -> None:
     if values["SCHOLARSENSE_ENV"] != environment or values["SCHOLARSENSE_ROLE"] not in {"web-api", "worker"}:
         violations.append(f"CONFIG_EXAMPLE_ENV_ROLE_INVALID: {environment}")
     for key, pattern in REFERENCE_PATTERNS.items():
+        expected_scheme = "config" if key == "SCHOLARSENSE_CLOCK_SOURCE_REF" \
+                or key in AUDIT_REFERENCE_RESOURCES else (
+            key.removeprefix("SCHOLARSENSE_").removesuffix("_REF").lower()
+        )
         if not re.fullmatch(pattern, values[key]) or not values[key].startswith(
-            key.removeprefix("SCHOLARSENSE_").removesuffix("_REF").lower() + f"://{environment}/"
+            expected_scheme + f"://{environment}/"
         ):
             violations.append(f"CONFIG_EXAMPLE_REFERENCE_INVALID: {environment}:{key}")
+    for key, resource in AUDIT_REFERENCE_RESOURCES.items():
+        if values.get(key) != f"config://{environment}/{resource}":
+            violations.append(f"CONFIG_EXAMPLE_AUDIT_REFERENCE_STALE: {environment}:{key}")
     if not re.fullmatch(
         rf"[a-z0-9]+(?:-[a-z0-9]+)*-{re.escape(environment)}",
         values["SCHOLARSENSE_STORAGE_NAMESPACE"],
@@ -239,7 +279,11 @@ def _check_roles(root: Path, roles, violations: list[str]) -> None:
         return
     if roles.get("artifactContract") != "same-backend-jar":
         violations.append("ROLE_ARTIFACT_CONTRACT_INVALID")
-    expected_environment = RUNTIME_KEYS - {"SCHOLARSENSE_ROLE", "SCHOLARSENSE_HTTP_PORT"}
+    expected_environment = RUNTIME_KEYS - {
+        "SCHOLARSENSE_ROLE", "SCHOLARSENSE_HTTP_PORT",
+        "SCHOLARSENSE_IDENTITY_ENABLED", "SCHOLARSENSE_AUDIT_LEDGER_ENABLED",
+        *AUDIT_REFERENCE_RESOURCES,
+    }
     if set(roles.get("requiredEnvironment", [])) != expected_environment:
         violations.append("ROLE_REQUIRED_ENVIRONMENT_INVALID")
     definitions = roles.get("roles", {})
@@ -266,9 +310,29 @@ def _check_roles(root: Path, roles, violations: list[str]) -> None:
         "readinessPath": "/actuator/health/readiness",
     }:
         violations.append("WEB_API_PROBE_INVALID")
+    expected_role_environment = {
+        "web-api": {
+            "SCHOLARSENSE_ROLE": "web-api",
+            "SCHOLARSENSE_IDENTITY_ENABLED": "true",
+            "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "false",
+        },
+        "worker": {
+            "SCHOLARSENSE_ROLE": "worker",
+            "SCHOLARSENSE_IDENTITY_ENABLED": "false",
+            "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "true",
+        },
+    }
+    expected_role_required = {
+        "web-api": set(),
+        "worker": set(AUDIT_REFERENCE_RESOURCES),
+    }
     for role, definition in definitions.items():
-        if definition.get("environment") != {"SCHOLARSENSE_ROLE": role}:
+        if definition.get("environment") != expected_role_environment[role]:
             violations.append(f"ROLE_ENVIRONMENT_MISMATCH: {role}")
+        required = definition.get("requiredEnvironment")
+        if not isinstance(required, list) or len(required) != len(set(required)) \
+                or set(required) != expected_role_required[role]:
+            violations.append(f"ROLE_REQUIRED_ENVIRONMENT_INVALID: {role}")
 
 
 def _maven_artifact(pom_path: Path) -> str | None:

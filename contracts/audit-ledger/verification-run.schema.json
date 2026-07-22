@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/audit-ledger/verification-run.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "runId", "mode", "startSequence", "endSequence", "verifiedHeadSequence", "verifiedHeadHash", "healthy", "startedAt", "completedAt", "traceId"],
+  "properties": {
+    "schemaVersion": {"const": "AUDIT-LEDGER-VERIFICATION-1.0.0"},
+    "runId": {"type": "string", "pattern": "^[0-9a-f-]{36}$"},
+    "mode": {"enum": ["incremental", "full-chain"]},
+    "startSequence": {"type": "integer", "minimum": 0},
+    "endSequence": {"type": "integer", "minimum": 0},
+    "verifiedHeadSequence": {"type": "integer", "minimum": 0},
+    "verifiedHeadHash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "healthy": {"type": "boolean"},
+    "startedAt": {"type": "string", "format": "date-time"},
+    "completedAt": {"type": "string", "format": "date-time"},
+    "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
+  }
+}

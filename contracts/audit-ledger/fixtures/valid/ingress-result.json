@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "AUDIT-INGRESS-RESULT-1.0.0",
+  "outcome": "appended",
+  "ledgerSequence": 1,
+  "entryHash": "ac8fa0d2dd7d3a20229247e68e75637a1f7d51f5661fe314226160d20679c242",
+  "errorCode": null,
+  "retryable": false,
+  "traceId": "0123456789abcdef0123456789abcdef"
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/audit-ledger/integrity-finding.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "findingId", "code", "severity", "policyVersion", "hashProfileVersion", "sequenceRange", "sourceRange", "safeDigest", "traceId", "occurredAt", "detectedAt", "runbookRef"],
+  "properties": {
+    "schemaVersion": {"const": "AUDIT-INTEGRITY-FINDING-1.0.0"},
+    "findingId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "code": {"enum": ["AUDIT_LEDGER_SEQUENCE_GAP", "AUDIT_LEDGER_PREVIOUS_HASH_MISMATCH", "AUDIT_LEDGER_ENTRY_HASH_MISMATCH", "AUDIT_LEDGER_HEAD_MISMATCH", "AUDIT_INGESTION_DUPLICATE_CONFLICT", "AUDIT_INGESTION_CONTRACT_REJECTED", "AUDIT_INGESTION_BACKLOG"]},
+    "severity": {"enum": ["warning", "critical"]},
+    "policyVersion": {"const": "AUDIT-INGESTION-POLICY-1.0.0"},
+    "hashProfileVersion": {"const": "AUDIT-LEDGER-HASH-1.0.0"},
+    "sequenceRange": {"type": ["string", "null"], "pattern": "^[1-9][0-9]*(?:-[1-9][0-9]*)?$"},
+    "sourceRange": {"type": ["string", "null"], "pattern": "^[a-z0-9-]{3,64}:[0-9a-f]{16,64}$"},
+    "safeDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "occurredAt": {"type": "string", "format": "date-time"},
+    "detectedAt": {"type": "string", "format": "date-time"},
+    "runbookRef": {"type": "string", "pattern": "^runbook://audit/[a-z0-9-]{3,80}$"}
+  }
+}

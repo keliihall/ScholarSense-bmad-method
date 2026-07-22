@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "AUDIT-INTEGRITY-FINDING-1.0.0",
+  "findingId": "019bf18e-6c00-7000-8000-000000000010",
+  "code": "AUDIT_LEDGER_ENTRY_HASH_MISMATCH",
+  "severity": "critical",
+  "policyVersion": "AUDIT-INGESTION-POLICY-1.0.0",
+  "hashProfileVersion": "AUDIT-LEDGER-HASH-1.0.0",
+  "sequenceRange": "41-41",
+  "sourceRange": "identity-access:0c97b5e3a80f1ec2",
+  "safeDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "traceId": "0123456789abcdef0123456789abcdef",
+  "occurredAt": "2026-07-20T02:00:00Z",
+  "detectedAt": "2026-07-20T02:00:15Z",
+  "runbookRef": "runbook://audit/ledger-entry-hash-mismatch"
+}

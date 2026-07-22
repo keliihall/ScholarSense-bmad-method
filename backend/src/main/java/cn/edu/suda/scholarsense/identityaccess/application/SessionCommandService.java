@@ -18,6 +18,7 @@ public final class SessionCommandService {
     private final SessionTransactionPort transaction;
     private final Clock clock;
     private final String registrationId;
+    private final HighRiskOperationGuard auditAvailability;
 
     public SessionCommandService(
             IdentitySessionRepository sessions,
@@ -27,7 +28,8 @@ public final class SessionCommandService {
             RemoteLogoutOutboxPort remoteLogout,
             SessionTransactionPort transaction,
             Clock clock) {
-        this(sessions, idempotency, auditFacts, audit, remoteLogout, transaction, clock, "school-idp");
+        this(sessions, idempotency, auditFacts, audit, remoteLogout, transaction, clock,
+                "school-idp", traceId -> {});
     }
 
     public SessionCommandService(
@@ -39,6 +41,20 @@ public final class SessionCommandService {
             SessionTransactionPort transaction,
             Clock clock,
             String registrationId) {
+        this(sessions, idempotency, auditFacts, audit, remoteLogout, transaction, clock,
+                registrationId, traceId -> {});
+    }
+
+    public SessionCommandService(
+            IdentitySessionRepository sessions,
+            SessionIdempotencyRepository idempotency,
+            IdentityAuditFactFactory auditFacts,
+            IdentityAuditPort audit,
+            RemoteLogoutOutboxPort remoteLogout,
+            SessionTransactionPort transaction,
+            Clock clock,
+            String registrationId,
+            HighRiskOperationGuard auditAvailability) {
         this.sessions = sessions;
         this.idempotency = idempotency;
         this.auditFacts = auditFacts;
@@ -46,6 +62,7 @@ public final class SessionCommandService {
         this.remoteLogout = remoteLogout;
         this.transaction = transaction;
         this.clock = clock;
+        this.auditAvailability = java.util.Objects.requireNonNull(auditAvailability, "auditAvailability");
         if (registrationId == null || !registrationId.matches("[A-Za-z0-9._-]{1,128}")) {
             throw new IllegalArgumentException("IDENTITY_REGISTRATION_ID_INVALID");
         }
@@ -53,6 +70,7 @@ public final class SessionCommandService {
     }
 
     public SessionCommandResult execute(SessionCommand command) {
+        auditAvailability.requireAvailable(command.traceId());
         try {
             return transaction.execute(() -> executeInTransaction(command));
         } catch (IdentityAccessException rejected) {
@@ -81,6 +99,7 @@ public final class SessionCommandService {
             String requestDigest,
             String sourceIp,
             String traceId) {
+        auditAvailability.requireAvailable(traceId);
         if (!SessionCommand.isIdempotencyKeyValid(idempotencyKey)) {
             auditAnonymousRejection(type, idempotencyKey, sourceIp, traceId);
             return Optional.empty();
