@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "AUDIT-LEDGER-HASH-1.0.0",
+  "algorithm": "SHA-256",
+  "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+  "encoding": "UTF-8",
+  "domainTag": "scholarsense.audit-ledger.entry.v1",
+  "genesis": {
+    "ledgerSequence": 0,
+    "entryHash": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "hashMaterialFields": [
+    "domainTag",
+    "hashProfileVersion",
+    "ledgerSequence",
+    "previousHash",
+    "auditId",
+    "sourceEventId",
+    "producerModule",
+    "eventType",
+    "eventSchemaVersion",
+    "factSchemaVersion",
+    "sourceCreatedAt",
+    "collectedAt",
+    "traceId",
+    "aggregateVersion",
+    "payloadFingerprint",
+    "retentionScheduleVersion"
+  ],
+  "nullEncoding": "json-null",
+  "duplicateKeyPolicy": "reject",
+  "unknownPropertyPolicy": "reject",
+  "payloadFingerprint": {
+    "algorithm": "SHA-256",
+    "material": "complete-local-audit-fact",
+    "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"
+  }
+}

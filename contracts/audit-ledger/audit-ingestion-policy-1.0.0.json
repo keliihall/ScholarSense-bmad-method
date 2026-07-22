@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "AUDIT-INGESTION-POLICY-1.0.0",
+  "observation": {
+    "intervalSeconds": 15,
+    "staleAfterSeconds": 45,
+    "unconfirmedStatuses": ["pending", "retrying", "failed"]
+  },
+  "claim": {
+    "batchSize": 100,
+    "leaseSeconds": 60,
+    "selection": "FOR UPDATE SKIP LOCKED",
+    "dueOrder": ["createdAt", "eventId"],
+    "fencingToken": "attempts"
+  },
+  "retry": {
+    "transient": "indefinite",
+    "capFormula": "min(60s,2^(attempts-1)s)",
+    "maximumCapSeconds": 60,
+    "jitterLowerInclusive": 0.5,
+    "jitterUpperInclusive": 1.0,
+    "permanentStatuses": ["failed", "quarantine"],
+    "permanentReasons": ["contract-rejected", "idempotency-collision"]
+  },
+  "idempotency": {
+    "businessKeys": ["auditId", "sourceEventId"],
+    "exactRetryFields": ["auditId", "sourceEventId", "payloadFingerprint", "eventSchemaVersion", "factSchemaVersion", "aggregateVersion"],
+    "exactRetryResult": "return-original-sequence-and-hash",
+    "collisionCode": "AUDIT_INGESTION_DUPLICATE_CONFLICT",
+    "collisionAllocatesSequence": false,
+    "collisionConfirmsSource": false
+  },
+  "availabilityThresholds": {
+    "comparison": ">=",
+    "degraded": {
+      "oldestUnconfirmedAgeSeconds": 60,
+      "unconfirmedCount": 10000
+    },
+    "blocked": {
+      "oldestUnconfirmedAgeSeconds": 300,
+      "unconfirmedCount": 50000,
+      "permanentFindingActive": true,
+      "verifierUnhealthy": true,
+      "measurementMissingOrStale": true
+    },
+    "recovery": {
+      "comparison": "<",
+      "oldestUnconfirmedAgeSecondsExclusiveMax": 60,
+      "unconfirmedCountExclusiveMax": 10000,
+      "consecutiveHealthyObservations": 2,
+      "requiresNoPermanentFinding": true,
+      "requiresHealthyChainAndHead": true,
+      "requiresFreshObservation": true
+    },
+    "highRiskFailureMode": "fail-closed",
+    "stableBlockedCode": "AUDIT_AVAILABILITY_BLOCKED",
+    "dependencyUnavailableCode": "AUDIT_AVAILABILITY_UNAVAILABLE"
+  },
+  "alertDeduplication": {
+    "windowSeconds": 300,
+    "keyFields": ["code", "sourceRange"],
+    "resolvedEventOnRecovery": true
+  },
+  "privacy": {
+    "findingAndAlertAllowedFields": ["code", "severity", "policyVersion", "hashProfileVersion", "sequenceRange", "sourceRange", "safeDigest", "traceId", "occurredAt", "detectedAt", "runbookRef"],
+    "forbiddenPlaintext": ["actor", "object", "ip", "token", "cookie", "payload", "studentId", "evidenceBody"],
+    "metricLabels": ["code", "severity", "producerModule", "policyVersion"]
+  }
+}

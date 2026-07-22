@@ -22,8 +22,8 @@ class MigrationOwnershipContractTest {
         assertEquals(expectedFacts(), result.ownership().entrySet().stream()
                 .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().factOwners())));
         try (var walk = Files.walk(MIGRATIONS)) {
-            assertEquals(2, walk.filter(path -> path.toString().endsWith(".sql")).count(),
-                    "Stories 1.2 and 1.3 own exactly two forward identity-access migrations");
+            assertEquals(4, walk.filter(path -> path.toString().endsWith(".sql")).count(),
+                    "Stories 1.2 through 1.4 own exactly four forward migrations");
         }
         Path firstMigration = MIGRATIONS.resolve(
                 "identity-access/V000001__identity-access__session_boundary.sql");
@@ -57,6 +57,46 @@ class MigrationOwnershipContractTest {
         assertFalse(migration.contains("grant insert (\n    schema_version"));
         assertTrue(migration.contains("alter column schema_version set default 'LOCAL-AUDIT-FACT-1.0.0'"));
         assertTrue(migration.contains("revoke all privileges on identity_access.ia_local_audit_fact"));
+    }
+
+    @Test
+    void story14MigrationCreatesGaplessAppendOnlyAuditOwnedLedgerAndLeastPrivilegeRoles() throws Exception {
+        String migration = Files.readString(MIGRATIONS.resolve(
+                "audit-operations/V000003__audit-operations__immutable_ledger_v1.sql"));
+        String lower = migration.toLowerCase();
+
+        for (String table : Set.of(
+                "ao_audit_ledger", "ao_audit_ledger_head", "ao_ingestion_receipt",
+                "ao_verification_run", "ao_integrity_finding", "ao_finding_disposition",
+                "ao_alert_outbox", "ao_availability_observation")) {
+            assertTrue(lower.contains("audit_operations." + table), table);
+        }
+        assertTrue(lower.contains("ledger_sequence bigint primary key"));
+        assertFalse(lower.contains("bigserial"));
+        assertFalse(lower.contains("generated always as identity"));
+        assertFalse(lower.contains("create sequence"));
+        assertTrue(lower.contains("insert into audit_operations.ao_audit_ledger_head"));
+        assertTrue(lower.contains("repeat('0', 64)"));
+        assertTrue(lower.contains("unique (audit_id)"));
+        assertTrue(lower.contains("unique (source_event_id)"));
+        assertTrue(lower.contains("revoke all privileges on audit_operations.ao_audit_ledger"));
+        assertFalse(lower.contains("grant update on audit_operations.ao_audit_ledger"));
+        assertFalse(lower.contains("grant delete on audit_operations.ao_audit_ledger"));
+        assertFalse(lower.contains("grant truncate on audit_operations.ao_audit_ledger"));
+        assertFalse(lower.contains("grant select, insert on audit_operations.ao_finding_disposition\n"
+                + "    to scholarsense_audit_verifier"));
+        assertFalse(lower.contains("identity_access."), "audit owner must not access the producer schema");
+    }
+
+    @Test
+    void story14ForwardExtensionKeepsIndefiniteIdentityRelayAttemptsFenced() throws Exception {
+        String migration = Files.readString(MIGRATIONS.resolve(
+                "identity-access/V000004__identity-access__audit_delivery_attempts_bigint.sql"));
+        String lower = migration.toLowerCase();
+
+        assertTrue(lower.contains("alter table identity_access.ia_local_audit_outbox"));
+        assertTrue(lower.contains("alter column attempts type bigint"));
+        assertFalse(lower.contains("audit_operations."));
     }
 
     @Test

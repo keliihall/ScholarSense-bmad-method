@@ -102,6 +102,33 @@ class CurrentSessionServiceTest {
                         session.sessionId(), "192.0.2.10", "3123456789abcdef0123456789abcdef")).code());
     }
 
+    @Test
+    void unavailableAuditLedgerBlocksBeforeSensitiveReadTransaction() {
+        var transactions = new AtomicInteger();
+        var service = new CurrentSessionService(
+                repository(IdentitySession.authenticate(
+                        "internal-cookie-bearer", "sp_RWxQcW41M2dSeHVIZ0JpYw", "actor-pseudo",
+                        "browser-hash", "https://app.stage.invalid", "family", "digest", NOW)),
+                (actor, session) -> true,
+                AuditTestSupport.factory(),
+                ignored -> {},
+                new SensitiveReadTransactionPort() {
+                    @Override public <T> T execute(java.util.function.Supplier<T> work) {
+                        transactions.incrementAndGet();
+                        return work.get();
+                    }
+                },
+                Clock.fixed(NOW.plusSeconds(30), ZoneOffset.UTC),
+                traceId -> { throw new IdentityAccessException(
+                        "AUDIT_AVAILABILITY_UNAVAILABLE", "audit evidence is unavailable"); });
+
+        IdentityAccessException failure = assertThrows(IdentityAccessException.class, () -> service.current(
+                "internal-cookie-bearer", "192.0.2.10", "4123456789abcdef0123456789abcdef"));
+
+        assertEquals("AUDIT_AVAILABILITY_UNAVAILABLE", failure.code());
+        assertEquals(0, transactions.get());
+    }
+
     private static IdentitySessionRepository repository(IdentitySession session) {
         return new IdentitySessionRepository() {
             @Override public Optional<IdentitySession> findById(String ignored) { return Optional.of(session); }

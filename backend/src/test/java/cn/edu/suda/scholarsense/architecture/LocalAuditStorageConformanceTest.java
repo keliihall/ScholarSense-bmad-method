@@ -67,7 +67,8 @@ class LocalAuditStorageConformanceTest {
                 "module-local technical facts must not become AD-2 domain fact owners");
         try (var walk = Files.walk(Path.of("src/main/resources/db/migration"))) {
             assertTrue(walk.filter(path -> path.toString().endsWith(".sql"))
-                    .allMatch(path -> path.toString().contains("identity-access")));
+                    .allMatch(path -> path.toString().contains("identity-access")
+                            || path.toString().contains("audit-operations")));
         }
     }
 }

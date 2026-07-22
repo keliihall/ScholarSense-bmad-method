@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/audit-ledger/audit-ingestion-policy.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "observation", "claim", "retry", "idempotency", "availabilityThresholds", "alertDeduplication", "privacy"],
+  "properties": {
+    "schemaVersion": {"const": "AUDIT-INGESTION-POLICY-1.0.0"},
+    "observation": {"type": "object", "additionalProperties": false, "required": ["intervalSeconds", "staleAfterSeconds", "unconfirmedStatuses"], "properties": {"intervalSeconds": {"type": "integer", "minimum": 1}, "staleAfterSeconds": {"type": "integer", "minimum": 1}, "unconfirmedStatuses": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}}},
+    "claim": {"type": "object", "additionalProperties": false, "required": ["batchSize", "leaseSeconds", "selection", "dueOrder", "fencingToken"], "properties": {"batchSize": {"type": "integer", "minimum": 1}, "leaseSeconds": {"type": "integer", "minimum": 1}, "selection": {"type": "string"}, "dueOrder": {"type": "array", "items": {"type": "string"}}, "fencingToken": {"type": "string"}}},
+    "retry": {"type": "object"},
+    "idempotency": {"type": "object"},
+    "availabilityThresholds": {"type": "object"},
+    "alertDeduplication": {"type": "object"},
+    "privacy": {"type": "object"}
+  }
+}

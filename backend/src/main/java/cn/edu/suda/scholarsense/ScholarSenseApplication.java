@@ -2,6 +2,7 @@ package cn.edu.suda.scholarsense;
 
 import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
 import cn.edu.suda.scholarsense.runtime.RuntimeRole;
+import cn.edu.suda.scholarsense.runtime.AuditRuntimeProfile;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.boot.SpringApplication;
@@ -42,6 +43,16 @@ public class ScholarSenseApplication {
         properties.put("scholarsense.runtime.environment", runtime.environment().wireName());
         properties.put("scholarsense.runtime.role", runtime.role().wireName());
         properties.put("scholarsense.identity.enabled", runtime.identityEnabled());
+        properties.put("scholarsense.audit-ledger.enabled", runtime.auditLedgerEnabled());
+        if (runtime.auditLedgerEnabled()) {
+            AuditRuntimeProfile audit = AuditRuntimeProfile.from(runtime);
+            properties.put("scholarsense.audit.collector.initial-delay", audit.collectorInitialDelay());
+            properties.put("scholarsense.audit.collector.interval", audit.collectorInterval());
+            properties.put("scholarsense.audit.verifier.initial-delay", audit.verifierInitialDelay());
+            properties.put("scholarsense.audit.verifier.interval", audit.verifierInterval());
+            properties.put("scholarsense.audit.alert.initial-delay", audit.alertInitialDelay());
+            properties.put("scholarsense.audit.alert.interval", audit.alertInterval());
+        }
         if (runtime.clockSourceReference() != null) {
             properties.put("scholarsense.identity.clock-source-ref", runtime.clockSourceReference());
         }
@@ -55,7 +66,7 @@ public class ScholarSenseApplication {
         properties.put("server.servlet.session.timeout", "15m");
         properties.put("spring.session.jdbc.initialize-schema", "never");
         properties.put("spring.session.jdbc.table-name", "identity_access.ia_spring_session");
-        if (!runtime.identityEnabled()) {
+        if (!runtime.identityEnabled() && !runtime.auditLedgerEnabled()) {
             properties.put("spring.autoconfigure.exclude", String.join(",",
                     "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration",
                     "org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration",

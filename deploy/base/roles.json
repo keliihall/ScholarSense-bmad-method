@@ -6,13 +6,17 @@
     "SCHOLARSENSE_DATABASE_REF",
     "SCHOLARSENSE_SECRET_REF",
     "SCHOLARSENSE_STORAGE_NAMESPACE",
-    "SCHOLARSENSE_EXTERNAL_BASE_URI"
+    "SCHOLARSENSE_EXTERNAL_BASE_URI",
+    "SCHOLARSENSE_CLOCK_SOURCE_REF"
   ],
   "roles": {
     "web-api": {
       "artifact": "backend/target/scholarsense-backend.jar",
+      "requiredEnvironment": [],
       "environment": {
-        "SCHOLARSENSE_ROLE": "web-api"
+        "SCHOLARSENSE_ROLE": "web-api",
+        "SCHOLARSENSE_IDENTITY_ENABLED": "true",
+        "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "false"
       },
       "businessHttp": true,
       "probe": {
@@ -23,8 +27,18 @@
     },
     "worker": {
       "artifact": "backend/target/scholarsense-backend.jar",
+      "requiredEnvironment": [
+        "SCHOLARSENSE_AUDIT_INGESTION_POLICY_REF",
+        "SCHOLARSENSE_AUDIT_HASH_PROFILE_REF",
+        "SCHOLARSENSE_AUDIT_COLLECTOR_REF",
+        "SCHOLARSENSE_AUDIT_VERIFIER_REF",
+        "SCHOLARSENSE_AUDIT_ALERT_TRANSPORT_REF",
+        "SCHOLARSENSE_AUDIT_METRIC_BINDING_REF"
+      ],
       "environment": {
-        "SCHOLARSENSE_ROLE": "worker"
+        "SCHOLARSENSE_ROLE": "worker",
+        "SCHOLARSENSE_IDENTITY_ENABLED": "false",
+        "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "true"
       },
       "businessHttp": false,
       "probe": {

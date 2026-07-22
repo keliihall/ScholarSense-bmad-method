@@ -19,6 +19,8 @@ import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditFactFact
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditPort;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditTokenPort;
 import cn.edu.suda.scholarsense.identityaccess.application.HostBootstrapService;
+import cn.edu.suda.scholarsense.identityaccess.application.HighRiskAuditGuard;
+import cn.edu.suda.scholarsense.identityaccess.application.HighRiskOperationGuard;
 import cn.edu.suda.scholarsense.identityaccess.application.OidcSessionEstablishmentService;
 import cn.edu.suda.scholarsense.identityaccess.application.PseudonymizationPort;
 import cn.edu.suda.scholarsense.identityaccess.application.RemoteIdentityProviderClient;
@@ -32,6 +34,7 @@ import cn.edu.suda.scholarsense.shared.time.EvidenceBoundTrustedTimeSource;
 import cn.edu.suda.scholarsense.shared.time.TimeSynchronizationStatusProvider;
 import cn.edu.suda.scholarsense.shared.time.TrustedClockConstraints;
 import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
+import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityPort;
 import java.time.Clock;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -138,15 +141,22 @@ public class IdentityAccessConfiguration {
     }
 
     @Bean
+    HighRiskOperationGuard highRiskAuditGuard(
+            AuditAvailabilityPort availability, TrustedTimeSource timeSource) {
+        return new HighRiskAuditGuard(availability, () -> timeSource.now().instant());
+    }
+
+    @Bean
     CurrentSessionService currentSessionService(
             JdbcIdentityAccessStore store,
             AuthorizationRecalculationPort authorization,
             IdentityAuditFactFactory auditFacts,
             IdentityAuditPort audit,
             JdbcSensitiveReadTransactionAdapter transactions,
-            Clock clock) {
+            Clock clock,
+            HighRiskOperationGuard auditAvailability) {
         return new CurrentSessionService(
-                store, authorization, auditFacts, audit, transactions, clock);
+                store, authorization, auditFacts, audit, transactions, clock, auditAvailability);
     }
 
     @Bean
@@ -166,9 +176,11 @@ public class IdentityAccessConfiguration {
             IdentityAuditPort audit,
             JdbcSessionTransactionAdapter transactions,
             Clock clock,
+            HighRiskOperationGuard auditAvailability,
             @Value("${scholarsense.identity.registration-id}") String registrationId) {
         return new SessionCommandService(
-                store, store, auditFacts, audit, store, transactions, clock, registrationId);
+                store, store, auditFacts, audit, store, transactions, clock,
+                registrationId, auditAvailability);
     }
 
     @Bean

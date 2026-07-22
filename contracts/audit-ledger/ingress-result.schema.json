@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/audit-ledger/ingress-result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "outcome", "ledgerSequence", "entryHash", "errorCode", "retryable", "traceId"],
+  "properties": {
+    "schemaVersion": {"const": "AUDIT-INGRESS-RESULT-1.0.0"},
+    "outcome": {"enum": ["appended", "exact-duplicate", "rejected", "collision"]},
+    "ledgerSequence": {"type": ["integer", "null"], "minimum": 1},
+    "entryHash": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "errorCode": {"type": ["string", "null"], "pattern": "^AUDIT_[A-Z0-9_]+$"},
+    "retryable": {"type": "boolean"},
+    "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
+  }
+}

@@ -58,6 +58,24 @@ class ContractSeedTest(unittest.TestCase):
             path.write_text(json.dumps(value), encoding="utf-8")
             self.assert_reason(root, "WORKER_EXPOSES_BUSINESS_HTTP")
 
+    def test_audit_runtime_references_are_required_only_by_the_worker_role(self) -> None:
+        roles = json.loads((PROJECT_ROOT / "deploy/base/roles.json").read_text(encoding="utf-8"))
+        audit_keys = {
+            "SCHOLARSENSE_AUDIT_INGESTION_POLICY_REF",
+            "SCHOLARSENSE_AUDIT_HASH_PROFILE_REF",
+            "SCHOLARSENSE_AUDIT_COLLECTOR_REF",
+            "SCHOLARSENSE_AUDIT_VERIFIER_REF",
+            "SCHOLARSENSE_AUDIT_ALERT_TRANSPORT_REF",
+            "SCHOLARSENSE_AUDIT_METRIC_BINDING_REF",
+        }
+
+        self.assertTrue(audit_keys.isdisjoint(roles["requiredEnvironment"]))
+        self.assertEqual([], roles["roles"]["web-api"]["requiredEnvironment"])
+        self.assertEqual(
+            audit_keys,
+            set(roles["roles"]["worker"]["requiredEnvironment"]),
+        )
+
     def test_role_artifact_matches_maven_output_name(self) -> None:
         roles = json.loads((PROJECT_ROOT / "deploy/base/roles.json").read_text(encoding="utf-8"))
         pom = (PROJECT_ROOT / "backend/pom.xml").read_text(encoding="utf-8")
@@ -93,6 +111,15 @@ class ContractSeedTest(unittest.TestCase):
             value["properties"]["SCHOLARSENSE_ACCOUNT_REF"]["pattern"] = "^account://.*$"
             path.write_text(json.dumps(value), encoding="utf-8")
             self.assert_reason(root, "RUNTIME_SCHEMA_REFERENCE_PATTERN_INVALID")
+
+    def test_audit_runtime_examples_reject_stale_controlled_versions(self) -> None:
+        with self.fixture() as root:
+            path = root / "contracts/config/examples/test.env.example"
+            content = path.read_text(encoding="utf-8").replace(
+                "audit-verifier-1-0-0", "audit-verifier-0-9-0"
+            )
+            path.write_text(content, encoding="utf-8")
+            self.assert_reason(root, "CONFIG_EXAMPLE_AUDIT_REFERENCE_STALE")
 
     def test_external_uri_schema_forbids_fragments(self) -> None:
         value = json.loads(

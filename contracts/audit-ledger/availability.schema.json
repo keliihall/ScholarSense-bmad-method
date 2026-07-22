@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/audit-ledger/availability.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "state", "policyVersion", "reasonCodes", "observedAt", "freshUntil", "traceId"],
+  "properties": {
+    "schemaVersion": {"const": "AUDIT-AVAILABILITY-1.0.0"},
+    "state": {"enum": ["healthy", "degraded", "blocked"]},
+    "policyVersion": {"const": "AUDIT-INGESTION-POLICY-1.0.0"},
+    "reasonCodes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^AUDIT_[A-Z0-9_]+$"}},
+    "observedAt": {"type": "string", "format": "date-time"},
+    "freshUntil": {"type": "string", "format": "date-time"},
+    "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
+  }
+}

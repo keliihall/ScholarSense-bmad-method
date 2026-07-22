@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "AUDIT-CANONICAL-HASH-VECTORS-1.0.0",
+  "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+  "hashProfileVersion": "AUDIT-LEDGER-HASH-1.0.0",
+  "vectors": [
+    {"id": "empty-null", "value": {"empty": "", "nil": null}, "canonicalUtf8Hex": "7b22656d707479223a22222c226e696c223a6e756c6c7d", "sha256": "f4deddc2cc212d43592b6a895059aeb6955c6731c6f2526c9c1769200669f784"},
+    {"id": "chinese", "value": {"message": "审计完整性"}, "canonicalUtf8Hex": "7b226d657373616765223a22e5aea1e8aea1e5ae8ce695b4e680a7227d", "sha256": "7bc7dbbca47700267bd63d1a940bfcfbd21f20c4a0e59355f4f14b471ca61d82"},
+    {"id": "non-bmp", "value": {"symbol": "𠮷"}, "canonicalUtf8Hex": "7b2273796d626f6c223a22f0a0aeb7227d", "sha256": "fc809d39fcc7fad33a2da67ed47f5fda4f5bbfcefc245c9dbc93963113c8a73e"},
+    {"id": "key-order", "value": {"z": 1, "a": 2}, "canonicalUtf8Hex": "7b2261223a322c227a223a317d", "sha256": "c2985c5ba6f7d2a55e768f92490ca09388e95bc4cccb9fdf11b15f4d42f93e73"},
+    {"id": "utc-time", "value": {"recordedAt": "2026-07-20T02:00:00.123Z"}, "canonicalUtf8Hex": "7b227265636f726465644174223a22323032362d30372d32305430323a30303a30302e3132335a227d", "sha256": "9b7a1d2fa183576fc5ff6f876ce0babbf3c86cef72a76555848aee7f7b04b754"}
+  ]
+}

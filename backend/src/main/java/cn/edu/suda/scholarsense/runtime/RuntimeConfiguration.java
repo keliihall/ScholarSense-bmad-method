@@ -14,7 +14,21 @@ public record RuntimeConfiguration(
         URI externalBaseUri,
         int httpPort,
         boolean identityEnabled,
-        String clockSourceReference) {
+        boolean auditLedgerEnabled,
+        String clockSourceReference,
+        String auditIngestionPolicyReference,
+        String auditHashProfileReference,
+        String auditCollectorReference,
+        String auditVerifierReference,
+        String auditAlertTransportReference,
+        String auditMetricBindingReference) {
+
+    private static final String AUDIT_INGESTION_POLICY = "audit-ingestion-policy-1-0-0";
+    private static final String AUDIT_HASH_PROFILE = "audit-ledger-hash-1-0-0";
+    private static final String AUDIT_COLLECTOR = "audit-collector-1-0-0";
+    private static final String AUDIT_VERIFIER = "audit-verifier-1-0-0";
+    private static final String AUDIT_ALERT_TRANSPORT = "audit-alert-structured-log-1-0-0";
+    private static final String AUDIT_METRIC_BINDING = "audit-micrometer-1-0-0";
 
     public static RuntimeConfiguration from(Map<String, String> values) {
         RuntimeEnvironment environment = RuntimeEnvironment.parse(required(values, "SCHOLARSENSE_ENV"));
@@ -30,16 +44,25 @@ public record RuntimeConfiguration(
         URI externalBaseUri = externalUri(
                 required(values, "SCHOLARSENSE_EXTERNAL_BASE_URI"), environment);
         int httpPort = httpPort(values.get("SCHOLARSENSE_HTTP_PORT"));
-        boolean identityEnabled = strictBoolean(values.get("SCHOLARSENSE_IDENTITY_ENABLED"));
+        boolean identityEnabled = strictBoolean(
+                values.get("SCHOLARSENSE_IDENTITY_ENABLED"), "SCHOLARSENSE_IDENTITY_ENABLED");
+        boolean auditLedgerEnabled = strictBoolean(
+                values.get("SCHOLARSENSE_AUDIT_LEDGER_ENABLED"), "SCHOLARSENSE_AUDIT_LEDGER_ENABLED");
         if (identityEnabled && role != RuntimeRole.WEB_API) {
             throw new ConfigurationException(
                     "CONFIG_ROLE_CAPABILITY_MISMATCH",
                     "SCHOLARSENSE_IDENTITY_ENABLED",
                     "identity access can only be enabled for web-api");
         }
+        if (auditLedgerEnabled && role != RuntimeRole.WORKER) {
+            throw new ConfigurationException(
+                    "CONFIG_ROLE_CAPABILITY_MISMATCH",
+                    "SCHOLARSENSE_AUDIT_LEDGER_ENABLED",
+                    "audit ledger collection can only be enabled for worker");
+        }
         String clockSourceReference = null;
         String clockSourceValue = values.get("SCHOLARSENSE_CLOCK_SOURCE_REF");
-        if (identityEnabled) {
+        if (identityEnabled || auditLedgerEnabled) {
             clockSourceReference = environmentReference(
                     required(values, "SCHOLARSENSE_CLOCK_SOURCE_REF"),
                     "SCHOLARSENSE_CLOCK_SOURCE_REF", "config", environment);
@@ -47,6 +70,24 @@ public record RuntimeConfiguration(
             clockSourceReference = environmentReference(
                     clockSourceValue.trim(), "SCHOLARSENSE_CLOCK_SOURCE_REF", "config", environment);
         }
+        String auditIngestionPolicyReference = controlledAuditReference(
+                values, "SCHOLARSENSE_AUDIT_INGESTION_POLICY_REF", environment,
+                auditLedgerEnabled, AUDIT_INGESTION_POLICY);
+        String auditHashProfileReference = controlledAuditReference(
+                values, "SCHOLARSENSE_AUDIT_HASH_PROFILE_REF", environment,
+                auditLedgerEnabled, AUDIT_HASH_PROFILE);
+        String auditCollectorReference = controlledAuditReference(
+                values, "SCHOLARSENSE_AUDIT_COLLECTOR_REF", environment,
+                auditLedgerEnabled, AUDIT_COLLECTOR);
+        String auditVerifierReference = controlledAuditReference(
+                values, "SCHOLARSENSE_AUDIT_VERIFIER_REF", environment,
+                auditLedgerEnabled, AUDIT_VERIFIER);
+        String auditAlertTransportReference = controlledAuditReference(
+                values, "SCHOLARSENSE_AUDIT_ALERT_TRANSPORT_REF", environment,
+                auditLedgerEnabled, AUDIT_ALERT_TRANSPORT);
+        String auditMetricBindingReference = controlledAuditReference(
+                values, "SCHOLARSENSE_AUDIT_METRIC_BINDING_REF", environment,
+                auditLedgerEnabled, AUDIT_METRIC_BINDING);
         return new RuntimeConfiguration(
                 environment,
                 role,
@@ -57,7 +98,14 @@ public record RuntimeConfiguration(
                 externalBaseUri,
                 httpPort,
                 identityEnabled,
-                clockSourceReference);
+                auditLedgerEnabled,
+                clockSourceReference,
+                auditIngestionPolicyReference,
+                auditHashProfileReference,
+                auditCollectorReference,
+                auditVerifierReference,
+                auditAlertTransportReference,
+                auditMetricBindingReference);
     }
 
     private static String required(Map<String, String> values, String field) {
@@ -83,6 +131,26 @@ public record RuntimeConfiguration(
                     "CONFIG_INVALID", field, "must identify one environment-scoped resource");
         }
         return value;
+    }
+
+    private static String controlledAuditReference(
+            Map<String, String> values,
+            String field,
+            RuntimeEnvironment environment,
+            boolean required,
+            String expectedResource) {
+        String raw = values.get(field);
+        if ((raw == null || raw.isBlank()) && !required) {
+            return null;
+        }
+        String reference = environmentReference(
+                RuntimeConfiguration.required(values, field), field, "config", environment);
+        URI uri = parseUri(reference, field);
+        if (!("/" + expectedResource).equals(uri.getPath())) {
+            throw new ConfigurationException(
+                    "CONFIG_STALE_REFERENCE", field, "must reference the current controlled version");
+        }
+        return reference;
     }
 
     private static String storageNamespace(String value, RuntimeEnvironment environment) {
@@ -145,7 +213,7 @@ public record RuntimeConfiguration(
         }
     }
 
-    private static boolean strictBoolean(String value) {
+    private static boolean strictBoolean(String value, String field) {
         if (value == null || value.isBlank() || "false".equals(value)) {
             return false;
         }
@@ -153,6 +221,6 @@ public record RuntimeConfiguration(
             return true;
         }
         throw new ConfigurationException(
-                "CONFIG_INVALID", "SCHOLARSENSE_IDENTITY_ENABLED", "must be true or false");
+                "CONFIG_INVALID", field, "must be true or false");
     }
 }

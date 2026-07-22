@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "AUDIT-LEDGER-NEGATIVE-FIXTURES-1.0.0",
+  "cases": [
+    {"id": "unknown-ledger-major", "target": "ledger-record", "mutation": "schemaVersion=AUDIT-LEDGER-RECORD-2.0.0", "expectedCode": "AUDIT_LEDGER_FIXTURE_SCHEMA_REJECTED"},
+    {"id": "idempotency-collision", "target": "ingress", "mutation": "same-auditId-different-sourceEventId", "expectedCode": "AUDIT_INGESTION_DUPLICATE_CONFLICT"},
+    {"id": "finding-sensitive-key", "target": "finding", "mutation": "studentId=2026000001", "expectedCode": "AUDIT_LEDGER_SENSITIVE_FIELD_FORBIDDEN"},
+    {"id": "degraded-boundary-below", "target": "policy", "mutation": "oldestAge=59,count=9999", "expectedState": "healthy"},
+    {"id": "blocked-boundary-below", "target": "policy", "mutation": "oldestAge=299,count=49999", "expectedState": "degraded"},
+    {"id": "duplicate-json-key", "target": "canonical-json", "rawJson": "{\"traceId\":\"a\",\"traceId\":\"b\"}", "expectedCode": "AUDIT_CANONICAL_JSON_DUPLICATE_KEY"},
+    {"id": "invalid-sequence", "target": "ledger-record", "mutation": "ledgerSequence=0", "expectedCode": "AUDIT_LEDGER_FIXTURE_SCHEMA_REJECTED"},
+    {"id": "invalid-entry-hash", "target": "ledger-record", "mutation": "entryHash=xyz", "expectedCode": "AUDIT_LEDGER_FIXTURE_SCHEMA_REJECTED"},
+    {"id": "alert-raw-payload", "target": "alert", "mutation": "payload={...}", "expectedCode": "AUDIT_LEDGER_SENSITIVE_FIELD_FORBIDDEN"}
+  ]
+}

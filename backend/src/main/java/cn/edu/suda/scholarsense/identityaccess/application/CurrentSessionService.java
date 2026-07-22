@@ -14,6 +14,7 @@ public final class CurrentSessionService {
     private final IdentityAuditPort audit;
     private final SensitiveReadTransactionPort transaction;
     private final Clock clock;
+    private final HighRiskOperationGuard auditAvailability;
 
     public CurrentSessionService(
             IdentitySessionRepository sessions,
@@ -22,15 +23,28 @@ public final class CurrentSessionService {
             IdentityAuditPort audit,
             SensitiveReadTransactionPort transaction,
             Clock clock) {
+        this(sessions, authorization, auditFacts, audit, transaction, clock, traceId -> {});
+    }
+
+    public CurrentSessionService(
+            IdentitySessionRepository sessions,
+            AuthorizationRecalculationPort authorization,
+            IdentityAuditFactFactory auditFacts,
+            IdentityAuditPort audit,
+            SensitiveReadTransactionPort transaction,
+            Clock clock,
+            HighRiskOperationGuard auditAvailability) {
         this.sessions = sessions;
         this.authorization = authorization;
         this.auditFacts = auditFacts;
         this.audit = audit;
         this.transaction = transaction;
         this.clock = clock;
+        this.auditAvailability = java.util.Objects.requireNonNull(auditAvailability, "auditAvailability");
     }
 
     public CurrentSessionProjection current(String internalSessionId, String sourceIp, String traceId) {
+        auditAvailability.requireAvailable(traceId);
         ReadOutcome outcome = transaction.execute(
                 () -> currentInTransaction(internalSessionId, sourceIp, traceId));
         if (outcome.failure() != null) {

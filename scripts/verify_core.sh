@@ -25,6 +25,7 @@ echo "[verify-core] audit and standard-library regression"
   "$TOOLCHAIN" python3 -B scripts/check_contract_seeds.py .
   "$TOOLCHAIN" python3 -B scripts/check_identity_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_contracts.py .
+  "$TOOLCHAIN" python3 -B scripts/check_audit_ledger_contracts.py .
   if [[ "$MODE" == "--review" ]]; then
     "$TOOLCHAIN" python3 -B scripts/check_identity_runtime_evidence.py . --review
     "$TOOLCHAIN" python3 -B scripts/check_host_deployment.py . --review
