@@ -24,7 +24,7 @@
     {"path": "contracts/identity/examples/valid/version-conflict-error.json", "sha256": "b5d8a8927868c2405eb626d6da92b5a3e53b26a3fbd345df9d1ac0c4791a7650"},
     {"path": "contracts/identity/identity-runtime-profile-1.0.0.json", "sha256": "24a5aeaeae4aac1bf40a86ccebcb8a7515f846997e97565ef22d1e770c51bf25"},
     {"path": "contracts/identity/identity-runtime-profile.schema.json", "sha256": "539c9e605528a117738f80a80dd7f986ab17293c78d1698a7838f9dfe53471f6"},
-    {"path": "contracts/identity/reauthentication.schema.json", "sha256": "e56ab409316f8c55af80be08016efcd7233ddbcd81f9f076f735cc74ea69c4d2"},
+    {"path": "contracts/identity/reauthentication.schema.json", "sha256": "d571ef8363c903522748da3c43eda0cbcfc70c42e6b7bba8263f69f0c5ee744a"},
     {"path": "contracts/identity/session-command.schema.json", "sha256": "a9d9d876123aa256b440ff680eb99ea71ba436ae3eb1b736c6a2cc492f31b639"}
   ]
 }

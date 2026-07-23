@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/audit-retention/retention-schedule-1.0.0.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "scheduleVersion", "dataClass", "retentionYears", "windowSemantics", "trustedTimeRequired", "legalHoldPrecedence", "approved"],
+  "properties": {
+    "schemaVersion": {"const": "AUDIT-RETENTION-SCHEDULE-1.0.0"},
+    "scheduleVersion": {"type": "string", "pattern": "^RS-[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "dataClass": {"const": "security-and-business-audit"},
+    "retentionYears": {"type": "integer", "minimum": 1},
+    "windowSemantics": {"const": "[startAt,endAt)"},
+    "trustedTimeRequired": {"const": true},
+    "legalHoldPrecedence": {"const": true},
+    "approved": {"type": "boolean"}
+  }
+}

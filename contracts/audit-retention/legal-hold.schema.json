@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/audit-retention/legal-hold-1.0.0.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "holdId", "version", "purpose", "scope", "authority", "startAt", "endAt", "reviewAt"],
+  "properties": {
+    "schemaVersion": {"const": "AUDIT-LEGAL-HOLD-1.0.0"},
+    "holdId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "version": {"type": "integer", "minimum": 1},
+    "purpose": {"type": "string", "minLength": 1, "maxLength": 256},
+    "scope": {"type": "string", "minLength": 1, "maxLength": 256},
+    "authority": {"type": "string", "minLength": 1, "maxLength": 256},
+    "startAt": {"type": "string", "format": "date-time"},
+    "endAt": {"type": "string", "format": "date-time"},
+    "reviewAt": {"type": "string", "format": "date-time"}
+  }
+}

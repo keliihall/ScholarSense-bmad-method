@@ -12,7 +12,8 @@ const identity = useIdentityState();
 const client = new IdentitySessionClient();
 const reason = computed(() => typeof route.query.reason === 'string' ? route.query.reason : 'session-expired');
 const targetRouteId = computed<ReauthenticationTarget>(() =>
-  route.query.targetRouteId === 'shell.session' ? 'shell.session' : 'shell.home');
+  route.query.targetRouteId === 'shell.session' || route.query.targetRouteId === 'audit.search'
+    ? route.query.targetRouteId : 'shell.home');
 const copy = computed(() => ({
   'session-expired': ['会话已失效', '当前身份无法确认。', '重新认证'],
   'network-failure': ['网络连接失败', '暂时无法核验当前身份。', '检查连接'],

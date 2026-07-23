@@ -35,6 +35,8 @@ import cn.edu.suda.scholarsense.shared.time.TimeSynchronizationStatusProvider;
 import cn.edu.suda.scholarsense.shared.time.TrustedClockConstraints;
 import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
 import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityPort;
+import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchAuthorizationPort;
+import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchTokenQueryPort;
 import java.time.Clock;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -74,6 +76,20 @@ public class IdentityAccessConfiguration {
         return (domain, value) -> {
             throw new IllegalStateException("AUDIT_TOKENIZATION_BINDING_UNAVAILABLE");
         };
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AuditSearchAuthorizationPort.class)
+    AuditSearchAuthorizationPort unavailableAuditSearchAuthorizationPort() {
+        // Story 1.6/1.7 replaces this only after authoritative roles, scopes and revocation are bound.
+        return AuditSearchAuthorizationPort.productionFailClosed();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AuditSearchTokenQueryPort.class)
+    AuditSearchTokenQueryPort unavailableAuditSearchTokenQueryPort() {
+        // A deployment must bind the approved retained-key catalog; never fall back to the current key.
+        return AuditSearchTokenQueryPort.productionFailClosed();
     }
 
     @Bean

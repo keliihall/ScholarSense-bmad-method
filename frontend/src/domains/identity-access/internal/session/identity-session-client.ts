@@ -7,7 +7,7 @@ export type CurrentIdentitySession = Readonly<{
   profileVersion: 'ISP-1.0.0';
 }>;
 
-export type ReauthenticationTarget = 'shell.home' | 'shell.session';
+export type ReauthenticationTarget = 'shell.home' | 'shell.session' | 'audit.search';
 
 export type CsrfProof = Readonly<{
   headerName: string;

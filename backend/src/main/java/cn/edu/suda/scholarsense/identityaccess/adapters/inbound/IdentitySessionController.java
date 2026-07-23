@@ -156,7 +156,7 @@ public final class IdentitySessionController {
     }
 
     public record ReauthenticationRequest(
-            @NotBlank @Pattern(regexp = "shell\\.(home|session)") String targetRouteId,
+            @NotBlank @Pattern(regexp = "(?:shell\\.(?:home|session)|audit\\.search)") String targetRouteId,
             @NotBlank @Pattern(regexp = "https://[A-Za-z0-9.-]+") String origin,
             @Pattern(regexp = "[A-Za-z0-9_-]{1,128}") String opaqueContext) {}
 

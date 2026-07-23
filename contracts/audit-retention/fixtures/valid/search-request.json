@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "AUDIT-SEARCH-REQUEST-1.0.0",
+  "view": "business",
+  "actorRef": "anonymous-fixture-actor",
+  "objectType": "fixture-record",
+  "objectRef": "anonymous-fixture-object",
+  "action": "identity.session.view",
+  "occurredFrom": "2026-06-01T00:00:00Z",
+  "occurredTo": "2026-07-01T00:00:00Z",
+  "outcome": "accepted",
+  "traceId": "trace-audit-search-001",
+  "page": 0,
+  "size": 25,
+  "asOfSequence": 42
+}

@@ -12,7 +12,8 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 class RequestOriginValidationFilterTest {
     private final RequestOriginValidationFilter filter = new RequestOriginValidationFilter(
-            new RequestOriginPolicy("https://app.stage.invalid"));
+            new RequestOriginPolicy("https://app.stage.invalid"),
+            (requester, reason, trace) -> {});
 
     @Test
     void permitsExactOriginAndThenLetsCsrfFilterDecideTheToken() throws Exception {

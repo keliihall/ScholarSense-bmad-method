@@ -6,6 +6,8 @@ import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditFactFact
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditPort;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySessionRepository;
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCommandService;
+import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchSecurityAuditPort;
+import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchCsrfProofPort;
 import org.springframework.http.HttpMethod;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,6 +24,10 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "scholarsense.identity.enabled", havingValue = "true")
@@ -42,6 +48,8 @@ public class IdentitySecurityConfiguration {
             OidcSessionEstablishmentService sessionEstablishment,
             ContinuationService continuations,
             SessionCommandService sessionCommands,
+            AuditSearchSecurityAuditPort auditSearchSecurityAudit,
+            AuditSearchCsrfProofPort auditSearchCsrfProofs,
             @Value("${scholarsense.identity.application-origin}") String applicationOrigin)
             throws Exception {
         var resolver = new DefaultOAuth2AuthorizationRequestResolver(registrations);
@@ -56,6 +64,13 @@ public class IdentitySecurityConfiguration {
                 .secure(true)
                 .httpOnly(true)
                 .sameSite("Lax"));
+        AuthorizationManager<RequestAuthorizationContext> auditSearchRequestGate =
+                (authentication, context) -> {
+                    var current = authentication.get();
+                    return new AuthorizationDecision(
+                            current != null && current.isAuthenticated()
+                                    && !(current instanceof AnonymousAuthenticationToken));
+                };
         http.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/actuator/health/**", "/oauth2/**", "/login/oauth2/**",
@@ -63,6 +78,8 @@ public class IdentitySecurityConfiguration {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/identity-sessions/csrf")
                         .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/audit-records/search")
+                        .access(auditSearchRequestGate)
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/identity-sessions/logout",
                                 "/api/v1/identity-sessions/account-switches",
@@ -79,12 +96,20 @@ public class IdentitySecurityConfiguration {
                 .csrf(csrf -> csrf.csrfTokenRepository(csrfTokens))
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint(
-                                IdentitySecurityErrorHandlers.authenticationEntryPoint())
+                                IdentitySecurityErrorHandlers.authenticationEntryPoint(
+                                        auditSearchSecurityAudit))
                         .accessDeniedHandler(
-                                IdentitySecurityErrorHandlers.accessDeniedHandler(sessionCommands)))
+                                IdentitySecurityErrorHandlers.accessDeniedHandler(
+                                        sessionCommands, auditSearchSecurityAudit)))
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .addFilterBefore(
-                        new RequestOriginValidationFilter(new RequestOriginPolicy(applicationOrigin)),
+                        new RequestOriginValidationFilter(
+                                new RequestOriginPolicy(applicationOrigin),
+                                auditSearchSecurityAudit),
+                        CsrfFilter.class)
+                .addFilterAfter(
+                        new AuditSearchCsrfReplayFilter(
+                                csrfTokens, auditSearchSecurityAudit, auditSearchCsrfProofs),
                         CsrfFilter.class);
         return http.build();
     }

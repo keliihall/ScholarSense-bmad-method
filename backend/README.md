@@ -11,7 +11,7 @@ _bmad/scripts/with_pab_toolchain.sh backend/mvnw -f backend/pom.xml clean verify
 ```
 
 真实数据库验收使用精确 PostgreSQL 18.4，并同时验证干净迁移与
-V000001→V000002→V000003→V000004 升级、并发、回滚、重放、权限和特权篡改路径：
+V000001→V000002→V000003→V000004→V000005 升级、搜索分页/索引、并发、回滚、重放、权限和特权篡改路径：
 
 ```bash
 scripts/run_audit_postgresql_tests.sh
@@ -30,7 +30,8 @@ The Maven coordinates remain `0.1.0-SNAPSHOT`, but the only runnable release art
 启用 audit worker 时还必须提供与当前环境及 v1 版本精确匹配的
 `SCHOLARSENSE_AUDIT_INGESTION_POLICY_REF`、`SCHOLARSENSE_AUDIT_HASH_PROFILE_REF`、
 `SCHOLARSENSE_AUDIT_COLLECTOR_REF`、`SCHOLARSENSE_AUDIT_VERIFIER_REF`、
-`SCHOLARSENSE_AUDIT_ALERT_TRANSPORT_REF` 和 `SCHOLARSENSE_AUDIT_METRIC_BINDING_REF`。
+`SCHOLARSENSE_AUDIT_ALERT_TRANSPORT_REF`、`SCHOLARSENSE_AUDIT_METRIC_BINDING_REF` 和
+`SCHOLARSENSE_AUDIT_RETENTION_CAPABILITY_REF`。
 这些引用从 jar 内的版本化 `audit-runtime/*.properties` 资源解析出阈值、批次、租约和调度周期；
 资源缺失、字段漂移、跨环境或旧版本引用均在 scheduler 启动前失败。时钟引用必须在装配时完整；
 若部署证据提供器暂无新鲜证据，worker 保持存活，但所有主动取时、审计归集和高风险路径以
@@ -52,8 +53,10 @@ The Maven coordinates remain `0.1.0-SNAPSHOT`, but the only runnable release art
 才允许高风险路径恢复。
 
 该中心账本是在线 tamper-evident 控制：最小权限和 SHA-256 链能发现在线数据库内的删除或改写，
-但数据库 owner 仍可实施篡改，因此它不是 WORM、外部时间戳服务或离线归档。跨介质归档、检索与
-证据导出属于后续 Story 1.5，不能由本实现推断为已经交付。
+但数据库 owner 仍可实施篡改，因此它不是 WORM、外部时间戳服务或离线归档。Story 1.5 已交付
+授权搜索 conformance、存储中立归档端口及匿名 fixture 的 retention 演练；capability manifest 仍固定
+`productionAuthorizationEnabled=false`、`productionArchiveEnabled=false` 和
+`deletionReceiptRuntimeIssuable=false`。这不能被解释为校方 WORM 已绑定或全域生产销毁已经完成。
 
 完整启动和验证命令由仓库根 README 与 `scripts/` 质量入口统一提供。
 

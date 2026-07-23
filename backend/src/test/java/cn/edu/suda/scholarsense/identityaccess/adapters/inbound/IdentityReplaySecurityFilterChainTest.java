@@ -20,6 +20,8 @@ import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditPort;
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCommandResult;
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCommandService;
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCommandType;
+import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchSecurityAuditPort;
+import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchCsrfProofPort;
 import jakarta.servlet.Filter;
 import jakarta.servlet.http.Cookie;
 import java.time.Clock;
@@ -36,7 +38,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockServletContext;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -47,6 +54,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 class IdentityReplaySecurityFilterChainTest {
     private static final String KEY = "idem_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ";
@@ -128,6 +137,93 @@ class IdentityReplaySecurityFilterChainTest {
                 eq(SessionCommandType.LOGOUT), eq(UNKNOWN_KEY), anyString(), anyString());
     }
 
+    @Test
+    void auditSearchCannotBypassCsrfOrSameOriginRequestGuards() throws Exception {
+        var missingCsrf = mvc.perform(post("/api/v1/audit-records/search")
+                        .secure(true)
+                        .header("Origin", "https://app.stage.invalid")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"view\":\"business\",\"page\":0,\"size\":25}"))
+                .andReturn().getResponse();
+        assertEquals(403, missingCsrf.getStatus());
+        verify(context.getBean(AuditSearchSecurityAuditPort.class)).recordRejected(
+                eq("anonymous-security-boundary"),
+                eq("AUDIT_SEARCH_REQUEST_REJECTED"),
+                anyString());
+
+        var csrfResponse = mvc.perform(get("/api/v1/identity-sessions/csrf").secure(true))
+                .andReturn().getResponse();
+        Cookie csrfCookie = csrfResponse.getCookie("__Host-ScholarSense-CSRF");
+        var matcher = Pattern.compile("\\\"token\\\":\\\"([^\\\"]+)\\\"")
+                .matcher(csrfResponse.getContentAsString());
+        assertTrue(matcher.find());
+        var crossOrigin = mvc.perform(post("/api/v1/audit-records/search")
+                        .secure(true)
+                        .cookie(csrfCookie)
+                        .header("Origin", "https://attacker.invalid")
+                        .header("X-CSRF-TOKEN", matcher.group(1))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"view\":\"business\",\"page\":0,\"size\":25}"))
+                .andReturn().getResponse();
+        assertEquals(403, crossOrigin.getStatus());
+        assertTrue(crossOrigin.getContentAsString().contains("\"fieldErrors\""));
+        verify(context.getBean(AuditSearchSecurityAuditPort.class)).recordRejected(
+                eq("anonymous-security-boundary"),
+                eq("AUDIT_SEARCH_ORIGIN_FORBIDDEN"),
+                anyString());
+    }
+
+    @Test
+    void auditSearchCsrfProofIsConsumedAndCannotBeReplayed() throws Exception {
+        var session = new MockHttpSession(context.getServletContext());
+        var csrfResponse = mvc.perform(get("/api/v1/identity-sessions/csrf")
+                        .session(session)
+                        .secure(true))
+                .andReturn().getResponse();
+        Cookie csrfCookie = csrfResponse.getCookie("__Host-ScholarSense-CSRF");
+        var matcher = Pattern.compile("\\\"token\\\":\\\"([^\\\"]+)\\\"")
+                .matcher(csrfResponse.getContentAsString());
+        assertTrue(matcher.find());
+        String csrfToken = matcher.group(1);
+        var security = SecurityContextHolder.createEmptyContext();
+        security.setAuthentication(new UsernamePasswordAuthenticationToken(
+                "sp_RWxQcW41M2dSeHVIZ0JpYw",
+                "n/a",
+                java.util.List.of(new SimpleGrantedAuthority("ROLE_AUDITOR"))));
+        session.setAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                security);
+
+        var first = mvc.perform(post("/api/v1/audit-records/search")
+                        .session(session)
+                        .secure(true)
+                        .cookie(csrfCookie)
+                        .header("Origin", "https://app.stage.invalid")
+                        .header("X-CSRF-TOKEN", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"view\":\"business\",\"page\":0,\"size\":25}"))
+                .andReturn().getResponse();
+        assertEquals(200, first.getStatus());
+
+        var replay = mvc.perform(post("/api/v1/audit-records/search")
+                        .session(session)
+                        .secure(true)
+                        .cookie(csrfCookie)
+                        .header("Origin", "https://app.stage.invalid")
+                        .header("X-CSRF-TOKEN", csrfToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"view\":\"business\",\"page\":0,\"size\":25}"))
+                .andReturn().getResponse();
+
+        assertEquals(403, replay.getStatus());
+        assertEquals("no-store", replay.getHeader("Cache-Control"));
+        assertEquals("no-referrer", replay.getHeader("Referrer-Policy"));
+        verify(context.getBean(AuditSearchSecurityAuditPort.class)).recordRejected(
+                eq("sp_RWxQcW41M2dSeHVIZ0JpYw"),
+                eq("AUDIT_SEARCH_CSRF_PROOF_REPLAYED"),
+                anyString());
+    }
+
     @Configuration(proxyBeanMethods = false)
     @EnableWebMvc
     @EnableWebSecurity
@@ -146,12 +242,22 @@ class IdentityReplaySecurityFilterChainTest {
             return mock(IdentityAuditFactFactory.class);
         }
         @Bean IdentityAuditPort identityAuditPort() { return mock(IdentityAuditPort.class); }
+        @Bean AuditSearchSecurityAuditPort auditSearchSecurityAuditPort() {
+            return mock(AuditSearchSecurityAuditPort.class);
+        }
+        @Bean AuditSearchCsrfProofPort auditSearchCsrfProofPort() {
+            var consumed = java.util.concurrent.ConcurrentHashMap.<String>newKeySet();
+            return (sessionDigest, proofDigest) -> consumed.add(sessionDigest + ":" + proofDigest);
+        }
         @Bean Clock clock() { return Clock.systemUTC(); }
         @Bean IdentitySessionController identitySessionController(
                 CurrentSessionService current,
                 ContinuationService continuations,
                 SessionCommandService commands) {
             return new IdentitySessionController(current, continuations, commands);
+        }
+        @Bean AuditSearchProbeController auditSearchProbeController() {
+            return new AuditSearchProbeController();
         }
         @Bean ClientRegistrationRepository clientRegistrationRepository() {
             return new InMemoryClientRegistrationRepository(registration());
@@ -174,6 +280,14 @@ class IdentityReplaySecurityFilterChainTest {
                     .userNameAttributeName("sub")
                     .clientName("School IdP")
                     .build();
+        }
+    }
+
+    @RestController
+    static final class AuditSearchProbeController {
+        @PostMapping("/api/v1/audit-records/search")
+        java.util.Map<String, Object> search() {
+            return java.util.Map.of("accepted", true);
         }
     }
 }

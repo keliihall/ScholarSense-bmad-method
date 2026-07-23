@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/audit-retention/archive-manifest-1.0.0.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "scheduleVersion", "scopeType", "fixtureId", "scopeHash", "sequenceStart", "sequenceEnd", "recordCount", "firstPreviousHash", "lastEntryHash", "archiveObjectId", "archiveObjectVersionId", "contentDigest", "createdBy", "trustedCreatedAt", "traceId", "storageBoundary", "readBackVerified"],
+  "properties": {
+    "schemaVersion": {"const": "AUDIT-ARCHIVE-MANIFEST-1.0.0"},
+    "scheduleVersion": {"const": "RS-1.0.0"},
+    "scopeType": {"const": "audit-domain"},
+    "fixtureId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "scopeHash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sequenceStart": {"type": "integer", "minimum": 1},
+    "sequenceEnd": {"type": "integer", "minimum": 1},
+    "recordCount": {"type": "integer", "minimum": 1},
+    "firstPreviousHash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "lastEntryHash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "archiveObjectId": {"type": "string", "minLength": 1, "maxLength": 256},
+    "archiveObjectVersionId": {"type": "string", "minLength": 1, "maxLength": 256},
+    "contentDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "createdBy": {"type": "string", "minLength": 1, "maxLength": 128},
+    "trustedCreatedAt": {"type": "string", "format": "date-time"},
+    "traceId": {"type": "string", "minLength": 8, "maxLength": 128},
+    "storageBoundary": {"const": "independent-object-lock"},
+    "readBackVerified": {"const": true}
+  }
+}

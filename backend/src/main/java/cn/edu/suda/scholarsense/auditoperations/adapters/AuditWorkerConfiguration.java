@@ -7,6 +7,7 @@ import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditBackl
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditEvidenceRepository;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditLedgerRepository;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditVerificationRunRepository;
+import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditSearchProjectionWriter;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.MicrometerAuditMetricSink;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.SpringAuditTransactionAdapter;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.SpringAuditVerificationTransactionAdapter;
@@ -43,6 +44,7 @@ import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
 import java.net.URI;
 import java.time.Clock;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.List;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -122,6 +124,11 @@ public class AuditWorkerConfiguration {
     }
 
     @Bean
+    JdbcAuditSearchProjectionWriter auditSearchProjectionWriter(JdbcTemplate jdbc) {
+        return new JdbcAuditSearchProjectionWriter(jdbc);
+    }
+
+    @Bean
     JdbcAuditEvidenceRepository auditEvidenceRepository(
             JdbcTemplate jdbc,
             ObjectMapper json,
@@ -149,9 +156,10 @@ public class AuditWorkerConfiguration {
             AuditPolicyPort policy,
             FindingIdPort identifiers,
             CanonicalAuditHasher hasher,
+            JdbcAuditSearchProjectionWriter projection,
             LowCardinalityAuditMetrics metrics) {
         var append = new AuditLedgerAppendService(
-                ledger, evidence, evidence, transactions, clock, policy, identifiers, hasher);
+                ledger, evidence, evidence, transactions, clock, policy, identifiers, hasher, projection);
         var reject = new AuditContractRejectionService(
                 evidence, evidence, transactions, clock, policy, identifiers);
         return new AuditLedgerIngress(append, reject, metrics);
@@ -187,10 +195,10 @@ public class AuditWorkerConfiguration {
 
     @Bean
     JdbcAuditBacklogMeasurementAdapter auditBacklogMeasurements(
-            AuditProducerBacklogPort producer,
+            List<AuditProducerBacklogPort> producers,
             JdbcAuditEvidenceRepository evidence,
             JdbcTemplate jdbc) {
-        return new JdbcAuditBacklogMeasurementAdapter(producer, evidence, jdbc);
+        return new JdbcAuditBacklogMeasurementAdapter(producers, evidence, jdbc);
     }
 
     @Bean

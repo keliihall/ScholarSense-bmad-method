@@ -1,12 +1,78 @@
 {
   "openapi": "3.1.2",
   "info": {
-    "title": "ScholarSense public envelope seed",
-    "version": "0.0.0",
-    "description": "Envelope conventions only; Story 1.1b defines no business operation."
+    "title": "ScholarSense public API",
+    "version": "1.5.0",
+    "description": "Shared error envelope and Story 1.5 read-only audit operations."
   },
-  "paths": {},
+  "paths": {
+    "/api/v1/audit-records/search": {
+      "post": {
+        "operationId": "searchAuditRecords",
+        "summary": "Search the immutable audit projection under a request-time purpose decision",
+        "security": [{"sessionCookie": []}],
+        "parameters": [{
+          "name": "X-CSRF-TOKEN", "in": "header", "required": true,
+          "schema": {"type": "string", "minLength": 16}
+        }],
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "../audit-retention/search-request.schema.json"}}}
+        },
+        "responses": {
+          "200": {
+            "description": "Authorized projected snapshot",
+            "headers": {
+              "Cache-Control": {"schema": {"const": "no-store"}},
+              "Referrer-Policy": {"schema": {"const": "no-referrer"}}
+            },
+            "content": {"application/json": {"schema": {"$ref": "../audit-retention/search-response.schema.json"}}}
+          },
+          "400": {"$ref": "#/components/responses/SafeError"},
+          "403": {"$ref": "#/components/responses/SafeError"},
+          "409": {"$ref": "#/components/responses/SafeError"},
+          "503": {"$ref": "#/components/responses/SafeError"}
+        }
+      }
+    },
+    "/api/v1/audit-retention-executions/{executionId}": {
+      "get": {
+        "operationId": "readAuditRetentionExecution",
+        "summary": "Read purpose-projected audit-domain retention evidence",
+        "security": [{"sessionCookie": []}],
+        "parameters": [
+          {"name": "executionId", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}},
+          {"name": "view", "in": "query", "required": false, "schema": {"type": "string", "enum": ["business", "technical"], "default": "business"}}
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized projected execution evidence",
+            "headers": {
+              "Cache-Control": {"schema": {"const": "no-store"}},
+              "Referrer-Policy": {"schema": {"const": "no-referrer"}}
+            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RetentionEvidenceResponse"}}}
+          },
+          "403": {"$ref": "#/components/responses/SafeError"},
+          "503": {"$ref": "#/components/responses/SafeError"}
+        }
+      }
+    }
+  },
   "components": {
+    "securitySchemes": {
+      "sessionCookie": {"type": "apiKey", "in": "cookie", "name": "__Host-ScholarSense"}
+    },
+    "responses": {
+      "SafeError": {
+        "description": "Non-leaking error envelope",
+        "headers": {
+          "Cache-Control": {"schema": {"const": "no-store"}},
+          "Referrer-Policy": {"schema": {"const": "no-referrer"}}
+        },
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}
+      }
+    },
     "schemas": {
       "ErrorEnvelope": {
         "type": "object",
@@ -67,6 +133,36 @@
           "field": {"type": "string"},
           "code": {"type": "string"},
           "message": {"type": "string"}
+        }
+      },
+      "RetentionEvidenceResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fields"],
+        "properties": {
+          "fields": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["executionId", "scheduleVersion", "state", "nonProductionEvidence"],
+            "properties": {
+              "executionId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+              "scheduleVersion": {"const": "RS-1.0.0"},
+              "state": {"enum": ["queued", "running", "succeeded", "failed", "blocked", "cancelled"]},
+              "nonProductionEvidence": {"const": true},
+              "actorDisplayRef": {"type": "string"},
+              "scopeType": {"type": "string"},
+              "fixtureId": {"type": "string"},
+              "action": {"type": "string"},
+              "asOfSequence": {"type": "integer", "minimum": 0},
+              "sourceLedgerHead": {"type": "integer", "minimum": 0},
+              "projectionWatermark": {"type": "integer", "minimum": 0},
+              "archiveDigest": {"type": "string"},
+              "trustedAt": {"type": "string", "format": "date-time"},
+              "traceId": {"type": "string"},
+              "unmetGuards": {"type": "array", "items": {"type": "string"}},
+              "steps": {"type": "array", "items": {"type": "object"}}
+            }
+          }
         }
       }
     }

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "AUDIT-FIELD-PROJECTION-1.0.0",
+  "rfpVersion": "RFP-1.0.0",
+  "denyOverrides": true,
+  "views": {
+    "business": {"action": "audit.search-business-metadata", "classes": {"B": "clear", "I": "masked", "C": "hidden", "S": "hidden", "E": "hidden", "N": "hidden", "G": "clear", "T": "masked"}},
+    "technical": {"action": "audit.search-technical-metadata", "classes": {"B": "clear", "I": "hidden", "C": "hidden", "S": "hidden", "E": "hidden", "N": "hidden", "G": "masked", "T": "clear"}}
+  },
+  "multiRoleResolution": "most-restrictive-applicable-projection",
+  "hiddenKeyPolicy": "omit-before-dto-construction",
+  "maskedValuePolicy": "request-local-fixed-alias"
+}

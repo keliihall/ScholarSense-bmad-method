@@ -3,6 +3,7 @@ import { nextTick } from 'vue';
 
 import { IdentitySessionClient, useIdentityState } from '../../domains/identity-access';
 import type { ReauthenticationTarget } from '../../domains/identity-access';
+import { auditOperationsRouteContribution } from '../../domains/audit-operations';
 
 
 /** Transport-neutral route contributions; domains may only expose routes through their public entry. */
@@ -11,7 +12,9 @@ export type RouteContribution = Readonly<{
   routes: readonly unknown[];
 }>;
 
-export const routeContributions: readonly RouteContribution[] = Object.freeze([]);
+export const routeContributions: readonly RouteContribution[] = Object.freeze([
+  auditOperationsRouteContribution,
+]);
 
 export const router = createRouter({
   history: createWebHistory('/scholarsense/'),
@@ -43,6 +46,7 @@ export const router = createRouter({
       name: 'shell-recovery',
       component: () => import('../views/ShellRecoveryView.vue'),
     },
+    ...auditOperationsRouteContribution.routes,
   ],
 });
 
@@ -90,5 +94,6 @@ router.afterEach(async () => {
 function protectedTarget(routeName: unknown): ReauthenticationTarget | undefined {
   if (routeName === 'shell-session') return 'shell.session';
   if (routeName === 'shell-home') return 'shell.home';
+  if (routeName === 'audit-search') return 'audit.search';
   return undefined;
 }

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "DELETION-RECEIPT-CONFORMANCE-1.0.0",
+  "conformanceOnly": true,
+  "runtimeIssuable": false,
+  "confirmedWatermarks": {
+    "consumers": 42,
+    "readModels": 42,
+    "objects": 42,
+    "indexes": 42,
+    "caches": 42
+  },
+  "backupLifecycleDays": 35,
+  "backupExpired": true
+}

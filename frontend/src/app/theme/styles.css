@@ -90,6 +90,27 @@ caption { padding: 8px; font-weight: 700; text-align: left; }
 th, td { padding: 8px; border: 1px solid #716762; text-align: left; }
 footer { margin-top: 24px; }
 .explicit-retry { min-height: 40px; }
+.audit-search { min-width: 0; display: grid; gap: 16px; }
+.audit-search > h2 { margin-bottom: 0; }
+.audit-filter { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 16px; border: 1px solid #c9c1bc; border-radius: 8px; background: #fff; }
+.audit-filter label { display: grid; gap: 4px; min-width: 0; font-weight: 700; }
+.audit-filter input,
+.audit-filter select,
+.audit-evidence-form input { width: 100%; min-width: 0; min-height: 40px; padding: 8px; border: 1px solid #716762; border-radius: 4px; color: inherit; background: #fff; }
+.audit-filter-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+.audit-result-state,
+.audit-evidence { padding: 16px; border-left: 6px solid var(--ss-web-primary); background: #fff; }
+.audit-result-state p { margin-top: 0; }
+.audit-table-wrap { max-width: 100%; overflow-x: auto; background: #fff; }
+.audit-table-wrap table { min-width: 720px; }
+.audit-pagination { display: flex; justify-content: center; align-items: center; gap: 12px; }
+.audit-pagination button,
+.audit-result-state button { min-height: 40px; padding: 8px 12px; }
+.audit-evidence-form { display: grid; grid-template-columns: minmax(8rem, 1fr) auto; gap: 8px; align-items: end; }
+.audit-evidence-form label { grid-column: 1 / -1; font-weight: 700; }
+.audit-evidence-list { display: grid; grid-template-columns: minmax(10rem, auto) minmax(0, 1fr); gap: 8px; }
+.audit-evidence-list dt { font-weight: 700; }
+.audit-evidence-list dd { margin: 0; overflow-wrap: anywhere; }
 
 @media (max-width: 767px) {
   .app-shell { width: min(100% - 20px, 720px); padding-block: 16px; }
@@ -97,6 +118,8 @@ footer { margin-top: 24px; }
   .action-target, .explicit-retry { min-height: 44px; }
   .baseline-card { padding: 16px; }
   .shell-card, .state-panel { padding: 16px; }
+  .audit-filter { grid-template-columns: 1fr; }
+  .audit-evidence-form { grid-template-columns: 1fr; }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {

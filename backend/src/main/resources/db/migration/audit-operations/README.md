@@ -7,11 +7,22 @@ verification runs, immutable findings/dispositions, privacy-safe alert outbox an
 observations. Ledger sequence comes only from a transactionally locked head row; PostgreSQL
 sequence/identity is forbidden because rollback must not consume a number.
 
+`V000005` adds the rebuildable authorized-search projection and its monotonic watermark, the
+audit-operations local read-audit fact/outbox, archive manifest, targeted legal hold and
+`RetentionExecution`/step evidence tables. The ledger writer projects a newly appended typed fact
+inside the same transaction. Existing rows are backfilled once by the forward migration; the
+projection is never a source of audit truth and may be rebuilt from the verified ledger.
+
 The writer receives only ledger `SELECT/INSERT` plus the minimum head/receipt/finding/alert columns.
 It never receives ledger `UPDATE/DELETE/TRUNCATE`. Verifier, alert-delivery and online roles remain
 separate. The verifier may read finding dispositions but cannot insert them, so verification cannot
 resolve its own permanent findings. `audit_operations` must not reference the `identity_access` schema; producer backlog and
 relay state cross the module boundary only through `auditoperations.api`.
+
+The search role can only read the projection and execution evidence. The retention executor may
+read the ledger for archive verification and mutate only archive/hold/execution state; it receives
+no `UPDATE`, `DELETE` or `TRUNCATE` privilege on `ao_audit_ledger`. Production ledger retirement
+and cross-domain `DeletionReceipt` issuance remain deliberately absent.
 
 The ledger is an online detection control, not WORM storage. Owner-level tamper is intentionally
 injected by the PostgreSQL verification suite and must be detected by a full-chain verifier. Never

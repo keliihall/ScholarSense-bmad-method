@@ -22,8 +22,8 @@ class MigrationOwnershipContractTest {
         assertEquals(expectedFacts(), result.ownership().entrySet().stream()
                 .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().factOwners())));
         try (var walk = Files.walk(MIGRATIONS)) {
-            assertEquals(4, walk.filter(path -> path.toString().endsWith(".sql")).count(),
-                    "Stories 1.2 through 1.4 own exactly four forward migrations");
+            assertEquals(5, walk.filter(path -> path.toString().endsWith(".sql")).count(),
+                    "Stories 1.2 through 1.5 own exactly five forward migrations");
         }
         Path firstMigration = MIGRATIONS.resolve(
                 "identity-access/V000001__identity-access__session_boundary.sql");
@@ -97,6 +97,32 @@ class MigrationOwnershipContractTest {
         assertTrue(lower.contains("alter table identity_access.ia_local_audit_outbox"));
         assertTrue(lower.contains("alter column attempts type bigint"));
         assertFalse(lower.contains("audit_operations."));
+    }
+
+    @Test
+    void story15MigrationCreatesRebuildableSearchRetentionStateAndKeepsLedgerImmutable()
+            throws Exception {
+        String migration = Files.readString(MIGRATIONS.resolve(
+                "audit-operations/V000005__audit-operations__authorized_search_retention_v1.sql"));
+        String lower = migration.toLowerCase();
+
+        for (String table : Set.of(
+                "ao_audit_search_projection", "ao_local_audit_fact", "ao_local_audit_outbox",
+                "ao_audit_search_csrf_proof",
+                "ao_archive_manifest", "ao_legal_hold", "ao_retention_execution",
+                "ao_retention_execution_step")) {
+            assertTrue(lower.contains("audit_operations." + table), table);
+        }
+        assertTrue(lower.contains("create role scholarsense_audit_search nologin"));
+        assertTrue(lower.contains("create role scholarsense_audit_retention_executor nologin"));
+        assertTrue(lower.contains("grant select on audit_operations.ao_audit_search_projection"));
+        assertTrue(lower.contains(
+                "primary key (browser_session_digest, proof_digest)"));
+        assertFalse(lower.contains("grant update on audit_operations.ao_audit_ledger"));
+        assertFalse(lower.contains("grant delete on audit_operations.ao_audit_ledger"));
+        assertFalse(lower.contains("grant truncate on audit_operations.ao_audit_ledger"));
+        assertFalse(lower.contains("delete from audit_operations.ao_audit_ledger"));
+        assertFalse(lower.contains("identity_access."));
     }
 
     @Test

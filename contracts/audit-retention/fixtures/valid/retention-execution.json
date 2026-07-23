@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "AUDIT-RETENTION-EXECUTION-1.0.0",
+  "executionId": "019d2c7d-4000-7000-8000-000000000015",
+  "scheduleVersion": "RS-1.0.0",
+  "scopeType": "audit-domain",
+  "fixtureId": "anonymous-fixture-2026-001",
+  "scopeHash": "1111111111111111111111111111111111111111111111111111111111111111",
+  "asOfSequence": 42,
+  "requestDigest": "05ce9d008f827a5d78ec129654a8f93808a347eb288dd354a4511969d89b215f",
+  "state": "succeeded",
+  "attemptNo": 1,
+  "fencingToken": 1,
+  "aggregateVersion": 3,
+  "action": "destroy-fixture",
+  "sourceLedgerHead": 42,
+  "projectionWatermark": 42,
+  "archiveDigest": "4444444444444444444444444444444444444444444444444444444444444444",
+  "actor": "audit-retention-fixture-executor",
+  "trustedAt": "2026-07-01T00:00:00Z",
+  "traceId": "trace-retention-execution-001",
+  "nonProductionEvidence": true,
+  "unmetGuards": [],
+  "steps": [
+    {"name": "evaluate", "status": "succeeded", "errorCode": null},
+    {"name": "archive-write", "status": "succeeded", "errorCode": null},
+    {"name": "archive-readback", "status": "succeeded", "errorCode": null},
+    {"name": "destroy-fixture", "status": "succeeded", "errorCode": null},
+    {"name": "persist-evidence", "status": "succeeded", "errorCode": null}
+  ]
+}

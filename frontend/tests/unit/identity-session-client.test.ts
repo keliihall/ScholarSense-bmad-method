@@ -74,6 +74,22 @@ describe('identity session BFF client', () => {
     });
   });
 
+  it('continues audit.search without filters or execution identifiers', async () => {
+    const request = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      continuationCode: 'ct_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQ',
+      expiresAt: '2026-07-20T02:15:00Z',
+      authorizationUri: '/oauth2/authorization/school-idp',
+    }), { status: 200 }));
+    const client = new IdentitySessionClient(request);
+    await client.createReauthentication(
+      'audit.search', 'https://app.stage.invalid',
+      { headerName: 'X-CSRF-TOKEN', value: 'abcdefghijklmnopqrstuvwxyzABCDEF' },
+    );
+    expect(JSON.parse(String(request.mock.calls[0]?.[1]?.body))).toEqual({
+      targetRouteId: 'audit.search', origin: 'https://app.stage.invalid',
+    });
+  });
+
   it('submits logout with CSRF, session version and a stable idempotency key', async () => {
     const request = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
     const client = new IdentitySessionClient(request);

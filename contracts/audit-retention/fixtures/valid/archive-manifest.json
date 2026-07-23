@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "AUDIT-ARCHIVE-MANIFEST-1.0.0",
+  "scheduleVersion": "RS-1.0.0",
+  "scopeType": "audit-domain",
+  "fixtureId": "anonymous-fixture-2026-001",
+  "scopeHash": "1111111111111111111111111111111111111111111111111111111111111111",
+  "sequenceStart": 40,
+  "sequenceEnd": 42,
+  "recordCount": 3,
+  "firstPreviousHash": "2222222222222222222222222222222222222222222222222222222222222222",
+  "lastEntryHash": "3333333333333333333333333333333333333333333333333333333333333333",
+  "archiveObjectId": "fixture/audit-domain/40-42",
+  "archiveObjectVersionId": "fixture-version-1",
+  "contentDigest": "4444444444444444444444444444444444444444444444444444444444444444",
+  "createdBy": "audit-retention-fixture-executor",
+  "trustedCreatedAt": "2026-07-01T00:00:00Z",
+  "traceId": "trace-retention-archive-001",
+  "storageBoundary": "independent-object-lock",
+  "readBackVerified": true
+}
