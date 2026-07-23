@@ -9,10 +9,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditEvidenceRepository;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditLedgerRepository;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditVerificationRunRepository;
+import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditSearchProjectionWriter;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.SpringAuditTransactionAdapter;
 import cn.edu.suda.scholarsense.auditoperations.domain.FindingCode;
 import cn.edu.suda.scholarsense.shared.outbox.LocalAuditFact;
 import cn.edu.suda.scholarsense.shared.outbox.LocalAuditOutboxRecord;
+import cn.edu.suda.scholarsense.runtime.JdbcAuditSearchCsrfProofAdapter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -46,6 +48,14 @@ class AuditLedgerPostgreSqlIT {
         jdbc = new JdbcTemplate(dataSource);
         jdbc.execute("""
                 truncate table audit_operations.ao_availability_observation,
+                  audit_operations.ao_audit_search_csrf_proof,
+                  audit_operations.ao_retention_execution_step,
+                  audit_operations.ao_retention_execution,
+                  audit_operations.ao_legal_hold,
+                  audit_operations.ao_archive_manifest,
+                  audit_operations.ao_local_audit_outbox,
+                  audit_operations.ao_local_audit_fact,
+                  audit_operations.ao_audit_search_projection,
                   audit_operations.ao_alert_outbox,
                   audit_operations.ao_finding_disposition,
                   audit_operations.ao_integrity_finding,
@@ -53,6 +63,11 @@ class AuditLedgerPostgreSqlIT {
                   audit_operations.ao_ingestion_receipt,
                   audit_operations.ao_audit_ledger,
                   audit_operations.ao_audit_ledger_head cascade
+                """);
+        jdbc.update("""
+                update audit_operations.ao_audit_search_projection_watermark
+                set ledger_sequence=0, projected_at='1970-01-01T00:00:00Z'
+                where singleton_id=1
                 """);
         jdbc.update("""
                 insert into audit_operations.ao_audit_ledger_head
@@ -71,12 +86,15 @@ class AuditLedgerPostgreSqlIT {
         assertEquals("180004", jdbc.queryForObject(
                 "select current_setting('server_version_num')", String.class));
         assertEquals(1, tableCount(jdbc, "ao_audit_ledger"));
+        assertEquals(1, tableCount(jdbc, "ao_audit_search_projection"));
+        assertEquals(1, tableCount(jdbc, "ao_retention_execution"));
         JdbcTemplate upgraded = new JdbcTemplate(dataSource(
                 requiredProperty("scholarsense.audit.pg.upgrade-url")));
         assertEquals("180004", upgraded.queryForObject(
                 "select current_setting('server_version_num')", String.class));
         assertEquals(1, tableCount(upgraded, "ao_audit_ledger"));
         assertEquals(1, tableCount(upgraded, "ia_local_audit_outbox"));
+        assertEquals(1, tableCount(upgraded, "ao_audit_search_projection"));
     }
 
     @Test
@@ -97,11 +115,70 @@ class AuditLedgerPostgreSqlIT {
         assertEquals(120L, scalar("select count(*) from audit_operations.ao_ingestion_receipt"));
         assertEquals(120L, scalar("select max(ledger_sequence) from audit_operations.ao_audit_ledger"));
         assertEquals(120L, scalar("select ledger_sequence from audit_operations.ao_audit_ledger_head"));
+        assertEquals(120L, scalar("select count(*) from audit_operations.ao_audit_search_projection"));
+        assertEquals(120L, scalar("select ledger_sequence from audit_operations.ao_audit_search_projection_watermark"));
         assertEquals(0L, scalar("""
                 select count(*) from (
                   select ledger_sequence, row_number() over (order by ledger_sequence) expected
                   from audit_operations.ao_audit_ledger) rows
                 where ledger_sequence<>expected
+                """));
+    }
+
+    @Test
+    void searchProjectionUsesStableSnapshotPaginationAndApprovedSortIndex() throws Exception {
+        AuditLedgerAppendService service = appendService(dataSource);
+        for (int index = 1; index <= 30; index++) service.append(source(index));
+        long asOf = scalar("select ledger_sequence from audit_operations.ao_audit_search_projection_watermark");
+        List<Long> first = jdbc.queryForList("""
+                select ledger_sequence from audit_operations.ao_audit_search_projection
+                where ledger_sequence <= ? order by occurred_at desc, ledger_sequence desc limit 10 offset 0
+                """, Long.class, asOf);
+        service.append(source(31));
+        List<Long> second = jdbc.queryForList("""
+                select ledger_sequence from audit_operations.ao_audit_search_projection
+                where ledger_sequence <= ? order by occurred_at desc, ledger_sequence desc limit 10 offset 10
+                """, Long.class, asOf);
+
+        assertEquals(10, first.size());
+        assertEquals(10, second.size());
+        assertTrue(first.stream().noneMatch(second::contains));
+        assertTrue(java.util.stream.Stream.concat(first.stream(), second.stream())
+                .allMatch(sequence -> sequence <= asOf));
+
+        try (Connection connection = dataSource.getConnection()) {
+            JdbcTemplate planner = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
+            planner.execute("set enable_seqscan=off");
+            planner.execute("set enable_bitmapscan=off");
+            String plan = String.join("\n", planner.queryForList("""
+                    explain (costs off)
+                    select ledger_sequence from audit_operations.ao_audit_search_projection
+                    order by occurred_at desc, ledger_sequence desc limit 10
+                    """, String.class));
+            assertTrue(plan.contains("ao_audit_search_projection_sort_idx"), plan);
+        }
+    }
+
+    @Test
+    void csrfProofConsumptionIsAtomicAcrossConcurrentApplicationNodes() throws Exception {
+        var adapter = new JdbcAuditSearchCsrfProofAdapter(
+                jdbc,
+                new TransactionTemplate(new DataSourceTransactionManager(dataSource)),
+                () -> NOW);
+        try (var executor = Executors.newFixedThreadPool(8)) {
+            var tasks = java.util.stream.IntStream.range(0, 32)
+                    .mapToObj(ignored -> (java.util.concurrent.Callable<Boolean>) () ->
+                            adapter.consume("a".repeat(64), "b".repeat(64)))
+                    .toList();
+            long accepted = 0;
+            for (var result : executor.invokeAll(tasks)) {
+                if (result.get()) accepted++;
+            }
+            assertEquals(1, accepted);
+        }
+        assertEquals(1L, scalar("""
+                select count(*) from audit_operations.ao_audit_search_csrf_proof
+                where browser_session_digest=repeat('a',64) and proof_digest=repeat('b',64)
                 """));
     }
 
@@ -162,8 +239,30 @@ class AuditLedgerPostgreSqlIT {
                 """);
         assertRoleDenied("scholarsense_audit_online",
                 "select count(*) from audit_operations.ao_audit_ledger");
+        assertRoleAllowed("scholarsense_audit_online", """
+                insert into audit_operations.ao_audit_search_csrf_proof (
+                  browser_session_digest, proof_digest, consumed_at, expires_at)
+                values (repeat('c',64), repeat('d',64), now(), now() + interval '8 hours')
+                """);
+        assertRoleAllowed("scholarsense_audit_online", """
+                delete from audit_operations.ao_audit_search_csrf_proof
+                where browser_session_digest=repeat('c',64) and proof_digest=repeat('d',64)
+                """);
         assertRoleDenied("scholarsense_audit_alert_delivery",
                 "select count(*) from audit_operations.ao_integrity_finding");
+        assertRoleAllowed("scholarsense_audit_search",
+                "select count(*) from audit_operations.ao_audit_search_projection");
+        assertRoleDenied("scholarsense_audit_search",
+                "select count(*) from audit_operations.ao_audit_ledger");
+        assertRoleAllowed("scholarsense_audit_retention_executor",
+                "select count(*) from audit_operations.ao_audit_ledger");
+        for (String operation : List.of(
+                "update audit_operations.ao_audit_ledger set entry_hash=entry_hash",
+                "delete from audit_operations.ao_audit_ledger",
+                "truncate audit_operations.ao_audit_ledger")) {
+            assertRoleDenied("scholarsense_audit_search", operation);
+            assertRoleDenied("scholarsense_audit_retention_executor", operation);
+        }
     }
 
     @Test
@@ -256,7 +355,8 @@ class AuditLedgerPostgreSqlIT {
         return new AuditLedgerAppendService(
                 ledger, evidence, evidence,
                 new SpringAuditTransactionAdapter(new TransactionTemplate(manager)),
-                this::now, policy(), this::findingId, new CanonicalAuditHasher());
+                this::now, policy(), this::findingId, new CanonicalAuditHasher(),
+                new JdbcAuditSearchProjectionWriter(template));
     }
 
     private AuditLedgerVerifier verifier() {

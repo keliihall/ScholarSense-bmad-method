@@ -18,6 +18,7 @@ AUDIT_REFERENCE_RESOURCES = {
     "SCHOLARSENSE_AUDIT_VERIFIER_REF": "audit-verifier-1-0-0",
     "SCHOLARSENSE_AUDIT_ALERT_TRANSPORT_REF": "audit-alert-structured-log-1-0-0",
     "SCHOLARSENSE_AUDIT_METRIC_BINDING_REF": "audit-micrometer-1-0-0",
+    "SCHOLARSENSE_AUDIT_RETENTION_CAPABILITY_REF": "audit-retention-capability-1-0-0",
 }
 RUNTIME_KEYS = {
     "SCHOLARSENSE_ENV",
@@ -195,10 +196,36 @@ def _check_openapi(openapi, violations: list[str]) -> None:
         return
     if openapi.get("openapi") != "3.1.2":
         violations.append("OPENAPI_VERSION_INVALID")
-    if openapi.get("paths") != {}:
-        violations.append("OPENAPI_BUSINESS_PATHS_PREMATURE")
+    paths = openapi.get("paths")
+    expected_paths = {
+        "/api/v1/audit-records/search",
+        "/api/v1/audit-retention-executions/{executionId}",
+    }
+    if not isinstance(paths, dict) or set(paths) != expected_paths:
+        violations.append("OPENAPI_AUDIT_PATH_SET_INVALID")
+    else:
+        search = paths["/api/v1/audit-records/search"].get("post", {})
+        evidence = paths["/api/v1/audit-retention-executions/{executionId}"].get("get", {})
+        if search.get("requestBody", {}).get("content", {}).get(
+                "application/json", {}).get("schema", {}).get("$ref") \
+                != "../audit-retention/search-request.schema.json":
+            violations.append("OPENAPI_AUDIT_SEARCH_REQUEST_REF_INVALID")
+        if search.get("responses", {}).get("200", {}).get("content", {}).get(
+                "application/json", {}).get("schema", {}).get("$ref") \
+                != "../audit-retention/search-response.schema.json":
+            violations.append("OPENAPI_AUDIT_SEARCH_RESPONSE_REF_INVALID")
+        if set(search.get("responses", {})) != {"200", "400", "403", "409", "503"}:
+            violations.append("OPENAPI_AUDIT_SEARCH_RESPONSE_SET_INVALID")
+        if set(evidence.get("responses", {})) != {"200", "403", "503"}:
+            violations.append("OPENAPI_AUDIT_EVIDENCE_RESPONSE_SET_INVALID")
+        for operation in (search, evidence):
+            success = operation.get("responses", {}).get("200", {})
+            headers = success.get("headers", {})
+            if headers.get("Cache-Control", {}).get("schema", {}).get("const") != "no-store" \
+                    or headers.get("Referrer-Policy", {}).get("schema", {}).get("const") != "no-referrer":
+                violations.append("OPENAPI_AUDIT_CACHE_BOUNDARY_INVALID")
     schemas = openapi.get("components", {}).get("schemas", {})
-    if set(schemas) != {"ErrorEnvelope", "FieldError"}:
+    if set(schemas) != {"ErrorEnvelope", "FieldError", "RetentionEvidenceResponse"}:
         violations.append("OPENAPI_ENVELOPE_SCOPE_INVALID")
         return
     required = set(schemas["ErrorEnvelope"].get("required", []))
@@ -242,6 +269,13 @@ def _check_openapi(openapi, violations: list[str]) -> None:
                 for name in ("field", "code", "message")
             ):
         violations.append("OPENAPI_FIELD_ERROR_INVALID")
+    evidence = schemas["RetentionEvidenceResponse"]
+    fields = evidence.get("properties", {}).get("fields", {})
+    if evidence.get("additionalProperties") is not False \
+            or fields.get("additionalProperties") is not False \
+            or fields.get("properties", {}).get("nonProductionEvidence") != {"const": True} \
+            or "archiveObjectUrl" in fields.get("properties", {}):
+        violations.append("OPENAPI_AUDIT_EVIDENCE_BOUNDARY_INVALID")
 
 
 def _check_event(event, violations: list[str]) -> None:

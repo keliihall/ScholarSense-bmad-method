@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "AUDIT-RETENTION-SCHEDULE-1.0.0",
+  "scheduleVersion": "RS-1.0.0",
+  "dataClass": "security-and-business-audit",
+  "retentionYears": 3,
+  "windowSemantics": "[startAt,endAt)",
+  "trustedTimeRequired": true,
+  "legalHoldPrecedence": true,
+  "approved": true
+}

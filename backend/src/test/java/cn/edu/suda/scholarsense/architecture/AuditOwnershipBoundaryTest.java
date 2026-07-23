@@ -24,6 +24,21 @@ class AuditOwnershipBoundaryTest {
         assertFalse(identitySources.contains("auditoperations.domain"));
     }
 
+    @Test
+    void story15CannotDeleteProductionLedgerOrIssueCrossDomainDeletionReceipts() throws IOException {
+        Path root = Path.of("src/main/java/cn/edu/suda/scholarsense");
+        String auditSources = sources(root.resolve("auditoperations"));
+        String runtimeSources = sources(root.resolve("runtime"));
+
+        assertFalse(auditSources.toLowerCase(java.util.Locale.ROOT)
+                .contains("delete from audit_operations.ao_audit_ledger"));
+        assertFalse(auditSources.contains("DeletionReceiptIssuer"));
+        assertFalse(auditSources.contains("class DeletionReceipt"));
+        assertFalse(runtimeSources.contains("DeletionReceiptIssuer"));
+        assertTrue(auditSources.contains("SyntheticFixtureDestroyPort"));
+        assertTrue(auditSources.contains("nonProductionEvidence"));
+    }
+
     private static String sources(Path root) throws IOException {
         StringBuilder result = new StringBuilder();
         try (var files = Files.walk(root)) {

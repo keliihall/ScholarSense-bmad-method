@@ -1,0 +1,27 @@
+{
+  "version": "AUDIT-RETENTION-CONTRACT-LOCK-1.0.0",
+  "sourceBaselineCommit": "37be4edaa32330e7ee2867bb38d94c4d2637d64a",
+  "consumedLockDigests": {
+    "audit": "24a4861ddbfa9ac11253a26f6e3c906f1735d73c4d774d713faf9cee9f8cb62f",
+    "auditLedger": "815d81cc991acfd2b0606cd188202957b044289f9b7d5276c7ac8f599ca84991"
+  },
+  "files": [
+    {"path":"contracts/audit-retention/archive-manifest.schema.json","sha256":"f57aabdbd0370aea9c632cb610b781d69342de2ba623731c7851a590488a08bc"},
+    {"path":"contracts/audit-retention/deletion-receipt-conformance.schema.json","sha256":"ac8be47069b23a9885d361ee513ec9d1880b080c86278cdba6ab2791fcc356bc"},
+    {"path":"contracts/audit-retention/field-projection-profile-1.0.0.json","sha256":"9155c9370bb8d1d8de0a878531b44dc01645001e99d02cc129e55a5302d6412c"},
+    {"path":"contracts/audit-retention/field-projection-profile.schema.json","sha256":"b609126d026479eed02b2ca5528028e4ada3939904e328845a2e5bbc7ce9718e"},
+    {"path":"contracts/audit-retention/fixtures/negative-fixtures-1.0.0.json","sha256":"956b51f3d9c4c93992f94152308fd463cdd597012c02a3b65370b173eb8b3229"},
+    {"path":"contracts/audit-retention/fixtures/valid/archive-manifest.json","sha256":"f24806df53e21c927db7a4dbd81a0c6ebe166ae23db782b1a9140cf71d7d3fa8"},
+    {"path":"contracts/audit-retention/fixtures/valid/deletion-receipt.json","sha256":"178b84090ac1ef644201e54dfa9f4501dfeeeb5cc8085c13db6e5767eecc2161"},
+    {"path":"contracts/audit-retention/fixtures/valid/legal-hold.json","sha256":"91d7ce3dcc3fd43f3d7202ce9eb778dd2d91ee571d2952550d49c81385c27964"},
+    {"path":"contracts/audit-retention/fixtures/valid/retention-execution.json","sha256":"73c2202b1c71a5c06ec84a2ee8a85661efdf1a8552651c63b1fc5ac8c63db3e2"},
+    {"path":"contracts/audit-retention/fixtures/valid/retention-schedule.json","sha256":"12caf22d07ca1bbd5b1c496eee2cfd842ed4ccd3b022d143f149b21a1030a29b"},
+    {"path":"contracts/audit-retention/fixtures/valid/search-request.json","sha256":"0c87715205a740d9e58d3cc3bf3866f158c567811338179434dc5bc783a5a778"},
+    {"path":"contracts/audit-retention/fixtures/valid/search-response.json","sha256":"9db035f5ebe75cae5c66e85702f492ee067460559932e2352cad0a98128c629a"},
+    {"path":"contracts/audit-retention/legal-hold.schema.json","sha256":"47ef8432ad553093f89adeae2aec73eaecdf81f26370a34420cfa38db8b3bda1"},
+    {"path":"contracts/audit-retention/retention-execution.schema.json","sha256":"7254d47affb3b3e775fb562dc13f4abfdcf62fd57407af2baf1dc04549f4be9d"},
+    {"path":"contracts/audit-retention/retention-schedule.schema.json","sha256":"c4fa853f90023614dc4df02962ac2e7dc67e165e1c1074c4092387441b7ed1de"},
+    {"path":"contracts/audit-retention/search-request.schema.json","sha256":"5676175a495c311a794b8b76c8ef190aceb6e8911b075da9acb818c00271aec8"},
+    {"path":"contracts/audit-retention/search-response.schema.json","sha256":"b805698a782864a36b29a018f6e16495c7cd53bd4cf616e703c82f6c58ac02e0"}
+  ]
+}

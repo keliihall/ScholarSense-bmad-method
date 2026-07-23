@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/audit-retention/deletion-receipt-conformance-1.0.0.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "conformanceOnly", "runtimeIssuable", "confirmedWatermarks", "backupLifecycleDays", "backupExpired"],
+  "properties": {
+    "schemaVersion": {"const": "DELETION-RECEIPT-CONFORMANCE-1.0.0"},
+    "conformanceOnly": {"const": true},
+    "runtimeIssuable": {"const": false},
+    "confirmedWatermarks": {"type": "object", "additionalProperties": false, "required": ["consumers", "readModels", "objects", "indexes", "caches"], "properties": {"consumers": {"type": "integer", "minimum": 0}, "readModels": {"type": "integer", "minimum": 0}, "objects": {"type": "integer", "minimum": 0}, "indexes": {"type": "integer", "minimum": 0}, "caches": {"type": "integer", "minimum": 0}}},
+    "backupLifecycleDays": {"const": 35},
+    "backupExpired": {"type": "boolean"}
+  }
+}

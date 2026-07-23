@@ -35,6 +35,9 @@ final class IdentityErrorResponseWriter {
             String code) throws IOException {
         IdentityErrorEnvelope envelope = envelope(contractCode(code), request);
         response.setStatus(status);
+        response.setHeader("Cache-Control", "no-store");
+        response.setHeader("Pragma", "no-cache");
+        response.setHeader("Referrer-Policy", "no-referrer");
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.getWriter().write("{\"code\":\"" + envelope.code()

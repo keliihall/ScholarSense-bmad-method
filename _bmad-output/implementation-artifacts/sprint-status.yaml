@@ -1,5 +1,5 @@
 # generated: 2026-07-17T20:58:14+0800
-# last_updated: 2026-07-22T22:35:51+0800
+# last_updated: 2026-07-23T23:17:39+0800
 # project: ScholarSense-bmad-method
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - 回顾产生的行动项追加到 action_items，sprint-status 会呈现未完成项
 
 generated: 2026-07-17T20:58:14+0800
-last_updated: 2026-07-22T22:35:51+0800
+last_updated: 2026-07-23T23:17:39+0800
 project: ScholarSense-bmad-method
 project_key: NOKEY
 tracking_system: file-system
@@ -56,7 +56,7 @@ development_status:
   1-2-接入统一门户-sso-与可恢复应用壳: done
   1-3-建立模块内原子审计事实: done
   1-4-归集不可变审计账本并检测篡改: done
-  1-5-提供授权审计检索-归档与销毁证明: backlog
+  1-5-提供授权审计检索-归档与销毁证明: done
   1-6a-同步权威身份与组织: backlog
   1-6b-同步责任关系并执行每日对账: backlog
   1-6c-发布撤权-更正与失效传播事实: backlog

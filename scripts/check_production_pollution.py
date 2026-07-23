@@ -67,7 +67,10 @@ APPROVED_TEST_LOOPBACKS = {
         "http://127.0.0.1:4173",
     ),
 }
-APPROVED_PERSISTENCE_ASSERTIONS = {"frontend/tests/baseline/identity-shell.spec.ts"}
+APPROVED_PERSISTENCE_ASSERTIONS = {
+    "frontend/tests/baseline/identity-shell.spec.ts",
+    "frontend/tests/baseline/audit-search.spec.ts",
+}
 APPROVED_MIGRATION_PREFIX = "backend/src/main/resources/db/migration/"
 NPMRC_FORBIDDEN = re.compile(
     r"(?im)^\s*(?://[^\s]+/:)?(?:_authToken|_password|username|cache|userconfig)\s*="

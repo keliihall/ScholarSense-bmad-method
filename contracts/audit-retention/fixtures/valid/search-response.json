@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "AUDIT-SEARCH-RESPONSE-1.0.0",
+  "items": [
+    {
+      "recordId": "019d2c7d-4000-7000-8000-000000000042",
+      "ledgerSequence": 42,
+      "occurredAt": "2026-06-30T12:00:00Z",
+      "outcome": "accepted",
+      "factSchemaVersion": "LOCAL-AUDIT-FACT-1.0.0",
+      "policyVersion": "RFP-1.0.0",
+      "retentionScheduleVersion": "RS-1.0.0",
+      "actorDisplayRef": "actor-7A2D91F0",
+      "objectDisplayRef": "object-4E90AC31",
+      "businessActionCategory": "session-access",
+      "businessObjectCategory": "identity-session",
+      "rolePackageSummary": "business-audit",
+      "projectionScope": "fixture-current-organization",
+      "producerModule": "identity-*",
+      "traceId": "trace-masked-0001"
+    }
+  ],
+  "page": 0,
+  "size": 25,
+  "total": 1,
+  "asOfSequence": 42,
+  "sourceLedgerHead": 44,
+  "projectionWatermark": 42,
+  "dataCutoffAt": "2026-07-01T00:00:00Z",
+  "retentionScheduleVersion": "RS-1.0.0",
+  "roleFieldPolicyVersion": "RFP-1.0.0",
+  "projectionStatus": "degraded"
+}

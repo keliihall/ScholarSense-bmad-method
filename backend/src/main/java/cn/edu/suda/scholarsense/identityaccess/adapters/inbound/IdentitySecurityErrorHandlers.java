@@ -2,6 +2,7 @@ package cn.edu.suda.scholarsense.identityaccess.adapters.inbound;
 
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCommandService;
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCommandType;
+import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchSecurityAuditPort;
 import cn.edu.suda.scholarsense.shared.trace.W3cTraceId;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -10,13 +11,20 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 final class IdentitySecurityErrorHandlers {
     private IdentitySecurityErrorHandlers() {}
 
-    static AuthenticationEntryPoint authenticationEntryPoint() {
-        return (request, response, failure) -> IdentityErrorResponseWriter.write(
-                request, response, HttpServletResponse.SC_UNAUTHORIZED,
-                "IDENTITY_SESSION_REQUIRED");
+    static AuthenticationEntryPoint authenticationEntryPoint(AuditSearchSecurityAuditPort audit) {
+        return (request, response, failure) -> {
+            if (AuditSearchSecurityRejection.record(
+                    request, response, audit, "AUDIT_SEARCH_AUTHENTICATION_REQUIRED")) {
+                IdentityErrorResponseWriter.write(
+                        request, response, HttpServletResponse.SC_UNAUTHORIZED,
+                        "IDENTITY_SESSION_REQUIRED");
+            }
+        };
     }
 
-    static AccessDeniedHandler accessDeniedHandler(SessionCommandService commands) {
+    static AccessDeniedHandler accessDeniedHandler(
+            SessionCommandService commands,
+            AuditSearchSecurityAuditPort audit) {
         return (request, response, failure) -> {
             SessionCommandType type = commandType(request.getRequestURI());
             if (type != null) {
@@ -28,9 +36,12 @@ final class IdentitySecurityErrorHandlers {
                                 request.getHeader("Traceparent"),
                                 request.getMethod() + ":" + request.getRequestURI()));
             }
-            IdentityErrorResponseWriter.write(
-                    request, response, HttpServletResponse.SC_FORBIDDEN,
-                    "IDENTITY_SESSION_REQUIRED");
+            if (AuditSearchSecurityRejection.record(
+                    request, response, audit, "AUDIT_SEARCH_REQUEST_REJECTED")) {
+                IdentityErrorResponseWriter.write(
+                        request, response, HttpServletResponse.SC_FORBIDDEN,
+                        "IDENTITY_SESSION_REQUIRED");
+            }
         };
     }
 

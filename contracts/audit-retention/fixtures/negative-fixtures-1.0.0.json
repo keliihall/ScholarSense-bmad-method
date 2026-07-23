@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "AUDIT-RETENTION-NEGATIVE-FIXTURES-1.0.0",
+  "cases": [
+    {"id": "unknown-major", "expectedCode": "AUDIT_RETENTION_UNKNOWN_MAJOR"},
+    {"id": "hidden-field", "expectedCode": "AUDIT_RETENTION_FORBIDDEN_FIELD"},
+    {"id": "policy-drift", "expectedCode": "AUDIT_RETENTION_POLICY_DRIFT"},
+    {"id": "token-leak", "expectedCode": "AUDIT_RETENTION_FORBIDDEN_FIELD"},
+    {"id": "forged-production-receipt", "expectedCode": "AUDIT_RETENTION_PRODUCTION_RECEIPT_FORBIDDEN"},
+    {"id": "missing-consumer-watermark", "expectedCode": "AUDIT_RETENTION_RECEIPT_CONFORMANCE_INVALID"},
+    {"id": "backup-not-expired", "expectedCode": "AUDIT_RETENTION_RECEIPT_CONFORMANCE_INVALID"}
+  ]
+}

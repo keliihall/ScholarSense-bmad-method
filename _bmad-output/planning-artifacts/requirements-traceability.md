@@ -48,6 +48,8 @@ derivedFrom:
 
 `AAB-1.0.0` 是后续窄域 companion：仅使 1.1c/1.1d 的 App/WebView 基线与运行报告为 `not-applicable + runtimeEvidenceClaim=none`，同时保持 1.1d 的 Web 浏览器/视觉/无障碍正式证据必需。它不把 FR-55、NFR-18/NFR-29/NFR-31/NFR-34 或 Story 7.x 写成通过；NFR-31 与真实 App/WebView/真机证据的最终 owner 仍为 7.1/7.x。
 
+Story 1.5 runtime companion（2026-07-23）：FR-8 的授权搜索/字段投影/归档与 retention conformance 由本 Story 提供；`conformanceVerified=true`。生产权威角色尚待 Story 1.6/1.7，因此 `productionAuthorizationEnabled=false`，RFP fixture 不得激活生产搜索。独立生产 WORM adapter 与真实跨域 `DeletionReceipt` 仍分别等待基础设施绑定和 Story 6.6；当前证据只允许 `scopeType=audit-domain`、`nonProductionEvidence=true`。
+
 Story 1.1d 的规划准入与完成平台分离：当前基线足以开始 U1 本地可复现构建合同；真实 Git/CI、digest-addressed store、attestation/signing、受保护环境、正式 Web runner 与 promotion endpoint 必须由 `CISB-1.0.0` 以实际值另行冻结。CISB 未完成时，U2—U4 与整体 `review/done` 保持不可验收，不得把 planning `ready` 解读为已有运行平台。
 
 ## Gate 批准登记

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/audit-retention/retention-execution-1.0.0.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "executionId", "scheduleVersion", "scopeType", "fixtureId", "scopeHash", "asOfSequence", "requestDigest", "state", "attemptNo", "fencingToken", "aggregateVersion", "action", "sourceLedgerHead", "projectionWatermark", "archiveDigest", "actor", "trustedAt", "traceId", "nonProductionEvidence", "unmetGuards", "steps"],
+  "properties": {
+    "schemaVersion": {"const": "AUDIT-RETENTION-EXECUTION-1.0.0"},
+    "executionId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "scheduleVersion": {"type": "string", "pattern": "^RS-[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "scopeType": {"enum": ["audit-domain", "cross-domain"]},
+    "fixtureId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "scopeHash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "asOfSequence": {"type": "integer", "minimum": 0},
+    "requestDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "state": {"enum": ["queued", "running", "succeeded", "failed", "blocked", "cancelled"]},
+    "attemptNo": {"type": "integer", "minimum": 1},
+    "fencingToken": {"type": "integer", "minimum": 1},
+    "aggregateVersion": {"type": "integer", "minimum": 1},
+    "action": {"enum": ["archive", "destroy-fixture"]},
+    "sourceLedgerHead": {"type": "integer", "minimum": 0},
+    "projectionWatermark": {"type": "integer", "minimum": 0},
+    "archiveDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "actor": {"type": "string", "minLength": 1, "maxLength": 128},
+    "trustedAt": {"type": "string", "format": "date-time"},
+    "traceId": {"type": "string", "minLength": 8, "maxLength": 128},
+    "nonProductionEvidence": {"type": "boolean"},
+    "unmetGuards": {"type": "array", "uniqueItems": true, "items": {"enum": ["schedule-approved", "ledger-healthy", "range-verified", "archive-readback-verified", "trusted-time-fresh", "legal-hold-clear", "watermark-stable"]}},
+    "steps": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["name", "status", "errorCode"], "properties": {"name": {"enum": ["evaluate", "archive-write", "archive-readback", "destroy-fixture", "persist-evidence"]}, "status": {"enum": ["pending", "succeeded", "failed", "blocked"]}, "errorCode": {"type": ["string", "null"]}}}}
+  }
+}

@@ -36,6 +36,20 @@ class ContinuationServiceTest {
     }
 
     @Test
+    void acceptsOnlyTheNonSensitiveAuditSearchRouteIdWithoutFilterContext() {
+        FakeContinuationRepository repository = new FakeContinuationRepository();
+        ContinuationService service = service(repository, NOW);
+
+        ContinuationCreated created = service.create(
+                "browser-session-1", "https://app.stage.invalid", "audit.search", null);
+
+        ContinuationTarget target = service.consume(
+                created.continuationCode(), "browser-session-1", "https://app.stage.invalid");
+        assertEquals("audit.search", target.routeId());
+        assertEquals(null, target.opaqueContext());
+    }
+
+    @Test
     void rejectsOpenRedirectCrossOriginUnknownBusinessAndExpiredTargetsWithOneSemantic() {
         for (String target : new String[] {
                 "https://attacker.invalid/steal", "//attacker.invalid/steal", "/absolute-path", "work-item.unknown"

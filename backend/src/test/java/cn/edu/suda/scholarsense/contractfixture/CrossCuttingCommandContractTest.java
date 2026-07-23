@@ -25,7 +25,7 @@ class CrossCuttingCommandContractTest {
         assertFalse(Files.exists(Path.of(
                 "src/main/java/cn/edu/suda/scholarsense/contractfixture")));
         try (var walk = Files.walk(Path.of("src/main/resources/db/migration"))) {
-            assertEquals(4, walk.filter(path -> path.toString().endsWith(".sql")).count());
+            assertEquals(5, walk.filter(path -> path.toString().endsWith(".sql")).count());
         }
     }
 

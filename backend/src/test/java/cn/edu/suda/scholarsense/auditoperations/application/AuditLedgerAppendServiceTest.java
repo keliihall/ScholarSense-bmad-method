@@ -37,6 +37,7 @@ class AuditLedgerAppendServiceTest {
         assertEquals(first.entryHash(), retry.entryHash());
         assertEquals(1, fixture.repository.entries.size());
         assertEquals(1, fixture.repository.head.ledgerSequence());
+        assertEquals(List.of(1L), fixture.projectedSequences);
         assertEquals(2, fixture.transactions);
         assertEquals(1, fixture.repository.duplicateObservations);
     }
@@ -75,6 +76,7 @@ class AuditLedgerAppendServiceTest {
         private final List<IntegrityFinding> findings = new ArrayList<>();
         private final List<IntegrityFinding> alerts = new ArrayList<>();
         private int transactions;
+        private final List<Long> projectedSequences = new ArrayList<>();
         private final AuditLedgerAppendService service;
 
         private Fixture() {
@@ -121,7 +123,8 @@ class AuditLedgerAppendServiceTest {
                     }
                 },
                 ignored -> UUID.fromString("019bf18e-6c00-7000-8000-000000000010"),
-                new CanonicalAuditHasher());
+                new CanonicalAuditHasher(),
+                entry -> projectedSequences.add(entry.ledgerSequence()));
         }
     }
 

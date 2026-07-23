@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/audit-retention/search-response-1.0.0.schema.json",
+  "title": "Projected audit search response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "items", "page", "size", "total", "asOfSequence", "sourceLedgerHead", "projectionWatermark", "dataCutoffAt", "retentionScheduleVersion", "roleFieldPolicyVersion", "projectionStatus"],
+  "properties": {
+    "schemaVersion": {"const": "AUDIT-SEARCH-RESPONSE-1.0.0"},
+    "items": {"type": "array", "items": {"$ref": "#/$defs/item"}},
+    "page": {"type": "integer", "minimum": 0},
+    "size": {"type": "integer", "minimum": 1, "maximum": 100},
+    "total": {"type": "integer", "minimum": 0},
+    "asOfSequence": {"type": "integer", "minimum": 0},
+    "sourceLedgerHead": {"type": "integer", "minimum": 0},
+    "projectionWatermark": {"type": "integer", "minimum": 0},
+    "dataCutoffAt": {"type": "string", "format": "date-time"},
+    "retentionScheduleVersion": {"const": "RS-1.0.0"},
+    "roleFieldPolicyVersion": {"const": "RFP-1.0.0"},
+    "projectionStatus": {"enum": ["current", "degraded"]}
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recordId", "ledgerSequence", "occurredAt", "outcome", "factSchemaVersion", "policyVersion", "retentionScheduleVersion"],
+      "properties": {
+        "recordId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "ledgerSequence": {"type": "integer", "minimum": 1},
+        "occurredAt": {"type": "string", "format": "date-time"},
+        "outcome": {"type": "string", "minLength": 1, "maxLength": 32},
+        "factSchemaVersion": {"type": "string", "minLength": 1, "maxLength": 64},
+        "policyVersion": {"type": "string", "minLength": 1, "maxLength": 64},
+        "retentionScheduleVersion": {"const": "RS-1.0.0"},
+        "actorDisplayRef": {"type": "string", "pattern": "^actor-[A-Z0-9]{8}$"},
+        "objectDisplayRef": {"type": "string", "pattern": "^object-[A-Z0-9]{8}$"},
+        "businessActionCategory": {"type": "string", "minLength": 1, "maxLength": 64},
+        "businessObjectCategory": {"type": "string", "minLength": 1, "maxLength": 64},
+        "rolePackageSummary": {"type": "string", "minLength": 1, "maxLength": 64},
+        "projectionScope": {"type": "string", "minLength": 1, "maxLength": 128},
+        "producerModule": {"type": "string", "minLength": 1, "maxLength": 64},
+        "eventType": {"type": "string", "minLength": 1, "maxLength": 128},
+        "reasonCode": {"type": "string", "minLength": 1, "maxLength": 128},
+        "traceId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$"},
+        "integrityStatus": {"enum": ["verified", "unverified"]},
+        "archiveStatus": {"enum": ["online", "archived"]},
+        "projectionStatus": {"enum": ["current", "degraded"]},
+        "archiveDigestReference": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "sourceNetworkRecorded": {"type": "boolean"}
+      }
+    }
+  }
+}

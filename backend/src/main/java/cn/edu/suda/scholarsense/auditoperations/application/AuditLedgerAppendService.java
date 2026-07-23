@@ -22,6 +22,7 @@ public final class AuditLedgerAppendService implements AuditLedgerAppendUseCase 
     private final AuditPolicyPort policy;
     private final FindingIdPort findingIds;
     private final CanonicalAuditHasher hasher;
+    private final AuditSearchProjectionWriter projection;
 
     public AuditLedgerAppendService(
             LedgerRepository ledger,
@@ -31,7 +32,8 @@ public final class AuditLedgerAppendService implements AuditLedgerAppendUseCase 
             AuditClock clock,
             AuditPolicyPort policy,
             FindingIdPort findingIds,
-            CanonicalAuditHasher hasher) {
+            CanonicalAuditHasher hasher,
+            AuditSearchProjectionWriter projection) {
         this.ledger = Objects.requireNonNull(ledger);
         this.findings = Objects.requireNonNull(findings);
         this.alerts = Objects.requireNonNull(alerts);
@@ -40,6 +42,7 @@ public final class AuditLedgerAppendService implements AuditLedgerAppendUseCase 
         this.policy = Objects.requireNonNull(policy);
         this.findingIds = Objects.requireNonNull(findingIds);
         this.hasher = Objects.requireNonNull(hasher);
+        this.projection = Objects.requireNonNull(projection);
     }
 
     @Override
@@ -97,6 +100,7 @@ public final class AuditLedgerAppendService implements AuditLedgerAppendUseCase 
                 fingerprint,
                 source.fact());
         ledger.insert(entry);
+        projection.project(entry);
         ledger.updateHead(head, new LedgerHead(sequence, entryHash));
         ledger.recordAppended(
                 findingIds.newId(collectedAt), source, fingerprint, entry, collectedAt);

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/audit-retention/field-projection-profile.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "rfpVersion", "denyOverrides", "views", "multiRoleResolution", "hiddenKeyPolicy", "maskedValuePolicy"],
+  "properties": {
+    "schemaVersion": {"const": "AUDIT-FIELD-PROJECTION-1.0.0"},
+    "rfpVersion": {"const": "RFP-1.0.0"},
+    "denyOverrides": {"const": true},
+    "views": {"type": "object", "additionalProperties": false, "required": ["business", "technical"], "properties": {"business": {"$ref": "#/$defs/view"}, "technical": {"$ref": "#/$defs/view"}}},
+    "multiRoleResolution": {"const": "most-restrictive-applicable-projection"},
+    "hiddenKeyPolicy": {"const": "omit-before-dto-construction"},
+    "maskedValuePolicy": {"const": "request-local-fixed-alias"}
+  },
+  "$defs": {
+    "view": {"type": "object", "additionalProperties": false, "required": ["action", "classes"], "properties": {"action": {"type": "string", "minLength": 1}, "classes": {"type": "object", "additionalProperties": false, "required": ["B", "I", "C", "S", "E", "N", "G", "T"], "properties": {"B": {"enum": ["clear", "masked", "hidden"]}, "I": {"enum": ["clear", "masked", "hidden"]}, "C": {"enum": ["clear", "masked", "hidden"]}, "S": {"enum": ["clear", "masked", "hidden"]}, "E": {"enum": ["clear", "masked", "hidden"]}, "N": {"enum": ["clear", "masked", "hidden"]}, "G": {"enum": ["clear", "masked", "hidden"]}, "T": {"enum": ["clear", "masked", "hidden"]}}}}}
+  }
+}

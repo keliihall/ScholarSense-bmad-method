@@ -95,6 +95,11 @@
       "type": "string",
       "pattern": "^config://(dev|test|stage|prod)/audit-micrometer-1-0-0$",
       "description": "Environment-scoped required metrics backend binding."
+    },
+    "SCHOLARSENSE_AUDIT_RETENTION_CAPABILITY_REF": {
+      "type": "string",
+      "pattern": "^config://(dev|test|stage|prod)/audit-retention-capability-1-0-0$",
+      "description": "Capability manifest binding; v1 records conformance true while production authorization/archive remain disabled."
     }
   },
   "allOf": [
@@ -119,7 +124,8 @@
           "SCHOLARSENSE_AUDIT_COLLECTOR_REF",
           "SCHOLARSENSE_AUDIT_VERIFIER_REF",
           "SCHOLARSENSE_AUDIT_ALERT_TRANSPORT_REF",
-          "SCHOLARSENSE_AUDIT_METRIC_BINDING_REF"
+          "SCHOLARSENSE_AUDIT_METRIC_BINDING_REF",
+          "SCHOLARSENSE_AUDIT_RETENTION_CAPABILITY_REF"
         ]
       }
     }

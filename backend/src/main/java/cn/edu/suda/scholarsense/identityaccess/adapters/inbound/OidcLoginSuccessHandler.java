@@ -67,8 +67,11 @@ public final class OidcLoginSuccessHandler implements AuthenticationSuccessHandl
 
             String target = "/scholarsense/";
             if (resolved != null) {
-                target = "shell.session".equals(resolved.routeId())
-                        ? "/scholarsense/session" : "/scholarsense/";
+                target = switch (resolved.routeId()) {
+                    case "shell.session" -> "/scholarsense/session";
+                    case "audit.search" -> "/scholarsense/audit/search";
+                    default -> "/scholarsense/";
+                };
             }
             response.sendRedirect(target);
         } catch (RuntimeException failure) {

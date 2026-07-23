@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCommandService;
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCommandType;
+import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchSecurityAuditPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -23,7 +24,7 @@ class IdentitySecurityErrorHandlersTest {
         var request = request();
         var response = new MockHttpServletResponse();
 
-        IdentitySecurityErrorHandlers.authenticationEntryPoint().commence(
+        IdentitySecurityErrorHandlers.authenticationEntryPoint((requester, reason, trace) -> {}).commence(
                 request, response,
                 new AuthenticationCredentialsNotFoundException("raw provider diagnostic"));
 
@@ -36,7 +37,8 @@ class IdentitySecurityErrorHandlersTest {
         var response = new MockHttpServletResponse();
         SessionCommandService commands = mock(SessionCommandService.class);
 
-        IdentitySecurityErrorHandlers.accessDeniedHandler(commands).handle(
+        IdentitySecurityErrorHandlers.accessDeniedHandler(
+                commands, (requester, reason, trace) -> {}).handle(
                 request, response, new AccessDeniedException("raw csrf diagnostic"));
 
         assertEnvelope(response, 403);
@@ -73,5 +75,7 @@ class IdentitySecurityErrorHandlersTest {
         assertTrue(body.contains("\"traceId\":\"0123456789abcdef0123456789abcdef\""));
         assertTrue(body.contains("\"fieldErrors\":[]"));
         assertFalse(body.contains("raw"));
+        assertEquals("no-store", response.getHeader("Cache-Control"));
+        assertEquals("no-referrer", response.getHeader("Referrer-Policy"));
     }
 }

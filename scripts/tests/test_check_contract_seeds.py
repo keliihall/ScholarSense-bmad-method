@@ -20,13 +20,13 @@ class ContractSeedTest(unittest.TestCase):
     def test_production_contract_seeds_pass(self) -> None:
         self.assertEqual([], validate(PROJECT_ROOT))
 
-    def test_business_openapi_path_is_rejected(self) -> None:
+    def test_unapproved_openapi_path_is_rejected(self) -> None:
         with self.fixture() as root:
             path = root / "contracts/openapi/envelope.openapi.json"
             value = json.loads(path.read_text(encoding="utf-8"))
             value["paths"] = {"/api/v1/clues": {}}
             path.write_text(json.dumps(value), encoding="utf-8")
-            self.assert_reason(root, "OPENAPI_BUSINESS_PATHS_PREMATURE")
+            self.assert_reason(root, "OPENAPI_AUDIT_PATH_SET_INVALID")
 
     def test_business_event_contract_is_rejected(self) -> None:
         with self.fixture() as root:
@@ -67,6 +67,7 @@ class ContractSeedTest(unittest.TestCase):
             "SCHOLARSENSE_AUDIT_VERIFIER_REF",
             "SCHOLARSENSE_AUDIT_ALERT_TRANSPORT_REF",
             "SCHOLARSENSE_AUDIT_METRIC_BINDING_REF",
+            "SCHOLARSENSE_AUDIT_RETENTION_CAPABILITY_REF",
         }
 
         self.assertTrue(audit_keys.isdisjoint(roles["requiredEnvironment"]))
