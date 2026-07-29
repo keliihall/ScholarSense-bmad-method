@@ -1,0 +1,71 @@
+{
+  "$schema": "./role-mapping.schema.json",
+  "version": "IDENTITY-ROLE-MAPPING-1.0.0",
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "environment": "sandbox",
+  "productionEligible": false,
+  "providedBy": "SRC-P0-RESPONSIBILITY-001 controlled sandbox source owner",
+  "approvedBy": "Hei",
+  "approvedAt": "2026-07-25T08:00:00+08:00",
+  "effectiveAt": "2026-07-25T08:00:00+08:00",
+  "digest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+  "entries": [
+    {
+      "sourceRoleCode": "SANDBOX_COUNSELOR",
+      "targetRoleId": "R1-COUNSELOR",
+      "conditions": {
+        "employmentStatus": "active",
+        "organizationTypes": ["college", "department"]
+      }
+    },
+    {
+      "sourceRoleCode": "SANDBOX_COLLEGE_MANAGER",
+      "targetRoleId": "R2-COLLEGE-MANAGER",
+      "conditions": {
+        "employmentStatus": "active",
+        "organizationTypes": ["college"]
+      }
+    },
+    {
+      "sourceRoleCode": "SANDBOX_STUDENT_AFFAIRS",
+      "targetRoleId": "R3-STUDENT-AFFAIRS",
+      "conditions": {
+        "employmentStatus": "active",
+        "organizationTypes": ["school"]
+      }
+    },
+    {
+      "sourceRoleCode": "SANDBOX_SCHOOL_LEADER",
+      "targetRoleId": "R4-SCHOOL-LEADER",
+      "conditions": {
+        "employmentStatus": "active",
+        "organizationTypes": ["school"]
+      }
+    },
+    {
+      "sourceRoleCode": "SANDBOX_COLLABORATOR",
+      "targetRoleId": "R5-COLLABORATOR",
+      "conditions": {
+        "employmentStatus": "active",
+        "organizationTypes": ["department"]
+      }
+    },
+    {
+      "sourceRoleCode": "SANDBOX_DATA_OWNER",
+      "targetRoleId": "R6-DATA-OWNER",
+      "conditions": {
+        "employmentStatus": "active",
+        "organizationTypes": ["college", "department", "school"]
+      }
+    },
+    {
+      "sourceRoleCode": "SANDBOX_PLATFORM_OPS",
+      "targetRoleId": "R7-PLATFORM-OPS",
+      "conditions": {
+        "employmentStatus": "active",
+        "organizationTypes": ["school"],
+        "forbidBusinessRoleSelfGrant": true
+      }
+    }
+  ]
+}

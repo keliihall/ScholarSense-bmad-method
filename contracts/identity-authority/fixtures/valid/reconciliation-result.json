@@ -1,0 +1,18 @@
+{
+  "$schema": "../../reconciliation-result.schema.json",
+  "reconciliationId": "019c1234-0000-7000-8000-000000000031",
+  "scope": "identity-org-sandbox-sample",
+  "sourceVersion": 7,
+  "watermark": 7,
+  "expectedDigest": "sha256:4ecbacdf745aca2c85d3b3d2585303901733d3030a09f2547f2c3f2702fb92f2",
+  "actualDigest": "sha256:4ecbacdf745aca2c85d3b3d2585303901733d3030a09f2547f2c3f2702fb92f2",
+  "expectedCount": 3,
+  "actualCount": 3,
+  "matched": 3,
+  "missing": 0,
+  "unexpected": 0,
+  "versionDrift": 0,
+  "generatedAt": "2026-07-24T00:02:00Z",
+  "traceId": "0123456789abcdef0123456789abcdef",
+  "mutationApplied": false
+}

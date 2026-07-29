@@ -14,10 +14,13 @@ Future migrations must:
 - obtain a new global sequence number; sequence reuse is rejected even across owner directories.
 
 The contract is enforced by the JDK suite and by `scripts/run_audit_postgresql_tests.sh` against
-PostgreSQL 18.4. V000003/V000004/V000005 are tested on both a clean
-V000001→V000002→V000003→V000004→V000005 path and an upgrade containing a preserved legacy audit
-row. V000005 additionally proves search projection backfill/watermark, cross-node atomic one-time
-CSRF proof consumption, stable indexed pagination, retention evidence tables, least-privilege
-read/executor roles, and the continued absence of ledger
-update/delete/truncate privileges. The audit conformance template proves the future module
-pattern without creating production tables for inactive modules.
+PostgreSQL 18.4. V000003/V000004/V000005/V000006 are tested on both a clean
+V000001→V000002→V000003→V000004→V000005→V000006 path and an upgrade containing a preserved legacy
+audit row. V000005 proves search projection backfill/watermark, cross-node atomic one-time CSRF
+proof consumption, stable indexed pagination, retention evidence tables, least-privilege
+read/executor roles, and the continued absence of ledger update/delete/truncate privileges.
+V000006 proves authoritative-identity inbox encryption metadata, exact-once projection/checkpoint/
+audit atomicity, persistent job and attempt state, lease fencing and expired-worker takeover,
+reconciliation/SLO evidence, replay coverage, and separate least-privilege sync-worker/current-
+reader roles. The audit conformance template proves the future module pattern without creating
+production tables for inactive modules.

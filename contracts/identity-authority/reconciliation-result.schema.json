@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/identity-authority/reconciliation-result.schema.json",
+  "title": "Read-only identity incremental reconciliation result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "reconciliationId",
+    "scope",
+    "sourceVersion",
+    "watermark",
+    "expectedDigest",
+    "actualDigest",
+    "expectedCount",
+    "actualCount",
+    "matched",
+    "missing",
+    "unexpected",
+    "versionDrift",
+    "generatedAt",
+    "traceId",
+    "mutationApplied"
+  ],
+  "properties": {
+    "$schema": {"type": "string", "const": "../../reconciliation-result.schema.json"},
+    "reconciliationId": {"type": "string", "pattern": "^[0-9a-f-]{36}$"},
+    "scope": {"type": "string", "const": "identity-org-sandbox-sample"},
+    "sourceVersion": {"type": "integer", "minimum": 1},
+    "watermark": {"type": "integer", "minimum": 1},
+    "expectedDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "actualDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "expectedCount": {"type": "integer", "minimum": 0},
+    "actualCount": {"type": "integer", "minimum": 0},
+    "matched": {"type": "integer", "minimum": 0},
+    "missing": {"type": "integer", "minimum": 0},
+    "unexpected": {"type": "integer", "minimum": 0},
+    "versionDrift": {"type": "integer", "minimum": 0},
+    "generatedAt": {"type": "string", "format": "date-time"},
+    "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "mutationApplied": {"type": "boolean", "const": false}
+  }
+}

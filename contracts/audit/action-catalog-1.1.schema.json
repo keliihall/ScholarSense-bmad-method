@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/audit/action-catalog-1.1.schema.json",
+  "title": "ScholarSense audit action catalog successor delta",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "version", "supersedes", "mode", "outcomes", "reasonCodes", "actions"],
+  "properties": {
+    "$schema": {"const": "./action-catalog-1.1.schema.json"},
+    "version": {"const": "AUDIT-ACTION-CATALOG-1.1.0"},
+    "supersedes": {"const": "AUDIT-ACTION-CATALOG-1.0.0"},
+    "mode": {"const": "successor-delta"},
+    "outcomes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["accepted", "rejected"]}
+    },
+    "reasonCodes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"}
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code", "ownerModule", "activationStory", "status",
+          "allowedOutcomes", "allowedReasonCodes", "allowedResults"
+        ],
+        "properties": {
+          "code": {
+            "pattern": "^identity\\.(session\\.view|sync\\.(applied|rejected|failed|reconciled))$"
+          },
+          "ownerModule": {"const": "identity-access"},
+          "activationStory": {"const": "1-6a"},
+          "status": {"const": "active"},
+          "allowedOutcomes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"enum": ["accepted", "rejected"]}
+          },
+          "allowedReasonCodes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"}
+          },
+          "allowedResults": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["outcome", "reasonCode"],
+              "properties": {
+                "outcome": {"enum": ["accepted", "rejected"]},
+                "reasonCode": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -6,18 +6,23 @@ import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcRefreshTran
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcSessionTransactionAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcSensitiveReadTransactionAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcIdentityAuditAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcAuthoritativeIdentityContextAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.HttpRemoteIdentityProviderClient;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.KmsEnvelopeClient;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.KmsEnvelopeDecryptClient;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.KmsEnvelopeDecryptionAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.KmsEnvelopeEncryptionAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.ClasspathIdentityAuthorizationPolicyAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.RemoteLogoutScheduler;
 import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationRecalculationPort;
+import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationDecision;
+import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationFreshness;
 import cn.edu.suda.scholarsense.identityaccess.application.ContinuationService;
 import cn.edu.suda.scholarsense.identityaccess.application.CurrentSessionService;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditFactFactory;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditPort;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditTokenPort;
+import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuthorizationPolicyAvailabilityPort;
 import cn.edu.suda.scholarsense.identityaccess.application.HostBootstrapService;
 import cn.edu.suda.scholarsense.identityaccess.application.HighRiskAuditGuard;
 import cn.edu.suda.scholarsense.identityaccess.application.HighRiskOperationGuard;
@@ -37,6 +42,8 @@ import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
 import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityPort;
 import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchAuthorizationPort;
 import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchTokenQueryPort;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthoritativeIdentityContextQueryPort;
+import cn.edu.suda.scholarsense.identityaccess.api.IdentityFreshness;
 import java.time.Clock;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -151,9 +158,76 @@ public class IdentityAccessConfiguration {
     }
 
     @Bean
-    AuthorizationRecalculationPort authorizationRecalculationPort() {
-        // Story 1.2 recalculates the active identity boundary. Object/role decisions arrive in 1.6/1.7.
-        return (actorPseudonym, sessionPseudonym) -> true;
+    @ConditionalOnMissingBean(AuthoritativeIdentityContextQueryPort.class)
+    AuthoritativeIdentityContextQueryPort authoritativeIdentityContexts(
+            JdbcTemplate jdbc, Clock clock) {
+        return new JdbcAuthoritativeIdentityContextAdapter(
+                jdbc, clock, Duration.ofMinutes(15));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(IdentityAuthorizationPolicyAvailabilityPort.class)
+    IdentityAuthorizationPolicyAvailabilityPort identityAuthorizationPolicies(
+            ObjectMapper json) {
+        return new ClasspathIdentityAuthorizationPolicyAdapter(json);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AuthorizationRecalculationPort.class)
+    AuthorizationRecalculationPort authorizationRecalculationPort(
+            AuthoritativeIdentityContextQueryPort contexts,
+            TrustedTimeSource trustedTime,
+            IdentityAuthorizationPolicyAvailabilityPort policies) {
+        return (actorPseudonym, sessionPseudonym) -> {
+            try {
+                trustedTime.now();
+                var policy = policies.current();
+                if (!policy.available()) {
+                    return AuthorizationDecision.unavailable(
+                            "IDENTITY_AUTHORIZATION_POLICY_UNAVAILABLE", 0);
+                }
+                var current = contexts.findCurrent(actorPseudonym);
+                if (current.isEmpty()) {
+                    return AuthorizationDecision.deny("IDENTITY_AUTHORITY_NOT_FOUND", 0);
+                }
+                var context = current.get();
+                if (context.freshness() == IdentityFreshness.STALE) {
+                    return AuthorizationDecision.unavailable(
+                            "IDENTITY_AUTHORITY_STALE", context.sourceVersion());
+                }
+                if (!policy.identitySessionPolicyVersion().equals(
+                                context.policyVersions().get("identitySessionPolicy"))
+                        || !policy.roleFieldPolicyVersion().equals(
+                                context.policyVersions().get("roleFieldPolicy"))
+                        || !policy.roleMappingVersion().equals(
+                                context.policyVersions().get("roleMapping"))
+                        || !policy.roleMappingDigest().equals(
+                                context.policyVersions().get("roleMappingDigest"))) {
+                    return AuthorizationDecision.unavailable(
+                            "IDENTITY_AUTHORIZATION_POLICY_UNAVAILABLE",
+                            context.sourceVersion());
+                }
+                AuthorizationFreshness freshness = switch (context.freshness()) {
+                    case FRESH -> AuthorizationFreshness.FRESH;
+                    case DEGRADED -> AuthorizationFreshness.DEGRADED;
+                    case STALE -> AuthorizationFreshness.STALE;
+                };
+                return AuthorizationDecision.allow(context.sourceVersion(), freshness);
+            } catch (RuntimeException unavailable) {
+                return AuthorizationDecision.unavailable(
+                        "IDENTITY_AUTHORITY_DEPENDENCY_UNAVAILABLE", 0);
+            }
+        };
+    }
+
+    AuthorizationRecalculationPort authorizationRecalculationPort(
+            AuthoritativeIdentityContextQueryPort contexts,
+            TrustedTimeSource trustedTime) {
+        return authorizationRecalculationPort(
+                contexts,
+                trustedTime,
+                new ClasspathIdentityAuthorizationPolicyAdapter(
+                        new ObjectMapper()));
     }
 
     @Bean

@@ -24,8 +24,12 @@ class CrossCuttingCommandContractTest {
     void fixtureRemainsOutsideProductionSourceWhileOwnedStoryMigrationExists() throws Exception {
         assertFalse(Files.exists(Path.of(
                 "src/main/java/cn/edu/suda/scholarsense/contractfixture")));
+        Path authoritativeIdentityMigration = Path.of(
+                "src/main/resources/db/migration/identity-access",
+                "V000006__identity-access__authoritative_identity_org_v1.sql");
+        assertTrue(Files.isRegularFile(authoritativeIdentityMigration));
         try (var walk = Files.walk(Path.of("src/main/resources/db/migration"))) {
-            assertEquals(5, walk.filter(path -> path.toString().endsWith(".sql")).count());
+            assertEquals(6, walk.filter(path -> path.toString().endsWith(".sql")).count());
         }
     }
 

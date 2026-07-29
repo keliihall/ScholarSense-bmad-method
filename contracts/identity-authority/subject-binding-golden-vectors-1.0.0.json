@@ -1,0 +1,19 @@
+{
+  "$schema": "./subject-binding-vectors.schema.json",
+  "version": "IDENTITY-SUBJECT-BINDING-VECTORS-1.0.0",
+  "purpose": "identity-actor",
+  "separatorHex": "00",
+  "keyRotation": "dual-read-new-write",
+  "vectors": [
+    {
+      "issuer": "https://idp.sandbox.invalid",
+      "subject": "subject-001",
+      "canonicalUtf8Hex": "68747470733a2f2f6964702e73616e64626f782e696e76616c6964007375626a6563742d303031"
+    },
+    {
+      "issuer": "https://idp.sandbox.invalid",
+      "subject": "subject-002",
+      "canonicalUtf8Hex": "68747470733a2f2f6964702e73616e64626f782e696e76616c6964007375626a6563742d303032"
+    }
+  ]
+}

@@ -14,8 +14,10 @@ public record RuntimeConfiguration(
         URI externalBaseUri,
         int httpPort,
         boolean identityEnabled,
+        boolean identitySyncEnabled,
         boolean auditLedgerEnabled,
         String clockSourceReference,
+        String identityAuthorityProfileReference,
         String auditIngestionPolicyReference,
         String auditHashProfileReference,
         String auditCollectorReference,
@@ -29,6 +31,8 @@ public record RuntimeConfiguration(
     private static final String AUDIT_VERIFIER = "audit-verifier-1-0-0";
     private static final String AUDIT_ALERT_TRANSPORT = "audit-alert-structured-log-1-0-0";
     private static final String AUDIT_METRIC_BINDING = "audit-micrometer-1-0-0";
+    private static final String IDENTITY_AUTHORITY_PROFILE =
+            "identity-authority-profile-1-0-0";
 
     public static RuntimeConfiguration from(Map<String, String> values) {
         RuntimeEnvironment environment = RuntimeEnvironment.parse(required(values, "SCHOLARSENSE_ENV"));
@@ -46,6 +50,9 @@ public record RuntimeConfiguration(
         int httpPort = httpPort(values.get("SCHOLARSENSE_HTTP_PORT"));
         boolean identityEnabled = strictBoolean(
                 values.get("SCHOLARSENSE_IDENTITY_ENABLED"), "SCHOLARSENSE_IDENTITY_ENABLED");
+        boolean identitySyncEnabled = strictBoolean(
+                values.get("SCHOLARSENSE_IDENTITY_SYNC_ENABLED"),
+                "SCHOLARSENSE_IDENTITY_SYNC_ENABLED");
         boolean auditLedgerEnabled = strictBoolean(
                 values.get("SCHOLARSENSE_AUDIT_LEDGER_ENABLED"), "SCHOLARSENSE_AUDIT_LEDGER_ENABLED");
         if (identityEnabled && role != RuntimeRole.WEB_API) {
@@ -60,9 +67,15 @@ public record RuntimeConfiguration(
                     "SCHOLARSENSE_AUDIT_LEDGER_ENABLED",
                     "audit ledger collection can only be enabled for worker");
         }
+        if (identitySyncEnabled && role != RuntimeRole.WORKER) {
+            throw new ConfigurationException(
+                    "CONFIG_ROLE_CAPABILITY_MISMATCH",
+                    "SCHOLARSENSE_IDENTITY_SYNC_ENABLED",
+                    "identity synchronization can only be enabled for worker");
+        }
         String clockSourceReference = null;
         String clockSourceValue = values.get("SCHOLARSENSE_CLOCK_SOURCE_REF");
-        if (identityEnabled || auditLedgerEnabled) {
+        if (identityEnabled || identitySyncEnabled || auditLedgerEnabled) {
             clockSourceReference = environmentReference(
                     required(values, "SCHOLARSENSE_CLOCK_SOURCE_REF"),
                     "SCHOLARSENSE_CLOCK_SOURCE_REF", "config", environment);
@@ -70,6 +83,12 @@ public record RuntimeConfiguration(
             clockSourceReference = environmentReference(
                     clockSourceValue.trim(), "SCHOLARSENSE_CLOCK_SOURCE_REF", "config", environment);
         }
+        String identityAuthorityProfileReference = controlledReference(
+                values,
+                "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+                environment,
+                identitySyncEnabled,
+                IDENTITY_AUTHORITY_PROFILE);
         String auditIngestionPolicyReference = controlledAuditReference(
                 values, "SCHOLARSENSE_AUDIT_INGESTION_POLICY_REF", environment,
                 auditLedgerEnabled, AUDIT_INGESTION_POLICY);
@@ -98,8 +117,10 @@ public record RuntimeConfiguration(
                 externalBaseUri,
                 httpPort,
                 identityEnabled,
+                identitySyncEnabled,
                 auditLedgerEnabled,
                 clockSourceReference,
+                identityAuthorityProfileReference,
                 auditIngestionPolicyReference,
                 auditHashProfileReference,
                 auditCollectorReference,
@@ -149,6 +170,27 @@ public record RuntimeConfiguration(
         if (!("/" + expectedResource).equals(uri.getPath())) {
             throw new ConfigurationException(
                     "CONFIG_STALE_REFERENCE", field, "must reference the current controlled version");
+        }
+        return reference;
+    }
+
+    private static String controlledReference(
+            Map<String, String> values,
+            String field,
+            RuntimeEnvironment environment,
+            boolean required,
+            String expectedResource) {
+        String raw = values.get(field);
+        if ((raw == null || raw.isBlank()) && !required) {
+            return null;
+        }
+        String reference = environmentReference(
+                RuntimeConfiguration.required(values, field), field, "config", environment);
+        URI uri = parseUri(reference, field);
+        if (!("/" + expectedResource).equals(uri.getPath())) {
+            throw new ConfigurationException(
+                    "CONFIG_STALE_REFERENCE", field,
+                    "must reference the current controlled version");
         }
         return reference;
     }

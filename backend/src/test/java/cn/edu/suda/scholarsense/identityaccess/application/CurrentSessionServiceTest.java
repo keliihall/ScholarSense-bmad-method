@@ -31,7 +31,9 @@ class CurrentSessionServiceTest {
                     }
                     @Override public void save(IdentitySession ignored) {}
                 },
-                (actor, identitySession) -> calls.incrementAndGet() <= 1,
+                (actor, identitySession) -> calls.incrementAndGet() <= 1
+                        ? AuthorizationDecision.allow(7, AuthorizationFreshness.FRESH)
+                        : AuthorizationDecision.deny("IDENTITY_AUTHORITY_NOT_FOUND", 7),
                 AuditTestSupport.factory(),
                 audit::add,
                 new SensitiveReadTransactionPort() {
@@ -69,7 +71,8 @@ class CurrentSessionServiceTest {
                 "https://app.stage.invalid", "family", "digest", NOW);
         var service = new CurrentSessionService(
                 repository(session),
-                (actor, identitySession) -> true,
+                (actor, identitySession) -> AuthorizationDecision.allow(
+                        7, AuthorizationFreshness.FRESH),
                 AuditTestSupport.factory(),
                 ignored -> { throw new IdentityAccessException(
                         "IDENTITY_AUDIT_UNAVAILABLE", "security audit unavailable"); },
@@ -84,7 +87,8 @@ class CurrentSessionServiceTest {
 
         var commitFailure = new CurrentSessionService(
                 repository(session),
-                (actor, identitySession) -> true,
+                (actor, identitySession) -> AuthorizationDecision.allow(
+                        7, AuthorizationFreshness.FRESH),
                 AuditTestSupport.factory(),
                 ignored -> {},
                 new SensitiveReadTransactionPort() {
@@ -109,7 +113,8 @@ class CurrentSessionServiceTest {
                 repository(IdentitySession.authenticate(
                         "internal-cookie-bearer", "sp_RWxQcW41M2dSeHVIZ0JpYw", "actor-pseudo",
                         "browser-hash", "https://app.stage.invalid", "family", "digest", NOW)),
-                (actor, session) -> true,
+                (actor, session) -> AuthorizationDecision.allow(
+                        7, AuthorizationFreshness.FRESH),
                 AuditTestSupport.factory(),
                 ignored -> {},
                 new SensitiveReadTransactionPort() {
@@ -127,6 +132,30 @@ class CurrentSessionServiceTest {
 
         assertEquals("AUDIT_AVAILABILITY_UNAVAILABLE", failure.code());
         assertEquals(0, transactions.get());
+    }
+
+    @Test
+    void staleAuthorityReturnsDependencyUnavailableWithoutLeakingAuthorityDetails() {
+        var session = IdentitySession.authenticate(
+                "internal-cookie-bearer", "sp_RWxQcW41M2dSeHVIZ0JpYw", "actor-pseudo",
+                "browser-hash", "https://app.stage.invalid", "family", "digest", NOW);
+        var service = new CurrentSessionService(
+                repository(session),
+                (actor, identitySession) -> AuthorizationDecision.unavailable(
+                        "IDENTITY_AUTHORITY_STALE", 7),
+                AuditTestSupport.factory(),
+                ignored -> {},
+                directTransaction(),
+                Clock.fixed(NOW.plusSeconds(30), ZoneOffset.UTC));
+
+        IdentityAccessException failure = assertThrows(
+                IdentityAccessException.class,
+                () -> service.current(
+                        session.sessionId(), "192.0.2.10",
+                        "5123456789abcdef0123456789abcdef"));
+
+        assertEquals("IDENTITY_DEPENDENCY_UNAVAILABLE", failure.code());
+        assertEquals("identity authorization is temporarily unavailable", failure.getMessage());
     }
 
     private static IdentitySessionRepository repository(IdentitySession session) {

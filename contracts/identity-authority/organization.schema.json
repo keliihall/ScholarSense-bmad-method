@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/identity-authority/organization.schema.json",
+  "title": "Normalized authoritative organization",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "externalRef",
+    "parentExternalRef",
+    "displayName",
+    "organizationType",
+    "status",
+    "effectiveFrom",
+    "effectiveTo",
+    "recordVersion"
+  ],
+  "properties": {
+    "externalRef": {"type": "string", "minLength": 1, "maxLength": 128},
+    "parentExternalRef": {"type": ["string", "null"], "minLength": 1, "maxLength": 128},
+    "displayName": {"type": "string", "minLength": 1, "maxLength": 128},
+    "organizationType": {"type": "string", "enum": ["school", "college", "department"]},
+    "status": {"type": "string", "enum": ["active", "inactive"]},
+    "effectiveFrom": {"type": "string", "format": "date-time"},
+    "effectiveTo": {"type": ["string", "null"], "format": "date-time"},
+    "recordVersion": {"type": "integer", "minimum": 1}
+  }
+}

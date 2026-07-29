@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import cn.edu.suda.scholarsense.identityaccess.application.CurrentSessionService;
 import cn.edu.suda.scholarsense.identityaccess.application.AuditTestSupport;
+import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationDecision;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySessionRepository;
 import cn.edu.suda.scholarsense.identityaccess.application.SensitiveReadTransactionPort;
 import cn.edu.suda.scholarsense.identityaccess.domain.IdentityAccessException;
@@ -48,7 +49,8 @@ class IdentitySensitiveReadHttpTest {
         };
         CurrentSessionService currentSessions = new CurrentSessionService(
                 sessions,
-                (actor, sessionId) -> true,
+                (actor, sessionId) -> AuthorizationDecision.allow(
+                        7, cn.edu.suda.scholarsense.identityaccess.application.AuthorizationFreshness.FRESH),
                 AuditTestSupport.factory(),
                 ignored -> {
                     throw new IdentityAccessException(

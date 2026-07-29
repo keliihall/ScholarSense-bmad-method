@@ -1,0 +1,77 @@
+{
+  "version": "IDENTITY-AUTHORITY-CONTRACT-LOCK-1.0.0",
+  "files": [
+    {
+      "path": "contracts/identity-authority/account.schema.json",
+      "sha256": "300d3870c1bd5819447b7bd7fe2993c323706e5e72f3c57ab45a2e38a22ec7a6"
+    },
+    {
+      "path": "contracts/identity-authority/employment-role.schema.json",
+      "sha256": "615d3cba0667893903b7470e04c128c4196962655a705c2119168a2d3b66a2c0"
+    },
+    {
+      "path": "contracts/identity-authority/fixtures/negative-fixtures-1.0.0.json",
+      "sha256": "4cfe04629b80d34ea138860480cdf803cfdf1d5ea0bbd64b9ca795217c42e9b3"
+    },
+    {
+      "path": "contracts/identity-authority/fixtures/negative/payloads-1.0.0.json",
+      "sha256": "11e25dacce0b5ceec7f8ddde2ddf3ec8e6f38bdd07bfcc9ea71583292199ef5a"
+    },
+    {
+      "path": "contracts/identity-authority/fixtures/valid/heartbeat.json",
+      "sha256": "bd43438c6b4a4d05e748cbf763277005a916fb481ac3a52cc96918b781cc2be4"
+    },
+    {
+      "path": "contracts/identity-authority/fixtures/valid/incremental-batch.json",
+      "sha256": "2a4c6a179da6bd177852a0e72a2e1b57bc2a857487a5bdc9bcb6130491ace43e"
+    },
+    {
+      "path": "contracts/identity-authority/fixtures/valid/reconciliation-result.json",
+      "sha256": "5960e8afd7d630d4c2ccd8231d6a2a6fbdfa78e69482091448ab64afb8b2cd1f"
+    },
+    {
+      "path": "contracts/identity-authority/fixtures/valid/sync-job.json",
+      "sha256": "7d25d023cece2b989efb378c38feeed26f47fd4ef5b40b227816fafdef85eaa0"
+    },
+    {
+      "path": "contracts/identity-authority/incremental-batch.schema.json",
+      "sha256": "955bb6280755782dc50caa6025b28448920a8ca15d85a65829dc6af1ecdc8b73"
+    },
+    {
+      "path": "contracts/identity-authority/organization.schema.json",
+      "sha256": "98830e2b3b52c79546163fc4c2ba80d9cb754ac4f68b620c77367cec3b1e1c21"
+    },
+    {
+      "path": "contracts/identity-authority/reconciliation-result.schema.json",
+      "sha256": "fe29a15aadaf1d24de1120a6230c372188b40923751711a794dc244d1d347473"
+    },
+    {
+      "path": "contracts/identity-authority/role-mapping.schema.json",
+      "sha256": "5fea3313e1874ba65d44e05564807b4fe26fc6dbac9512ed40a7d11f6652d9ce"
+    },
+    {
+      "path": "contracts/identity-authority/runtime-profile.schema.json",
+      "sha256": "04c54716360f7e437eae92e39abdaa5c5454dd58f7269109cc0575cee0d67a4d"
+    },
+    {
+      "path": "contracts/identity-authority/sandbox-role-mapping-1.0.0.json",
+      "sha256": "e2ae081e2241e7fb9bfc617b9be04cb09ed8d3fa34f979861458344bf3599932"
+    },
+    {
+      "path": "contracts/identity-authority/sandbox-runtime-profile-1.0.0.json",
+      "sha256": "1a0e3d7429ae42cc82d7e2940ea5426fa8eabcecb7de883a4849e4783ff1d4b5"
+    },
+    {
+      "path": "contracts/identity-authority/subject-binding-golden-vectors-1.0.0.json",
+      "sha256": "f9a56037bc999b6b365b99f602921a8a9e903e1322d10064bec7e1f1369872a3"
+    },
+    {
+      "path": "contracts/identity-authority/subject-binding-vectors.schema.json",
+      "sha256": "1ad982787d6ad13731344580434fdc8f1dfcd1dcb0872afe07a6a9695be6b397"
+    },
+    {
+      "path": "contracts/identity-authority/sync-job.schema.json",
+      "sha256": "d7a6b9fa75c98363b7d7af545e6c1b4f20fef1eef467aecc335c97f253d19d4d"
+    }
+  ]
+}

@@ -13,6 +13,7 @@
     "SCHOLARSENSE_STORAGE_NAMESPACE",
     "SCHOLARSENSE_EXTERNAL_BASE_URI",
     "SCHOLARSENSE_IDENTITY_ENABLED",
+    "SCHOLARSENSE_IDENTITY_SYNC_ENABLED",
     "SCHOLARSENSE_AUDIT_LEDGER_ENABLED"
   ],
   "properties": {
@@ -57,6 +58,10 @@
       "type": "string",
       "enum": ["true", "false"]
     },
+    "SCHOLARSENSE_IDENTITY_SYNC_ENABLED": {
+      "type": "string",
+      "enum": ["true", "false"]
+    },
     "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": {
       "type": "string",
       "enum": ["true", "false"]
@@ -65,6 +70,11 @@
       "type": "string",
       "pattern": "^config://(dev|test|stage|prod)/[a-z0-9-]+$",
       "description": "Environment-scoped trusted-time evidence source binding."
+    },
+    "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF": {
+      "type": "string",
+      "pattern": "^config://(dev|test|stage|prod)/identity-authority-profile-1-0-0$",
+      "description": "Environment-scoped immutable source endpoint, workload identity, signature, timeout and mapping binding."
     },
     "SCHOLARSENSE_AUDIT_INGESTION_POLICY_REF": {
       "type": "string",
@@ -107,10 +117,20 @@
       "if": {
         "anyOf": [
           {"properties": {"SCHOLARSENSE_IDENTITY_ENABLED": {"const": "true"}}},
+          {"properties": {"SCHOLARSENSE_IDENTITY_SYNC_ENABLED": {"const": "true"}}},
           {"properties": {"SCHOLARSENSE_AUDIT_LEDGER_ENABLED": {"const": "true"}}}
         ]
       },
       "then": {"required": ["SCHOLARSENSE_CLOCK_SOURCE_REF"]}
+    },
+    {
+      "if": {
+        "properties": {"SCHOLARSENSE_IDENTITY_SYNC_ENABLED": {"const": "true"}},
+        "required": ["SCHOLARSENSE_IDENTITY_SYNC_ENABLED"]
+      },
+      "then": {
+        "required": ["SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF"]
+      }
     },
     {
       "if": {

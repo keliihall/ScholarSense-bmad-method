@@ -1,0 +1,22 @@
+{
+  "$schema": "../../sync-job.schema.json",
+  "jobId": "019c1234-0000-7000-8000-000000000021",
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "feedId": "identity-authority",
+  "partitionId": "sandbox-0",
+  "consumerProjection": "identity-org",
+  "status": "succeeded",
+  "health": "healthy",
+  "freshness": "fresh",
+  "attemptNo": 1,
+  "fencingToken": 1,
+  "inputWatermark": 6,
+  "outputWatermark": 7,
+  "lastSuccessfulWatermark": 7,
+  "requestedAt": "2026-07-24T00:00:30Z",
+  "startedAt": "2026-07-24T00:00:31Z",
+  "completedAt": "2026-07-24T00:01:01Z",
+  "nextAttemptAt": null,
+  "reasonCode": null,
+  "traceId": "0123456789abcdef0123456789abcdef"
+}

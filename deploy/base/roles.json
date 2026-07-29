@@ -16,6 +16,7 @@
       "environment": {
         "SCHOLARSENSE_ROLE": "web-api",
         "SCHOLARSENSE_IDENTITY_ENABLED": "true",
+        "SCHOLARSENSE_IDENTITY_SYNC_ENABLED": "false",
         "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "false"
       },
       "businessHttp": true,
@@ -39,7 +40,30 @@
       "environment": {
         "SCHOLARSENSE_ROLE": "worker",
         "SCHOLARSENSE_IDENTITY_ENABLED": "false",
+        "SCHOLARSENSE_IDENTITY_SYNC_ENABLED": "false",
         "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "true"
+      },
+      "businessHttp": false,
+      "probe": {
+        "type": "process-alive"
+      }
+    },
+    "identity-sync-worker": {
+      "artifact": "backend/target/scholarsense-backend.jar",
+      "allowedEnvironments": [
+        "dev",
+        "test",
+        "stage"
+      ],
+      "requiredEnvironment": [
+        "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+        "SCHOLARSENSE_IDENTITY_SYNC_SECURITY_DIRECTORY"
+      ],
+      "environment": {
+        "SCHOLARSENSE_ROLE": "worker",
+        "SCHOLARSENSE_IDENTITY_ENABLED": "false",
+        "SCHOLARSENSE_IDENTITY_SYNC_ENABLED": "true",
+        "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "false"
       },
       "businessHttp": false,
       "probe": {

@@ -3,6 +3,7 @@ package cn.edu.suda.scholarsense;
 import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
 import cn.edu.suda.scholarsense.runtime.RuntimeRole;
 import cn.edu.suda.scholarsense.runtime.AuditRuntimeProfile;
+import cn.edu.suda.scholarsense.runtime.IdentityAuthorityRuntimeProfile;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.boot.SpringApplication;
@@ -43,7 +44,20 @@ public class ScholarSenseApplication {
         properties.put("scholarsense.runtime.environment", runtime.environment().wireName());
         properties.put("scholarsense.runtime.role", runtime.role().wireName());
         properties.put("scholarsense.identity.enabled", runtime.identityEnabled());
+        properties.put("scholarsense.identity-sync.enabled", runtime.identitySyncEnabled());
         properties.put("scholarsense.audit-ledger.enabled", runtime.auditLedgerEnabled());
+        if (runtime.identityAuthorityProfileReference() != null) {
+            properties.put(
+                    "scholarsense.identity-sync.profile-ref",
+                    runtime.identityAuthorityProfileReference());
+        }
+        if (runtime.identitySyncEnabled()) {
+            IdentityAuthorityRuntimeProfile identityAuthority =
+                    IdentityAuthorityRuntimeProfile.from(runtime);
+            properties.put(
+                    "scholarsense.identity-sync.poll-interval",
+                    identityAuthority.pollInterval().toMillis());
+        }
         if (runtime.auditLedgerEnabled()) {
             AuditRuntimeProfile audit = AuditRuntimeProfile.from(runtime);
             properties.put("scholarsense.audit.collector.initial-delay", audit.collectorInitialDelay());
@@ -66,7 +80,9 @@ public class ScholarSenseApplication {
         properties.put("server.servlet.session.timeout", "15m");
         properties.put("spring.session.jdbc.initialize-schema", "never");
         properties.put("spring.session.jdbc.table-name", "identity_access.ia_spring_session");
-        if (!runtime.identityEnabled() && !runtime.auditLedgerEnabled()) {
+        if (!runtime.identityEnabled()
+                && !runtime.identitySyncEnabled()
+                && !runtime.auditLedgerEnabled()) {
             properties.put("spring.autoconfigure.exclude", String.join(",",
                     "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration",
                     "org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration",

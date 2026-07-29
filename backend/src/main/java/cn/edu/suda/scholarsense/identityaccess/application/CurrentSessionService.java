@@ -70,10 +70,19 @@ public final class CurrentSessionService {
             return ReadOutcome.failure(new IdentityAccessException(
                     "IDENTITY_SESSION_EXPIRED", "authentication is required"));
         }
-        if (!authorization.isCurrentSessionAllowed(
-                session.actorPseudonym(), session.sessionPseudonym())) {
+        AuthorizationDecision decision = authorization.decide(
+                session.actorPseudonym(), session.sessionPseudonym());
+        if (decision.outcome() == AuthorizationOutcome.DEPENDENCY_UNAVAILABLE) {
             audit.append(auditFacts.create(request(
-                    session, ActorType.USER, denied(),
+                    session, ActorType.USER, denied(decision),
+                    "rejected", "IDENTITY_DEPENDENCY_UNAVAILABLE", sourceIp, traceId)));
+            return ReadOutcome.failure(new IdentityAccessException(
+                    "IDENTITY_DEPENDENCY_UNAVAILABLE",
+                    "identity authorization is temporarily unavailable"));
+        }
+        if (decision.outcome() != AuthorizationOutcome.ALLOW) {
+            audit.append(auditFacts.create(request(
+                    session, ActorType.USER, denied(decision),
                     "rejected", "IDENTITY_SESSION_REQUIRED", sourceIp, traceId)));
             return ReadOutcome.failure(required());
         }
@@ -105,6 +114,11 @@ public final class CurrentSessionService {
     private static IdentityAuditAuthorizationContext denied() {
         return new IdentityAuditAuthorizationContext(
                 "deny", "ISP-1.0.0", List.of("CURRENT_SESSION"), List.of(), null);
+    }
+
+    private static IdentityAuditAuthorizationContext denied(AuthorizationDecision decision) {
+        return new IdentityAuditAuthorizationContext(
+                "deny", decision.policyVersion(), List.of("CURRENT_SESSION"), List.of(), null);
     }
 
     private static IdentityAuditRequest request(

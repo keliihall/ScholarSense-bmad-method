@@ -1,0 +1,74 @@
+package cn.edu.suda.scholarsense.identityaccess.adapters.outbound;
+
+import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditAction;
+import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditAuthorizationContext;
+import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditFactFactory;
+import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditPort;
+import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditRequest;
+import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncAuditEvent;
+import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncAuditPort;
+import cn.edu.suda.scholarsense.shared.outbox.ActorType;
+import java.util.List;
+import java.util.Map;
+
+/** Converts sync events to the identity-owned LocalAuditFact + outbox contract. */
+public final class IdentitySyncAuditAdapter implements IdentitySyncAuditPort {
+    private final IdentityAuditFactFactory facts;
+    private final IdentityAuditPort audit;
+
+    public IdentitySyncAuditAdapter(
+            IdentityAuditFactFactory facts, IdentityAuditPort audit) {
+        this.facts = facts;
+        this.audit = audit;
+    }
+
+    @Override
+    public void append(IdentitySyncAuditEvent event) {
+        IdentityAuditAction action = switch (event.action()) {
+            case "identity.sync.applied" -> IdentityAuditAction.SYNC_APPLIED;
+            case "identity.sync.rejected" -> IdentityAuditAction.SYNC_REJECTED;
+            case "identity.sync.failed" -> IdentityAuditAction.SYNC_FAILED;
+            case "identity.sync.reconciled" -> IdentityAuditAction.SYNC_RECONCILED;
+            default -> throw new IllegalArgumentException(
+                    "IDENTITY_SYNC_AUDIT_ACTION_INVALID");
+        };
+        String objectType = action == IdentityAuditAction.SYNC_RECONCILED
+                ? "identity-reconciliation" : "identity-sync-job";
+        String purpose = action == IdentityAuditAction.SYNC_RECONCILED
+                ? "IDENTITY_AUTHORITY_RECONCILIATION" : "IDENTITY_AUTHORITY_SYNC";
+        Map<String, String> policies = Map.copyOf(event.policyVersions());
+        String outcome = action == IdentityAuditAction.SYNC_FAILED
+                ? "rejected" : event.outcome();
+        String evidenceBinding = event.jobId()
+                + ":" + event.attemptNo()
+                + ":" + event.fencingToken()
+                + ":" + event.sourceVersion()
+                + ":" + event.sourceWatermark()
+                + ":" + event.occurredAt();
+        audit.append(facts.create(new IdentityAuditRequest(
+                ActorType.SERVICE,
+                "identity-sync-worker",
+                List.of(),
+                new IdentityAuditAuthorizationContext(
+                        "not-applicable",
+                        null,
+                        List.of(),
+                        List.of(),
+                        "SERVICE_OPERATION"),
+                action,
+                outcome,
+                event.reasonCode(),
+                objectType,
+                event.jobId().toString(),
+                purpose,
+                "IDENTITY_ORG",
+                null,
+                event.traceId(),
+                event.occurredAt(),
+                objectType,
+                evidenceBinding,
+                event.aggregateVersion() > 0 ? event.aggregateVersion() : null,
+                evidenceBinding + ":" + event.action(),
+                policies)));
+    }
+}

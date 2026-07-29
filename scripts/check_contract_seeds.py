@@ -20,6 +20,7 @@ AUDIT_REFERENCE_RESOURCES = {
     "SCHOLARSENSE_AUDIT_METRIC_BINDING_REF": "audit-micrometer-1-0-0",
     "SCHOLARSENSE_AUDIT_RETENTION_CAPABILITY_REF": "audit-retention-capability-1-0-0",
 }
+IDENTITY_AUTHORITY_PROFILE_RESOURCE = "identity-authority-profile-1-0-0"
 RUNTIME_KEYS = {
     "SCHOLARSENSE_ENV",
     "SCHOLARSENSE_ROLE",
@@ -30,8 +31,10 @@ RUNTIME_KEYS = {
     "SCHOLARSENSE_EXTERNAL_BASE_URI",
     "SCHOLARSENSE_HTTP_PORT",
     "SCHOLARSENSE_IDENTITY_ENABLED",
+    "SCHOLARSENSE_IDENTITY_SYNC_ENABLED",
     "SCHOLARSENSE_AUDIT_LEDGER_ENABLED",
     "SCHOLARSENSE_CLOCK_SOURCE_REF",
+    "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
     *AUDIT_REFERENCE_RESOURCES,
 }
 SENSITIVE_CLIENT_NAME = re.compile(r"(?:SECRET|TOKEN|PASSWORD|PRIVATE|DATABASE|ACCOUNT|STORAGE)", re.IGNORECASE)
@@ -40,6 +43,8 @@ REFERENCE_PATTERNS = {
     "SCHOLARSENSE_DATABASE_REF": r"^database://(dev|test|stage|prod)/[a-z0-9-]+$",
     "SCHOLARSENSE_SECRET_REF": r"^secret://(dev|test|stage|prod)/[a-z0-9-]+$",
     "SCHOLARSENSE_CLOCK_SOURCE_REF": r"^config://(dev|test|stage|prod)/[a-z0-9-]+$",
+    "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF":
+        rf"^config://(dev|test|stage|prod)/{IDENTITY_AUTHORITY_PROFILE_RESOURCE}$",
     **{
         key: rf"^config://(dev|test|stage|prod)/{resource}$"
         for key, resource in AUDIT_REFERENCE_RESOURCES.items()
@@ -89,6 +94,7 @@ def _check_runtime_schema(schema, violations: list[str]) -> None:
         violations.append("RUNTIME_SCHEMA_OBJECT_BOUNDARY_INVALID")
     optional = {
         "SCHOLARSENSE_HTTP_PORT", "SCHOLARSENSE_CLOCK_SOURCE_REF",
+        "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
         *AUDIT_REFERENCE_RESOURCES,
     }
     if set(schema.get("required", [])) != RUNTIME_KEYS - optional:
@@ -101,7 +107,11 @@ def _check_runtime_schema(schema, violations: list[str]) -> None:
         violations.append("RUNTIME_SCHEMA_ENVIRONMENT_INVALID")
     if properties["SCHOLARSENSE_ROLE"] != {"type": "string", "enum": ["web-api", "worker"]}:
         violations.append("RUNTIME_SCHEMA_ROLE_INVALID")
-    for key in ("SCHOLARSENSE_IDENTITY_ENABLED", "SCHOLARSENSE_AUDIT_LEDGER_ENABLED"):
+    for key in (
+        "SCHOLARSENSE_IDENTITY_ENABLED",
+        "SCHOLARSENSE_IDENTITY_SYNC_ENABLED",
+        "SCHOLARSENSE_AUDIT_LEDGER_ENABLED",
+    ):
         if properties[key] != {"type": "string", "enum": ["true", "false"]}:
             violations.append(f"RUNTIME_SCHEMA_CAPABILITY_INVALID: {key}")
     for key, expected in REFERENCE_PATTERNS.items():
@@ -136,6 +146,15 @@ def _check_runtime_schema(schema, violations: list[str]) -> None:
             audit_required.update(rule.get("then", {}).get("required", []))
     if audit_required != set(AUDIT_REFERENCE_RESOURCES):
         violations.append("RUNTIME_SCHEMA_AUDIT_BINDINGS_INVALID")
+    sync_required = set()
+    for rule in schema.get("allOf", []):
+        condition = rule.get("if", {}).get("properties", {}).get(
+            "SCHOLARSENSE_IDENTITY_SYNC_ENABLED", {}
+        )
+        if condition.get("const") == "true":
+            sync_required.update(rule.get("then", {}).get("required", []))
+    if sync_required != {"SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF"}:
+        violations.append("RUNTIME_SCHEMA_IDENTITY_SYNC_BINDINGS_INVALID")
 
 
 def _check_example(path: Path, environment: str, violations: list[str]) -> None:
@@ -160,8 +179,11 @@ def _check_example(path: Path, environment: str, violations: list[str]) -> None:
     if values["SCHOLARSENSE_ENV"] != environment or values["SCHOLARSENSE_ROLE"] not in {"web-api", "worker"}:
         violations.append(f"CONFIG_EXAMPLE_ENV_ROLE_INVALID: {environment}")
     for key, pattern in REFERENCE_PATTERNS.items():
-        expected_scheme = "config" if key == "SCHOLARSENSE_CLOCK_SOURCE_REF" \
-                or key in AUDIT_REFERENCE_RESOURCES else (
+        expected_scheme = "config" if key in {
+            "SCHOLARSENSE_CLOCK_SOURCE_REF",
+            "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+            *AUDIT_REFERENCE_RESOURCES,
+        } else (
             key.removeprefix("SCHOLARSENSE_").removesuffix("_REF").lower()
         )
         if not re.fullmatch(pattern, values[key]) or not values[key].startswith(
@@ -171,6 +193,11 @@ def _check_example(path: Path, environment: str, violations: list[str]) -> None:
     for key, resource in AUDIT_REFERENCE_RESOURCES.items():
         if values.get(key) != f"config://{environment}/{resource}":
             violations.append(f"CONFIG_EXAMPLE_AUDIT_REFERENCE_STALE: {environment}:{key}")
+    if values.get("SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF") != \
+            f"config://{environment}/{IDENTITY_AUTHORITY_PROFILE_RESOURCE}":
+        violations.append(
+            f"CONFIG_EXAMPLE_IDENTITY_AUTHORITY_REFERENCE_STALE: {environment}"
+        )
     if not re.fullmatch(
         rf"[a-z0-9]+(?:-[a-z0-9]+)*-{re.escape(environment)}",
         values["SCHOLARSENSE_STORAGE_NAMESPACE"],
@@ -315,13 +342,15 @@ def _check_roles(root: Path, roles, violations: list[str]) -> None:
         violations.append("ROLE_ARTIFACT_CONTRACT_INVALID")
     expected_environment = RUNTIME_KEYS - {
         "SCHOLARSENSE_ROLE", "SCHOLARSENSE_HTTP_PORT",
-        "SCHOLARSENSE_IDENTITY_ENABLED", "SCHOLARSENSE_AUDIT_LEDGER_ENABLED",
+        "SCHOLARSENSE_IDENTITY_ENABLED", "SCHOLARSENSE_IDENTITY_SYNC_ENABLED",
+        "SCHOLARSENSE_AUDIT_LEDGER_ENABLED",
+        "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
         *AUDIT_REFERENCE_RESOURCES,
     }
     if set(roles.get("requiredEnvironment", [])) != expected_environment:
         violations.append("ROLE_REQUIRED_ENVIRONMENT_INVALID")
     definitions = roles.get("roles", {})
-    if set(definitions) != {"web-api", "worker"}:
+    if set(definitions) != {"web-api", "worker", "identity-sync-worker"}:
         violations.append("ROLE_SET_INVALID")
         return
     artifacts = {value.get("artifact") for value in definitions.values()}
@@ -332,12 +361,11 @@ def _check_roles(root: Path, roles, violations: list[str]) -> None:
         violations.append("ROLE_ARTIFACT_MISMATCH")
     if definitions["web-api"].get("businessHttp") is not True:
         violations.append("WEB_API_HTTP_CONTRACT_INVALID")
-    if definitions["worker"].get("businessHttp") is not False:
-        violations.append("WORKER_EXPOSES_BUSINESS_HTTP")
-    if definitions["worker"].get("probe", {}).get("type") != "process-alive":
-        violations.append("WORKER_PROBE_INVALID")
-    if definitions["worker"].get("probe") != {"type": "process-alive"}:
-        violations.append("WORKER_PROBE_INVALID")
+    for worker_role in ("worker", "identity-sync-worker"):
+        if definitions[worker_role].get("businessHttp") is not False:
+            violations.append("WORKER_EXPOSES_BUSINESS_HTTP")
+        if definitions[worker_role].get("probe") != {"type": "process-alive"}:
+            violations.append("WORKER_PROBE_INVALID")
     if definitions["web-api"].get("probe") != {
         "type": "health-http",
         "livenessPath": "/actuator/health/liveness",
@@ -348,17 +376,31 @@ def _check_roles(root: Path, roles, violations: list[str]) -> None:
         "web-api": {
             "SCHOLARSENSE_ROLE": "web-api",
             "SCHOLARSENSE_IDENTITY_ENABLED": "true",
+            "SCHOLARSENSE_IDENTITY_SYNC_ENABLED": "false",
             "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "false",
         },
         "worker": {
             "SCHOLARSENSE_ROLE": "worker",
             "SCHOLARSENSE_IDENTITY_ENABLED": "false",
+            "SCHOLARSENSE_IDENTITY_SYNC_ENABLED": "false",
             "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "true",
+        },
+        "identity-sync-worker": {
+            "SCHOLARSENSE_ROLE": "worker",
+            "SCHOLARSENSE_IDENTITY_ENABLED": "false",
+            "SCHOLARSENSE_IDENTITY_SYNC_ENABLED": "true",
+            "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "false",
         },
     }
     expected_role_required = {
         "web-api": set(),
-        "worker": set(AUDIT_REFERENCE_RESOURCES),
+        "worker": {
+            *AUDIT_REFERENCE_RESOURCES,
+        },
+        "identity-sync-worker": {
+            "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+            "SCHOLARSENSE_IDENTITY_SYNC_SECURITY_DIRECTORY",
+        },
     }
     for role, definition in definitions.items():
         if definition.get("environment") != expected_role_environment[role]:
@@ -367,6 +409,13 @@ def _check_roles(root: Path, roles, violations: list[str]) -> None:
         if not isinstance(required, list) or len(required) != len(set(required)) \
                 or set(required) != expected_role_required[role]:
             violations.append(f"ROLE_REQUIRED_ENVIRONMENT_INVALID: {role}")
+    if definitions["identity-sync-worker"].get("allowedEnvironments") != [
+        "dev", "test", "stage"
+    ]:
+        violations.append("IDENTITY_SYNC_PRODUCTION_DISABLED_INVALID")
+    for role in ("web-api", "worker"):
+        if "allowedEnvironments" in definitions[role]:
+            violations.append(f"ROLE_ALLOWED_ENVIRONMENT_INVALID: {role}")
 
 
 def _maven_artifact(pom_path: Path) -> str | None:

@@ -1,0 +1,1117 @@
+{
+  "version": "IDENTITY-AUTHORITY-NEGATIVE-PAYLOADS-1.0.0",
+  "cases": {
+    "unknown-role": {
+      "executionStage": "adapter",
+      "afterWatermark": 6,
+      "checkpoint": {
+        "sourceVersion": 6,
+        "sourceWatermark": 6,
+        "aggregateVersion": 2
+      },
+      "signatureVerified": true,
+      "detachedSignature": "sandbox-signature-v1",
+      "payload": {
+        "$schema": "../../incremental-batch.schema.json",
+        "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+        "resultType": "changes",
+        "sourceId": "SRC-P0-RESPONSIBILITY-001",
+        "feedId": "identity-authority",
+        "partitionId": "sandbox-0",
+        "consumerProjection": "identity-org",
+        "batchId": "019c1234-0000-7000-8000-000000000001",
+        "sourceVersion": 7,
+        "fromWatermark": 6,
+        "toWatermark": 7,
+        "sourceVisibleAt": "2026-07-24T00:00:00Z",
+        "observedAt": "2026-07-24T00:01:00Z",
+        "traceId": "0123456789abcdef0123456789abcdef",
+        "correlationId": "019c1234-0000-7000-8001-000000000001",
+        "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+        "mappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+        "signatureDigest": "sha256:4d36ff7fec7e0993f46c31fd1dc4abeb0c7a052d000105148b5197134630de46",
+        "records": [
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000101",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:17c6a8d487e58a34e5815fe4d5d7a83f496d3a2b1b9cb793fe85d0a957f62dc4",
+            "payload": {
+              "externalRef": "ORG-SCHOOL",
+              "parentExternalRef": null,
+              "displayName": "苏州大学",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000102",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:bd338a228a1960c3dfcf029bf036f2963b5353b328595553991e084f442ad47a",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000103",
+            "recordKind": "employment-role",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:770fa4a2e223a0352368b68a13ef9b51d1f4b4c170e8324f67b1b6566eda5812",
+            "payload": {
+              "externalRef": "EMPLOYMENT-001",
+              "accountExternalRef": "ACCOUNT-001",
+              "organizationExternalRef": "ORG-SCHOOL",
+              "sourceRoleCode": "UNAPPROVED_ROLE",
+              "targetRoleId": "R3-STUDENT-AFFAIRS",
+              "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          }
+        ]
+      }
+    },
+    "duplicate-binding": {
+      "executionStage": "adapter",
+      "afterWatermark": 6,
+      "checkpoint": {
+        "sourceVersion": 6,
+        "sourceWatermark": 6,
+        "aggregateVersion": 2
+      },
+      "signatureVerified": true,
+      "detachedSignature": "sandbox-signature-v1",
+      "payload": {
+        "$schema": "../../incremental-batch.schema.json",
+        "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+        "resultType": "changes",
+        "sourceId": "SRC-P0-RESPONSIBILITY-001",
+        "feedId": "identity-authority",
+        "partitionId": "sandbox-0",
+        "consumerProjection": "identity-org",
+        "batchId": "019c1234-0000-7000-8000-000000000002",
+        "sourceVersion": 7,
+        "fromWatermark": 6,
+        "toWatermark": 7,
+        "sourceVisibleAt": "2026-07-24T00:00:00Z",
+        "observedAt": "2026-07-24T00:01:00Z",
+        "traceId": "0123456789abcdef0123456789abcdef",
+        "correlationId": "019c1234-0000-7000-8001-000000000002",
+        "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+        "mappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+        "signatureDigest": "sha256:4d36ff7fec7e0993f46c31fd1dc4abeb0c7a052d000105148b5197134630de46",
+        "records": [
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000201",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:17c6a8d487e58a34e5815fe4d5d7a83f496d3a2b1b9cb793fe85d0a957f62dc4",
+            "payload": {
+              "externalRef": "ORG-SCHOOL",
+              "parentExternalRef": null,
+              "displayName": "苏州大学",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000202",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:bd338a228a1960c3dfcf029bf036f2963b5353b328595553991e084f442ad47a",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000203",
+            "recordKind": "employment-role",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:d4634374e2287315850e54856726b436e1e20569d9637bca6a75e49954978401",
+            "payload": {
+              "externalRef": "EMPLOYMENT-001",
+              "accountExternalRef": "ACCOUNT-001",
+              "organizationExternalRef": "ORG-SCHOOL",
+              "sourceRoleCode": "SANDBOX_STUDENT_AFFAIRS",
+              "targetRoleId": "R3-STUDENT-AFFAIRS",
+              "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000204",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:2850c21da22b65a384ee1db69db218893b5cf5be2682d9796bda407f113e46d9",
+            "payload": {
+              "externalRef": "ACCOUNT-002",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          }
+        ]
+      }
+    },
+    "duplicate-external-id": {
+      "executionStage": "adapter",
+      "afterWatermark": 6,
+      "checkpoint": {
+        "sourceVersion": 6,
+        "sourceWatermark": 6,
+        "aggregateVersion": 2
+      },
+      "signatureVerified": true,
+      "detachedSignature": "sandbox-signature-v1",
+      "payload": {
+        "$schema": "../../incremental-batch.schema.json",
+        "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+        "resultType": "changes",
+        "sourceId": "SRC-P0-RESPONSIBILITY-001",
+        "feedId": "identity-authority",
+        "partitionId": "sandbox-0",
+        "consumerProjection": "identity-org",
+        "batchId": "019c1234-0000-7000-8000-000000000003",
+        "sourceVersion": 7,
+        "fromWatermark": 6,
+        "toWatermark": 7,
+        "sourceVisibleAt": "2026-07-24T00:00:00Z",
+        "observedAt": "2026-07-24T00:01:00Z",
+        "traceId": "0123456789abcdef0123456789abcdef",
+        "correlationId": "019c1234-0000-7000-8001-000000000003",
+        "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+        "mappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+        "signatureDigest": "sha256:4d36ff7fec7e0993f46c31fd1dc4abeb0c7a052d000105148b5197134630de46",
+        "records": [
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000301",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:17c6a8d487e58a34e5815fe4d5d7a83f496d3a2b1b9cb793fe85d0a957f62dc4",
+            "payload": {
+              "externalRef": "ORG-SCHOOL",
+              "parentExternalRef": null,
+              "displayName": "苏州大学",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000302",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:bd338a228a1960c3dfcf029bf036f2963b5353b328595553991e084f442ad47a",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000303",
+            "recordKind": "employment-role",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:d4634374e2287315850e54856726b436e1e20569d9637bca6a75e49954978401",
+            "payload": {
+              "externalRef": "EMPLOYMENT-001",
+              "accountExternalRef": "ACCOUNT-001",
+              "organizationExternalRef": "ORG-SCHOOL",
+              "sourceRoleCode": "SANDBOX_STUDENT_AFFAIRS",
+              "targetRoleId": "R3-STUDENT-AFFAIRS",
+              "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000304",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:cfd0c0bec173105599d2581007cfbecda555db6969fe8b6555e0ae17f42ecd70",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-002",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          }
+        ]
+      }
+    },
+    "orphan-organization": {
+      "executionStage": "service",
+      "afterWatermark": 6,
+      "checkpoint": {
+        "sourceVersion": 6,
+        "sourceWatermark": 6,
+        "aggregateVersion": 2
+      },
+      "signatureVerified": true,
+      "detachedSignature": "sandbox-signature-v1",
+      "payload": {
+        "$schema": "../../incremental-batch.schema.json",
+        "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+        "resultType": "changes",
+        "sourceId": "SRC-P0-RESPONSIBILITY-001",
+        "feedId": "identity-authority",
+        "partitionId": "sandbox-0",
+        "consumerProjection": "identity-org",
+        "batchId": "019c1234-0000-7000-8000-000000000004",
+        "sourceVersion": 7,
+        "fromWatermark": 6,
+        "toWatermark": 7,
+        "sourceVisibleAt": "2026-07-24T00:00:00Z",
+        "observedAt": "2026-07-24T00:01:00Z",
+        "traceId": "0123456789abcdef0123456789abcdef",
+        "correlationId": "019c1234-0000-7000-8001-000000000004",
+        "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+        "mappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+        "signatureDigest": "sha256:4d36ff7fec7e0993f46c31fd1dc4abeb0c7a052d000105148b5197134630de46",
+        "records": [
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000401",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:8f3a2d5b4ee4f136b8eb01f25aa349fbb4afa4ae52e7b34b75e0f02625664f46",
+            "payload": {
+              "externalRef": "ORG-SCHOOL",
+              "parentExternalRef": "ORG-MISSING",
+              "displayName": "苏州大学",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000402",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:bd338a228a1960c3dfcf029bf036f2963b5353b328595553991e084f442ad47a",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000403",
+            "recordKind": "employment-role",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:d4634374e2287315850e54856726b436e1e20569d9637bca6a75e49954978401",
+            "payload": {
+              "externalRef": "EMPLOYMENT-001",
+              "accountExternalRef": "ACCOUNT-001",
+              "organizationExternalRef": "ORG-SCHOOL",
+              "sourceRoleCode": "SANDBOX_STUDENT_AFFAIRS",
+              "targetRoleId": "R3-STUDENT-AFFAIRS",
+              "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          }
+        ]
+      }
+    },
+    "self-parent-organization": {
+      "executionStage": "service",
+      "afterWatermark": 6,
+      "checkpoint": {
+        "sourceVersion": 6,
+        "sourceWatermark": 6,
+        "aggregateVersion": 2
+      },
+      "signatureVerified": true,
+      "detachedSignature": "sandbox-signature-v1",
+      "payload": {
+        "$schema": "../../incremental-batch.schema.json",
+        "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+        "resultType": "changes",
+        "sourceId": "SRC-P0-RESPONSIBILITY-001",
+        "feedId": "identity-authority",
+        "partitionId": "sandbox-0",
+        "consumerProjection": "identity-org",
+        "batchId": "019c1234-0000-7000-8000-000000000005",
+        "sourceVersion": 7,
+        "fromWatermark": 6,
+        "toWatermark": 7,
+        "sourceVisibleAt": "2026-07-24T00:00:00Z",
+        "observedAt": "2026-07-24T00:01:00Z",
+        "traceId": "0123456789abcdef0123456789abcdef",
+        "correlationId": "019c1234-0000-7000-8001-000000000005",
+        "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+        "mappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+        "signatureDigest": "sha256:4d36ff7fec7e0993f46c31fd1dc4abeb0c7a052d000105148b5197134630de46",
+        "records": [
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000501",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:9c12e44f9b83371ebb894bfeae8ead067f6b85451e125ff8b24e92048fd236f4",
+            "payload": {
+              "externalRef": "ORG-SCHOOL",
+              "parentExternalRef": "ORG-SCHOOL",
+              "displayName": "苏州大学",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000502",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:bd338a228a1960c3dfcf029bf036f2963b5353b328595553991e084f442ad47a",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000503",
+            "recordKind": "employment-role",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:d4634374e2287315850e54856726b436e1e20569d9637bca6a75e49954978401",
+            "payload": {
+              "externalRef": "EMPLOYMENT-001",
+              "accountExternalRef": "ACCOUNT-001",
+              "organizationExternalRef": "ORG-SCHOOL",
+              "sourceRoleCode": "SANDBOX_STUDENT_AFFAIRS",
+              "targetRoleId": "R3-STUDENT-AFFAIRS",
+              "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          }
+        ]
+      }
+    },
+    "cyclic-organization": {
+      "executionStage": "service",
+      "afterWatermark": 6,
+      "checkpoint": {
+        "sourceVersion": 6,
+        "sourceWatermark": 6,
+        "aggregateVersion": 2
+      },
+      "signatureVerified": true,
+      "detachedSignature": "sandbox-signature-v1",
+      "payload": {
+        "$schema": "../../incremental-batch.schema.json",
+        "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+        "resultType": "changes",
+        "sourceId": "SRC-P0-RESPONSIBILITY-001",
+        "feedId": "identity-authority",
+        "partitionId": "sandbox-0",
+        "consumerProjection": "identity-org",
+        "batchId": "019c1234-0000-7000-8000-000000000006",
+        "sourceVersion": 7,
+        "fromWatermark": 6,
+        "toWatermark": 7,
+        "sourceVisibleAt": "2026-07-24T00:00:00Z",
+        "observedAt": "2026-07-24T00:01:00Z",
+        "traceId": "0123456789abcdef0123456789abcdef",
+        "correlationId": "019c1234-0000-7000-8001-000000000006",
+        "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+        "mappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+        "signatureDigest": "sha256:4d36ff7fec7e0993f46c31fd1dc4abeb0c7a052d000105148b5197134630de46",
+        "records": [
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000601",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:ec2b69773cae5ce99ca9bcbeeaa8cabfb46fd54a0c2a08ce0d38c6839aa8c584",
+            "payload": {
+              "externalRef": "ORG-A",
+              "parentExternalRef": "ORG-B",
+              "displayName": "苏州大学",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000602",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:92a6dbb71338cbe207b9f63233d235ccde9427c02482c70ae9e4a5df64d6e89f",
+            "payload": {
+              "externalRef": "ORG-B",
+              "parentExternalRef": "ORG-A",
+              "displayName": "循环组织 B",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000603",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:bd338a228a1960c3dfcf029bf036f2963b5353b328595553991e084f442ad47a",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000604",
+            "recordKind": "employment-role",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:f8c8e5eb04c8b5089f3b141216d54f44e2cf1ef5231a09bfb5b9784cdbfbd426",
+            "payload": {
+              "externalRef": "EMPLOYMENT-001",
+              "accountExternalRef": "ACCOUNT-001",
+              "organizationExternalRef": "ORG-A",
+              "sourceRoleCode": "SANDBOX_STUDENT_AFFAIRS",
+              "targetRoleId": "R3-STUDENT-AFFAIRS",
+              "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          }
+        ]
+      }
+    },
+    "invalid-effective-window": {
+      "executionStage": "adapter",
+      "afterWatermark": 6,
+      "checkpoint": {
+        "sourceVersion": 6,
+        "sourceWatermark": 6,
+        "aggregateVersion": 2
+      },
+      "signatureVerified": true,
+      "detachedSignature": "sandbox-signature-v1",
+      "payload": {
+        "$schema": "../../incremental-batch.schema.json",
+        "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+        "resultType": "changes",
+        "sourceId": "SRC-P0-RESPONSIBILITY-001",
+        "feedId": "identity-authority",
+        "partitionId": "sandbox-0",
+        "consumerProjection": "identity-org",
+        "batchId": "019c1234-0000-7000-8000-000000000007",
+        "sourceVersion": 7,
+        "fromWatermark": 6,
+        "toWatermark": 7,
+        "sourceVisibleAt": "2026-07-24T00:00:00Z",
+        "observedAt": "2026-07-24T00:01:00Z",
+        "traceId": "0123456789abcdef0123456789abcdef",
+        "correlationId": "019c1234-0000-7000-8001-000000000007",
+        "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+        "mappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+        "signatureDigest": "sha256:4d36ff7fec7e0993f46c31fd1dc4abeb0c7a052d000105148b5197134630de46",
+        "records": [
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000701",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:17c6a8d487e58a34e5815fe4d5d7a83f496d3a2b1b9cb793fe85d0a957f62dc4",
+            "payload": {
+              "externalRef": "ORG-SCHOOL",
+              "parentExternalRef": null,
+              "displayName": "苏州大学",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000702",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T01:00:00Z",
+            "effectiveTo": "2026-07-24T00:59:59Z",
+            "payloadDigest": "sha256:f7576d189a89956a5b521f7bf95687e839beb5b8d38de391aaff296cd4ebafa7",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T01:00:00Z",
+              "effectiveTo": "2026-07-24T00:59:59Z",
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000703",
+            "recordKind": "employment-role",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:d4634374e2287315850e54856726b436e1e20569d9637bca6a75e49954978401",
+            "payload": {
+              "externalRef": "EMPLOYMENT-001",
+              "accountExternalRef": "ACCOUNT-001",
+              "organizationExternalRef": "ORG-SCHOOL",
+              "sourceRoleCode": "SANDBOX_STUDENT_AFFAIRS",
+              "targetRoleId": "R3-STUDENT-AFFAIRS",
+              "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          }
+        ]
+      }
+    },
+    "stale-source-version": {
+      "executionStage": "service",
+      "afterWatermark": 6,
+      "checkpoint": {
+        "sourceVersion": 7,
+        "sourceWatermark": 6,
+        "aggregateVersion": 2
+      },
+      "signatureVerified": true,
+      "detachedSignature": "sandbox-signature-v1",
+      "payload": {
+        "$schema": "../../incremental-batch.schema.json",
+        "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+        "resultType": "changes",
+        "sourceId": "SRC-P0-RESPONSIBILITY-001",
+        "feedId": "identity-authority",
+        "partitionId": "sandbox-0",
+        "consumerProjection": "identity-org",
+        "batchId": "019c1234-0000-7000-8000-000000000008",
+        "sourceVersion": 7,
+        "fromWatermark": 6,
+        "toWatermark": 7,
+        "sourceVisibleAt": "2026-07-24T00:00:00Z",
+        "observedAt": "2026-07-24T00:01:00Z",
+        "traceId": "0123456789abcdef0123456789abcdef",
+        "correlationId": "019c1234-0000-7000-8001-000000000008",
+        "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+        "mappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+        "signatureDigest": "sha256:4d36ff7fec7e0993f46c31fd1dc4abeb0c7a052d000105148b5197134630de46",
+        "records": [
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000801",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:17c6a8d487e58a34e5815fe4d5d7a83f496d3a2b1b9cb793fe85d0a957f62dc4",
+            "payload": {
+              "externalRef": "ORG-SCHOOL",
+              "parentExternalRef": null,
+              "displayName": "苏州大学",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000802",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:bd338a228a1960c3dfcf029bf036f2963b5353b328595553991e084f442ad47a",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000803",
+            "recordKind": "employment-role",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:d4634374e2287315850e54856726b436e1e20569d9637bca6a75e49954978401",
+            "payload": {
+              "externalRef": "EMPLOYMENT-001",
+              "accountExternalRef": "ACCOUNT-001",
+              "organizationExternalRef": "ORG-SCHOOL",
+              "sourceRoleCode": "SANDBOX_STUDENT_AFFAIRS",
+              "targetRoleId": "R3-STUDENT-AFFAIRS",
+              "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          }
+        ]
+      }
+    },
+    "cursor-gap": {
+      "executionStage": "service",
+      "afterWatermark": 6,
+      "checkpoint": {
+        "sourceVersion": 4,
+        "sourceWatermark": 4,
+        "aggregateVersion": 2
+      },
+      "signatureVerified": true,
+      "detachedSignature": "sandbox-signature-v1",
+      "payload": {
+        "$schema": "../../incremental-batch.schema.json",
+        "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+        "resultType": "changes",
+        "sourceId": "SRC-P0-RESPONSIBILITY-001",
+        "feedId": "identity-authority",
+        "partitionId": "sandbox-0",
+        "consumerProjection": "identity-org",
+        "batchId": "019c1234-0000-7000-8000-000000000009",
+        "sourceVersion": 7,
+        "fromWatermark": 6,
+        "toWatermark": 7,
+        "sourceVisibleAt": "2026-07-24T00:00:00Z",
+        "observedAt": "2026-07-24T00:01:00Z",
+        "traceId": "0123456789abcdef0123456789abcdef",
+        "correlationId": "019c1234-0000-7000-8001-000000000009",
+        "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+        "mappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+        "signatureDigest": "sha256:4d36ff7fec7e0993f46c31fd1dc4abeb0c7a052d000105148b5197134630de46",
+        "records": [
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000901",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:17c6a8d487e58a34e5815fe4d5d7a83f496d3a2b1b9cb793fe85d0a957f62dc4",
+            "payload": {
+              "externalRef": "ORG-SCHOOL",
+              "parentExternalRef": null,
+              "displayName": "苏州大学",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000902",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:bd338a228a1960c3dfcf029bf036f2963b5353b328595553991e084f442ad47a",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000000903",
+            "recordKind": "employment-role",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:d4634374e2287315850e54856726b436e1e20569d9637bca6a75e49954978401",
+            "payload": {
+              "externalRef": "EMPLOYMENT-001",
+              "accountExternalRef": "ACCOUNT-001",
+              "organizationExternalRef": "ORG-SCHOOL",
+              "sourceRoleCode": "SANDBOX_STUDENT_AFFAIRS",
+              "targetRoleId": "R3-STUDENT-AFFAIRS",
+              "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          }
+        ]
+      }
+    },
+    "same-key-different-payload": {
+      "executionStage": "service",
+      "afterWatermark": 6,
+      "checkpoint": {
+        "sourceVersion": 6,
+        "sourceWatermark": 6,
+        "aggregateVersion": 2
+      },
+      "signatureVerified": true,
+      "detachedSignature": "sandbox-signature-v1",
+      "payload": {
+        "$schema": "../../incremental-batch.schema.json",
+        "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+        "resultType": "changes",
+        "sourceId": "SRC-P0-RESPONSIBILITY-001",
+        "feedId": "identity-authority",
+        "partitionId": "sandbox-0",
+        "consumerProjection": "identity-org",
+        "batchId": "019c1234-0000-7000-8000-000000000010",
+        "sourceVersion": 7,
+        "fromWatermark": 6,
+        "toWatermark": 7,
+        "sourceVisibleAt": "2026-07-24T00:00:00Z",
+        "observedAt": "2026-07-24T00:01:00Z",
+        "traceId": "0123456789abcdef0123456789abcdef",
+        "correlationId": "019c1234-0000-7000-8001-000000000010",
+        "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+        "mappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+        "signatureDigest": "sha256:4d36ff7fec7e0993f46c31fd1dc4abeb0c7a052d000105148b5197134630de46",
+        "records": [
+          {
+            "eventId": "019c1234-0000-7000-8002-000000001001",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:17c6a8d487e58a34e5815fe4d5d7a83f496d3a2b1b9cb793fe85d0a957f62dc4",
+            "payload": {
+              "externalRef": "ORG-SCHOOL",
+              "parentExternalRef": null,
+              "displayName": "苏州大学",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000001002",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:bd338a228a1960c3dfcf029bf036f2963b5353b328595553991e084f442ad47a",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000001003",
+            "recordKind": "employment-role",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:d4634374e2287315850e54856726b436e1e20569d9637bca6a75e49954978401",
+            "payload": {
+              "externalRef": "EMPLOYMENT-001",
+              "accountExternalRef": "ACCOUNT-001",
+              "organizationExternalRef": "ORG-SCHOOL",
+              "sourceRoleCode": "SANDBOX_STUDENT_AFFAIRS",
+              "targetRoleId": "R3-STUDENT-AFFAIRS",
+              "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          }
+        ]
+      },
+      "currentRecord": {
+        "sourceVersion": 7,
+        "payloadDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    "mapping-digest-mismatch": {
+      "executionStage": "adapter",
+      "afterWatermark": 6,
+      "checkpoint": {
+        "sourceVersion": 6,
+        "sourceWatermark": 6,
+        "aggregateVersion": 2
+      },
+      "signatureVerified": true,
+      "detachedSignature": "sandbox-signature-v1",
+      "payload": {
+        "$schema": "../../incremental-batch.schema.json",
+        "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+        "resultType": "changes",
+        "sourceId": "SRC-P0-RESPONSIBILITY-001",
+        "feedId": "identity-authority",
+        "partitionId": "sandbox-0",
+        "consumerProjection": "identity-org",
+        "batchId": "019c1234-0000-7000-8000-000000000011",
+        "sourceVersion": 7,
+        "fromWatermark": 6,
+        "toWatermark": 7,
+        "sourceVisibleAt": "2026-07-24T00:00:00Z",
+        "observedAt": "2026-07-24T00:01:00Z",
+        "traceId": "0123456789abcdef0123456789abcdef",
+        "correlationId": "019c1234-0000-7000-8001-000000000011",
+        "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+        "mappingDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "signatureDigest": "sha256:4d36ff7fec7e0993f46c31fd1dc4abeb0c7a052d000105148b5197134630de46",
+        "records": [
+          {
+            "eventId": "019c1234-0000-7000-8002-000000001101",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:17c6a8d487e58a34e5815fe4d5d7a83f496d3a2b1b9cb793fe85d0a957f62dc4",
+            "payload": {
+              "externalRef": "ORG-SCHOOL",
+              "parentExternalRef": null,
+              "displayName": "苏州大学",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000001102",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:bd338a228a1960c3dfcf029bf036f2963b5353b328595553991e084f442ad47a",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000001103",
+            "recordKind": "employment-role",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:d4634374e2287315850e54856726b436e1e20569d9637bca6a75e49954978401",
+            "payload": {
+              "externalRef": "EMPLOYMENT-001",
+              "accountExternalRef": "ACCOUNT-001",
+              "organizationExternalRef": "ORG-SCHOOL",
+              "sourceRoleCode": "SANDBOX_STUDENT_AFFAIRS",
+              "targetRoleId": "R3-STUDENT-AFFAIRS",
+              "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          }
+        ]
+      }
+    },
+    "source-signature-invalid": {
+      "executionStage": "service",
+      "afterWatermark": 6,
+      "checkpoint": {
+        "sourceVersion": 6,
+        "sourceWatermark": 6,
+        "aggregateVersion": 2
+      },
+      "signatureVerified": false,
+      "detachedSignature": "sandbox-signature-v1",
+      "payload": {
+        "$schema": "../../incremental-batch.schema.json",
+        "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+        "resultType": "changes",
+        "sourceId": "SRC-P0-RESPONSIBILITY-001",
+        "feedId": "identity-authority",
+        "partitionId": "sandbox-0",
+        "consumerProjection": "identity-org",
+        "batchId": "019c1234-0000-7000-8000-000000000012",
+        "sourceVersion": 7,
+        "fromWatermark": 6,
+        "toWatermark": 7,
+        "sourceVisibleAt": "2026-07-24T00:00:00Z",
+        "observedAt": "2026-07-24T00:01:00Z",
+        "traceId": "0123456789abcdef0123456789abcdef",
+        "correlationId": "019c1234-0000-7000-8001-000000000012",
+        "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+        "mappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+        "signatureDigest": "sha256:4d36ff7fec7e0993f46c31fd1dc4abeb0c7a052d000105148b5197134630de46",
+        "records": [
+          {
+            "eventId": "019c1234-0000-7000-8002-000000001201",
+            "recordKind": "organization",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:17c6a8d487e58a34e5815fe4d5d7a83f496d3a2b1b9cb793fe85d0a957f62dc4",
+            "payload": {
+              "externalRef": "ORG-SCHOOL",
+              "parentExternalRef": null,
+              "displayName": "苏州大学",
+              "organizationType": "school",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000001202",
+            "recordKind": "account",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:bd338a228a1960c3dfcf029bf036f2963b5353b328595553991e084f442ad47a",
+            "payload": {
+              "externalRef": "ACCOUNT-001",
+              "issuer": "https://idp.sandbox.invalid",
+              "subject": "subject-001",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          },
+          {
+            "eventId": "019c1234-0000-7000-8002-000000001203",
+            "recordKind": "employment-role",
+            "sourceVersion": 7,
+            "effectiveFrom": "2026-07-24T00:00:00Z",
+            "effectiveTo": null,
+            "payloadDigest": "sha256:d4634374e2287315850e54856726b436e1e20569d9637bca6a75e49954978401",
+            "payload": {
+              "externalRef": "EMPLOYMENT-001",
+              "accountExternalRef": "ACCOUNT-001",
+              "organizationExternalRef": "ORG-SCHOOL",
+              "sourceRoleCode": "SANDBOX_STUDENT_AFFAIRS",
+              "targetRoleId": "R3-STUDENT-AFFAIRS",
+              "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+              "status": "active",
+              "effectiveFrom": "2026-07-24T00:00:00Z",
+              "effectiveTo": null,
+              "recordVersion": 7
+            }
+          }
+        ]
+      }
+    }
+  }
+}

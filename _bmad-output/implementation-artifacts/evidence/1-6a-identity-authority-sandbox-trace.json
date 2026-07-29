@@ -1,0 +1,175 @@
+{
+  "authorizationReadBackEvidence": "IdentityAuthoritySandboxIT#sameTraceRunsThroughWorkerPostgreSqlAndCurrentAuthorizationReadBack",
+  "consumer": "backend/src/test/java/cn/edu/suda/scholarsense/identityaccess/adapters/outbound/IdentityAuthoritySandboxIT.java",
+  "consumerResult": "PASS",
+  "credentialsPersisted": false,
+  "endToEndPath": [
+    "controlled-provider",
+    "identity-sync-worker",
+    "PostgreSQL-18.4",
+    "current-authorization-read-back"
+  ],
+  "endToEndRequest": {
+    "afterWatermark": 0,
+    "authorization": "accepted",
+    "httpStatus": 200,
+    "responseSha256": "9f6b0408681b591d98ac59d6adf410707b465ee705afeaa028b0f9b68762d8dd",
+    "scenario": "account-added",
+    "signature": "valid",
+    "traceId": "fedcba9876543210fedcba9876543210"
+  },
+  "endToEndTraceId": "fedcba9876543210fedcba9876543210",
+  "environment": "controlled-local-sandbox",
+  "executedAt": "2026-07-29T12:45:52.976843+00:00",
+  "productionEligible": false,
+  "provider": "scripts/identity_authority_sandbox.py",
+  "providerConsumerLatencyAssertion": "every accepted sandbox fixture observed-minus-sourceVisibleAt<=15m",
+  "requests": [
+    {
+      "afterWatermark": 0,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "a092c8dfeac26f55e733a194d03d7a27981eb9a95ed042259d50b3d59f92cf45",
+      "scenario": "account-added",
+      "signature": "valid",
+      "traceId": "00000000000000000000000000000001"
+    },
+    {
+      "afterWatermark": 1,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "70f848838067fa27b66ee56e26e1ef19c31fed058ea3266381390282c7b008f2",
+      "scenario": "account-changed",
+      "signature": "valid",
+      "traceId": "00000000000000000000000000000002"
+    },
+    {
+      "afterWatermark": 2,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "805c5a4b695037fe8b74213f2ff0fc380f5e41cee5c8992c6bf09523413358a5",
+      "scenario": "account-deactivated",
+      "signature": "valid",
+      "traceId": "00000000000000000000000000000003"
+    },
+    {
+      "afterWatermark": 3,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "57f40d2e3a7f222b40ec480eaa90db3273c3e511e0ed0e677d87aa6cf5c3c950",
+      "scenario": "role-added-and-multi-role",
+      "signature": "valid",
+      "traceId": "00000000000000000000000000000004"
+    },
+    {
+      "afterWatermark": 4,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "fee2f51e8b0978d410022fb683bc067b3a0ca91210cc24f96c9f39e524105208",
+      "scenario": "role-removed",
+      "signature": "valid",
+      "traceId": "00000000000000000000000000000005"
+    },
+    {
+      "afterWatermark": 5,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "dfb4e7341b76300a80f4f7d39788451ac6f5948a34b308ef2ae178173ac859cd",
+      "scenario": "organization-added",
+      "signature": "valid",
+      "traceId": "00000000000000000000000000000006"
+    },
+    {
+      "afterWatermark": 6,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "a4eaaa6afce5e648bb65ba0cfa4658ef1c38cbcdc9b1ac9df372e98014dd9dfe",
+      "scenario": "organization-renamed",
+      "signature": "valid",
+      "traceId": "00000000000000000000000000000007"
+    },
+    {
+      "afterWatermark": 7,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "859de20d32493fa1fb25497a6549b3f37173876cb6a756c608930109e83d05f1",
+      "scenario": "organization-reparented",
+      "signature": "valid",
+      "traceId": "00000000000000000000000000000008"
+    },
+    {
+      "afterWatermark": 8,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "5ffa4b99ee4cb1bda8f821be0d95a06b6fe032b3aede0186e3f313ae5b61f25f",
+      "scenario": "organization-deactivated",
+      "signature": "valid",
+      "traceId": "00000000000000000000000000000009"
+    },
+    {
+      "afterWatermark": 9,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "45b607c6f5253220d67cf26717c4c69d7b08e6ed263ea838681148cce9d609e8",
+      "scenario": "employment-window-ended",
+      "signature": "valid",
+      "traceId": "0000000000000000000000000000000a"
+    },
+    {
+      "afterWatermark": 10,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "07cc328b5a1594af60e6021ac7754644064e49053722425267462dd6044634a7",
+      "scenario": "unknown-role",
+      "signature": "valid",
+      "traceId": "0000000000000000000000000000000b"
+    },
+    {
+      "afterWatermark": 11,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "7cf99663f950b0f90200d6a4f9d647d2f80696f4e9999ca8fa7eb73708acfdd4",
+      "scenario": "subject-binding-conflict",
+      "signature": "valid",
+      "traceId": "0000000000000000000000000000000c"
+    },
+    {
+      "afterWatermark": 0,
+      "authorization": "rejected",
+      "httpStatus": 401,
+      "responseSha256": null,
+      "scenario": "authentication-failure",
+      "signature": "not-issued",
+      "traceId": "0000000000000000000000000000000d"
+    },
+    {
+      "afterWatermark": 12,
+      "authorization": "accepted",
+      "httpStatus": 200,
+      "responseSha256": "8f478d95398eaee3d9dfc31c969c98142225217edd789cd8931b9d290378460d",
+      "scenario": "invalid-signature",
+      "signature": "invalid",
+      "traceId": "0000000000000000000000000000000e"
+    }
+  ],
+  "scenarios": [
+    "account-added",
+    "account-changed",
+    "account-deactivated",
+    "authentication-failure",
+    "employment-window-ended",
+    "invalid-signature",
+    "organization-added",
+    "organization-deactivated",
+    "organization-renamed",
+    "organization-reparented",
+    "role-added-and-multi-role",
+    "role-removed",
+    "subject-binding-conflict",
+    "unknown-role"
+  ],
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "storyId": "1.6a",
+  "transport": "loopback-http-test-only",
+  "version": "IDENTITY-AUTHORITY-SANDBOX-EVIDENCE-1.0.0"
+}

@@ -19,9 +19,12 @@ from release_json import load_json, schema_definition_issues, schema_issues  # n
 
 AUDIT = Path("contracts/audit")
 LOCK = AUDIT / "audit-contract-lock-1.0.0.json"
+SUCCESSOR_LOCK = AUDIT / "audit-contract-lock-1.1.0.json"
 SCHEMAS = {
     AUDIT / "action-catalog-1.0.0.json": AUDIT / "action-catalog.schema.json",
     AUDIT / "identity-access-vocabulary-1.0.0.json": AUDIT / "identity-access-vocabulary.schema.json",
+    AUDIT / "action-catalog-1.1.0.json": AUDIT / "action-catalog-1.1.schema.json",
+    AUDIT / "identity-access-vocabulary-1.1.0.json": AUDIT / "identity-access-vocabulary-1.1.schema.json",
     AUDIT / "trusted-clock-runtime-binding-1.0.0.json": AUDIT / "trusted-clock-runtime-binding.schema.json",
     AUDIT / "fixtures/valid/local-audit-fact.json": AUDIT / "local-audit-fact.schema.json",
     AUDIT / "fixtures/valid/local-audit-outbox.json": AUDIT / "local-audit-outbox.schema.json",
@@ -67,6 +70,12 @@ def validate(project_root: Path) -> list[str]:
     outbox = documents.get(AUDIT / "fixtures/valid/local-audit-outbox.json")
     clock_binding = documents.get(AUDIT / "trusted-clock-runtime-binding-1.0.0.json")
     issues.extend(_catalog_issues(catalog))
+    successor_catalog = documents.get(AUDIT / "action-catalog-1.1.0.json")
+    successor_vocabulary = documents.get(
+        AUDIT / "identity-access-vocabulary-1.1.0.json"
+    )
+    issues.extend(_catalog_issues(successor_catalog))
+    issues.extend(_successor_issues(successor_catalog, successor_vocabulary))
     issues.extend(_outbox_schema_issues(
         loaded_schemas.get(AUDIT / "local-audit-outbox.schema.json"),
         loaded_schemas.get(AUDIT / "local-audit-fact.schema.json")))
@@ -78,6 +87,7 @@ def validate(project_root: Path) -> list[str]:
     issues.extend(_negative_fixture_issues(
         root, loaded_schemas.get(AUDIT / "local-audit-fact.schema.json"), catalog, vocabulary))
     issues.extend(_lock_issues(root))
+    issues.extend(_successor_lock_issues(root))
     return sorted(set(issues))
 
 
@@ -108,6 +118,39 @@ def _catalog_issues(catalog: Any) -> list[str]:
         if entry.get("status") == "active" and entry.get("ownerModule") != "identity-access":
             issues.append(f"AUDIT_ACTION_PREMATURELY_ACTIVE: {entry.get('code')}")
     return issues
+
+
+def _successor_issues(catalog: Any, vocabulary: Any) -> list[str]:
+    if not isinstance(catalog, dict) or not isinstance(vocabulary, dict):
+        return ["AUDIT_SUCCESSOR_INVALID"]
+    actions = {
+        entry.get("code"): entry
+        for entry in catalog.get("actions", [])
+        if isinstance(entry, dict)
+    }
+    required_actions = {
+        "identity.session.view",
+        "identity.sync.applied",
+        "identity.sync.rejected",
+        "identity.sync.failed",
+        "identity.sync.reconciled",
+    }
+    checks = (
+        catalog.get("version") == "AUDIT-ACTION-CATALOG-1.1.0",
+        catalog.get("supersedes") == "AUDIT-ACTION-CATALOG-1.0.0",
+        set(actions) == required_actions,
+        vocabulary.get("version") == "IDENTITY-AUDIT-VOCABULARY-1.1.0",
+        vocabulary.get("supersedes") == "IDENTITY-AUDIT-VOCABULARY-1.0.0",
+        {"IDENTITY_AUTHORITY_SYNC", "IDENTITY_AUTHORITY_RECONCILIATION"}
+            <= set(vocabulary.get("purposes", [])),
+        {"identity-sync-job", "identity-reconciliation"}
+            <= set(vocabulary.get("objectTypes", [])),
+        vocabulary.get("policyVersions", {}).get("roleMapping")
+            == "IDENTITY-ROLE-MAPPING-1.0.0",
+        vocabulary.get("policyVersions", {}).get("retentionSchedule")
+            == "RS-1.0.0",
+    )
+    return [] if all(checks) else ["AUDIT_SUCCESSOR_INVALID"]
 
 
 def _fact_issues(fact: Any, catalog: Any, vocabulary: Any) -> list[str]:
@@ -343,13 +386,12 @@ def _lock_issues(root: Path) -> list[str]:
     except (OSError, ValueError, KeyError, TypeError):
         return ["AUDIT_CONTRACT_LOCK_INVALID"]
     issues: list[str] = []
-    expected_paths = sorted(
-        str(path.relative_to(root))
-        for path in (root / AUDIT).rglob("*")
-        if path.is_file() and path != root / LOCK
-    )
     locked_paths = [entry.get("path") for entry in entries if isinstance(entry, dict)]
-    if lock.get("version") != "AUDIT-CONTRACT-LOCK-1.0.0" or locked_paths != expected_paths:
+    if (
+        lock.get("version") != "AUDIT-CONTRACT-LOCK-1.0.0"
+        or locked_paths != sorted(locked_paths)
+        or any("-1.1" in str(path) for path in locked_paths)
+    ):
         issues.append("AUDIT_CONTRACT_LOCK_SCOPE_MISMATCH")
     for entry in entries:
         if not isinstance(entry, dict) or not isinstance(entry.get("path"), str) \
@@ -363,6 +405,38 @@ def _lock_issues(root: Path) -> list[str]:
             continue
         if digest != entry["sha256"]:
             issues.append(f"AUDIT_CONTRACT_LOCK_DIGEST_MISMATCH: {entry['path']}")
+    return issues
+
+
+def _successor_lock_issues(root: Path) -> list[str]:
+    try:
+        lock = load_json(root / SUCCESSOR_LOCK)
+        entries = lock["files"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return ["AUDIT_SUCCESSOR_LOCK_INVALID"]
+    expected = sorted({
+        "contracts/audit/action-catalog-1.1.0.json",
+        "contracts/audit/action-catalog-1.1.schema.json",
+        "contracts/audit/identity-access-vocabulary-1.1.0.json",
+        "contracts/audit/identity-access-vocabulary-1.1.schema.json",
+    })
+    paths = [entry.get("path") for entry in entries if isinstance(entry, dict)]
+    issues: list[str] = []
+    if (
+        lock.get("version") != "AUDIT-CONTRACT-LOCK-1.1.0"
+        or paths != expected
+    ):
+        issues.append("AUDIT_SUCCESSOR_LOCK_INVALID")
+    for entry in entries:
+        try:
+            actual = hashlib.sha256((root / entry["path"]).read_bytes()).hexdigest()
+        except (OSError, KeyError, TypeError):
+            issues.append("AUDIT_SUCCESSOR_LOCK_INVALID")
+            continue
+        if actual != entry.get("sha256"):
+            issues.append(
+                f"AUDIT_SUCCESSOR_LOCK_DIGEST_MISMATCH: {entry.get('path')}"
+            )
     return issues
 
 
