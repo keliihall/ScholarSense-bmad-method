@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/identity-authority/runtime-profile.schema.json",
+  "title": "Controlled identity authority source profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "profileVersion",
+    "sourceId",
+    "environment",
+    "productionEligible",
+    "approvedBy",
+    "approvedAt",
+    "bindings",
+    "digest"
+  ],
+  "properties": {
+    "$schema": {"const": "./runtime-profile.schema.json"},
+    "profileVersion": {"const": "IDENTITY-AUTHORITY-PROFILE-1.0.0"},
+    "sourceId": {"const": "SRC-P0-RESPONSIBILITY-001"},
+    "environment": {"const": "sandbox"},
+    "productionEligible": {"const": false},
+    "approvedBy": {"type": "string", "minLength": 1},
+    "approvedAt": {"type": "string", "format": "date-time"},
+    "bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feedId",
+        "partitionId",
+        "consumerProjection",
+        "endpointTemplate",
+        "connectTimeoutSeconds",
+        "requestTimeoutSeconds",
+        "workloadIdentityResource",
+        "signatureKeyResource",
+        "inboxEncryptionKeyResource",
+        "roleMappingResource",
+        "roleMappingVersion",
+        "roleMappingDigest",
+        "pollIntervalSeconds",
+        "retryBudget"
+      ],
+      "properties": {
+        "feedId": {"const": "identity-authority"},
+        "partitionId": {"const": "sandbox-0"},
+        "consumerProjection": {"const": "identity-org"},
+        "endpointTemplate": {
+          "const": "https://{environment}.identity-authority.sandbox.invalid/api/v1/incremental"
+        },
+        "connectTimeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 30},
+        "requestTimeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 60},
+        "workloadIdentityResource": {"const": "identity-sync-worker"},
+        "signatureKeyResource": {"const": "identity-authority-signature"},
+        "inboxEncryptionKeyResource": {"const": "identity-authority-inbox"},
+        "roleMappingResource": {"const": "identity-role-mapping-1-0-0"},
+        "roleMappingVersion": {"const": "IDENTITY-ROLE-MAPPING-1.0.0"},
+        "roleMappingDigest": {"pattern": "^sha256:[0-9a-f]{64}$"},
+        "pollIntervalSeconds": {"type": "integer", "minimum": 5, "maximum": 900},
+        "retryBudget": {"type": "integer", "minimum": 1, "maximum": 20}
+      }
+    },
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

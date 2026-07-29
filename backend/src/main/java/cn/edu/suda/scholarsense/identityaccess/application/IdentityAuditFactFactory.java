@@ -28,7 +28,15 @@ public final class IdentityAuditFactFactory {
         TrustedTime occurred;
         try {
             IdentityAuditVocabulary.validate(request);
-            occurred = timeSource.now();
+            TrustedTime trustedNow = timeSource.now();
+            if (request.sourceOccurredAt() != null
+                    && request.sourceOccurredAt().isAfter(trustedNow.instant())) {
+                throw new IllegalArgumentException("AUDIT_SOURCE_TIME_IN_FUTURE");
+            }
+            occurred = request.sourceOccurredAt() == null
+                    ? trustedNow
+                    : new TrustedTime(
+                            request.sourceOccurredAt(), trustedNow.profile());
         } catch (TrustedTimeException unavailable) {
             throw unavailable("IDENTITY_AUDIT_TIME_UNAVAILABLE");
         } catch (IllegalArgumentException invalid) {

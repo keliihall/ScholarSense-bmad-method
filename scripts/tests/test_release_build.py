@@ -35,7 +35,7 @@ class ReleaseBuildContractTest(unittest.TestCase):
         self.assertIn("<project.build.outputTimestamp>2026-07-19T00:00:00Z</project.build.outputTimestamp>", pom)
         roles = (PROJECT_ROOT / "deploy/base/roles.json").read_text(encoding="utf-8")
         self.assertNotIn("scholarsense-backend-0.1.0-SNAPSHOT.jar", roles)
-        self.assertEqual(2, roles.count("backend/target/scholarsense-backend.jar"))
+        self.assertEqual(3, roles.count("backend/target/scholarsense-backend.jar"))
 
     def test_normalized_frontend_archive_ignores_source_mtime_and_mode_noise(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

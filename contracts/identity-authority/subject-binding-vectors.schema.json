@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/identity-authority/subject-binding-vectors.schema.json",
+  "title": "OIDC issuer and subject canonicalization vectors",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "purpose", "separatorHex", "keyRotation", "vectors"],
+  "properties": {
+    "$schema": {"type": "string", "const": "./subject-binding-vectors.schema.json"},
+    "version": {"type": "string", "const": "IDENTITY-SUBJECT-BINDING-VECTORS-1.0.0"},
+    "purpose": {"type": "string", "const": "identity-actor"},
+    "separatorHex": {"type": "string", "const": "00"},
+    "keyRotation": {"type": "string", "const": "dual-read-new-write"},
+    "vectors": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["issuer", "subject", "canonicalUtf8Hex"],
+        "properties": {
+          "issuer": {"type": "string", "pattern": "^https://[a-z0-9.-]+$"},
+          "subject": {"type": "string", "minLength": 1},
+          "canonicalUtf8Hex": {"type": "string", "pattern": "^[0-9a-f]+$"}
+        }
+      }
+    }
+  }
+}

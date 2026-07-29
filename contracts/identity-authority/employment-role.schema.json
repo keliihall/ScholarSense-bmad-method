@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/identity-authority/employment-role.schema.json",
+  "title": "Normalized authoritative employment and role binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "externalRef",
+    "accountExternalRef",
+    "organizationExternalRef",
+    "sourceRoleCode",
+    "targetRoleId",
+    "mappingVersion",
+    "status",
+    "effectiveFrom",
+    "effectiveTo",
+    "recordVersion"
+  ],
+  "properties": {
+    "externalRef": {"type": "string", "minLength": 1, "maxLength": 128},
+    "accountExternalRef": {"type": "string", "minLength": 1, "maxLength": 128},
+    "organizationExternalRef": {"type": "string", "minLength": 1, "maxLength": 128},
+    "sourceRoleCode": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,63}$"},
+    "targetRoleId": {
+      "type": "string",
+      "enum": [
+        "R1-COUNSELOR",
+        "R2-COLLEGE-MANAGER",
+        "R3-STUDENT-AFFAIRS",
+        "R4-SCHOOL-LEADER",
+        "R5-COLLABORATOR",
+        "R6-DATA-OWNER",
+        "R7-PLATFORM-OPS"
+      ]
+    },
+    "mappingVersion": {"type": "string", "const": "IDENTITY-ROLE-MAPPING-1.0.0"},
+    "status": {"type": "string", "enum": ["active", "inactive"]},
+    "effectiveFrom": {"type": "string", "format": "date-time"},
+    "effectiveTo": {"type": ["string", "null"], "format": "date-time"},
+    "recordVersion": {"type": "integer", "minimum": 1}
+  }
+}

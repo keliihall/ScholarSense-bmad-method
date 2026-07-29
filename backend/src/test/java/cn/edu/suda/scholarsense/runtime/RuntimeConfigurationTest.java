@@ -154,6 +154,45 @@ public class RuntimeConfigurationTest {
     }
 
     @Test
+    void identitySyncCapabilityIsWorkerOnlyAndRequiresCurrentControlledBindings() {
+        Map<String, String> worker = new HashMap<>(validEnvironment("worker"));
+        worker.put("SCHOLARSENSE_IDENTITY_SYNC_ENABLED", "true");
+
+        ConfigurationException missingClock = assertThrows(
+                ConfigurationException.class, () -> RuntimeConfiguration.from(worker));
+        assertEquals("SCHOLARSENSE_CLOCK_SOURCE_REF", missingClock.field());
+
+        worker.put("SCHOLARSENSE_CLOCK_SOURCE_REF", "config://test/campus-ntp-a");
+        ConfigurationException missingProfile = assertThrows(
+                ConfigurationException.class, () -> RuntimeConfiguration.from(worker));
+        assertEquals("SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF", missingProfile.field());
+
+        worker.put(
+                "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+                "config://test/identity-authority-profile-1-0-0");
+        RuntimeConfiguration configured = RuntimeConfiguration.from(worker);
+        assertEquals(true, configured.identitySyncEnabled());
+        assertEquals(
+                "config://test/identity-authority-profile-1-0-0",
+                configured.identityAuthorityProfileReference());
+
+        Map<String, String> web = new HashMap<>(worker);
+        web.put("SCHOLARSENSE_ROLE", "web-api");
+        ConfigurationException roleMismatch = assertThrows(
+                ConfigurationException.class, () -> RuntimeConfiguration.from(web));
+        assertEquals("CONFIG_ROLE_CAPABILITY_MISMATCH", roleMismatch.code());
+        assertEquals("SCHOLARSENSE_IDENTITY_SYNC_ENABLED", roleMismatch.field());
+
+        Map<String, String> stale = new HashMap<>(worker);
+        stale.put(
+                "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+                "config://test/identity-authority-profile-0-9-0");
+        ConfigurationException staleProfile = assertThrows(
+                ConfigurationException.class, () -> RuntimeConfiguration.from(stale));
+        assertEquals("CONFIG_STALE_REFERENCE", staleProfile.code());
+    }
+
+    @Test
     void auditRuntimeRejectsMissingCrossEnvironmentAndStaleControlledReferencesWithoutEchoingValues() {
         Map<String, String> missing = new HashMap<>(validEnvironment("worker"));
         missing.put("SCHOLARSENSE_AUDIT_LEDGER_ENABLED", "true");
@@ -201,6 +240,7 @@ public class RuntimeConfigurationTest {
                 Map.entry("SCHOLARSENSE_STORAGE_NAMESPACE", "scholarsense-" + environment),
                 Map.entry("SCHOLARSENSE_EXTERNAL_BASE_URI", "https://" + environment + ".invalid"),
                 Map.entry("SCHOLARSENSE_IDENTITY_ENABLED", "false"),
+                Map.entry("SCHOLARSENSE_IDENTITY_SYNC_ENABLED", "false"),
                 Map.entry("SCHOLARSENSE_AUDIT_LEDGER_ENABLED", "false"));
     }
 

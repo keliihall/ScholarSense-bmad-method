@@ -1,0 +1,21 @@
+{
+  "$schema": "../../incremental-batch.schema.json",
+  "schemaVersion": "IDENTITY-AUTHORITY-BATCH-1.0.0",
+  "resultType": "heartbeat",
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "feedId": "identity-authority",
+  "partitionId": "sandbox-0",
+  "consumerProjection": "identity-org",
+  "batchId": "019c1234-0000-7000-8000-000000000021",
+  "sourceVersion": 7,
+  "fromWatermark": 6,
+  "toWatermark": 6,
+  "sourceVisibleAt": "2026-07-24T00:00:00Z",
+  "observedAt": "2026-07-24T00:01:00Z",
+  "traceId": "0123456789abcdef0123456789abcdef",
+  "correlationId": "019c1234-0000-7000-8000-000000000022",
+  "mappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+  "mappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+  "signatureDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "records": []
+}

@@ -1,0 +1,17 @@
+{
+  "version": "IDENTITY-AUTHORITY-NEGATIVE-FIXTURES-1.0.0",
+  "cases": [
+    {"id": "unknown-role", "fixtureRef": "fixtures/negative/payloads-1.0.0.json#unknown-role", "expectedReasonCode": "IDENTITY_ROLE_UNKNOWN"},
+    {"id": "duplicate-binding", "fixtureRef": "fixtures/negative/payloads-1.0.0.json#duplicate-binding", "expectedReasonCode": "IDENTITY_SUBJECT_BINDING_CONFLICT"},
+    {"id": "duplicate-external-id", "fixtureRef": "fixtures/negative/payloads-1.0.0.json#duplicate-external-id", "expectedReasonCode": "IDENTITY_EXTERNAL_ID_DUPLICATE"},
+    {"id": "orphan-organization", "fixtureRef": "fixtures/negative/payloads-1.0.0.json#orphan-organization", "expectedReasonCode": "IDENTITY_ORGANIZATION_ORPHAN"},
+    {"id": "self-parent-organization", "fixtureRef": "fixtures/negative/payloads-1.0.0.json#self-parent-organization", "expectedReasonCode": "IDENTITY_ORGANIZATION_SELF_PARENT"},
+    {"id": "cyclic-organization", "fixtureRef": "fixtures/negative/payloads-1.0.0.json#cyclic-organization", "expectedReasonCode": "IDENTITY_ORGANIZATION_CYCLE"},
+    {"id": "invalid-effective-window", "fixtureRef": "fixtures/negative/payloads-1.0.0.json#invalid-effective-window", "expectedReasonCode": "IDENTITY_EFFECTIVE_WINDOW_INVALID"},
+    {"id": "stale-source-version", "fixtureRef": "fixtures/negative/payloads-1.0.0.json#stale-source-version", "expectedReasonCode": "IDENTITY_SOURCE_VERSION_STALE"},
+    {"id": "cursor-gap", "fixtureRef": "fixtures/negative/payloads-1.0.0.json#cursor-gap", "expectedReasonCode": "IDENTITY_SOURCE_CURSOR_GAP"},
+    {"id": "same-key-different-payload", "fixtureRef": "fixtures/negative/payloads-1.0.0.json#same-key-different-payload", "expectedReasonCode": "IDENTITY_SOURCE_PAYLOAD_CONFLICT"},
+    {"id": "mapping-digest-mismatch", "fixtureRef": "fixtures/negative/payloads-1.0.0.json#mapping-digest-mismatch", "expectedReasonCode": "IDENTITY_SOURCE_CONTRACT_UNAPPROVED"},
+    {"id": "source-signature-invalid", "fixtureRef": "fixtures/negative/payloads-1.0.0.json#source-signature-invalid", "expectedReasonCode": "IDENTITY_SOURCE_SIGNATURE_INVALID"}
+  ]
+}

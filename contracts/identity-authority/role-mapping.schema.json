@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/identity-authority/role-mapping.schema.json",
+  "title": "Approved source role to R1-R7 mapping",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "sourceId",
+    "environment",
+    "productionEligible",
+    "providedBy",
+    "approvedBy",
+    "approvedAt",
+    "effectiveAt",
+    "digest",
+    "entries"
+  ],
+  "properties": {
+    "$schema": {"type": "string", "const": "./role-mapping.schema.json"},
+    "version": {"type": "string", "const": "IDENTITY-ROLE-MAPPING-1.0.0"},
+    "sourceId": {"type": "string", "const": "SRC-P0-RESPONSIBILITY-001"},
+    "environment": {"type": "string", "enum": ["sandbox", "production"]},
+    "productionEligible": {"type": "boolean"},
+    "providedBy": {
+      "type": "string",
+      "const": "SRC-P0-RESPONSIBILITY-001 controlled sandbox source owner"
+    },
+    "approvedBy": {"type": "string", "const": "Hei"},
+    "approvedAt": {"type": "string", "format": "date-time"},
+    "effectiveAt": {"type": "string", "format": "date-time"},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceRoleCode", "targetRoleId", "conditions"],
+        "properties": {
+          "sourceRoleCode": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,63}$"},
+          "targetRoleId": {
+            "type": "string",
+            "enum": [
+              "R1-COUNSELOR",
+              "R2-COLLEGE-MANAGER",
+              "R3-STUDENT-AFFAIRS",
+              "R4-SCHOOL-LEADER",
+              "R5-COLLABORATOR",
+              "R6-DATA-OWNER",
+              "R7-PLATFORM-OPS"
+            ]
+          },
+          "conditions": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["employmentStatus", "organizationTypes"],
+            "properties": {
+              "employmentStatus": {"type": "string", "const": "active"},
+              "organizationTypes": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {"type": "string", "enum": ["school", "college", "department"]}
+              },
+              "forbidBusinessRoleSelfGrant": {"type": "boolean"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

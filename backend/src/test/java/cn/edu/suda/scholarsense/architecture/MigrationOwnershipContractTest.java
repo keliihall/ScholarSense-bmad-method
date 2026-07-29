@@ -22,8 +22,8 @@ class MigrationOwnershipContractTest {
         assertEquals(expectedFacts(), result.ownership().entrySet().stream()
                 .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().factOwners())));
         try (var walk = Files.walk(MIGRATIONS)) {
-            assertEquals(5, walk.filter(path -> path.toString().endsWith(".sql")).count(),
-                    "Stories 1.2 through 1.5 own exactly five forward migrations");
+            assertEquals(6, walk.filter(path -> path.toString().endsWith(".sql")).count(),
+                    "Stories 1.2 through 1.6a own exactly six forward migrations");
         }
         Path firstMigration = MIGRATIONS.resolve(
                 "identity-access/V000001__identity-access__session_boundary.sql");
@@ -123,6 +123,44 @@ class MigrationOwnershipContractTest {
         assertFalse(lower.contains("grant truncate on audit_operations.ao_audit_ledger"));
         assertFalse(lower.contains("delete from audit_operations.ao_audit_ledger"));
         assertFalse(lower.contains("identity_access."));
+    }
+
+    @Test
+    void story16aMigrationCreatesFencedIdentitySyncAndLeastPrivilegeCurrentProjection()
+            throws Exception {
+        String migration = Files.readString(MIGRATIONS.resolve(
+                "identity-access/V000006__identity-access__authoritative_identity_org_v1.sql"));
+        String lower = migration.toLowerCase();
+
+        for (String table : Set.of(
+                "ia_identity_source_inbox", "ia_identity_source_archive",
+                "ia_identity_source_fact",
+                "ia_authoritative_account_current",
+                "ia_authoritative_subject_binding_history",
+                "ia_authoritative_organization_current",
+                "ia_authoritative_role_current", "ia_identity_sync_job",
+                "ia_identity_sync_failure_resolution",
+                "ia_identity_sync_attempt", "ia_identity_sync_lease",
+                "ia_identity_sync_checkpoint", "ia_identity_rejected_record",
+                "ia_identity_replay_request",
+                "ia_identity_reconciliation_sample", "ia_identity_slo_evidence",
+                "ia_identity_slo_compensation")) {
+            assertTrue(lower.contains("identity_access." + table), table);
+        }
+        assertTrue(lower.contains("consumer_projection"));
+        assertTrue(lower.contains("fencing_token"));
+        assertTrue(lower.contains("aggregate_version"));
+        assertTrue(lower.contains("encrypted_data_key"));
+        assertTrue(lower.contains("encryption_nonce"));
+        assertTrue(lower.contains("create role scholarsense_identity_sync_worker nologin"));
+        assertTrue(lower.contains("create role scholarsense_identity_current_reader nologin"));
+        assertTrue(lower.contains("grant select on identity_access.ia_authoritative_account_current"));
+        assertFalse(lower.contains("grant insert on identity_access.ia_authoritative_account_current\n"
+                + "    to scholarsense_identity_current_reader"));
+        assertFalse(lower.contains("audit_operations."));
+        assertFalse(lower.contains("subject_registry."));
+        assertFalse(lower.contains("raw_subject"));
+        assertFalse(lower.contains("access_token"));
     }
 
     @Test

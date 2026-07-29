@@ -58,7 +58,7 @@ class ContractSeedTest(unittest.TestCase):
             path.write_text(json.dumps(value), encoding="utf-8")
             self.assert_reason(root, "WORKER_EXPOSES_BUSINESS_HTTP")
 
-    def test_audit_runtime_references_are_required_only_by_the_worker_role(self) -> None:
+    def test_worker_capabilities_are_split_and_identity_sync_is_not_production_eligible(self) -> None:
         roles = json.loads((PROJECT_ROOT / "deploy/base/roles.json").read_text(encoding="utf-8"))
         audit_keys = {
             "SCHOLARSENSE_AUDIT_INGESTION_POLICY_REF",
@@ -69,13 +69,25 @@ class ContractSeedTest(unittest.TestCase):
             "SCHOLARSENSE_AUDIT_METRIC_BINDING_REF",
             "SCHOLARSENSE_AUDIT_RETENTION_CAPABILITY_REF",
         }
+        sync_keys = {
+            "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+            "SCHOLARSENSE_IDENTITY_SYNC_SECURITY_DIRECTORY",
+        }
 
-        self.assertTrue(audit_keys.isdisjoint(roles["requiredEnvironment"]))
+        self.assertTrue((audit_keys | sync_keys).isdisjoint(roles["requiredEnvironment"]))
         self.assertEqual([], roles["roles"]["web-api"]["requiredEnvironment"])
-        self.assertEqual(
-            audit_keys,
-            set(roles["roles"]["worker"]["requiredEnvironment"]),
+        self.assertEqual(audit_keys, set(roles["roles"]["worker"]["requiredEnvironment"]))
+        self.assertFalse(
+            roles["roles"]["worker"]["environment"]["SCHOLARSENSE_IDENTITY_SYNC_ENABLED"]
+            == "true"
         )
+        sync = roles["roles"]["identity-sync-worker"]
+        self.assertEqual(sync_keys, set(sync["requiredEnvironment"]))
+        self.assertEqual("worker", sync["environment"]["SCHOLARSENSE_ROLE"])
+        self.assertEqual("true", sync["environment"]["SCHOLARSENSE_IDENTITY_SYNC_ENABLED"])
+        self.assertEqual("false", sync["environment"]["SCHOLARSENSE_AUDIT_LEDGER_ENABLED"])
+        self.assertEqual(["dev", "test", "stage"], sync["allowedEnvironments"])
+        self.assertFalse(sync["businessHttp"])
 
     def test_role_artifact_matches_maven_output_name(self) -> None:
         roles = json.loads((PROJECT_ROOT / "deploy/base/roles.json").read_text(encoding="utf-8"))

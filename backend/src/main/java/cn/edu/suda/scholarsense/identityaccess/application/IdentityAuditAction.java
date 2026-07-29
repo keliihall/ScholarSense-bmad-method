@@ -6,7 +6,11 @@ public enum IdentityAuditAction {
     SESSION_LOGOUT("identity.session.logout"),
     SESSION_ACCOUNT_SWITCH("identity.session.account-switch"),
     HOST_INPUT_REJECT("identity.host.input.reject"),
-    SESSION_VIEW("identity.session.view");
+    SESSION_VIEW("identity.session.view"),
+    SYNC_APPLIED("identity.sync.applied"),
+    SYNC_REJECTED("identity.sync.rejected"),
+    SYNC_FAILED("identity.sync.failed"),
+    SYNC_RECONCILED("identity.sync.reconciled");
 
     private final String code;
 

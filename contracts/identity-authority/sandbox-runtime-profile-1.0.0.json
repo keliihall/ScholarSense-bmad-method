@@ -1,0 +1,26 @@
+{
+  "$schema": "./runtime-profile.schema.json",
+  "profileVersion": "IDENTITY-AUTHORITY-PROFILE-1.0.0",
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "environment": "sandbox",
+  "productionEligible": false,
+  "approvedBy": "Hei",
+  "approvedAt": "2026-07-24T08:00:00+08:00",
+  "bindings": {
+    "feedId": "identity-authority",
+    "partitionId": "sandbox-0",
+    "consumerProjection": "identity-org",
+    "endpointTemplate": "https://{environment}.identity-authority.sandbox.invalid/api/v1/incremental",
+    "connectTimeoutSeconds": 5,
+    "requestTimeoutSeconds": 20,
+    "workloadIdentityResource": "identity-sync-worker",
+    "signatureKeyResource": "identity-authority-signature",
+    "inboxEncryptionKeyResource": "identity-authority-inbox",
+    "roleMappingResource": "identity-role-mapping-1-0-0",
+    "roleMappingVersion": "IDENTITY-ROLE-MAPPING-1.0.0",
+    "roleMappingDigest": "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+    "pollIntervalSeconds": 30,
+    "retryBudget": 5
+  },
+  "digest": "sha256:11c68739c85df9dfc8aaeb70eac8474b6da50ae98fb9ad8163ca7c2ab6fa363f"
+}

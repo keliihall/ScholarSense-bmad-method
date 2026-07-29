@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,16 +33,29 @@ class IdentityAuditCatalogContractTest {
                     "HOST_ORIGIN_FORBIDDEN", "HOST_SOURCE_FORBIDDEN",
                     "HOST_MESSAGE_INVALID", "HOST_MESSAGE_REPLAYED"),
             IdentityAuditAction.SESSION_VIEW, Set.of(
-                    "AUTHORIZATION_ALLOWED", "IDENTITY_SESSION_REQUIRED", "IDENTITY_SESSION_EXPIRED"));
+                    "AUTHORIZATION_ALLOWED", "IDENTITY_SESSION_REQUIRED", "IDENTITY_SESSION_EXPIRED",
+                    "IDENTITY_DEPENDENCY_UNAVAILABLE"),
+            IdentityAuditAction.SYNC_APPLIED, Set.of("IDENTITY_SYNC_APPLIED"),
+            IdentityAuditAction.SYNC_REJECTED, syncRejectionReasons(),
+            IdentityAuditAction.SYNC_FAILED, syncFailureReasons(),
+            IdentityAuditAction.SYNC_RECONCILED, Set.of(
+                    "IDENTITY_RECONCILIATION_MATCHED",
+                    "IDENTITY_RECONCILIATION_DIFFERENCES_FOUND"));
 
     @Test
     void everyImplementedIdentityActionAndReasonIsActiveInTheVersionedCatalog() throws Exception {
-        Path catalogPath = Path.of("..", "contracts", "audit", "action-catalog-1.0.0.json");
-        JsonNode root = new ObjectMapper().readTree(Files.readString(catalogPath));
-        Map<String, JsonNode> activeIdentityActions = root.get("actions").valueStream()
-                .filter(action -> "identity-access".equals(action.get("ownerModule").asText()))
-                .filter(action -> "active".equals(action.get("status").asText()))
-                .collect(Collectors.toMap(action -> action.get("code").asText(), action -> action));
+        ObjectMapper json = new ObjectMapper();
+        Map<String, JsonNode> activeIdentityActions = new HashMap<>();
+        for (String version : List.of("1.0.0", "1.1.0")) {
+            Path catalogPath = Path.of(
+                    "..", "contracts", "audit", "action-catalog-" + version + ".json");
+            JsonNode root = json.readTree(Files.readString(catalogPath));
+            root.get("actions").valueStream()
+                    .filter(action -> "identity-access".equals(action.get("ownerModule").asText()))
+                    .filter(action -> "active".equals(action.get("status").asText()))
+                    .forEach(action -> activeIdentityActions.put(
+                            action.get("code").asText(), action));
+        }
 
         Set<String> implemented = Arrays.stream(IdentityAuditAction.values())
                 .map(IdentityAuditAction::code)
@@ -54,5 +69,48 @@ class IdentityAuditCatalogContractTest {
                     .collect(Collectors.toSet());
             assertTrue(allowed.containsAll(reasons), action.code() + " has an unregistered runtime reason");
         });
+    }
+
+    private static Set<String> syncFailureReasons() {
+        java.util.HashSet<String> reasons = new java.util.HashSet<>(syncRejectionReasons());
+        reasons.add("IDENTITY_SYNC_PERSISTENCE_UNAVAILABLE");
+        return Set.copyOf(reasons);
+    }
+
+    private static Set<String> syncRejectionReasons() {
+        return Set.of(
+                "IDENTITY_SOURCE_DEPENDENCY_UNAVAILABLE",
+                "IDENTITY_SOURCE_AUTHENTICATION_FAILED",
+                "IDENTITY_SOURCE_AUTHENTICATION_UNAVAILABLE",
+                "IDENTITY_SOURCE_SIGNATURE_INVALID",
+                "IDENTITY_SOURCE_SIGNATURE_DIGEST_INVALID",
+                "IDENTITY_SOURCE_CONTRACT_UNAPPROVED",
+                "IDENTITY_SOURCE_DIGEST_INVALID",
+                "IDENTITY_SOURCE_EFFECTIVE_INTERVAL_MISMATCH",
+                "IDENTITY_SOURCE_PAYLOAD_INVALID",
+                "IDENTITY_SOURCE_PAYLOAD_TOO_LARGE",
+                "IDENTITY_SOURCE_PAYLOAD_DIGEST_INVALID",
+                "IDENTITY_SOURCE_PAYLOAD_CONFLICT",
+                "IDENTITY_SOURCE_RECORD_KIND_INVALID",
+                "IDENTITY_SOURCE_REQUEST_INVALID",
+                "IDENTITY_SOURCE_SCOPE_INVALID",
+                "IDENTITY_SOURCE_KMS_BINDING_INVALID",
+                "IDENTITY_SOURCE_CURSOR_GAP",
+                "IDENTITY_SOURCE_VERSION_STALE",
+                "IDENTITY_SOURCE_EVENT_DUPLICATE",
+                "IDENTITY_SUBJECT_BINDING_CONFLICT",
+                "IDENTITY_SUBJECT_REBIND_FORBIDDEN",
+                "IDENTITY_SYNC_FENCING_STALE",
+                "IDENTITY_BINDING_REFERENCE_INVALID",
+                "IDENTITY_EXTERNAL_ID_DUPLICATE",
+                "IDENTITY_EXTERNAL_ID_TOKEN_INVALID",
+                "IDENTITY_ORGANIZATION_TYPE_INVALID",
+                "IDENTITY_PSEUDONYMIZATION_UNAVAILABLE",
+                "IDENTITY_STATUS_INVALID",
+                "IDENTITY_ORGANIZATION_ORPHAN",
+                "IDENTITY_ORGANIZATION_SELF_PARENT",
+                "IDENTITY_ORGANIZATION_CYCLE",
+                "IDENTITY_ROLE_UNKNOWN",
+                "IDENTITY_ROLE_MAPPING_UNAPPROVED");
     }
 }
