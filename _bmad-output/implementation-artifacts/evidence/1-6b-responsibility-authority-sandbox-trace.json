@@ -1,0 +1,48 @@
+{
+  "boundaries": {
+    "authorizationEffective": "<=15m",
+    "partialOrUnsealedSnapshot": "fail-closed",
+    "reconciliationMatchRate": ">=0.999000",
+    "schedule": "Asia/Shanghai 06:00 inclusive"
+  },
+  "consumerMatrix": [
+    "ResponsibilityRecipientValidityTest",
+    "ResponsibilitySyncServiceTest",
+    "ResponsibilitySyncWorkerTest",
+    "ResponsibilityScopeQueryServiceTest",
+    "ResponsibilityFullSnapshotNormalizerTest",
+    "ResponsibilityReconciliationServiceTest",
+    "ResponsibilityReconciliationWorkerTest",
+    "ResponsibilityReconciliationSchedulerTest",
+    "ResponsibilitySloServiceTest",
+    "ResponsibilitySloCompensationServiceTest",
+    "ResponsibilityAuthorityRuntimeProfileTest",
+    "IdentitySyncConfigurationTest"
+  ],
+  "consumerResult": "PASS",
+  "contractChecker": "scripts/check_responsibility_authority_contracts.py",
+  "credentialsPersisted": false,
+  "databaseEvidence": "ResponsibilityAuthorityPostgreSqlIT via scripts/run_audit_postgresql_tests.sh",
+  "environment": "controlled-local-sandbox",
+  "executedAt": "2026-07-30T13:19:43.580950+00:00",
+  "productionEligible": false,
+  "rawStudentReferencesPersisted": false,
+  "scenarios": [
+    "responsibility-added",
+    "responsibility-changed",
+    "responsibility-invalidated",
+    "primary-secondary-conflict",
+    "recipient-missing",
+    "college-exception-opened",
+    "college-exception-resolved",
+    "complete-snapshot",
+    "partial-snapshot-rejected",
+    "asia-shanghai-daily-boundary",
+    "fifteen-minute-inclusive-boundary",
+    "ninety-nine-point-nine-inclusive-boundary"
+  ],
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "storyId": "1.6b",
+  "transport": "loopback-and-fixture-test-only",
+  "version": "RESPONSIBILITY-AUTHORITY-SANDBOX-EVIDENCE-1.0.0"
+}

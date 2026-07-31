@@ -9,6 +9,11 @@ import java.util.UUID;
 
 /** Runs one persisted attempt. Scheduling is an inbound concern; correctness stays in the ports. */
 public final class IdentitySyncWorker {
+    private static final CheckpointKey DEFAULT_IDENTITY_ROUTE = new CheckpointKey(
+            "SRC-P0-RESPONSIBILITY-001",
+            "identity-authority",
+            "sandbox-0",
+            "identity-org");
     private static final Set<String> RETRYABLE_SYNC_CODES = Set.of(
             "IDENTITY_SOURCE_CURSOR_GAP",
             "IDENTITY_SOURCE_DEPENDENCY_UNAVAILABLE",
@@ -25,6 +30,7 @@ public final class IdentitySyncWorker {
     private final TrustedTimeSource time;
     private final IdentityReplayPort replay;
     private final IdentitySyncRejectionPort rejections;
+    private final CheckpointKey routeKey;
 
     public IdentitySyncWorker(
             IdentitySyncJobPort jobs,
@@ -37,7 +43,8 @@ public final class IdentitySyncWorker {
         this(
                 jobs, source, processor, audit, observability, transactions, time,
                 (key, fromInclusive, toInclusive, traceId) -> {},
-                rejection -> {});
+                rejection -> {},
+                DEFAULT_IDENTITY_ROUTE);
     }
 
     public IdentitySyncWorker(
@@ -51,7 +58,7 @@ public final class IdentitySyncWorker {
             IdentityReplayPort replay) {
         this(
                 jobs, source, processor, audit, observability, transactions, time,
-                replay, rejection -> {});
+                replay, rejection -> {}, DEFAULT_IDENTITY_ROUTE);
     }
 
     public IdentitySyncWorker(
@@ -64,6 +71,22 @@ public final class IdentitySyncWorker {
             TrustedTimeSource time,
             IdentityReplayPort replay,
             IdentitySyncRejectionPort rejections) {
+        this(
+                jobs, source, processor, audit, observability, transactions, time,
+                replay, rejections, DEFAULT_IDENTITY_ROUTE);
+    }
+
+    public IdentitySyncWorker(
+            IdentitySyncJobPort jobs,
+            IdentityAuthoritySourcePort source,
+            IdentitySyncProcessorPort processor,
+            IdentitySyncAuditPort audit,
+            IdentitySyncObservabilityPort observability,
+            IdentitySyncTransactionPort transactions,
+            TrustedTimeSource time,
+            IdentityReplayPort replay,
+            IdentitySyncRejectionPort rejections,
+            CheckpointKey routeKey) {
         this.jobs = jobs;
         this.source = source;
         this.processor = processor;
@@ -73,11 +96,15 @@ public final class IdentitySyncWorker {
         this.time = time;
         this.replay = replay;
         this.rejections = rejections;
+        if (routeKey == null || !"identity-org".equals(routeKey.consumerProjection())) {
+            throw new IllegalArgumentException("IDENTITY_SYNC_ROUTE_INVALID");
+        }
+        this.routeKey = routeKey;
     }
 
     public Optional<IdentitySyncWorkerRun> runNext(String leaseOwner) {
         Instant now = time.now().instant();
-        Optional<IdentitySyncJob> due = jobs.nextDue(now);
+        Optional<IdentitySyncJob> due = jobs.nextDue(routeKey, now);
         if (due.isEmpty()) {
             return Optional.empty();
         }

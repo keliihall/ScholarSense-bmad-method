@@ -18,6 +18,7 @@ public record RuntimeConfiguration(
         boolean auditLedgerEnabled,
         String clockSourceReference,
         String identityAuthorityProfileReference,
+        String responsibilityAuthorityProfileReference,
         String auditIngestionPolicyReference,
         String auditHashProfileReference,
         String auditCollectorReference,
@@ -33,6 +34,8 @@ public record RuntimeConfiguration(
     private static final String AUDIT_METRIC_BINDING = "audit-micrometer-1-0-0";
     private static final String IDENTITY_AUTHORITY_PROFILE =
             "identity-authority-profile-1-0-0";
+    private static final String RESPONSIBILITY_AUTHORITY_PROFILE =
+            "responsibility-authority-profile-1-0-0";
 
     public static RuntimeConfiguration from(Map<String, String> values) {
         RuntimeEnvironment environment = RuntimeEnvironment.parse(required(values, "SCHOLARSENSE_ENV"));
@@ -89,6 +92,12 @@ public record RuntimeConfiguration(
                 environment,
                 identitySyncEnabled,
                 IDENTITY_AUTHORITY_PROFILE);
+        String responsibilityAuthorityProfileReference = controlledReference(
+                values,
+                "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
+                environment,
+                identitySyncEnabled,
+                RESPONSIBILITY_AUTHORITY_PROFILE);
         String auditIngestionPolicyReference = controlledAuditReference(
                 values, "SCHOLARSENSE_AUDIT_INGESTION_POLICY_REF", environment,
                 auditLedgerEnabled, AUDIT_INGESTION_POLICY);
@@ -121,6 +130,7 @@ public record RuntimeConfiguration(
                 auditLedgerEnabled,
                 clockSourceReference,
                 identityAuthorityProfileReference,
+                responsibilityAuthorityProfileReference,
                 auditIngestionPolicyReference,
                 auditHashProfileReference,
                 auditCollectorReference,

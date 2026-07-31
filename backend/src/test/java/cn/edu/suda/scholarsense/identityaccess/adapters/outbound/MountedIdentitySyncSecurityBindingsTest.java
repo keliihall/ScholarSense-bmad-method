@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cn.edu.suda.scholarsense.identityaccess.application.AuditTokenDomain;
 import cn.edu.suda.scholarsense.runtime.IdentityAuthorityRuntimeProfile;
+import cn.edu.suda.scholarsense.runtime.ResponsibilityAuthorityRuntimeProfile;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -94,6 +95,55 @@ class MountedIdentitySyncSecurityBindingsTest {
                         temporary, profile()));
     }
 
+    @Test
+    void responsibilityUsesIndependentWorkloadSignatureAndEnvelopeMaterial()
+            throws Exception {
+        writeBinding(
+                "s".repeat(32).getBytes(StandardCharsets.US_ASCII),
+                "k1",
+                "none");
+        byte[] responsibilitySignature =
+                "r".repeat(32).getBytes(StandardCharsets.US_ASCII);
+        write(
+                "responsibility-workload-token",
+                "x".repeat(32).getBytes(StandardCharsets.US_ASCII));
+        write(
+                "responsibility-signature-hmac.key",
+                responsibilitySignature);
+        write(
+                "responsibility-envelope-kek.key",
+                "z".repeat(32).getBytes(StandardCharsets.US_ASCII));
+        var bindings = new MountedIdentitySyncSecurityBindings(
+                temporary, profile(), responsibilityProfile());
+        byte[] payload = ("{\"signatureDigest\":\"sha256:"
+                + "0".repeat(64) + "\",\"value\":1}")
+                .getBytes(StandardCharsets.UTF_8);
+
+        assertEquals(
+                "Bearer " + "x".repeat(32),
+                bindings.authorizationHeader(
+                        "account://test/responsibility-sync-worker"));
+        assertTrue(bindings.verify(
+                payload,
+                hmac(responsibilitySignature, payload),
+                "secret://test/responsibility-authority-signature"));
+        var encrypted = bindings.encrypt(
+                "responsibility".toCharArray(),
+                "responsibility-authority-inbox");
+        assertEquals(
+                "config://test/responsibility-authority-inbox",
+                encrypted.keyRef());
+        assertEquals(
+                "responsibility",
+                new String(bindings.decrypt(
+                        encrypted,
+                        "responsibility-authority-inbox")));
+        assertThrows(
+                RuntimeException.class,
+                () -> bindings.decrypt(
+                        encrypted, "identity-authority-inbox"));
+    }
+
     private void writeBinding(
             byte[] signatureKey, String currentVersion, String previousVersion)
             throws Exception {
@@ -151,6 +201,22 @@ class MountedIdentitySyncSecurityBindingsTest {
                 "sha256:" + "a".repeat(64),
                 Duration.ofSeconds(30),
                 5,
+                false);
+    }
+
+    private static ResponsibilityAuthorityRuntimeProfile
+            responsibilityProfile() {
+        return new ResponsibilityAuthorityRuntimeProfile(
+                "SRC-P0-RESPONSIBILITY-001",
+                "responsibility-authority",
+                "sandbox-0",
+                "responsibility",
+                URI.create(
+                        "https://test.responsibility-authority.invalid/incremental"),
+                Duration.ofSeconds(5),
+                "account://test/responsibility-sync-worker",
+                "secret://test/responsibility-authority-signature",
+                "config://test/responsibility-authority-inbox",
                 false);
     }
 

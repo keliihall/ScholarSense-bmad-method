@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.IdentitySyncScheduler;
+import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.ResponsibilityReconciliationScheduler;
+import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.ResponsibilitySyncScheduler;
 import cn.edu.suda.scholarsense.identityaccess.application.EncryptedSecret;
 import cn.edu.suda.scholarsense.identityaccess.application.EnvelopeEncryptionPort;
 import cn.edu.suda.scholarsense.identityaccess.application.EnvelopeDecryptionPort;
@@ -39,6 +41,9 @@ class IdentitySyncConfigurationTest {
         values.put(
                 "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
                 "config://test/identity-authority-profile-1-0-0");
+        values.put(
+                "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
+                "config://test/responsibility-authority-profile-1-0-0");
         RuntimeConfiguration runtime = RuntimeConfiguration.from(values);
 
         try (var context = new AnnotationConfigApplicationContext()) {
@@ -91,6 +96,13 @@ class IdentitySyncConfigurationTest {
                     cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncWorker.class));
             assertNotNull(context.getBean(
                     cn.edu.suda.scholarsense.runtime.IdentityAuthorityRuntimeProfile.class));
+            assertNotNull(context.getBean(
+                    cn.edu.suda.scholarsense.runtime.ResponsibilityAuthorityRuntimeProfile.class));
+            assertNotNull(context.getBean(ResponsibilitySyncScheduler.class));
+            assertNotNull(context.getBean(
+                    ResponsibilityReconciliationScheduler.class));
+            assertNotNull(context.getBean(
+                    cn.edu.suda.scholarsense.identityaccess.application.ResponsibilitySyncWorker.class));
         }
     }
 
@@ -102,6 +114,9 @@ class IdentitySyncConfigurationTest {
         values.put(
                 "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
                 "config://test/identity-authority-profile-1-0-0");
+        values.put(
+                "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
+                "config://test/responsibility-authority-profile-1-0-0");
         RuntimeConfiguration runtime = RuntimeConfiguration.from(values);
 
         try (var context = new AnnotationConfigApplicationContext()) {

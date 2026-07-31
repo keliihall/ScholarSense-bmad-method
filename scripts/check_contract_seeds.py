@@ -21,6 +21,9 @@ AUDIT_REFERENCE_RESOURCES = {
     "SCHOLARSENSE_AUDIT_RETENTION_CAPABILITY_REF": "audit-retention-capability-1-0-0",
 }
 IDENTITY_AUTHORITY_PROFILE_RESOURCE = "identity-authority-profile-1-0-0"
+RESPONSIBILITY_AUTHORITY_PROFILE_RESOURCE = (
+    "responsibility-authority-profile-1-0-0"
+)
 RUNTIME_KEYS = {
     "SCHOLARSENSE_ENV",
     "SCHOLARSENSE_ROLE",
@@ -35,6 +38,7 @@ RUNTIME_KEYS = {
     "SCHOLARSENSE_AUDIT_LEDGER_ENABLED",
     "SCHOLARSENSE_CLOCK_SOURCE_REF",
     "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+    "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
     *AUDIT_REFERENCE_RESOURCES,
 }
 SENSITIVE_CLIENT_NAME = re.compile(r"(?:SECRET|TOKEN|PASSWORD|PRIVATE|DATABASE|ACCOUNT|STORAGE)", re.IGNORECASE)
@@ -45,6 +49,8 @@ REFERENCE_PATTERNS = {
     "SCHOLARSENSE_CLOCK_SOURCE_REF": r"^config://(dev|test|stage|prod)/[a-z0-9-]+$",
     "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF":
         rf"^config://(dev|test|stage|prod)/{IDENTITY_AUTHORITY_PROFILE_RESOURCE}$",
+    "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF":
+        rf"^config://(dev|test|stage|prod)/{RESPONSIBILITY_AUTHORITY_PROFILE_RESOURCE}$",
     **{
         key: rf"^config://(dev|test|stage|prod)/{resource}$"
         for key, resource in AUDIT_REFERENCE_RESOURCES.items()
@@ -95,6 +101,7 @@ def _check_runtime_schema(schema, violations: list[str]) -> None:
     optional = {
         "SCHOLARSENSE_HTTP_PORT", "SCHOLARSENSE_CLOCK_SOURCE_REF",
         "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+        "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
         *AUDIT_REFERENCE_RESOURCES,
     }
     if set(schema.get("required", [])) != RUNTIME_KEYS - optional:
@@ -153,7 +160,10 @@ def _check_runtime_schema(schema, violations: list[str]) -> None:
         )
         if condition.get("const") == "true":
             sync_required.update(rule.get("then", {}).get("required", []))
-    if sync_required != {"SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF"}:
+    if sync_required != {
+        "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+        "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
+    }:
         violations.append("RUNTIME_SCHEMA_IDENTITY_SYNC_BINDINGS_INVALID")
 
 
@@ -182,6 +192,7 @@ def _check_example(path: Path, environment: str, violations: list[str]) -> None:
         expected_scheme = "config" if key in {
             "SCHOLARSENSE_CLOCK_SOURCE_REF",
             "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+            "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
             *AUDIT_REFERENCE_RESOURCES,
         } else (
             key.removeprefix("SCHOLARSENSE_").removesuffix("_REF").lower()
@@ -197,6 +208,11 @@ def _check_example(path: Path, environment: str, violations: list[str]) -> None:
             f"config://{environment}/{IDENTITY_AUTHORITY_PROFILE_RESOURCE}":
         violations.append(
             f"CONFIG_EXAMPLE_IDENTITY_AUTHORITY_REFERENCE_STALE: {environment}"
+        )
+    if values.get("SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF") != \
+            f"config://{environment}/{RESPONSIBILITY_AUTHORITY_PROFILE_RESOURCE}":
+        violations.append(
+            f"CONFIG_EXAMPLE_RESPONSIBILITY_AUTHORITY_REFERENCE_STALE: {environment}"
         )
     if not re.fullmatch(
         rf"[a-z0-9]+(?:-[a-z0-9]+)*-{re.escape(environment)}",
@@ -345,6 +361,7 @@ def _check_roles(root: Path, roles, violations: list[str]) -> None:
         "SCHOLARSENSE_IDENTITY_ENABLED", "SCHOLARSENSE_IDENTITY_SYNC_ENABLED",
         "SCHOLARSENSE_AUDIT_LEDGER_ENABLED",
         "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+        "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
         *AUDIT_REFERENCE_RESOURCES,
     }
     if set(roles.get("requiredEnvironment", [])) != expected_environment:
@@ -399,6 +416,7 @@ def _check_roles(root: Path, roles, violations: list[str]) -> None:
         },
         "identity-sync-worker": {
             "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+            "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
             "SCHOLARSENSE_IDENTITY_SYNC_SECURITY_DIRECTORY",
         },
     }

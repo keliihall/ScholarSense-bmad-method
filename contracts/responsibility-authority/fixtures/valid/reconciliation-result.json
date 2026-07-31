@@ -1,0 +1,30 @@
+{
+  "$schema": "../../reconciliation-result.schema.json",
+  "runId": "01980d46-5b40-7000-8000-000000000021",
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "consumerProjection": "responsibility",
+  "contractVersion": "RESPONSIBILITY-AUTHORITY-1.0.0",
+  "businessDate": "2026-07-30",
+  "sourceVersion": 7,
+  "throughWatermark": 7,
+  "supportingIdentityOrgWatermarks": {
+    "identity-authority|sandbox-0": 42
+  },
+  "expectedCount": 1000,
+  "actualCount": 1000,
+  "expectedDigest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+  "actualDigest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+  "matched": 999,
+  "missing": 1,
+  "unexpected": 0,
+  "versionDrift": 0,
+  "matchRate": "0.999000",
+  "activeUnmappedCount": 0,
+  "exceptionCount": 1,
+  "jobOutcome": "succeeded",
+  "reconciliationOutcome": "matched",
+  "reasonCode": "RESPONSIBILITY_RECONCILIATION_MATCHED",
+  "startedAt": "2026-07-30T06:00:01+08:00",
+  "completedAt": "2026-07-30T06:00:10+08:00",
+  "traceId": "44444444444444444444444444444444"
+}

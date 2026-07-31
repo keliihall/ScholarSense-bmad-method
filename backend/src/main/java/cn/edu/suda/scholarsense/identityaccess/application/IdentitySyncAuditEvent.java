@@ -16,8 +16,41 @@ public record IdentitySyncAuditEvent(
         long aggregateVersion,
         String traceId,
         Instant occurredAt,
-        Map<String, String> policyVersions) {
+        Map<String, String> policyVersions,
+        UUID auditedObjectId) {
     public IdentitySyncAuditEvent {
         policyVersions = Map.copyOf(policyVersions);
+        if (auditedObjectId == null) {
+            auditedObjectId = jobId;
+        }
+    }
+
+    public IdentitySyncAuditEvent(
+            String action,
+            String outcome,
+            String reasonCode,
+            UUID jobId,
+            int attemptNo,
+            long fencingToken,
+            long sourceVersion,
+            long sourceWatermark,
+            long aggregateVersion,
+            String traceId,
+            Instant occurredAt,
+            Map<String, String> policyVersions) {
+        this(
+                action,
+                outcome,
+                reasonCode,
+                jobId,
+                attemptNo,
+                fencingToken,
+                sourceVersion,
+                sourceWatermark,
+                aggregateVersion,
+                traceId,
+                occurredAt,
+                policyVersions,
+                jobId);
     }
 }

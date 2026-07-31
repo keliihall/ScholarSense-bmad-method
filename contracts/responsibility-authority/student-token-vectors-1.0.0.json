@@ -1,0 +1,29 @@
+{
+  "$schema": "./student-token-vectors.schema.json",
+  "version": "RESPONSIBILITY-STUDENT-TOKEN-VECTORS-1.0.0",
+  "purposeCode": "RESPONSIBILITY-STUDENT-REF",
+  "vectors": [
+    {
+      "keyVersion": "resp-student-v1",
+      "tokenValue": "stok_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "equivalenceDomain": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "keyVersion": "resp-student-v2",
+      "tokenValue": "stok_BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "digest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "equivalenceDomain": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "negativeCases": [
+    {
+      "id": "wrong-purpose",
+      "expectedReasonCode": "RESPONSIBILITY_TOKEN_PURPOSE_INVALID"
+    },
+    {
+      "id": "unknown-key-version",
+      "expectedReasonCode": "RESPONSIBILITY_TOKEN_KEY_VERSION_UNKNOWN"
+    }
+  ]
+}

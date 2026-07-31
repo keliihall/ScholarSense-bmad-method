@@ -14,8 +14,8 @@ Future migrations must:
 - obtain a new global sequence number; sequence reuse is rejected even across owner directories.
 
 The contract is enforced by the JDK suite and by `scripts/run_audit_postgresql_tests.sh` against
-PostgreSQL 18.4. V000003/V000004/V000005/V000006 are tested on both a clean
-V000001→V000002→V000003→V000004→V000005→V000006 path and an upgrade containing a preserved legacy
+PostgreSQL 18.4. V000003/V000004/V000005/V000006/V000007 are tested on both a clean
+V000001→V000002→V000003→V000004→V000005→V000006→V000007 path and an upgrade containing a preserved legacy
 audit row. V000005 proves search projection backfill/watermark, cross-node atomic one-time CSRF
 proof consumption, stable indexed pagination, retention evidence tables, least-privilege
 read/executor roles, and the continued absence of ledger update/delete/truncate privileges.
@@ -24,3 +24,8 @@ audit atomicity, persistent job and attempt state, lease fencing and expired-wor
 reconciliation/SLO evidence, replay coverage, and separate least-privilege sync-worker/current-
 reader roles. The audit conformance template proves the future module pattern without creating
 production tables for inactive modules.
+V000007 keeps V000006 immutable and adds responsibility-specific encrypted custody, append-only
+facts, rebuildable current scope, exception history/current projection, an independently routed
+daily reconciliation job/lease/run model, and post-commit SLO evidence/compensation. The sync worker
+has no delete privilege; the current reader (and inherited online role) can only select the minimal
+current scope, college exception projection, and reconciliation result.

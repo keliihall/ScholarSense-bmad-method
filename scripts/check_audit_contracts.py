@@ -20,11 +20,14 @@ from release_json import load_json, schema_definition_issues, schema_issues  # n
 AUDIT = Path("contracts/audit")
 LOCK = AUDIT / "audit-contract-lock-1.0.0.json"
 SUCCESSOR_LOCK = AUDIT / "audit-contract-lock-1.1.0.json"
+RESPONSIBILITY_SUCCESSOR_LOCK = AUDIT / "audit-contract-lock-1.2.0.json"
 SCHEMAS = {
     AUDIT / "action-catalog-1.0.0.json": AUDIT / "action-catalog.schema.json",
     AUDIT / "identity-access-vocabulary-1.0.0.json": AUDIT / "identity-access-vocabulary.schema.json",
     AUDIT / "action-catalog-1.1.0.json": AUDIT / "action-catalog-1.1.schema.json",
     AUDIT / "identity-access-vocabulary-1.1.0.json": AUDIT / "identity-access-vocabulary-1.1.schema.json",
+    AUDIT / "action-catalog-1.2.0.json": AUDIT / "action-catalog-1.2.schema.json",
+    AUDIT / "identity-access-vocabulary-1.2.0.json": AUDIT / "identity-access-vocabulary-1.2.schema.json",
     AUDIT / "trusted-clock-runtime-binding-1.0.0.json": AUDIT / "trusted-clock-runtime-binding.schema.json",
     AUDIT / "fixtures/valid/local-audit-fact.json": AUDIT / "local-audit-fact.schema.json",
     AUDIT / "fixtures/valid/local-audit-outbox.json": AUDIT / "local-audit-outbox.schema.json",
@@ -76,6 +79,15 @@ def validate(project_root: Path) -> list[str]:
     )
     issues.extend(_catalog_issues(successor_catalog))
     issues.extend(_successor_issues(successor_catalog, successor_vocabulary))
+    responsibility_catalog = documents.get(
+        AUDIT / "action-catalog-1.2.0.json"
+    )
+    responsibility_vocabulary = documents.get(
+        AUDIT / "identity-access-vocabulary-1.2.0.json"
+    )
+    issues.extend(_catalog_issues(responsibility_catalog))
+    issues.extend(_responsibility_successor_issues(
+        responsibility_catalog, responsibility_vocabulary))
     issues.extend(_outbox_schema_issues(
         loaded_schemas.get(AUDIT / "local-audit-outbox.schema.json"),
         loaded_schemas.get(AUDIT / "local-audit-fact.schema.json")))
@@ -88,6 +100,7 @@ def validate(project_root: Path) -> list[str]:
         root, loaded_schemas.get(AUDIT / "local-audit-fact.schema.json"), catalog, vocabulary))
     issues.extend(_lock_issues(root))
     issues.extend(_successor_lock_issues(root))
+    issues.extend(_responsibility_successor_lock_issues(root))
     return sorted(set(issues))
 
 
@@ -151,6 +164,49 @@ def _successor_issues(catalog: Any, vocabulary: Any) -> list[str]:
             == "RS-1.0.0",
     )
     return [] if all(checks) else ["AUDIT_SUCCESSOR_INVALID"]
+
+
+def _responsibility_successor_issues(
+        catalog: Any, vocabulary: Any) -> list[str]:
+    if not isinstance(catalog, dict) or not isinstance(vocabulary, dict):
+        return ["AUDIT_RESPONSIBILITY_SUCCESSOR_INVALID"]
+    actions = {
+        entry.get("code"): entry
+        for entry in catalog.get("actions", [])
+        if isinstance(entry, dict)
+    }
+    required_actions = {
+        "responsibility.sync.applied",
+        "responsibility.sync.rejected",
+        "responsibility.sync.reconciled",
+        "responsibility.exception.opened",
+        "responsibility.exception.resolved",
+    }
+    checks = (
+        catalog.get("version") == "AUDIT-ACTION-CATALOG-1.2.0",
+        catalog.get("supersedes") == "AUDIT-ACTION-CATALOG-1.1.0",
+        set(actions) == required_actions,
+        vocabulary.get("version") == "IDENTITY-AUDIT-VOCABULARY-1.2.0",
+        vocabulary.get("supersedes") == "IDENTITY-AUDIT-VOCABULARY-1.1.0",
+        {
+            "RESPONSIBILITY_AUTHORITY_SYNC",
+            "RESPONSIBILITY_AUTHORITY_RECONCILIATION",
+            "RESPONSIBILITY_EXCEPTION_MANAGEMENT",
+        } <= set(vocabulary.get("purposes", [])),
+        {
+            "responsibility-sync-job",
+            "responsibility-reconciliation",
+            "responsibility-exception",
+        } <= set(vocabulary.get("objectTypes", [])),
+        "RESPONSIBILITY" in vocabulary.get("projectionScopes", []),
+        vocabulary.get("policyVersions", {}).get("responsibilityContract")
+            == "RESPONSIBILITY-AUTHORITY-1.0.0",
+        vocabulary.get("policyVersions", {}).get("retentionSchedule")
+            == "RS-1.0.0",
+    )
+    return [] if all(checks) else [
+        "AUDIT_RESPONSIBILITY_SUCCESSOR_INVALID"
+    ]
 
 
 def _fact_issues(fact: Any, catalog: Any, vocabulary: Any) -> list[str]:
@@ -436,6 +492,47 @@ def _successor_lock_issues(root: Path) -> list[str]:
         if actual != entry.get("sha256"):
             issues.append(
                 f"AUDIT_SUCCESSOR_LOCK_DIGEST_MISMATCH: {entry.get('path')}"
+            )
+    return issues
+
+
+def _responsibility_successor_lock_issues(root: Path) -> list[str]:
+    try:
+        lock = load_json(root / RESPONSIBILITY_SUCCESSOR_LOCK)
+        entries = lock["files"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return ["AUDIT_RESPONSIBILITY_SUCCESSOR_LOCK_INVALID"]
+    expected = sorted({
+        "contracts/audit/action-catalog-1.2.0.json",
+        "contracts/audit/action-catalog-1.2.schema.json",
+        "contracts/audit/identity-access-vocabulary-1.2.0.json",
+        "contracts/audit/identity-access-vocabulary-1.2.schema.json",
+    })
+    paths = [
+        entry.get("path") for entry in entries if isinstance(entry, dict)
+    ]
+    issues: list[str] = []
+    if (
+        lock.get("version") != "AUDIT-CONTRACT-LOCK-1.2.0"
+        or paths != expected
+    ):
+        issues.append(
+            "AUDIT_RESPONSIBILITY_SUCCESSOR_LOCK_INVALID"
+        )
+    for entry in entries:
+        try:
+            actual = hashlib.sha256(
+                (root / entry["path"]).read_bytes()
+            ).hexdigest()
+        except (OSError, KeyError, TypeError):
+            issues.append(
+                "AUDIT_RESPONSIBILITY_SUCCESSOR_LOCK_INVALID"
+            )
+            continue
+        if actual != entry.get("sha256"):
+            issues.append(
+                "AUDIT_RESPONSIBILITY_SUCCESSOR_LOCK_DIGEST_MISMATCH: "
+                f"{entry.get('path')}"
             )
     return issues
 

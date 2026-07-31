@@ -1,0 +1,24 @@
+{
+  "$schema": "../../full-snapshot.schema.json",
+  "schemaVersion": "RESPONSIBILITY-SNAPSHOT-1.0.0",
+  "contractVersion": "RESPONSIBILITY-AUTHORITY-1.0.0",
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "feedId": "responsibility-authority",
+  "consumerProjection": "responsibility",
+  "snapshotId": "01980d46-5b40-7000-8000-000000000012",
+  "businessDate": "2026-07-29",
+  "cutoffAt": "2026-07-29T06:00:00+08:00",
+  "sourceVersion": 6,
+  "throughWatermark": 6,
+  "supportingIdentityOrgWatermarks": {
+    "identity-authority|sandbox-0": 41
+  },
+  "sealed": true,
+  "complete": true,
+  "expectedCount": 0,
+  "canonicalDigest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "signatureDigest": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+  "partitions": ["sandbox-0"],
+  "records": [],
+  "traceId": "33333333333333333333333333333333"
+}

@@ -71,6 +71,7 @@ class ContractSeedTest(unittest.TestCase):
         }
         sync_keys = {
             "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+            "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
             "SCHOLARSENSE_IDENTITY_SYNC_SECURITY_DIRECTORY",
         }
 

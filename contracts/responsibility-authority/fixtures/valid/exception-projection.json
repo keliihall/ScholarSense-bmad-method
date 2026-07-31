@@ -1,0 +1,15 @@
+{
+  "$schema": "../../exception-projection.schema.json",
+  "exceptionId": "01980d46-5b40-7000-8000-000000000031",
+  "businessKey": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "collegeRefToken": "otok_FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+  "studentRefDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "reasonCode": "RESPONSIBILITY_INACTIVE_RECIPIENT",
+  "sourceVersion": 7,
+  "sourceWatermark": 7,
+  "firstSeenAt": "2026-07-30T06:45:31+08:00",
+  "lastSeenAt": "2026-07-30T06:45:31+08:00",
+  "status": "open",
+  "aggregateVersion": 1,
+  "traceId": "55555555555555555555555555555555"
+}

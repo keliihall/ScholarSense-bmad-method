@@ -25,7 +25,7 @@ public interface IdentitySyncJobPort {
 
     boolean hasPending(CheckpointKey key);
 
-    Optional<IdentitySyncJob> nextDue(Instant now);
+    Optional<IdentitySyncJob> nextDue(CheckpointKey routeKey, Instant now);
 
     Optional<RunningIdentitySyncAttempt> start(
             UUID jobId, String leaseOwner, Instant now);

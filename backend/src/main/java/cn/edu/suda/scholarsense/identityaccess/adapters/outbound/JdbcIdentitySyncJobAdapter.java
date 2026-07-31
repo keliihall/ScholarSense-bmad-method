@@ -177,7 +177,7 @@ public final class JdbcIdentitySyncJobAdapter implements IdentitySyncJobPort {
     }
 
     @Override
-    public Optional<IdentitySyncJob> nextDue(Instant now) {
+    public Optional<IdentitySyncJob> nextDue(CheckpointKey routeKey, Instant now) {
         List<IdentitySyncJob> values = jdbc.query("""
                 select job_id, source_id, feed_id, partition_id, consumer_projection,
                        status, health, freshness, requested_at, completed_at,
@@ -188,17 +188,21 @@ public final class JdbcIdentitySyncJobAdapter implements IdentitySyncJobPort {
                           where attempt.job_id=job.job_id), 0) as last_attempt_no,
                        reason_code, trace_id
                  from identity_access.ia_identity_sync_job job
-                 where (status='queued'
-                        and (next_attempt_at is null or next_attempt_at<=?))
-                    or (status='running' and exists (
-                         select 1
-                           from identity_access.ia_identity_sync_lease lease
-                          where lease.job_id=job.job_id
-                            and lease.lease_expires_at<=?))
+                 where source_id=? and feed_id=? and partition_id=?
+                   and consumer_projection=?
+                   and ((status='queued'
+                         and (next_attempt_at is null or next_attempt_at<=?))
+                     or (status='running' and exists (
+                          select 1
+                            from identity_access.ia_identity_sync_lease lease
+                           where lease.job_id=job.job_id
+                             and lease.lease_expires_at<=?)))
                  order by requested_at, job_id
                  limit 1
                 """,
                 (rs, row) -> mapJob(rs),
+                routeKey.sourceId(), routeKey.feedId(), routeKey.partitionId(),
+                routeKey.consumerProjection(),
                 timestamp(now), timestamp(now));
         return values.stream().findFirst();
     }

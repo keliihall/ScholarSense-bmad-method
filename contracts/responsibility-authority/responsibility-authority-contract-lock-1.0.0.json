@@ -1,0 +1,79 @@
+{
+  "version": "RESPONSIBILITY-AUTHORITY-CONTRACT-LOCK-1.0.0",
+  "files": [
+    {
+      "path": "contracts/responsibility-authority/exception-projection.schema.json",
+      "sha256": "d5da212840601ec8ebc8dcf8c82972c9ce98f32a732987fb34bcc8461385dead"
+    },
+    {
+      "path": "contracts/responsibility-authority/fixtures/boundary-fixtures-1.0.0.json",
+      "sha256": "132410065792aae6359cdbbc738999a283555e38b67775c113fdde7c2779e29a"
+    },
+    {
+      "path": "contracts/responsibility-authority/fixtures/negative-fixtures-1.0.0.json",
+      "sha256": "d0618ff5de3985b38901e9395aec3c807f7caaaeff2389954b38e4c42991c094"
+    },
+    {
+      "path": "contracts/responsibility-authority/fixtures/valid/empty-complete-snapshot.json",
+      "sha256": "2bfb422f94314e3ffbad2c3110b3ca5ae6385c74e78179b514400148d6741a40"
+    },
+    {
+      "path": "contracts/responsibility-authority/fixtures/valid/exception-projection.json",
+      "sha256": "b5c53e4e3191d6e5a7db9dab1516c7a0cd081ae9d79c220b274f37b230d751e9"
+    },
+    {
+      "path": "contracts/responsibility-authority/fixtures/valid/full-snapshot.json",
+      "sha256": "9b7d398af6a928085bc8998414dd13d0991538afbd3bd9a24d88487492ea7510"
+    },
+    {
+      "path": "contracts/responsibility-authority/fixtures/valid/incremental-batch.json",
+      "sha256": "aaeb58b68d7c798d83c8924be706f3625b66cb0954cc74ecb28377937864473c"
+    },
+    {
+      "path": "contracts/responsibility-authority/fixtures/valid/reconciliation-result.json",
+      "sha256": "127b53de7ae3c0a8fc12ecc5272e42449fa5f572e741c6c18af506b24eb44cf6"
+    },
+    {
+      "path": "contracts/responsibility-authority/full-snapshot.schema.json",
+      "sha256": "bc9c57780a61f79ce28bde839b43f085bb771a9a629d728993addf4925ea32e3"
+    },
+    {
+      "path": "contracts/responsibility-authority/incremental-batch.schema.json",
+      "sha256": "1ed6c53e2b26c44ecabc46df59f10e720e1be20162ac392bf97a24cdc12c00db"
+    },
+    {
+      "path": "contracts/responsibility-authority/reconciliation-result.schema.json",
+      "sha256": "73a90eb06498a48a1c2d74197fc6b8e9a8a7e732435ea34cf92792189ac9eeec"
+    },
+    {
+      "path": "contracts/responsibility-authority/responsibility-policy-1.0.0.json",
+      "sha256": "3f0d09705cf287b9531ee9519401f4c7124678cabe5074a46119edfc1c268480"
+    },
+    {
+      "path": "contracts/responsibility-authority/responsibility-relation.schema.json",
+      "sha256": "ad5c8e0494a7ba0d7c76489a2d289a198ef0152242b64c499a538fcd8aab6858"
+    },
+    {
+      "path": "contracts/responsibility-authority/runtime-profile.schema.json",
+      "sha256": "8b563685d8c28dcf492693b1ef2f9c3ef6f6ba0f1d65964511c553c69da8e357"
+    },
+    {
+      "path": "contracts/responsibility-authority/sandbox-runtime-profile-1.0.0.json",
+      "sha256": "7f699b74aaa8c90ea6d7ce72ae18afbcdcf3566e8615fdc7b03d0d549b06fe80"
+    },
+    {
+      "path": "contracts/responsibility-authority/student-token-vectors-1.0.0.json",
+      "sha256": "df16b4e53bd6cc80c1df4a390d054582f20c288401b749606eb54951e1a90bdd"
+    },
+    {
+      "path": "contracts/responsibility-authority/student-token-vectors.schema.json",
+      "sha256": "f36b7fd739a329d8b71f78f97af038ff60bfa3d1d0fdc9f3458c368a6f815011"
+    }
+  ],
+  "upstreamLocks": [
+    {
+      "path": "contracts/identity-authority/identity-authority-contract-lock-1.0.0.json",
+      "sha256": "84a29a5bdb3d618f8b2aa19db2ef0ccc62bcf629c97fd12e3e3a00f3ba97769b"
+    }
+  ]
+}

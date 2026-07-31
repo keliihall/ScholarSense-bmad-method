@@ -244,6 +244,24 @@ class IdentitySyncWorkerTest {
                 IdentityProjectionFreshness.FRESH, null, null, null, 42));
     }
 
+    @Test
+    void identityWorkerNeverClaimsResponsibilityProjectionJob() {
+        CheckpointKey responsibilityRoute = new CheckpointKey(
+                KEY.sourceId(), KEY.feedId(), KEY.partitionId(), "responsibility");
+        var store = new FakeJobStore(job(
+                responsibilityRoute,
+                IdentitySyncJobStatus.QUEUED,
+                0,
+                3));
+
+        assertTrue(worker(
+                store,
+                (_key, _watermark, _traceId) -> {
+                    throw new AssertionError("wrong projection must not be fetched");
+                },
+                new ArrayList<>()).runNext("identity-worker").isEmpty());
+    }
+
     private static IdentitySyncWorker worker(
             FakeJobStore store,
             IdentityAuthoritySourcePort source,
@@ -278,9 +296,17 @@ class IdentitySyncWorkerTest {
 
     private static IdentitySyncJob job(
             IdentitySyncJobStatus status, int lastAttemptNo, int retryBudget) {
+        return job(KEY, status, lastAttemptNo, retryBudget);
+    }
+
+    private static IdentitySyncJob job(
+            CheckpointKey key,
+            IdentitySyncJobStatus status,
+            int lastAttemptNo,
+            int retryBudget) {
         return new IdentitySyncJob(
                 JOB_ID,
-                KEY,
+                key,
                 status,
                 IdentitySourceHealth.HEALTHY,
                 IdentityProjectionFreshness.FRESH,
@@ -414,8 +440,8 @@ class IdentitySyncWorkerTest {
         }
 
         @Override
-        public Optional<IdentitySyncJob> nextDue(Instant now) {
-            return Optional.of(due);
+        public Optional<IdentitySyncJob> nextDue(CheckpointKey routeKey, Instant now) {
+            return routeKey.equals(due.key()) ? Optional.of(due) : Optional.empty();
         }
 
         @Override

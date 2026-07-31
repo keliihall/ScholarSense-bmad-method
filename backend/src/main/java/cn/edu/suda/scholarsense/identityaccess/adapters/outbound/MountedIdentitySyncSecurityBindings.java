@@ -12,6 +12,7 @@ import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncException
 import cn.edu.suda.scholarsense.identityaccess.application.PseudonymizationPort;
 import cn.edu.suda.scholarsense.identityaccess.application.WorkloadIdentityAuthenticationPort;
 import cn.edu.suda.scholarsense.runtime.IdentityAuthorityRuntimeProfile;
+import cn.edu.suda.scholarsense.runtime.ResponsibilityAuthorityRuntimeProfile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -68,6 +69,11 @@ public final class MountedIdentitySyncSecurityBindings
     private final String pseudonymPreviousKeyVersion;
     private final byte[] signatureKey;
     private final byte[] envelopeKey;
+    private final String responsibilityWorkloadIdentityReference;
+    private final String responsibilitySignatureKeyReference;
+    private final String responsibilityEnvelopeKeyReference;
+    private final byte[] responsibilitySignatureKey;
+    private final byte[] responsibilityEnvelopeKey;
     private final byte[] pseudonymCurrentKey;
     private final byte[] pseudonymPreviousKey;
     private final HmacIdentityAuditTokenAdapter auditTokens;
@@ -75,12 +81,31 @@ public final class MountedIdentitySyncSecurityBindings
 
     public MountedIdentitySyncSecurityBindings(
             Path directory, IdentityAuthorityRuntimeProfile profile) {
-        this(directory, profile, new SecureRandom());
+        this(directory, profile, null, new SecureRandom());
+    }
+
+    public MountedIdentitySyncSecurityBindings(
+            Path directory,
+            IdentityAuthorityRuntimeProfile identityProfile,
+            ResponsibilityAuthorityRuntimeProfile responsibilityProfile) {
+        this(
+                directory,
+                identityProfile,
+                java.util.Objects.requireNonNull(responsibilityProfile),
+                new SecureRandom());
     }
 
     MountedIdentitySyncSecurityBindings(
             Path directory,
             IdentityAuthorityRuntimeProfile profile,
+            SecureRandom random) {
+        this(directory, profile, null, random);
+    }
+
+    private MountedIdentitySyncSecurityBindings(
+            Path directory,
+            IdentityAuthorityRuntimeProfile profile,
+            ResponsibilityAuthorityRuntimeProfile responsibilityProfile,
             SecureRandom random) {
         this.directory = requireDirectory(directory);
         this.random = random;
@@ -110,6 +135,31 @@ public final class MountedIdentitySyncSecurityBindings
         String auditKeyVersion = keyVersion(manifest, "auditKeyVersion");
         this.signatureKey = readKey("signature-hmac.key");
         this.envelopeKey = readKey("envelope-kek.key");
+        this.responsibilityWorkloadIdentityReference =
+                responsibilityProfile == null
+                        ? null
+                        : responsibilityProfile
+                                .workloadIdentityReference();
+        this.responsibilitySignatureKeyReference =
+                responsibilityProfile == null
+                        ? null
+                        : responsibilityProfile
+                                .signatureKeyReference();
+        this.responsibilityEnvelopeKeyReference =
+                responsibilityProfile == null
+                        ? null
+                        : responsibilityProfile
+                                .inboxEncryptionKeyReference();
+        this.responsibilitySignatureKey =
+                responsibilityProfile == null
+                        ? null
+                        : readKey(
+                                "responsibility-signature-hmac.key");
+        this.responsibilityEnvelopeKey =
+                responsibilityProfile == null
+                        ? null
+                        : readKey(
+                                "responsibility-envelope-kek.key");
         this.pseudonymCurrentKey = readKey("pseudonym-current.key");
         this.pseudonymPreviousKey = "none".equals(previous)
                 ? null
@@ -119,30 +169,48 @@ public final class MountedIdentitySyncSecurityBindings
                 auditKeyVersion);
         // Read and validate the initial token during bootstrap; the live value
         // is re-read on every request so an external agent can rotate it.
-        workloadToken();
+        workloadToken("workload-token");
+        if (responsibilityProfile != null) {
+            workloadToken("responsibility-workload-token");
+        }
     }
 
     @Override
     public String authorizationHeader(String reference) {
-        if (!workloadIdentityReference.equals(reference)) {
-            throw new IdentitySyncException(
-                    "IDENTITY_SOURCE_AUTHENTICATION_UNAVAILABLE");
+        if (workloadIdentityReference.equals(reference)) {
+            return "Bearer " + workloadToken("workload-token");
         }
-        return "Bearer " + workloadToken();
+        if (java.util.Objects.equals(
+                responsibilityWorkloadIdentityReference, reference)) {
+            return "Bearer "
+                    + workloadToken(
+                            "responsibility-workload-token");
+        }
+        throw new IdentitySyncException(
+                "IDENTITY_SOURCE_AUTHENTICATION_UNAVAILABLE");
     }
 
     @Override
     public boolean verify(
             byte[] payload, String detachedSignature, String keyReference) {
-        if (!signatureKeyReference.equals(keyReference)
-                || detachedSignature == null
+        byte[] selectedKey;
+        if (signatureKeyReference.equals(keyReference)) {
+            selectedKey = signatureKey;
+        } else if (java.util.Objects.equals(
+                responsibilitySignatureKeyReference,
+                keyReference)) {
+            selectedKey = responsibilitySignatureKey;
+        } else {
+            return false;
+        }
+        if (detachedSignature == null
                 || !detachedSignature.matches("[0-9a-f]{64}")) {
             return false;
         }
         byte[] unsigned = unsignedPayload(payload);
         try {
             String expected = HexFormat.of().formatHex(
-                    hmac(signatureKey, unsigned));
+                    hmac(selectedKey, unsigned));
             return MessageDigest.isEqual(
                     expected.getBytes(StandardCharsets.US_ASCII),
                     detachedSignature.getBytes(StandardCharsets.US_ASCII));
@@ -153,8 +221,21 @@ public final class MountedIdentitySyncSecurityBindings
 
     @Override
     public EncryptedSecret encrypt(char[] plaintext, String purpose) {
-        if (!"identity-authority-inbox".equals(purpose)) {
+        boolean responsibility =
+                "responsibility-authority-inbox".equals(purpose);
+        if (!responsibility
+                && !"identity-authority-inbox".equals(purpose)) {
             throw new IdentitySyncException("IDENTITY_SOURCE_KMS_BINDING_INVALID");
+        }
+        byte[] selectedKey = responsibility
+                ? responsibilityEnvelopeKey
+                : envelopeKey;
+        String selectedReference = responsibility
+                ? responsibilityEnvelopeKeyReference
+                : envelopeKeyReference;
+        if (selectedKey == null || selectedReference == null) {
+            throw new IdentitySyncException(
+                    "IDENTITY_SOURCE_KMS_BINDING_INVALID");
         }
         ByteBuffer encoded = StandardCharsets.UTF_8.encode(CharBuffer.wrap(plaintext));
         byte[] cleartext = new byte[encoded.remaining()];
@@ -167,7 +248,8 @@ public final class MountedIdentitySyncSecurityBindings
         random.nextBytes(wrappingNonce);
         try {
             byte[] ciphertext = aesGcm(cleartext, dataKey, payloadNonce);
-            byte[] wrapped = aesGcm(dataKey, envelopeKey, wrappingNonce);
+            byte[] wrapped = aesGcm(
+                    dataKey, selectedKey, wrappingNonce);
             byte[] wrappedWithNonce = new byte[wrappingNonce.length + wrapped.length];
             System.arraycopy(
                     wrappingNonce, 0, wrappedWithNonce, 0, wrappingNonce.length);
@@ -176,7 +258,7 @@ public final class MountedIdentitySyncSecurityBindings
             return new EncryptedSecret(
                     ciphertext,
                     wrappedWithNonce,
-                    envelopeKeyReference,
+                    selectedReference,
                     envelopeKeyVersion,
                     payloadNonce);
         } catch (GeneralSecurityException unavailable) {
@@ -189,8 +271,22 @@ public final class MountedIdentitySyncSecurityBindings
 
     @Override
     public char[] decrypt(EncryptedSecret encrypted, String purpose) {
-        if (!"identity-authority-inbox".equals(purpose)
-                || !envelopeKeyReference.equals(encrypted.keyRef())
+        boolean responsibility =
+                "responsibility-authority-inbox".equals(purpose);
+        if (!responsibility
+                && !"identity-authority-inbox".equals(purpose)) {
+            throw new IdentitySyncException(
+                    "IDENTITY_SOURCE_KMS_BINDING_INVALID");
+        }
+        String selectedReference = responsibility
+                ? responsibilityEnvelopeKeyReference
+                : envelopeKeyReference;
+        byte[] selectedKey = responsibility
+                ? responsibilityEnvelopeKey
+                : envelopeKey;
+        if (selectedKey == null
+                || !java.util.Objects.equals(
+                        selectedReference, encrypted.keyRef())
                 || !envelopeKeyVersion.equals(encrypted.keyVersion())) {
             throw new IdentitySyncException("IDENTITY_SOURCE_KMS_BINDING_INVALID");
         }
@@ -204,7 +300,8 @@ public final class MountedIdentitySyncSecurityBindings
         byte[] dataKey = null;
         byte[] cleartext = null;
         try {
-            dataKey = aesGcmDecrypt(wrappedKey, envelopeKey, wrappingNonce);
+            dataKey = aesGcmDecrypt(
+                    wrappedKey, selectedKey, wrappingNonce);
             cleartext = aesGcmDecrypt(
                     encrypted.ciphertext(), dataKey, encrypted.nonce());
             return StandardCharsets.UTF_8.decode(
@@ -278,8 +375,8 @@ public final class MountedIdentitySyncSecurityBindings
         }
     }
 
-    private String workloadToken() {
-        byte[] value = readSecret("workload-token", 32, 8192);
+    private String workloadToken(String name) {
+        byte[] value = readSecret(name, 32, 8192);
         try {
             String token = new String(value, StandardCharsets.US_ASCII).strip();
             if (!token.matches("[A-Za-z0-9._~+/-]{24,8192}")) {

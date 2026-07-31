@@ -25,6 +25,7 @@ echo "[verify-core] audit and standard-library regression"
   "$TOOLCHAIN" python3 -B scripts/check_contract_seeds.py .
   "$TOOLCHAIN" python3 -B scripts/check_identity_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_identity_authority_contracts.py .
+  "$TOOLCHAIN" python3 -B scripts/check_responsibility_authority_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_ledger_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_retention_contracts.py .
@@ -53,6 +54,18 @@ trap cleanup_sandbox_evidence EXIT INT TERM
 "$TOOLCHAIN" python3 -B "$ROOT_DIR/scripts/run_identity_authority_sandbox_tests.py" \
   --evidence "$SANDBOX_EVIDENCE_FILE"
 cleanup_sandbox_evidence
+trap - EXIT INT TERM
+
+echo "[verify-core] controlled responsibility-authority sandbox evidence"
+RESPONSIBILITY_SANDBOX_EVIDENCE_FILE="$(mktemp "${TMPDIR:-/tmp}/scholarsense-responsibility-sandbox-evidence-XXXXXX")"
+cleanup_responsibility_sandbox_evidence() {
+  rm -f -- "$RESPONSIBILITY_SANDBOX_EVIDENCE_FILE"
+}
+trap cleanup_responsibility_sandbox_evidence EXIT INT TERM
+"$TOOLCHAIN" python3 -B \
+  "$ROOT_DIR/scripts/run_responsibility_authority_sandbox_tests.py" \
+  --evidence "$RESPONSIBILITY_SANDBOX_EVIDENCE_FILE"
+cleanup_responsibility_sandbox_evidence
 trap - EXIT INT TERM
 
 echo "[verify-core] PostgreSQL 18.4 evidence completed by the sandbox E2E runner"

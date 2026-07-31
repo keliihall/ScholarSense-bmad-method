@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/responsibility-authority/responsibility-relation.schema.json",
+  "title": "Provider-neutral authoritative responsibility relation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "relationRefToken",
+    "studentSourceRef",
+    "counselorAccountExternalRef",
+    "collegeOrganizationExternalRef",
+    "responsibilityType",
+    "status",
+    "effectiveFrom",
+    "effectiveTo",
+    "recordVersion",
+    "payloadDigest"
+  ],
+  "properties": {
+    "relationRefToken": {"type": "string", "pattern": "^rtok_[A-Za-z0-9_-]{32,128}$"},
+    "studentSourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "purposeCode",
+        "keyVersion",
+        "tokenValue",
+        "digest",
+        "equivalenceDomain"
+      ],
+      "properties": {
+        "purposeCode": {"const": "RESPONSIBILITY-STUDENT-REF"},
+        "keyVersion": {"type": "string", "enum": ["resp-student-v1", "resp-student-v2"]},
+        "tokenValue": {"type": "string", "pattern": "^stok_[A-Za-z0-9_-]{32,128}$"},
+        "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "equivalenceDomain": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "counselorAccountExternalRef": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "collegeOrganizationExternalRef": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "responsibilityType": {"type": "string", "enum": ["primary", "secondary"]},
+    "status": {"type": "string", "enum": ["active", "inactive"]},
+    "effectiveFrom": {"type": "string", "format": "date-time"},
+    "effectiveTo": {"type": ["string", "null"], "format": "date-time"},
+    "recordVersion": {"type": "integer", "minimum": 1},
+    "payloadDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

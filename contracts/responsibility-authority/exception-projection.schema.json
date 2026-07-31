@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/responsibility-authority/exception-projection.schema.json",
+  "title": "Minimal college responsibility exception projection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "exceptionId",
+    "businessKey",
+    "collegeRefToken",
+    "studentRefDigest",
+    "reasonCode",
+    "sourceVersion",
+    "sourceWatermark",
+    "firstSeenAt",
+    "lastSeenAt",
+    "status",
+    "aggregateVersion",
+    "traceId"
+  ],
+  "properties": {
+    "$schema": {"const": "../../exception-projection.schema.json"},
+    "exceptionId": {"type": "string", "pattern": "^[0-9a-f-]{36}$"},
+    "businessKey": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "collegeRefToken": {"type": "string", "pattern": "^otok_[A-Za-z0-9_-]{32,128}$"},
+    "studentRefDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "reasonCode": {"type": "string", "pattern": "^RESPONSIBILITY_[A-Z0-9_]+$"},
+    "sourceVersion": {"type": "integer", "minimum": 1},
+    "sourceWatermark": {"type": "integer", "minimum": 0},
+    "firstSeenAt": {"type": "string", "format": "date-time"},
+    "lastSeenAt": {"type": "string", "format": "date-time"},
+    "status": {"type": "string", "enum": ["open", "resolved"]},
+    "aggregateVersion": {"type": "integer", "minimum": 1},
+    "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
+  }
+}

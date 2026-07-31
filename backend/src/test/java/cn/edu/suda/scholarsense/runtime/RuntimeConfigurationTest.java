@@ -170,11 +170,24 @@ public class RuntimeConfigurationTest {
         worker.put(
                 "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
                 "config://test/identity-authority-profile-1-0-0");
+        ConfigurationException missingResponsibilityProfile = assertThrows(
+                ConfigurationException.class,
+                () -> RuntimeConfiguration.from(worker));
+        assertEquals(
+                "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
+                missingResponsibilityProfile.field());
+
+        worker.put(
+                "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
+                "config://test/responsibility-authority-profile-1-0-0");
         RuntimeConfiguration configured = RuntimeConfiguration.from(worker);
         assertEquals(true, configured.identitySyncEnabled());
         assertEquals(
                 "config://test/identity-authority-profile-1-0-0",
                 configured.identityAuthorityProfileReference());
+        assertEquals(
+                "config://test/responsibility-authority-profile-1-0-0",
+                configured.responsibilityAuthorityProfileReference());
 
         Map<String, String> web = new HashMap<>(worker);
         web.put("SCHOLARSENSE_ROLE", "web-api");

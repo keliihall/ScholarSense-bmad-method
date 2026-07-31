@@ -2,7 +2,13 @@ package cn.edu.suda.scholarsense.identityaccess.adapters;
 
 import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.IdentitySyncScheduler;
 import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.IdentitySloCompensationScheduler;
+import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.ResponsibilityReconciliationScheduler;
+import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.ResponsibilityReconciliationWorkerScheduler;
+import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.ResponsibilitySloCompensationScheduler;
+import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.ResponsibilitySyncScheduler;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.HttpIdentityAuthoritySourceAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.HttpResponsibilityAuthoritySourceAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.HttpResponsibilityFullSnapshotSourceAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.IdentitySyncAuditAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcAuthoritativeIdentityContextAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcIdentityAuditAdapter;
@@ -12,8 +18,13 @@ import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcIdentityPro
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcIdentitySyncJobAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcIdentitySyncRepository;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcIdentitySyncTransactionAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcResponsibilityRecipientEvidenceAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcResponsibilityReconciliationAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcResponsibilitySloEvidenceAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcResponsibilitySyncRepository;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.MicrometerIdentitySyncObservabilityAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.MountedIdentitySyncSecurityBindings;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.ResponsibilityScopeQueryAdapter;
 import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationEffectiveContext;
 import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationEffectivenessProbePort;
 import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationFreshness;
@@ -34,8 +45,17 @@ import cn.edu.suda.scholarsense.identityaccess.application.IdentitySloCompensati
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncService;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncWorker;
 import cn.edu.suda.scholarsense.identityaccess.application.PseudonymizationPort;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityAuthoritySourcePort;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityFullSnapshotSourcePort;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityReconciliationService;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityReconciliationWorker;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilitySloCompensationService;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilitySloService;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilitySyncService;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilitySyncWorker;
 import cn.edu.suda.scholarsense.identityaccess.application.WorkloadIdentityAuthenticationPort;
 import cn.edu.suda.scholarsense.runtime.IdentityAuthorityRuntimeProfile;
+import cn.edu.suda.scholarsense.runtime.ResponsibilityAuthorityRuntimeProfile;
 import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
 import cn.edu.suda.scholarsense.shared.time.EvidenceBoundTrustedTimeSource;
 import cn.edu.suda.scholarsense.shared.time.TimeSynchronizationStatusProvider;
@@ -99,6 +119,12 @@ public class IdentitySyncConfiguration {
     }
 
     @Bean
+    ResponsibilityAuthorityRuntimeProfile responsibilityAuthorityRuntimeProfile(
+            RuntimeConfiguration runtime) {
+        return ResponsibilityAuthorityRuntimeProfile.from(runtime);
+    }
+
+    @Bean
     @ConditionalOnMissingBean(HttpClient.class)
     HttpClient identityAuthorityHttpClient(
             IdentityAuthorityRuntimeProfile profile) {
@@ -111,9 +137,12 @@ public class IdentitySyncConfiguration {
     @ConditionalOnProperty(name = "scholarsense.identity-sync.security-directory")
     MountedIdentitySyncSecurityBindings mountedIdentitySyncSecurityBindings(
             @Value("${scholarsense.identity-sync.security-directory}") String directory,
-            IdentityAuthorityRuntimeProfile profile) {
+            IdentityAuthorityRuntimeProfile profile,
+            ResponsibilityAuthorityRuntimeProfile responsibilityProfile) {
         return new MountedIdentitySyncSecurityBindings(
-                java.nio.file.Path.of(directory), profile);
+                java.nio.file.Path.of(directory),
+                profile,
+                responsibilityProfile);
     }
 
     @Bean
@@ -131,6 +160,40 @@ public class IdentitySyncConfiguration {
         return new HttpIdentityAuthoritySourceAdapter(
                 http, json, profile, workloadIdentity, signatures,
                 encryption, pseudonyms, time, references);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ResponsibilityAuthoritySourcePort.class)
+    HttpResponsibilityAuthoritySourceAdapter responsibilityAuthoritySource(
+            HttpClient http,
+            ObjectMapper json,
+            ResponsibilityAuthorityRuntimeProfile profile,
+            WorkloadIdentityAuthenticationPort workloadIdentity,
+            IdentitySourceSignaturePort signatures,
+            EnvelopeEncryptionPort encryption,
+            PseudonymizationPort pseudonyms,
+            TrustedTimeSource time) {
+        return new HttpResponsibilityAuthoritySourceAdapter(
+                http,
+                json,
+                profile,
+                workloadIdentity,
+                signatures,
+                encryption,
+                pseudonyms,
+                time);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ResponsibilityFullSnapshotSourcePort.class)
+    HttpResponsibilityFullSnapshotSourceAdapter responsibilityFullSnapshotSource(
+            HttpClient http,
+            ObjectMapper json,
+            ResponsibilityAuthorityRuntimeProfile profile,
+            WorkloadIdentityAuthenticationPort workloadIdentity,
+            IdentitySourceSignaturePort signatures) {
+        return new HttpResponsibilityFullSnapshotSourceAdapter(
+                http, json, profile, workloadIdentity, signatures);
     }
 
     @Bean
@@ -259,10 +322,16 @@ public class IdentitySyncConfiguration {
             JdbcIdentitySyncTransactionAdapter transactions,
             TrustedTimeSource time,
             JdbcIdentityReplayAdapter replay,
-            JdbcIdentitySyncRepository repository) {
+            JdbcIdentitySyncRepository repository,
+            IdentityAuthorityRuntimeProfile profile) {
         return new IdentitySyncWorker(
                 jobs, source, sync::process, audit, observability,
-                transactions, time, replay, repository);
+                transactions, time, replay, repository,
+                new CheckpointKey(
+                        profile.sourceId(),
+                        profile.feedId(),
+                        profile.partitionId(),
+                        profile.consumerProjection()));
     }
 
     @Bean
@@ -302,5 +371,185 @@ public class IdentitySyncConfiguration {
                         profile.partitionId(),
                         profile.consumerProjection()),
                 profile.retryBudget());
+    }
+
+    @Bean
+    JdbcResponsibilitySyncRepository responsibilitySyncRepository(
+            JdbcTemplate jdbc) {
+        return new JdbcResponsibilitySyncRepository(jdbc);
+    }
+
+    @Bean
+    JdbcResponsibilityRecipientEvidenceAdapter
+            responsibilityRecipientEvidence(JdbcTemplate jdbc) {
+        return new JdbcResponsibilityRecipientEvidenceAdapter(jdbc);
+    }
+
+    @Bean
+    ResponsibilityScopeQueryAdapter responsibilityScopeQuery(
+            JdbcResponsibilitySyncRepository repository,
+            JdbcResponsibilityRecipientEvidenceAdapter evidence,
+            TrustedTimeSource time,
+            ResponsibilityAuthorityRuntimeProfile profile) {
+        return new ResponsibilityScopeQueryAdapter(
+                repository, evidence, time, responsibilityKey(profile));
+    }
+
+    @Bean
+    JdbcResponsibilitySloEvidenceAdapter responsibilitySloEvidence(
+            JdbcTemplate jdbc) {
+        return new JdbcResponsibilitySloEvidenceAdapter(jdbc);
+    }
+
+    @Bean
+    ResponsibilitySloService responsibilitySloService(
+            ResponsibilityScopeQueryAdapter readBack,
+            JdbcResponsibilitySloEvidenceAdapter evidence,
+            IdentitySyncObservabilityPort observability,
+            TrustedTimeSource time) {
+        return new ResponsibilitySloService(
+                readBack, evidence, observability, time);
+    }
+
+    @Bean
+    ResponsibilitySloCompensationService
+            responsibilitySloCompensationService(
+                    JdbcResponsibilitySloEvidenceAdapter evidence,
+                    TrustedTimeSource time) {
+        return new ResponsibilitySloCompensationService(evidence, time);
+    }
+
+    @Bean
+    ResponsibilitySloCompensationScheduler
+            responsibilitySloCompensationScheduler(
+                    ResponsibilitySloCompensationService service) {
+        return new ResponsibilitySloCompensationScheduler(service);
+    }
+
+    @Bean
+    ResponsibilitySyncService responsibilitySyncService(
+            JdbcResponsibilitySyncRepository repository,
+            JdbcResponsibilityRecipientEvidenceAdapter evidence,
+            JdbcIdentityReplayAdapter replay,
+            JdbcIdentitySyncTransactionAdapter transactions,
+            IdentitySyncAuditPort audit,
+            IdentitySyncObservabilityPort observability,
+            TrustedTimeSource time) {
+        return new ResponsibilitySyncService(
+                repository,
+                evidence,
+                replay,
+                transactions,
+                audit,
+                observability,
+                time);
+    }
+
+    @Bean
+    ResponsibilitySyncWorker responsibilitySyncWorker(
+            JdbcIdentitySyncJobAdapter jobs,
+            ResponsibilityAuthoritySourcePort source,
+            ResponsibilitySyncService sync,
+            JdbcResponsibilitySyncRepository repository,
+            IdentitySyncAuditPort audit,
+            IdentitySyncObservabilityPort observability,
+            JdbcIdentitySyncTransactionAdapter transactions,
+            TrustedTimeSource time,
+            JdbcIdentityReplayAdapter replay,
+            ResponsibilitySloService slo,
+            ResponsibilityAuthorityRuntimeProfile profile) {
+        return new ResponsibilitySyncWorker(
+                jobs,
+                source,
+                sync,
+                repository,
+                audit,
+                observability,
+                transactions,
+                time,
+                replay,
+                slo,
+                responsibilityKey(profile));
+    }
+
+    @Bean
+    ResponsibilitySyncScheduler responsibilitySyncScheduler(
+            IdentitySyncJobService jobs,
+            ResponsibilitySyncWorker worker,
+            ResponsibilityAuthorityRuntimeProfile profile) {
+        return new ResponsibilitySyncScheduler(
+                jobs,
+                worker,
+                responsibilityKey(profile),
+                profile.retryBudget());
+    }
+
+    @Bean
+    JdbcResponsibilityReconciliationAdapter
+            responsibilityReconciliationStore(
+                    JdbcTemplate jdbc,
+                    PlatformTransactionManager manager,
+                    TrustedTimeSource time,
+                    ResponsibilityAuthorityRuntimeProfile profile) {
+        return new JdbcResponsibilityReconciliationAdapter(
+                jdbc,
+                new TransactionTemplate(manager),
+                time,
+                profile.retryBudget());
+    }
+
+    @Bean
+    ResponsibilityReconciliationService responsibilityReconciliationService(
+            ResponsibilityFullSnapshotSourcePort source,
+            JdbcResponsibilityReconciliationAdapter store,
+            IdentitySyncAuditPort audit,
+            JdbcIdentitySyncTransactionAdapter transactions,
+            TrustedTimeSource time) {
+        return new ResponsibilityReconciliationService(
+                source, store, audit, transactions, time);
+    }
+
+    @Bean
+    ResponsibilityReconciliationWorker responsibilityReconciliationWorker(
+            JdbcResponsibilityReconciliationAdapter jobs,
+            ResponsibilityReconciliationService service,
+            JdbcIdentitySyncTransactionAdapter transactions,
+            TrustedTimeSource time,
+            IdentitySyncAuditPort audit,
+            ResponsibilityAuthorityRuntimeProfile profile) {
+        return new ResponsibilityReconciliationWorker(
+                jobs,
+                service,
+                transactions,
+                time,
+                audit,
+                responsibilityKey(profile));
+    }
+
+    @Bean
+    ResponsibilityReconciliationScheduler
+            responsibilityReconciliationScheduler(
+                    JdbcResponsibilityReconciliationAdapter jobs,
+                    TrustedTimeSource time,
+                    ResponsibilityAuthorityRuntimeProfile profile) {
+        return new ResponsibilityReconciliationScheduler(
+                jobs, responsibilityKey(profile), time);
+    }
+
+    @Bean
+    ResponsibilityReconciliationWorkerScheduler
+            responsibilityReconciliationWorkerScheduler(
+                    ResponsibilityReconciliationWorker worker) {
+        return new ResponsibilityReconciliationWorkerScheduler(
+                worker);
+    }
+
+    private static CheckpointKey responsibilityKey(
+            ResponsibilityAuthorityRuntimeProfile profile) {
+        return new CheckpointKey(
+                profile.sourceId(),
+                profile.feedId(),
+                profile.partitionId(),
+                profile.consumerProjection());
     }
 }
