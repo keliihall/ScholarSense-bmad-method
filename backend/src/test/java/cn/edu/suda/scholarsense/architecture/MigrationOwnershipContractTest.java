@@ -22,8 +22,8 @@ class MigrationOwnershipContractTest {
         assertEquals(expectedFacts(), result.ownership().entrySet().stream()
                 .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().factOwners())));
         try (var walk = Files.walk(MIGRATIONS)) {
-            assertEquals(6, walk.filter(path -> path.toString().endsWith(".sql")).count(),
-                    "Stories 1.2 through 1.6a own exactly six forward migrations");
+            assertEquals(7, walk.filter(path -> path.toString().endsWith(".sql")).count(),
+                    "Stories 1.2 through 1.6b own exactly seven forward migrations");
         }
         Path firstMigration = MIGRATIONS.resolve(
                 "identity-access/V000001__identity-access__session_boundary.sql");
@@ -161,6 +161,64 @@ class MigrationOwnershipContractTest {
         assertFalse(lower.contains("subject_registry."));
         assertFalse(lower.contains("raw_subject"));
         assertFalse(lower.contains("access_token"));
+        assertEquals(
+                "6dda051f2bb34434fa32f18b1037c1db5769c669d942473fed1a9545966172ef",
+                sha256(MIGRATIONS.resolve(
+                        "identity-access/V000006__identity-access__authoritative_identity_org_v1.sql")),
+                "V000006 remains byte-for-byte immutable");
+    }
+
+    @Test
+    void story16bMigrationCreatesResponsibilityFactsExceptionsReconciliationAndLeastPrivilege()
+            throws Exception {
+        String migration = Files.readString(MIGRATIONS.resolve(
+                "identity-access/V000007__identity-access__responsibility_reconciliation_v1.sql"));
+        String lower = migration.toLowerCase();
+
+        for (String table : Set.of(
+                "ia_responsibility_source_inbox", "ia_responsibility_source_archive",
+                "ia_responsibility_source_fact", "ia_responsibility_current",
+                "ia_responsibility_exception_history", "ia_responsibility_exception_current",
+                "ia_responsibility_reconciliation_job",
+                "ia_responsibility_reconciliation_attempt",
+                "ia_responsibility_reconciliation_lease",
+                "ia_responsibility_reconciliation_run",
+                "ia_responsibility_reconciliation_detail",
+                "ia_responsibility_slo_evidence",
+                "ia_responsibility_slo_compensation")) {
+            assertTrue(lower.contains("identity_access." + table), table);
+        }
+        assertTrue(lower.contains("consumer_projection = 'responsibility'"));
+        assertTrue(lower.contains("job_kind = 'full-reconciliation'"));
+        assertTrue(lower.contains("supporting_identity_org_watermarks jsonb"));
+        assertTrue(lower.contains("fencing_token bigint"));
+        assertTrue(lower.contains("aggregate_version bigint"));
+        assertTrue(lower.contains(
+                "retention_schedule_version varchar(64) not null default 'rs-1.0.0'"));
+        assertTrue(lower.contains(
+                "retention_owner varchar(64) not null default 'identity-access'"));
+        assertTrue(lower.contains("legal_hold boolean not null default false"));
+        assertTrue(lower.contains(
+                "ia_responsibility_slo_evidence\n        (legal_hold, expires_at, consumer_watermark)"));
+        assertTrue(lower.contains(
+                "ia_responsibility_slo_compensation\n        (status, requested_at, consumer_watermark, evidence_id)"));
+        assertTrue(lower.contains("student_ref_purpose = 'responsibility-student-ref'"));
+        assertTrue(lower.contains("create index ia_responsibility_current_student_idx"));
+        assertTrue(lower.contains("create index ia_responsibility_current_recipient_idx"));
+        assertTrue(lower.contains("create index ia_responsibility_exception_college_open_idx"));
+        assertTrue(lower.contains("create index ia_responsibility_reconciliation_job_due_idx"));
+        assertTrue(lower.contains(
+                "grant select on identity_access.ia_responsibility_current\n"
+                        + "    to scholarsense_identity_current_reader"));
+        assertFalse(lower.contains(
+                "grant insert on identity_access.ia_responsibility_current\n"
+                        + "    to scholarsense_identity_current_reader"));
+        assertFalse(lower.contains("grant delete on identity_access.ia_responsibility_source_fact"));
+        assertFalse(lower.contains("grant delete on identity_access.ia_responsibility_exception_history"));
+        assertFalse(lower.contains("subject_registry."));
+        assertFalse(lower.contains("studentref"));
+        assertFalse(lower.contains("delegationgrant"));
+        assertFalse(lower.contains("audit_operations."));
     }
 
     @Test

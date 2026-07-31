@@ -180,6 +180,36 @@ class AuditContractsTest(unittest.TestCase):
         }:
             self.assertEqual("reserved", actions[code]["status"], code)
 
+    def test_responsibility_successor_publishes_only_approved_story_actions(self) -> None:
+        catalog = self.read(
+            PROJECT_ROOT / "contracts/audit/action-catalog-1.2.0.json"
+        )
+        self.assertEqual(
+            "AUDIT-ACTION-CATALOG-1.1.0", catalog["supersedes"]
+        )
+        self.assertEqual(
+            {
+                "responsibility.sync.applied",
+                "responsibility.sync.rejected",
+                "responsibility.sync.reconciled",
+                "responsibility.exception.opened",
+                "responsibility.exception.resolved",
+            },
+            {entry["code"] for entry in catalog["actions"]},
+        )
+
+    def test_responsibility_successor_lock_detects_silent_drift(self) -> None:
+        with self.fixture() as root:
+            path = root / "contracts/audit/action-catalog-1.2.0.json"
+            path.write_text(
+                path.read_text(encoding="utf-8") + "\n",
+                encoding="utf-8",
+            )
+            self.assert_reason(
+                root,
+                "AUDIT_RESPONSIBILITY_SUCCESSOR_LOCK_DIGEST_MISMATCH",
+            )
+
     def test_contract_lock_detects_silent_drift(self) -> None:
         with self.fixture() as root:
             path = root / "contracts/audit/local-audit-fact.schema.json"

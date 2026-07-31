@@ -1,0 +1,49 @@
+{
+  "$schema": "./identity-access-vocabulary-1.2.schema.json",
+  "version": "IDENTITY-AUDIT-VOCABULARY-1.2.0",
+  "supersedes": "IDENTITY-AUDIT-VOCABULARY-1.1.0",
+  "module": "identity-access",
+  "roleIds": [],
+  "scopeCodes": ["CURRENT_SESSION", "IDENTITY_ORG", "RESPONSIBILITY"],
+  "purposes": [
+    "HOST_INTEGRATION_SECURITY",
+    "IDENTITY_AUTHORITY_RECONCILIATION",
+    "IDENTITY_AUTHORITY_SYNC",
+    "RESPONSIBILITY_AUTHORITY_RECONCILIATION",
+    "RESPONSIBILITY_AUTHORITY_SYNC",
+    "RESPONSIBILITY_EXCEPTION_MANAGEMENT",
+    "SESSION_CONTINUITY",
+    "SESSION_CONTROL",
+    "SESSION_ESTABLISHMENT"
+  ],
+  "projectionScopes": ["CURRENT_SESSION", "IDENTITY_ORG", "RESPONSIBILITY"],
+  "objectTypes": [
+    "identity-reconciliation",
+    "identity-session",
+    "identity-sync-job",
+    "responsibility-exception",
+    "responsibility-reconciliation",
+    "responsibility-sync-job"
+  ],
+  "aggregateTypes": [
+    "identity-reconciliation",
+    "identity-session",
+    "identity-sync-job",
+    "responsibility-exception",
+    "responsibility-reconciliation",
+    "responsibility-sync-job"
+  ],
+  "notApplicableReasons": [
+    "NO_ROLE_MODEL",
+    "PRE_AUTHENTICATION",
+    "SERVICE_OPERATION"
+  ],
+  "policyVersions": {
+    "hostIntegrationProfile": "HIP-1.0.0",
+    "identitySessionPolicy": "ISP-1.0.0",
+    "responsibilityContract": "RESPONSIBILITY-AUTHORITY-1.0.0",
+    "retentionSchedule": "RS-1.0.0",
+    "roleFieldPolicy": "RFP-1.0.0",
+    "roleMapping": "IDENTITY-ROLE-MAPPING-1.0.0"
+  }
+}

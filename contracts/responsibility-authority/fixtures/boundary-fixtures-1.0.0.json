@@ -1,0 +1,39 @@
+{
+  "version": "RESPONSIBILITY-AUTHORITY-BOUNDARY-FIXTURES-1.0.0",
+  "cases": [
+    {
+      "id": "exact-effective-start",
+      "serverNow": "2026-07-01T00:00:00+08:00",
+      "effectiveFrom": "2026-07-01T00:00:00+08:00",
+      "effectiveTo": "2026-08-01T00:00:00+08:00",
+      "expectedValidity": "VALID"
+    },
+    {
+      "id": "exact-effective-end",
+      "serverNow": "2026-08-01T00:00:00+08:00",
+      "effectiveFrom": "2026-07-01T00:00:00+08:00",
+      "effectiveTo": "2026-08-01T00:00:00+08:00",
+      "expectedValidity": "INVALID"
+    },
+    {
+      "id": "exactly-99-9-percent",
+      "matched": 999,
+      "missing": 1,
+      "unexpected": 0,
+      "versionDrift": 0,
+      "matchRate": "0.999000",
+      "activeUnmappedCount": 0,
+      "qualityPassed": true
+    },
+    {
+      "id": "below-99-9-percent",
+      "matched": 998,
+      "missing": 2,
+      "unexpected": 0,
+      "versionDrift": 0,
+      "matchRate": "0.998000",
+      "activeUnmappedCount": 0,
+      "qualityPassed": false
+    }
+  ]
+}

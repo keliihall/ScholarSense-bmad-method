@@ -223,7 +223,7 @@ class IdentityAuthorityPostgreSqlIT {
                 "select count(*) from identity_access.ia_identity_sync_attempt where job_id=?",
                 Long.class,
                 exhausted.jobId()));
-        assertTrue(jobs.nextDue(now.plus(Duration.ofMinutes(4))).isEmpty());
+        assertTrue(jobs.nextDue(KEY, now.plus(Duration.ofMinutes(4))).isEmpty());
     }
 
     @Test

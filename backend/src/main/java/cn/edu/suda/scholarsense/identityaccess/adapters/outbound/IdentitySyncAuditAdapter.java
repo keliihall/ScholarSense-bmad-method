@@ -29,15 +29,57 @@ public final class IdentitySyncAuditAdapter implements IdentitySyncAuditPort {
             case "identity.sync.rejected" -> IdentityAuditAction.SYNC_REJECTED;
             case "identity.sync.failed" -> IdentityAuditAction.SYNC_FAILED;
             case "identity.sync.reconciled" -> IdentityAuditAction.SYNC_RECONCILED;
+            case "responsibility.sync.applied",
+                    "responsibility.sync.heartbeat" ->
+                    IdentityAuditAction.RESPONSIBILITY_SYNC_APPLIED;
+            case "responsibility.sync.rejected",
+                    "responsibility.sync.failed" ->
+                    IdentityAuditAction.RESPONSIBILITY_SYNC_REJECTED;
+            case "responsibility.sync.reconciled" ->
+                    IdentityAuditAction.RESPONSIBILITY_SYNC_RECONCILED;
+            case "responsibility.exception.opened" ->
+                    IdentityAuditAction.RESPONSIBILITY_EXCEPTION_OPENED;
+            case "responsibility.exception.resolved" ->
+                    IdentityAuditAction.RESPONSIBILITY_EXCEPTION_RESOLVED;
             default -> throw new IllegalArgumentException(
                     "IDENTITY_SYNC_AUDIT_ACTION_INVALID");
         };
-        String objectType = action == IdentityAuditAction.SYNC_RECONCILED
-                ? "identity-reconciliation" : "identity-sync-job";
-        String purpose = action == IdentityAuditAction.SYNC_RECONCILED
-                ? "IDENTITY_AUTHORITY_RECONCILIATION" : "IDENTITY_AUTHORITY_SYNC";
+        boolean responsibility = action.name().startsWith("RESPONSIBILITY_");
+        boolean reconciliation =
+                action == IdentityAuditAction.SYNC_RECONCILED
+                        || action
+                                == IdentityAuditAction
+                                        .RESPONSIBILITY_SYNC_RECONCILED;
+        boolean exception =
+                action
+                                == IdentityAuditAction
+                                        .RESPONSIBILITY_EXCEPTION_OPENED
+                        || action
+                                == IdentityAuditAction
+                                        .RESPONSIBILITY_EXCEPTION_RESOLVED;
+        String objectType = exception
+                ? "responsibility-exception"
+                : reconciliation
+                        ? responsibility
+                                ? "responsibility-reconciliation"
+                                : "identity-reconciliation"
+                        : responsibility
+                                ? "responsibility-sync-job"
+                                : "identity-sync-job";
+        String purpose = exception
+                ? "RESPONSIBILITY_EXCEPTION_MANAGEMENT"
+                : reconciliation
+                        ? responsibility
+                                ? "RESPONSIBILITY_AUTHORITY_RECONCILIATION"
+                                : "IDENTITY_AUTHORITY_RECONCILIATION"
+                        : responsibility
+                                ? "RESPONSIBILITY_AUTHORITY_SYNC"
+                                : "IDENTITY_AUTHORITY_SYNC";
         Map<String, String> policies = Map.copyOf(event.policyVersions());
         String outcome = action == IdentityAuditAction.SYNC_FAILED
+                || action
+                        == IdentityAuditAction
+                                .RESPONSIBILITY_SYNC_REJECTED
                 ? "rejected" : event.outcome();
         String evidenceBinding = event.jobId()
                 + ":" + event.attemptNo()
@@ -59,16 +101,20 @@ public final class IdentitySyncAuditAdapter implements IdentitySyncAuditPort {
                 outcome,
                 event.reasonCode(),
                 objectType,
-                event.jobId().toString(),
+                event.auditedObjectId().toString(),
                 purpose,
-                "IDENTITY_ORG",
+                responsibility ? "RESPONSIBILITY" : "IDENTITY_ORG",
                 null,
                 event.traceId(),
                 event.occurredAt(),
                 objectType,
                 evidenceBinding,
                 event.aggregateVersion() > 0 ? event.aggregateVersion() : null,
-                evidenceBinding + ":" + event.action(),
+                evidenceBinding
+                        + ":"
+                        + event.action()
+                        + ":"
+                        + event.auditedObjectId(),
                 policies)));
     }
 }

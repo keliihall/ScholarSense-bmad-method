@@ -1,0 +1,22 @@
+{
+  "version": "RESPONSIBILITY-AUTHORITY-NEGATIVE-FIXTURES-1.0.0",
+  "cases": [
+    {"id": "partial-snapshot", "expectedReasonCode": "RESPONSIBILITY_SNAPSHOT_PARTIAL"},
+    {"id": "unsealed-snapshot", "expectedReasonCode": "RESPONSIBILITY_SNAPSHOT_UNSEALED"},
+    {"id": "missing-partition", "expectedReasonCode": "RESPONSIBILITY_SNAPSHOT_PARTITION_MISSING"},
+    {"id": "count-mismatch", "expectedReasonCode": "RESPONSIBILITY_SNAPSHOT_COUNT_MISMATCH"},
+    {"id": "digest-mismatch", "expectedReasonCode": "RESPONSIBILITY_SNAPSHOT_DIGEST_MISMATCH"},
+    {"id": "duplicate-relation", "expectedReasonCode": "RESPONSIBILITY_DUPLICATE_RELATION"},
+    {"id": "overlapping-primary", "expectedReasonCode": "RESPONSIBILITY_OVERLAPPING_PRIMARY"},
+    {"id": "inactive-recipient", "expectedReasonCode": "RESPONSIBILITY_INACTIVE_RECIPIENT"},
+    {"id": "non-r1-recipient", "expectedReasonCode": "RESPONSIBILITY_NON_R1_RECIPIENT"},
+    {"id": "wrong-college", "expectedReasonCode": "RESPONSIBILITY_COLLEGE_MISMATCH"},
+    {"id": "exact-effective-end", "expectedReasonCode": "RESPONSIBILITY_EFFECTIVE_END_REACHED"},
+    {"id": "stale-source-version", "expectedReasonCode": "RESPONSIBILITY_SOURCE_VERSION_STALE"},
+    {"id": "watermark-gap", "expectedReasonCode": "RESPONSIBILITY_WATERMARK_GAP"},
+    {"id": "same-key-different-payload", "expectedReasonCode": "RESPONSIBILITY_IDEMPOTENCY_CONFLICT"},
+    {"id": "wrong-token-purpose", "expectedReasonCode": "RESPONSIBILITY_TOKEN_PURPOSE_INVALID"},
+    {"id": "unknown-token-key-version", "expectedReasonCode": "RESPONSIBILITY_TOKEN_KEY_VERSION_UNKNOWN"},
+    {"id": "below-threshold", "expectedReasonCode": "RESPONSIBILITY_RECONCILIATION_THRESHOLD_FAILED"}
+  ]
+}

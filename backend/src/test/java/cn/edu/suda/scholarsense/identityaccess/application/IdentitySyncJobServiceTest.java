@@ -119,7 +119,7 @@ class IdentitySyncJobServiceTest {
         }
 
         @Override
-        public Optional<IdentitySyncJob> nextDue(Instant now) {
+        public Optional<IdentitySyncJob> nextDue(CheckpointKey routeKey, Instant now) {
             return Optional.empty();
         }
 

@@ -1,0 +1,29 @@
+{
+  "$schema": "./runtime-profile.schema.json",
+  "profileVersion": "RESPONSIBILITY-AUTHORITY-PROFILE-1.0.0",
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "environment": "sandbox",
+  "productionEligible": false,
+  "providedBy": "SRC-P0-RESPONSIBILITY-001 controlled sandbox source owner",
+  "approvedBy": "Hei",
+  "approvedAt": "2026-07-30T07:00:00+08:00",
+  "effectiveAt": "2026-07-30T07:00:00+08:00",
+  "policyDigest": "sha256:6941bf305e7e69e1b9537c724b85c18f2c8c4c4925c4871bf8a21ac76c648cc5",
+  "bindings": {
+    "feedId": "responsibility-authority",
+    "partitionId": "sandbox-0",
+    "consumerProjection": "responsibility",
+    "incrementalEndpointTemplate": "https://{environment}.responsibility-authority.sandbox.invalid/api/v1/incremental",
+    "snapshotEndpointTemplate": "https://{environment}.responsibility-authority.sandbox.invalid/api/v1/snapshots/{businessDate}",
+    "maximumResponseBytes": 4194304,
+    "maximumRecordsPerBatch": 1000,
+    "workloadIdentityResource": "responsibility-sync-worker",
+    "signatureKeyResource": "responsibility-authority-signature",
+    "inboxEncryptionKeyResource": "responsibility-authority-inbox",
+    "scheduleTimeZone": "Asia/Shanghai",
+    "scheduleCron": "0 0 6 * * *",
+    "catchUpWindowHours": 24,
+    "retryBudget": 8
+  },
+  "digest": "sha256:6ee8550e24fe4d16ba40c198a489296bac877b6c67f0ec37c3948fa35025ed1c"
+}

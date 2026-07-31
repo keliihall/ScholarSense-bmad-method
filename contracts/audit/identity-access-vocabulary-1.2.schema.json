@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/audit/identity-access-vocabulary-1.2.schema.json",
+  "title": "Identity-access responsibility audit vocabulary successor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "version", "supersedes", "module", "roleIds", "scopeCodes",
+    "purposes", "projectionScopes", "objectTypes", "aggregateTypes",
+    "notApplicableReasons", "policyVersions"
+  ],
+  "properties": {
+    "$schema": {"const": "./identity-access-vocabulary-1.2.schema.json"},
+    "version": {"const": "IDENTITY-AUDIT-VOCABULARY-1.2.0"},
+    "supersedes": {"const": "IDENTITY-AUDIT-VOCABULARY-1.1.0"},
+    "module": {"const": "identity-access"},
+    "roleIds": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "scopeCodes": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "purposes": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "projectionScopes": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "objectTypes": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "aggregateTypes": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "notApplicableReasons": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "policyVersions": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{2,63}$"}
+    }
+  }
+}

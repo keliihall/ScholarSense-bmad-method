@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/responsibility-authority/student-token-vectors.schema.json",
+  "title": "Responsibility student source token rotation vectors",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "version", "purposeCode", "vectors", "negativeCases"],
+  "properties": {
+    "$schema": {"const": "./student-token-vectors.schema.json"},
+    "version": {"const": "RESPONSIBILITY-STUDENT-TOKEN-VECTORS-1.0.0"},
+    "purposeCode": {"const": "RESPONSIBILITY-STUDENT-REF"},
+    "vectors": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["keyVersion", "tokenValue", "digest", "equivalenceDomain"],
+        "properties": {
+          "keyVersion": {"enum": ["resp-student-v1", "resp-student-v2"]},
+          "tokenValue": {"type": "string", "pattern": "^stok_[A-Za-z0-9_-]{32,128}$"},
+          "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "equivalenceDomain": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "negativeCases": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "expectedReasonCode"],
+        "properties": {
+          "id": {"enum": ["wrong-purpose", "unknown-key-version"]},
+          "expectedReasonCode": {"type": "string", "pattern": "^RESPONSIBILITY_[A-Z0-9_]+$"}
+        }
+      }
+    }
+  }
+}

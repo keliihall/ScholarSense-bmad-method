@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/responsibility-authority/runtime-profile.schema.json",
+  "title": "Controlled responsibility authority runtime profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "profileVersion",
+    "sourceId",
+    "environment",
+    "productionEligible",
+    "providedBy",
+    "approvedBy",
+    "approvedAt",
+    "effectiveAt",
+    "policyDigest",
+    "bindings",
+    "digest"
+  ],
+  "properties": {
+    "$schema": {"const": "./runtime-profile.schema.json"},
+    "profileVersion": {"const": "RESPONSIBILITY-AUTHORITY-PROFILE-1.0.0"},
+    "sourceId": {"const": "SRC-P0-RESPONSIBILITY-001"},
+    "environment": {"const": "sandbox"},
+    "productionEligible": {"const": false},
+    "providedBy": {"const": "SRC-P0-RESPONSIBILITY-001 controlled sandbox source owner"},
+    "approvedBy": {"const": "Hei"},
+    "approvedAt": {"type": "string", "format": "date-time"},
+    "effectiveAt": {"type": "string", "format": "date-time"},
+    "policyDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feedId",
+        "partitionId",
+        "consumerProjection",
+        "incrementalEndpointTemplate",
+        "snapshotEndpointTemplate",
+        "maximumResponseBytes",
+        "maximumRecordsPerBatch",
+        "workloadIdentityResource",
+        "signatureKeyResource",
+        "inboxEncryptionKeyResource",
+        "scheduleTimeZone",
+        "scheduleCron",
+        "catchUpWindowHours",
+        "retryBudget"
+      ],
+      "properties": {
+        "feedId": {"const": "responsibility-authority"},
+        "partitionId": {"const": "sandbox-0"},
+        "consumerProjection": {"const": "responsibility"},
+        "incrementalEndpointTemplate": {"const": "https://{environment}.responsibility-authority.sandbox.invalid/api/v1/incremental"},
+        "snapshotEndpointTemplate": {"const": "https://{environment}.responsibility-authority.sandbox.invalid/api/v1/snapshots/{businessDate}"},
+        "maximumResponseBytes": {"const": 4194304},
+        "maximumRecordsPerBatch": {"const": 1000},
+        "workloadIdentityResource": {"const": "responsibility-sync-worker"},
+        "signatureKeyResource": {"const": "responsibility-authority-signature"},
+        "inboxEncryptionKeyResource": {"const": "responsibility-authority-inbox"},
+        "scheduleTimeZone": {"const": "Asia/Shanghai"},
+        "scheduleCron": {"const": "0 0 6 * * *"},
+        "catchUpWindowHours": {"type": "integer", "minimum": 1, "maximum": 72},
+        "retryBudget": {"type": "integer", "minimum": 1, "maximum": 20}
+      }
+    },
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

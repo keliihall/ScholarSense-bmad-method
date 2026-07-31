@@ -1,0 +1,31 @@
+{
+  "$schema": "../../full-snapshot.schema.json",
+  "schemaVersion": "RESPONSIBILITY-SNAPSHOT-1.0.0",
+  "contractVersion": "RESPONSIBILITY-AUTHORITY-1.0.0",
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "feedId": "responsibility-authority",
+  "consumerProjection": "responsibility",
+  "snapshotId": "01980d46-5b40-7000-8000-000000000011",
+  "businessDate": "2026-07-30",
+  "cutoffAt": "2026-07-30T06:00:00+08:00",
+  "sourceVersion": 7,
+  "throughWatermark": 7,
+  "supportingIdentityOrgWatermarks": {
+    "identity-authority|sandbox-0": 42
+  },
+  "sealed": true,
+  "complete": true,
+  "expectedCount": 1,
+  "canonicalDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+  "signatureDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+  "partitions": ["sandbox-0"],
+  "records": [
+    {
+      "relationRefToken": "rtok_CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+      "studentEquivalenceDomain": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "recordVersion": 7,
+      "payloadDigest": "sha256:5555555555555555555555555555555555555555555555555555555555555555"
+    }
+  ],
+  "traceId": "22222222222222222222222222222222"
+}

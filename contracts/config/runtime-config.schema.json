@@ -76,6 +76,11 @@
       "pattern": "^config://(dev|test|stage|prod)/identity-authority-profile-1-0-0$",
       "description": "Environment-scoped immutable source endpoint, workload identity, signature, timeout and mapping binding."
     },
+    "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF": {
+      "type": "string",
+      "pattern": "^config://(dev|test|stage|prod)/responsibility-authority-profile-1-0-0$",
+      "description": "Environment-scoped immutable responsibility incremental, snapshot, schedule, retry and security binding."
+    },
     "SCHOLARSENSE_AUDIT_INGESTION_POLICY_REF": {
       "type": "string",
       "pattern": "^config://(dev|test|stage|prod)/audit-ingestion-policy-1-0-0$",
@@ -129,7 +134,10 @@
         "required": ["SCHOLARSENSE_IDENTITY_SYNC_ENABLED"]
       },
       "then": {
-        "required": ["SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF"]
+        "required": [
+          "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
+          "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF"
+        ]
       }
     },
     {

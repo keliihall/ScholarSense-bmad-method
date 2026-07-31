@@ -1,0 +1,99 @@
+{
+  "version": "RESPONSIBILITY-POLICY-1.0.0",
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "providedBy": "SRC-P0-RESPONSIBILITY-001 source owner",
+  "approvedBy": "Hei",
+  "approvedAt": "2026-07-30T07:00:00+08:00",
+  "effectiveAt": "2026-07-30T07:00:00+08:00",
+  "relation": {
+    "stableBusinessKey": "relationRefToken",
+    "effectiveInterval": "[effectiveFrom,effectiveTo)",
+    "allowedTypes": ["primary", "secondary"],
+    "duplicateBusinessKey": "reject",
+    "overlappingPrimary": "reject"
+  },
+  "studentToken": {
+    "purposeCode": "RESPONSIBILITY-STUDENT-REF",
+    "activeKeyVersion": "resp-student-v2",
+    "dualReadKeyVersions": ["resp-student-v1", "resp-student-v2"],
+    "stabilityDomain": "sourceId|purposeCode|providerExternalReference",
+    "rotation": "dual-read-and-rebuild-before-old-key-destruction",
+    "oldKeyDestructionCondition": "rebuild-complete-and-retention-expired-and-no-legal-hold"
+  },
+  "recipient": {
+    "primaryCardinality": "exactly-one",
+    "requiredRole": "R1-COUNSELOR",
+    "requiredAccountStatus": "active",
+    "requiredCollegeStatus": "active",
+    "collegeMatch": "relation-college-equals-employment-scope",
+    "fallback": "none"
+  },
+  "recipientReferenceBinding": {
+    "version": "RESPONSIBILITY-IDENTITY-REF-BINDING-1.0.0",
+    "approvedBy": "Hei",
+    "approvedAt": "2026-07-30T20:27:02+08:00",
+    "sourceNamespace": "SRC-P0-RESPONSIBILITY-001",
+    "transportFields": [
+      "counselorAccountExternalRef",
+      "collegeOrganizationExternalRef"
+    ],
+    "transportProtection": "signed-and-envelope-encrypted; raw references are never persisted or logged",
+    "platformPurpose": "identity-external-ref",
+    "algorithm": "existing-platform-keyed-pseudonymization",
+    "material": "purposeCode|NUL|sourceId|NUL|providerExternalReference",
+    "rotation": "same bounded platform key rotation and rebuild as identity-org",
+    "crosswalk": "not-required"
+  },
+  "dependency": {
+    "identityOrgWatermark": "vector",
+    "vectorKey": "feedId|partitionId",
+    "behindOutcome": "DEPENDENCY_UNAVAILABLE"
+  },
+  "schedule": {
+    "timeZone": "Asia/Shanghai",
+    "localTime": "06:00:00",
+    "firstBusinessDate": "2026-07-30",
+    "businessDate": "local-date-at-scheduled-trigger",
+    "catchUpWindowHours": 24,
+    "uniqueKey": "sourceId|feedId|partitionId|consumerProjection|businessDate|jobKind"
+  },
+  "reconciliation": {
+    "formula": "matched/(matched+missing+unexpected+versionDrift)",
+    "zeroDenominatorResult": "1.000000",
+    "minimumMatchRate": "0.999",
+    "maximumActiveUnmappedCount": 0,
+    "duplicateKeyTreatment": "versionDrift",
+    "activeUnmappedDefinition": "active relation without contract-valid student token plus mapped active account/R1 employment plus active matching college at the reconciliation watermark",
+    "canonicalStudentRefValidation": "out-of-scope"
+  },
+  "reasonCodes": [
+    "RESPONSIBILITY_VALID",
+    "RESPONSIBILITY_ZERO_RECIPIENT",
+    "RESPONSIBILITY_MULTIPLE_RECIPIENTS",
+    "RESPONSIBILITY_DUPLICATE_RELATION",
+    "RESPONSIBILITY_OVERLAPPING_PRIMARY",
+    "RESPONSIBILITY_INACTIVE_RECIPIENT",
+    "RESPONSIBILITY_NON_R1_RECIPIENT",
+    "RESPONSIBILITY_COLLEGE_MISSING",
+    "RESPONSIBILITY_COLLEGE_INACTIVE",
+    "RESPONSIBILITY_COLLEGE_MISMATCH",
+    "RESPONSIBILITY_EFFECTIVE_WINDOW_INVALID",
+    "RESPONSIBILITY_EFFECTIVE_END_REACHED",
+    "RESPONSIBILITY_TOKEN_PURPOSE_INVALID",
+    "RESPONSIBILITY_TOKEN_KEY_VERSION_UNKNOWN",
+    "RESPONSIBILITY_DEPENDENCY_WATERMARK_BEHIND",
+    "RESPONSIBILITY_CLOCK_UNAVAILABLE",
+    "RESPONSIBILITY_SNAPSHOT_PARTIAL",
+    "RESPONSIBILITY_SNAPSHOT_UNSEALED",
+    "RESPONSIBILITY_SNAPSHOT_PARTITION_MISSING",
+    "RESPONSIBILITY_SNAPSHOT_COUNT_MISMATCH",
+    "RESPONSIBILITY_SNAPSHOT_DIGEST_MISMATCH",
+    "RESPONSIBILITY_SOURCE_VERSION_STALE",
+    "RESPONSIBILITY_WATERMARK_GAP",
+    "RESPONSIBILITY_IDEMPOTENCY_CONFLICT",
+    "RESPONSIBILITY_RECONCILIATION_MATCHED",
+    "RESPONSIBILITY_RECONCILIATION_DIFFERENCES",
+    "RESPONSIBILITY_RECONCILIATION_THRESHOLD_FAILED"
+  ],
+  "digest": "sha256:6941bf305e7e69e1b9537c724b85c18f2c8c4c4925c4871bf8a21ac76c648cc5"
+}

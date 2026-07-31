@@ -10,7 +10,12 @@ public enum IdentityAuditAction {
     SYNC_APPLIED("identity.sync.applied"),
     SYNC_REJECTED("identity.sync.rejected"),
     SYNC_FAILED("identity.sync.failed"),
-    SYNC_RECONCILED("identity.sync.reconciled");
+    SYNC_RECONCILED("identity.sync.reconciled"),
+    RESPONSIBILITY_SYNC_APPLIED("responsibility.sync.applied"),
+    RESPONSIBILITY_SYNC_REJECTED("responsibility.sync.rejected"),
+    RESPONSIBILITY_SYNC_RECONCILED("responsibility.sync.reconciled"),
+    RESPONSIBILITY_EXCEPTION_OPENED("responsibility.exception.opened"),
+    RESPONSIBILITY_EXCEPTION_RESOLVED("responsibility.exception.resolved");
 
     private final String code;
 
