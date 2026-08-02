@@ -28,13 +28,48 @@ class ContractSeedTest(unittest.TestCase):
             path.write_text(json.dumps(value), encoding="utf-8")
             self.assert_reason(root, "OPENAPI_AUDIT_PATH_SET_INVALID")
 
-    def test_business_event_contract_is_rejected(self) -> None:
+    def test_public_event_envelope_stays_generic(self) -> None:
         with self.fixture() as root:
             path = root / "contracts/events/envelope.schema.json"
             value = json.loads(path.read_text(encoding="utf-8"))
             value["$defs"] = {"ClueCreated": {"type": "object"}}
             path.write_text(json.dumps(value), encoding="utf-8")
-            self.assert_reason(root, "EVENT_BUSINESS_CONTRACT_PREMATURE")
+            self.assert_reason(root, "EVENT_ENVELOPE_DATA_EXTENSION_INVALID")
+
+    def test_event_type_pattern_accepts_legacy_and_pic_names(self) -> None:
+        value = json.loads(
+            (PROJECT_ROOT / "contracts/events/envelope.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        pattern = value["properties"]["type"]["pattern"]
+
+        self.assertIsNotNone(
+            re.fullmatch(pattern, "identity-access.local-audit-fact.recorded.v1")
+        )
+        self.assertIsNotNone(
+            re.fullmatch(
+                pattern,
+                "scholarsense.identity-access.responsibility.changed.v1",
+            )
+        )
+        self.assertIsNone(
+            re.fullmatch(pattern, "scholarsense.identity-access.responsibility.changed")
+        )
+
+    def test_public_event_envelope_keeps_legacy_optional_extensions(self) -> None:
+        value = json.loads(
+            (PROJECT_ROOT / "contracts/events/envelope.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        self.assertEqual(
+            {"specversion", "id", "source", "type", "time", "data"},
+            set(value["required"]),
+        )
+        self.assertIn("subject", value["properties"])
+        self.assertIn("datacontenttype", value["properties"])
 
     def test_sensitive_client_variable_is_rejected(self) -> None:
         with self.fixture() as root:
@@ -73,6 +108,12 @@ class ContractSeedTest(unittest.TestCase):
             "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
             "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
             "SCHOLARSENSE_IDENTITY_SYNC_SECURITY_DIRECTORY",
+            "SCHOLARSENSE_IDENTITY_SYNC_ACCESS_INVALIDATION_CONSUMER_JDBC_URL",
+            "SCHOLARSENSE_IDENTITY_SYNC_ACCESS_INVALIDATION_CONSUMER_USERNAME",
+            "SCHOLARSENSE_IDENTITY_SYNC_ACCESS_INVALIDATION_CONSUMER_PASSWORD",
+            "SCHOLARSENSE_IDENTITY_SYNC_RESPONSIBILITY_V2_CUTOVER_JDBC_URL",
+            "SCHOLARSENSE_IDENTITY_SYNC_RESPONSIBILITY_V2_CUTOVER_USERNAME",
+            "SCHOLARSENSE_IDENTITY_SYNC_RESPONSIBILITY_V2_CUTOVER_PASSWORD",
         }
 
         self.assertTrue((audit_keys | sync_keys).isdisjoint(roles["requiredEnvironment"]))

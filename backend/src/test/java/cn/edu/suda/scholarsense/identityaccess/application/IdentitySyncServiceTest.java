@@ -6,11 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cn.edu.suda.scholarsense.identityaccess.domain.AuthoritativeAccount;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationLineageId;
 import cn.edu.suda.scholarsense.identityaccess.domain.AuthoritativeStatus;
 import cn.edu.suda.scholarsense.identityaccess.domain.EffectiveInterval;
 import cn.edu.suda.scholarsense.identityaccess.domain.EmploymentRoleBinding;
 import cn.edu.suda.scholarsense.identityaccess.domain.OrganizationNode;
 import cn.edu.suda.scholarsense.identityaccess.domain.OrganizationType;
+import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityRecipientValidity;
 import cn.edu.suda.scholarsense.identityaccess.domain.TargetRole;
 import cn.edu.suda.scholarsense.shared.time.TimeSourceProfile;
 import cn.edu.suda.scholarsense.shared.time.TrustedTime;
@@ -179,6 +181,306 @@ class IdentitySyncServiceTest {
                 value.accountId() == null
                         && "IDENTITY_AUTHORIZATION_READBACK_EMPTY".equals(
                                 value.lateReasonCode())));
+    }
+
+    @Test
+    void inactiveIdentityUsesAffectedResponsibilityScopeDenyAsSloProof() {
+        var repository = new FakeRepository(checkpoint(6, 6, 2));
+        var evidence = new ArrayList<IdentitySloEvidence>();
+        NormalizedIdentityBatch original =
+                batch(6, 7, 7, digest("cascade-deny"));
+        AuthoritativeAccount active = original.accounts().getFirst();
+        AuthoritativeAccount inactive = new AuthoritativeAccount(
+                active.accountId(),
+                active.sourceId(),
+                active.externalRefDigest(),
+                active.subjectBindingToken(),
+                active.subjectBindingReadTokens(),
+                AuthoritativeStatus.INACTIVE,
+                active.effectiveInterval(),
+                active.sourceVersion(),
+                active.aggregateVersion());
+        NormalizedIdentityBatch batch = original.withAccounts(
+                List.of(inactive));
+        var service = new IdentitySyncService(
+                repository,
+                (_key, from, to, traceId) -> {},
+                directTransaction(),
+                ignored -> {},
+                ignored -> {},
+                actor -> Optional.of(context(batch)),
+                evidence::add,
+                IdentitySyncServiceTest::trustedNow,
+                AccessInvalidationChangePublisherPort.noOp(),
+                (kind, digest, sourceVersion, sourceWatermark,
+                        aggregateVersion, serverNow) -> kind
+                                == IdentityRecordKind.ACCOUNT
+                        ? List.of(
+                        new IdentityCascadeScopeReadBack(
+                                new AccessInvalidationLineageId(
+                                        "lin_"
+                                                + "D".repeat(40)),
+                                "d".repeat(64),
+                                inactive.accountId(),
+                                uuid("305"),
+                                ResponsibilityRecipientValidity.INVALID,
+                                sourceVersion,
+                                sourceWatermark,
+                                aggregateVersion,
+                                9,
+                                12,
+                                4,
+                                new ResponsibilityScopeReadBack(
+                                        ResponsibilityRecipientValidity.INVALID,
+                                        "RESPONSIBILITY_ACCOUNT_INACTIVE",
+                                        9,
+                                        12,
+                                        4,
+                                        NOW)))
+                        : List.of());
+
+        service.process(batch, lease(3));
+
+        IdentitySloEvidence accountEvidence = evidence.stream()
+                .filter(item -> item.recordKind()
+                        == IdentityRecordKind.ACCOUNT)
+                .findFirst()
+                .orElseThrow();
+        assertEquals(inactive.accountId(), accountEvidence.accountId());
+        assertTrue(accountEvidence.withinFifteenMinutes());
+        assertEquals(null, accountEvidence.lateReasonCode());
+    }
+
+    @Test
+    void stillValidCascadeScopeStaysInSloDenominator() {
+        var repository = new FakeRepository(checkpoint(6, 6, 2));
+        var evidence = new ArrayList<IdentitySloEvidence>();
+        NormalizedIdentityBatch original =
+                batch(6, 7, 7, digest("cascade-still-valid"));
+        AuthoritativeAccount active = original.accounts().getFirst();
+        AuthoritativeAccount inactive = new AuthoritativeAccount(
+                active.accountId(),
+                active.sourceId(),
+                active.externalRefDigest(),
+                active.subjectBindingToken(),
+                active.subjectBindingReadTokens(),
+                AuthoritativeStatus.INACTIVE,
+                active.effectiveInterval(),
+                active.sourceVersion(),
+                active.aggregateVersion());
+        NormalizedIdentityBatch batch = original.withAccounts(
+                List.of(inactive));
+        var service = new IdentitySyncService(
+                repository,
+                (_key, from, to, traceId) -> {},
+                directTransaction(),
+                ignored -> {},
+                ignored -> {},
+                actor -> Optional.of(context(batch)),
+                evidence::add,
+                IdentitySyncServiceTest::trustedNow,
+                AccessInvalidationChangePublisherPort.noOp(),
+                (kind, digest, sourceVersion, sourceWatermark,
+                        aggregateVersion, serverNow) -> kind
+                                == IdentityRecordKind.ACCOUNT
+                        ? List.of(
+                        new IdentityCascadeScopeReadBack(
+                                new AccessInvalidationLineageId(
+                                        "lin_"
+                                                + "E".repeat(40)),
+                                "e".repeat(64),
+                                inactive.accountId(),
+                                uuid("305"),
+                                ResponsibilityRecipientValidity.INVALID,
+                                sourceVersion,
+                                sourceWatermark,
+                                aggregateVersion,
+                                9,
+                                12,
+                                4,
+                                new ResponsibilityScopeReadBack(
+                                        ResponsibilityRecipientValidity.VALID,
+                                        "RESPONSIBILITY_VALID",
+                                        9,
+                                        12,
+                                        4,
+                                        NOW)))
+                        : List.of());
+
+        service.process(batch, lease(3));
+
+        IdentitySloEvidence accountEvidence = evidence.stream()
+                .filter(item -> item.recordKind()
+                        == IdentityRecordKind.ACCOUNT)
+                .findFirst()
+                .orElseThrow();
+        assertFalse(accountEvidence.withinFifteenMinutes());
+        assertEquals(
+                "IDENTITY_CASCADE_SCOPE_STILL_VALID",
+                accountEvidence.lateReasonCode());
+    }
+
+    @Test
+    void activeCorrectionRequiresExpectedValidExactScopeProof() {
+        var repository = new FakeRepository(checkpoint(6, 6, 2));
+        var evidence = new ArrayList<IdentitySloEvidence>();
+        NormalizedIdentityBatch batch =
+                batch(6, 7, 7, digest("cascade-recovery"));
+        AuthoritativeAccount account = batch.accounts().getFirst();
+        var service = new IdentitySyncService(
+                repository,
+                (_key, from, to, traceId) -> {},
+                directTransaction(),
+                ignored -> {},
+                ignored -> {},
+                actor -> Optional.of(context(batch)),
+                evidence::add,
+                IdentitySyncServiceTest::trustedNow,
+                AccessInvalidationChangePublisherPort.noOp(),
+                (kind, digest, sourceVersion, sourceWatermark,
+                        aggregateVersion, serverNow) -> kind
+                                == IdentityRecordKind.ACCOUNT
+                        ? List.of(new IdentityCascadeScopeReadBack(
+                                new AccessInvalidationLineageId(
+                                        "lin_" + "F".repeat(40)),
+                                "f".repeat(64),
+                                account.accountId(),
+                                uuid("305"),
+                                ResponsibilityRecipientValidity.VALID,
+                                sourceVersion,
+                                sourceWatermark,
+                                aggregateVersion,
+                                9,
+                                12,
+                                4,
+                                new ResponsibilityScopeReadBack(
+                                        ResponsibilityRecipientValidity.VALID,
+                                        "RESPONSIBILITY_VALID",
+                                        9,
+                                        12,
+                                        4,
+                                        NOW)))
+                        : List.of());
+
+        service.process(batch, lease(3));
+
+        IdentitySloEvidence accountEvidence = evidence.stream()
+                .filter(item -> item.recordKind()
+                        == IdentityRecordKind.ACCOUNT)
+                .findFirst()
+                .orElseThrow();
+        assertTrue(accountEvidence.withinFifteenMinutes());
+        assertEquals(null, accountEvidence.lateReasonCode());
+    }
+
+    @Test
+    void cascadeScopeIsEnumeratedAtTheActualReadBackTime() {
+        var repository = new FakeRepository(checkpoint(6, 6, 2));
+        NormalizedIdentityBatch batch =
+                batch(6, 7, 7, digest("cascade-readback-time"));
+        Instant readBackAt = NOW.plusSeconds(90);
+        var timeReads = new AtomicInteger();
+        var cascadeTimes = new ArrayList<Instant>();
+        var service = new IdentitySyncService(
+                repository,
+                (_key, from, to, traceId) -> {},
+                directTransaction(),
+                ignored -> {},
+                ignored -> {},
+                actor -> Optional.of(context(batch)),
+                ignored -> {},
+                () -> trustedAt(
+                        timeReads.getAndIncrement() == 0
+                                ? NOW
+                                : readBackAt),
+                AccessInvalidationChangePublisherPort.noOp(),
+                (kind, digest, sourceVersion, sourceWatermark,
+                        aggregateVersion, serverNow) -> {
+                    cascadeTimes.add(serverNow);
+                    return List.of();
+                });
+
+        service.process(batch, lease(3));
+
+        assertEquals(3, cascadeTimes.size());
+        assertTrue(cascadeTimes.stream()
+                .allMatch(readBackAt::equals));
+    }
+
+    @Test
+    void cascadeScopeNeedsIdentityAndEveryScopeVersionCoordinate() {
+        var repository = new FakeRepository(checkpoint(6, 6, 2));
+        var evidence = new ArrayList<IdentitySloEvidence>();
+        NormalizedIdentityBatch original =
+                batch(6, 7, 7, digest("cascade-version-mismatch"));
+        AuthoritativeAccount active = original.accounts().getFirst();
+        AuthoritativeAccount inactive = new AuthoritativeAccount(
+                active.accountId(),
+                active.sourceId(),
+                active.externalRefDigest(),
+                active.subjectBindingToken(),
+                active.subjectBindingReadTokens(),
+                AuthoritativeStatus.INACTIVE,
+                active.effectiveInterval(),
+                active.sourceVersion(),
+                active.aggregateVersion());
+        NormalizedIdentityBatch batch = original.withAccounts(
+                List.of(inactive));
+        var service = new IdentitySyncService(
+                repository,
+                (_key, from, to, traceId) -> {},
+                directTransaction(),
+                ignored -> {},
+                ignored -> {},
+                actor -> Optional.of(context(batch)),
+                evidence::add,
+                IdentitySyncServiceTest::trustedNow,
+                AccessInvalidationChangePublisherPort.noOp(),
+                (kind, digest, sourceVersion, sourceWatermark,
+                        aggregateVersion, serverNow) -> kind
+                                == IdentityRecordKind.ACCOUNT
+                        ? List.of(
+                                cascadeVersionObservation(
+                                        "G", inactive.accountId(),
+                                        sourceVersion, sourceWatermark,
+                                        aggregateVersion, 10, 12, 4),
+                                cascadeVersionObservation(
+                                        "H", inactive.accountId(),
+                                        sourceVersion, sourceWatermark,
+                                        aggregateVersion, 9, 13, 4),
+                                cascadeVersionObservation(
+                                        "I", inactive.accountId(),
+                                        sourceVersion, sourceWatermark,
+                                        aggregateVersion, 9, 12, 5),
+                                cascadeVersionObservation(
+                                        "J", inactive.accountId(),
+                                        sourceVersion + 1,
+                                        sourceWatermark,
+                                        aggregateVersion, 9, 12, 4),
+                                cascadeVersionObservation(
+                                        "K", inactive.accountId(),
+                                        sourceVersion,
+                                        sourceWatermark + 1,
+                                        aggregateVersion, 9, 12, 4),
+                                cascadeVersionObservation(
+                                        "L", inactive.accountId(),
+                                        sourceVersion,
+                                        sourceWatermark,
+                                        aggregateVersion + 1, 9, 12, 4))
+                        : List.of());
+
+        service.process(batch, lease(3));
+
+        List<IdentitySloEvidence> accountEvidence = evidence.stream()
+                .filter(item -> item.recordKind()
+                        == IdentityRecordKind.ACCOUNT)
+                .toList();
+        assertEquals(6, accountEvidence.size());
+        assertTrue(accountEvidence.stream().noneMatch(
+                IdentitySloEvidence::withinFifteenMinutes));
+        assertTrue(accountEvidence.stream().allMatch(item ->
+                "IDENTITY_AUTHORIZATION_VERSION_MISMATCH".equals(
+                        item.lateReasonCode())));
     }
 
     @Test
@@ -419,6 +721,37 @@ class IdentitySyncServiceTest {
         };
     }
 
+    private static IdentityCascadeScopeReadBack cascadeVersionObservation(
+            String lineageSuffix,
+            UUID accountId,
+            long identitySourceVersion,
+            long identitySourceWatermark,
+            long identityAggregateVersion,
+            long readBackSourceVersion,
+            long readBackSourceWatermark,
+            long readBackAggregateVersion) {
+        return new IdentityCascadeScopeReadBack(
+                new AccessInvalidationLineageId(
+                        "lin_" + lineageSuffix.repeat(40)),
+                "a".repeat(64),
+                accountId,
+                uuid("305"),
+                ResponsibilityRecipientValidity.INVALID,
+                identitySourceVersion,
+                identitySourceWatermark,
+                identityAggregateVersion,
+                9,
+                12,
+                4,
+                new ResponsibilityScopeReadBack(
+                        ResponsibilityRecipientValidity.INVALID,
+                        "RESPONSIBILITY_ACCOUNT_INACTIVE",
+                        readBackSourceVersion,
+                        readBackSourceWatermark,
+                        readBackAggregateVersion,
+                        NOW));
+    }
+
     private static NormalizedIdentityBatch batch(
             long fromWatermark, long toWatermark, long sourceVersion, String envelopeDigest) {
         UUID accountId = uuid("301");
@@ -531,14 +864,18 @@ class IdentitySyncServiceTest {
     }
 
     private static TrustedTime trustedNow() {
+        return trustedAt(NOW);
+    }
+
+    private static TrustedTime trustedAt(Instant instant) {
         return new TrustedTime(
-                NOW,
+                instant,
                 new TimeSourceProfile(
                         "campus-ntp-a",
                         "AUDIT-CLOCK-BINDING-1.0.0",
                         5,
-                        NOW.minusSeconds(10),
-                        NOW.plusSeconds(50),
+                        instant.minusSeconds(10),
+                        instant.plusSeconds(50),
                         "evidence://signed/clock/campus-ntp-a.json"));
     }
 

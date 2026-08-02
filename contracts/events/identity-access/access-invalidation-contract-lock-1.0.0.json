@@ -1,0 +1,55 @@
+{
+  "version": "ACCESS-INVALIDATION-CONTRACT-LOCK-1.0.0",
+  "files": [
+    {
+      "path": "contracts/events/identity-access/access-invalidation-event.schema.json",
+      "sha256": "664b4879775b2eba090dd6ab24d6d101c39e2a0f0c20721cde40afbb8f139cfa"
+    },
+    {
+      "path": "contracts/events/identity-access/access-invalidation-policy-1.0.0.json",
+      "sha256": "e4331d04b2cf353f67018d29330a8d962b6d08e2f7ef335269963e7927d359d5"
+    },
+    {
+      "path": "contracts/events/identity-access/consumer-registry-1.0.0.json",
+      "sha256": "c7e8d2ee73bf60756fe6f5ceb812639942c896fdf3452df37e103eda62428762"
+    },
+    {
+      "path": "contracts/events/identity-access/fixtures/invalid/negative-fixtures-1.0.0.json",
+      "sha256": "bf3631c723dc2066c19ab4830ca40bfa1c5acd931cc4bcb587d8d5a4f36bc454"
+    },
+    {
+      "path": "contracts/events/identity-access/fixtures/ordering-fixtures-1.0.0.json",
+      "sha256": "8ae8c5a68f131d8aef25253ceceb16395fb8e3b7b9bfefb6268ef0dfd29c60db"
+    },
+    {
+      "path": "contracts/events/identity-access/fixtures/valid/account-disabled-cause-v1.json",
+      "sha256": "233aa9ac1919d65b3b6e0298ae12f874ce88b3b04fe451fd69c23e81e6031db3"
+    },
+    {
+      "path": "contracts/events/identity-access/fixtures/valid/account-disabled-derived-v1.json",
+      "sha256": "40e73f865455b89bd43de5b0a948b5983b814fd158e06803c6d08df80d28c4b9"
+    },
+    {
+      "path": "contracts/events/identity-access/fixtures/valid/responsibility-corrected-v1.json",
+      "sha256": "dd9be133c8b2b7992b088ce8b649ae57baa7ff04f9269e5e0c0f7deeb74fe821"
+    },
+    {
+      "path": "contracts/events/identity-access/fixtures/valid/responsibility-revalidated-v3.json",
+      "sha256": "14291ff285048508cd0c05ac6dbb8c23cc526fadba74a9363b53e375465bd8e4"
+    },
+    {
+      "path": "contracts/events/identity-access/fixtures/valid/responsibility-revoked-v2.json",
+      "sha256": "f7c5a5e35c7c75bd06c88755c33ee95f9a155baa671c2efd9e656a2e01d3d604"
+    }
+  ],
+  "upstreamLocks": [
+    {
+      "path": "contracts/events/envelope.schema.json",
+      "sha256": "10d75ab24a6df63a2520f263ba29c9f6f45bc5e78165deb20109b37fd4eadd6d"
+    },
+    {
+      "path": "contracts/responsibility-authority-v2/responsibility-authority-contract-lock-2.0.0.json",
+      "sha256": "0b56461f5addf7cf521a7968df06ba1344eb7ac6a4810d9ac25ce060a31447cc"
+    }
+  ]
+}

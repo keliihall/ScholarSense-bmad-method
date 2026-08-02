@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/events/identity-access/access-invalidation-event.schema.json",
+  "title": "ScholarSense identity-access responsibility invalidation event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "specversion",
+    "id",
+    "source",
+    "type",
+    "subject",
+    "time",
+    "datacontenttype",
+    "data"
+  ],
+  "properties": {
+    "specversion": {"const": "1.0"},
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "source": {"const": "urn:scholarsense:identity-access"},
+    "type": {
+      "const": "scholarsense.identity-access.responsibility.changed.v1"
+    },
+    "subject": {
+      "type": "string",
+      "pattern": "^responsibility/(?:lin|cause)_[A-Za-z0-9_-]{32,128}$",
+      "maxLength": 256
+    },
+    "time": {"type": "string", "format": "date-time"},
+    "datacontenttype": {"const": "application/json"},
+    "traceparent": {
+      "type": "string",
+      "pattern": "^00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]$"
+    },
+    "data": {"$ref": "#/$defs/data"}
+  },
+  "$defs": {
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "eventId",
+        "traceId",
+        "producer",
+        "changeKind",
+        "reasonCode",
+        "lineageId",
+        "supersedesId",
+        "causeEventId",
+        "aggregateType",
+        "aggregateId",
+        "aggregateVersion",
+        "invalidationVersion",
+        "effectiveAt",
+        "sourceVector",
+        "subjectSnapshot",
+        "authorizationSnapshot",
+        "retention"
+      ],
+      "properties": {
+        "schemaVersion": {"const": "ACCESS-INVALIDATION-DATA-1.0.0"},
+        "eventId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "producer": {"const": "identity-access"},
+        "changeKind": {
+          "type": "string",
+          "enum": [
+            "corrected",
+            "revoked",
+            "expired",
+            "invalidated",
+            "revalidated"
+          ]
+        },
+        "reasonCode": {
+          "type": "string",
+          "enum": [
+            "DIRECT_RESPONSIBILITY_CHANGE",
+            "ACCOUNT_DISABLED",
+            "R1_EMPLOYMENT_INVALID",
+            "COLLEGE_INVALID",
+            "RELATION_EXPIRED",
+            "COMPLETE_SNAPSHOT_MISSING",
+            "QUALITY_GATE_INVALID",
+            "RECONCILIATION_RECOVERED",
+            "SOURCE_CORRECTION"
+          ]
+        },
+        "lineageId": {
+          "type": "string",
+          "pattern": "^lin_[A-Za-z0-9_-]{32,128}$"
+        },
+        "supersedesId": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "causeEventId": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "aggregateType": {
+          "type": "string",
+          "enum": ["responsibility-scope", "identity-cause"]
+        },
+        "aggregateId": {
+          "type": "string",
+          "pattern": "^(?:lin|cause)_[A-Za-z0-9_-]{32,128}$"
+        },
+        "aggregateVersion": {"type": "integer", "minimum": 1},
+        "invalidationVersion": {"type": "integer", "minimum": 1},
+        "effectiveAt": {"type": "string", "format": "date-time"},
+        "sourceVector": {"$ref": "#/$defs/sourceVector"},
+        "subjectSnapshot": {"$ref": "#/$defs/subjectSnapshot"},
+        "authorizationSnapshot": {"$ref": "#/$defs/authorizationSnapshot"},
+        "retention": {"$ref": "#/$defs/retention"}
+      }
+    },
+    "sourceVector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceId",
+        "sourceVersion",
+        "sourceWatermark",
+        "dependencyVector"
+      ],
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "enum": [
+            "SRC-P0-RESPONSIBILITY-001"
+          ]
+        },
+        "sourceVersion": {"type": "integer", "minimum": 1},
+        "sourceWatermark": {"type": "integer", "minimum": 0},
+        "dependencyVector": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/dependencyWatermark"}
+        }
+      }
+    },
+    "dependencyWatermark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["feedId", "partitionId", "watermark"],
+      "properties": {
+        "feedId": {
+          "type": "string",
+          "enum": ["identity-authority", "responsibility-authority"]
+        },
+        "partitionId": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "maxLength": 64
+        },
+        "watermark": {"type": "integer", "minimum": 0}
+      }
+    },
+    "subjectSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subjectToken",
+        "scopeToken",
+        "objectDigest",
+        "tokenizationProfileVersion"
+      ],
+      "properties": {
+        "subjectToken": {
+          "type": "string",
+          "pattern": "^subtok_[A-Za-z0-9_-]{32,128}$"
+        },
+        "scopeToken": {
+          "type": "string",
+          "pattern": "^scptok_[A-Za-z0-9_-]{32,128}$"
+        },
+        "objectDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "tokenizationProfileVersion": {
+          "const": "ACCESS-INVALIDATION-TOKENIZATION-1.0.0"
+        }
+      }
+    },
+    "authorizationSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "currentState",
+        "accountActive",
+        "r1EmploymentValid",
+        "collegeActive",
+        "relationEffective",
+        "policyVersion"
+      ],
+      "properties": {
+        "currentState": {
+          "type": "string",
+          "enum": ["invalidated", "revalidated"]
+        },
+        "accountActive": {"type": "boolean"},
+        "r1EmploymentValid": {"type": "boolean"},
+        "collegeActive": {"type": "boolean"},
+        "relationEffective": {"type": "boolean"},
+        "policyVersion": {"const": "RFP-1.0.0"}
+      }
+    },
+    "retention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "classification",
+        "retentionScheduleVersion",
+        "retainUntil",
+        "legalHold"
+      ],
+      "properties": {
+        "classification": {"const": "restricted"},
+        "retentionScheduleVersion": {"const": "RS-1.0.0"},
+        "retainUntil": {"type": "string", "format": "date-time"},
+        "legalHold": {"type": "boolean"}
+      }
+    }
+  }
+}

@@ -461,6 +461,25 @@ public final class JdbcResponsibilityReconciliationAdapter
     }
 
     @Override
+    public String activeContractVersion(CheckpointKey key) {
+        boolean active = jdbc.query("""
+                select active
+                  from identity_access
+                       .ia_responsibility_v2_shadow_checkpoint
+                 where source_id=? and feed_id=? and partition_id=?
+                   and consumer_projection='responsibility'
+                """,
+                (rs, row) -> rs.getBoolean("active"),
+                key.sourceId(), key.feedId(), key.partitionId())
+                .stream()
+                .findFirst()
+                .orElse(false);
+        return active
+                ? "RESPONSIBILITY-AUTHORITY-2.0.0"
+                : "RESPONSIBILITY-AUTHORITY-1.0.0";
+    }
+
+    @Override
     public long identityOrgWatermark(
             String feedId, String partitionId) {
         List<Long> values = jdbc.query("""
@@ -479,11 +498,46 @@ public final class JdbcResponsibilityReconciliationAdapter
     @Override
     public List<ResponsibilitySnapshotEntry> actualSnapshot(
             CheckpointKey key,
+            String contractVersion,
             long throughWatermark,
             Instant cutoffAt,
             java.util.Map<String, Long>
                     supportingIdentityOrgWatermarks) {
-        return jdbc.query("""
+        if (!activeContractVersion(key).equals(contractVersion)) {
+            throw new IdentitySyncException(
+                    "RESPONSIBILITY_RECONCILIATION_CONTRACT_STALE");
+        }
+        String sql = "RESPONSIBILITY-AUTHORITY-2.0.0".equals(
+                contractVersion)
+                ? """
+                with latest as (
+                  select distinct on (fact.relation_ref_token)
+                         fact.relation_ref_token,
+                         fact.student_equivalence_digest,
+                         fact.record_version,
+                         fact.payload_digest,
+                         fact.relation_status,
+                         fact.effective_from,
+                         fact.effective_to,
+                         fact.recipient_mapped,
+                         fact.supporting_identity_org_watermarks =
+                           cast(? as jsonb)
+                           as recipient_mapping_baseline_matches
+                    from identity_access
+                         .ia_responsibility_v2_source_fact fact
+                   where fact.source_id=? and fact.feed_id=?
+                     and fact.partition_id=?
+                     and fact.consumer_projection='responsibility'
+                     and fact.source_watermark<=?
+                   order by fact.relation_ref_token,
+                            fact.source_watermark desc,
+                            fact.record_version desc,
+                            fact.fact_id desc)
+                select latest.*
+                  from latest
+                 order by latest.relation_ref_token
+                """
+                : """
                 with latest as (
                   select distinct on (fact.relation_ref_token)
                          fact.relation_ref_token,
@@ -507,9 +561,10 @@ public final class JdbcResponsibilityReconciliationAdapter
                             fact.record_version desc,
                             fact.fact_id desc)
                 select latest.*
-                  from latest
+                 from latest
                  order by latest.relation_ref_token
-                """,
+                """;
+        return jdbc.query(sql,
                 (rs, row) -> {
                     Instant effectiveFrom =
                             instant(rs.getTimestamp(
@@ -571,6 +626,7 @@ public final class JdbcResponsibilityReconciliationAdapter
             throw new IdentitySyncException(
                     "RESPONSIBILITY_RECONCILIATION_FENCING_STALE");
         }
+        lockReconciliationContract(result);
         jdbc.update("""
                 insert into identity_access.ia_responsibility_reconciliation_run (
                   run_id, job_id, source_id, feed_id, partition_id,
@@ -585,7 +641,7 @@ public final class JdbcResponsibilityReconciliationAdapter
                   started_at, completed_at, trace_id, consumer_watermark,
                   retention_effective_at, expires_at)
                 values (?, ?, ?, ?, ?, 'responsibility',
-                        'RESPONSIBILITY-AUTHORITY-1.0.0',
+                        ?,
                         'RESPONSIBILITY-SNAPSHOT-1.0.0',
                         ?, ?, ?, cast(? as jsonb), ?, ?, ?, ?, ?, ?, ?, ?,
                         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -595,6 +651,7 @@ public final class JdbcResponsibilityReconciliationAdapter
                 result.key().sourceId(),
                 result.key().feedId(),
                 result.key().partitionId(),
+                result.contractVersion(),
                 result.businessDate(),
                 result.sourceVersion(),
                 result.throughWatermark(),
@@ -718,6 +775,26 @@ public final class JdbcResponsibilityReconciliationAdapter
                     resolveReconciliationExceptions(result));
         }
         return List.copyOf(transitions);
+    }
+
+    private void lockReconciliationContract(
+            ResponsibilityReconciliationResult result) {
+        List<Long> locked = jdbc.query("""
+                select source_watermark
+                  from identity_access.ia_identity_sync_checkpoint
+                 where source_id=? and feed_id=? and partition_id=?
+                   and consumer_projection='responsibility'
+                 for update
+                """,
+                (rs, row) -> rs.getLong("source_watermark"),
+                result.key().sourceId(), result.key().feedId(),
+                result.key().partitionId());
+        if (locked.isEmpty()
+                || !activeContractVersion(result.key()).equals(
+                        result.contractVersion())) {
+            throw new IdentitySyncException(
+                    "RESPONSIBILITY_RECONCILIATION_CONTRACT_STALE");
+        }
     }
 
     @Override

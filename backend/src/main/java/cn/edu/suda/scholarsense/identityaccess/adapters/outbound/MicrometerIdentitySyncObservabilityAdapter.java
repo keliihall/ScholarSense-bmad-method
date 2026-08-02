@@ -212,6 +212,51 @@ public final class MicrometerIdentitySyncObservabilityAdapter
               from identity_access.ia_identity_rejected_record
              where consumer_projection='responsibility'
             """;
+    private static final String ACCESS_INVALIDATION_LAG_SECONDS_SQL = """
+            select coalesce(greatest(
+              extract(epoch from (
+                current_timestamp - min(fact.occurred_at))), 0), 0)
+              from identity_access.ia_access_invalidation_propagation propagation
+              join identity_access.ia_access_invalidation_fact fact
+                on fact.event_id=propagation.event_id
+             where propagation.propagation_status<>'complete'
+            """;
+    private static final String ACCESS_INVALIDATION_GAP_SQL = """
+            select count(*)
+              from identity_access.ia_access_invalidation_propagation
+             where reconciliation_status='gap'
+            """;
+    private static final String ACCESS_INVALIDATION_POISON_SQL = """
+            select (
+              (select count(*)
+                 from identity_access.ia_access_invalidation_outbox
+                where status='quarantined')
+              +
+              (select count(*)
+                 from identity_access.ia_access_invalidation_job
+                where job_kind in ('impact', 'expiry')
+                  and status='quarantined')
+            )
+            """;
+    private static final String ACCESS_INVALIDATION_FANOUT_SQL = """
+            select count(*)
+             from identity_access.ia_access_invalidation_job
+             where job_kind='impact'
+               and status in (
+                 'pending', 'running', 'retry', 'quarantined')
+            """;
+    private static final String ACCESS_INVALIDATION_EXPIRY_SQL = """
+            select count(*)
+             from identity_access.ia_access_invalidation_job
+             where job_kind='expiry'
+               and status in (
+                 'pending', 'running', 'retry', 'quarantined')
+            """;
+    private static final String ACCESS_INVALIDATION_PROPAGATION_SQL = """
+            select count(*)
+              from identity_access.ia_access_invalidation_propagation
+             where propagation_status<>'complete'
+            """;
 
     private final MeterRegistry registry;
 
@@ -318,6 +363,42 @@ public final class MicrometerIdentitySyncObservabilityAdapter
                 source -> longValue(
                         source,
                         RESPONSIBILITY_QUARANTINE_SQL));
+        registry.gauge(
+                "access_invalidation_lag_seconds",
+                jdbc,
+                source -> doubleValue(
+                        source,
+                        ACCESS_INVALIDATION_LAG_SECONDS_SQL));
+        registry.gauge(
+                "access_invalidation_gap_count",
+                jdbc,
+                source -> longValue(
+                        source,
+                        ACCESS_INVALIDATION_GAP_SQL));
+        registry.gauge(
+                "access_invalidation_poison_count",
+                jdbc,
+                source -> longValue(
+                        source,
+                        ACCESS_INVALIDATION_POISON_SQL));
+        registry.gauge(
+                "access_invalidation_fanout_backlog",
+                jdbc,
+                source -> longValue(
+                        source,
+                        ACCESS_INVALIDATION_FANOUT_SQL));
+        registry.gauge(
+                "access_invalidation_expiry_backlog",
+                jdbc,
+                source -> longValue(
+                        source,
+                        ACCESS_INVALIDATION_EXPIRY_SQL));
+        registry.gauge(
+                "access_invalidation_propagation_pending",
+                jdbc,
+                source -> longValue(
+                        source,
+                        ACCESS_INVALIDATION_PROPAGATION_SQL));
     }
 
     @Override

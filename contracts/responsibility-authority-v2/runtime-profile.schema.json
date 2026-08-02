@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/responsibility-authority-v2/runtime-profile.schema.json",
+  "title": "Controlled responsibility authority V2 runtime profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "profileVersion", "sourceId", "environment",
+    "productionEligible", "providedBy", "approvedBy", "approvedAt",
+    "effectiveAt", "policyDigest", "bindings", "digest"
+  ],
+  "properties": {
+    "$schema": {"const": "./runtime-profile.schema.json"},
+    "profileVersion": {"const": "RESPONSIBILITY-AUTHORITY-PROFILE-2.0.0"},
+    "sourceId": {"const": "SRC-P0-RESPONSIBILITY-001"},
+    "environment": {"const": "sandbox"},
+    "productionEligible": {"const": false},
+    "providedBy": {"const": "SRC-P0-RESPONSIBILITY-001 controlled sandbox source owner"},
+    "approvedBy": {"const": "Hei"},
+    "approvedAt": {"type": "string", "format": "date-time"},
+    "effectiveAt": {"const": "2026-08-01T00:00:00+08:00"},
+    "policyDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feedId", "partitionId", "consumerProjection",
+        "version1IncrementalEndpointTemplate",
+        "version1SnapshotEndpointTemplate",
+        "version2IncrementalEndpointTemplate",
+        "version2SnapshotEndpointTemplate", "maximumResponseBytes",
+        "maximumRecordsPerBatch", "workloadIdentityResource",
+        "signatureKeyResource", "inboxEncryptionKeyResource",
+        "scheduleTimeZone", "scheduleCron", "catchUpWindowHours",
+        "retryBudget", "writeContractVersion", "dualReadWindowHours",
+        "cutoverEnabled", "cutoverCron", "lineageDigestProfile"
+      ],
+      "properties": {
+        "feedId": {"const": "responsibility-authority"},
+        "partitionId": {"const": "sandbox-0"},
+        "consumerProjection": {"const": "responsibility"},
+        "version1IncrementalEndpointTemplate": {"const": "https://{environment}.responsibility-authority.sandbox.invalid/api/v1/incremental"},
+        "version1SnapshotEndpointTemplate": {"const": "https://{environment}.responsibility-authority.sandbox.invalid/api/v1/snapshots/{businessDate}"},
+        "version2IncrementalEndpointTemplate": {"const": "https://{environment}.responsibility-authority.sandbox.invalid/api/v2/incremental"},
+        "version2SnapshotEndpointTemplate": {"const": "https://{environment}.responsibility-authority.sandbox.invalid/api/v2/snapshots/{businessDate}"},
+        "maximumResponseBytes": {"const": 4194304},
+        "maximumRecordsPerBatch": {"const": 1000},
+        "workloadIdentityResource": {"const": "responsibility-sync-worker"},
+        "signatureKeyResource": {"const": "responsibility-authority-signature"},
+        "inboxEncryptionKeyResource": {"const": "responsibility-authority-inbox"},
+        "scheduleTimeZone": {"const": "Asia/Shanghai"},
+        "scheduleCron": {"const": "0 0 6 * * *"},
+        "catchUpWindowHours": {"const": 24},
+        "retryBudget": {"const": 8},
+        "writeContractVersion": {"const": "RESPONSIBILITY-AUTHORITY-2.0.0"},
+        "dualReadWindowHours": {"const": 336},
+        "cutoverEnabled": {"const": true},
+        "cutoverCron": {"const": "0 */15 * * * *"},
+        "lineageDigestProfile": {
+          "const": "RESPONSIBILITY-LINEAGE-DIGEST-1.0.0"
+        }
+      }
+    },
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

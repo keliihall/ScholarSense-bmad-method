@@ -1,0 +1,43 @@
+{
+  "version": "RESPONSIBILITY-LINEAGE-DIGEST-1.0.0",
+  "algorithm": "SHA-256",
+  "encoding": "UTF-8",
+  "lineSeparator": "LF",
+  "fieldSeparator": "|",
+  "header": "RESPONSIBILITY-LINEAGE-DIGEST-1.0.0",
+  "instantFormat": "UTC with exactly six fractional digits: yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",
+  "nullSupersedes": "-",
+  "fields": [
+    "lineageVersion",
+    "eventId",
+    "supersedesId",
+    "sourceVersion",
+    "sourceWatermark",
+    "recordVersion",
+    "payloadDigestWithoutPrefix",
+    "changeKindLowercase",
+    "reasonCodeUppercase",
+    "effectiveAtUtcMicrosecond"
+  ],
+  "goldenVectors": [
+    {
+      "id": "single-root-source-correction",
+      "events": [
+        {
+          "lineageVersion": 1,
+          "eventId": "019c0000-0000-7000-8000-000000000101",
+          "supersedesId": null,
+          "sourceVersion": 1,
+          "sourceWatermark": 1,
+          "recordVersion": 1,
+          "payloadDigest": "14a50ecb1b62bcc138af5bb2590b8a1fcf4dc28f83ee6d6c1c72555ffbff53e6",
+          "changeKind": "corrected",
+          "reasonCode": "SOURCE_CORRECTION",
+          "effectiveAt": "2026-07-31T10:51:41.000000Z"
+        }
+      ],
+      "canonicalText": "RESPONSIBILITY-LINEAGE-DIGEST-1.0.0\n1|019c0000-0000-7000-8000-000000000101|-|1|1|1|14a50ecb1b62bcc138af5bb2590b8a1fcf4dc28f83ee6d6c1c72555ffbff53e6|corrected|SOURCE_CORRECTION|2026-07-31T10:51:41.000000Z",
+      "sha256": "278ca6e199e96ff9ca061d1d471cac31d326af2b46da8c9358383a9db08a1389"
+    }
+  ]
+}

@@ -5,6 +5,9 @@ import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncException
 import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityFullSnapshot;
 import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityReconciliationService;
 import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilitySnapshotEntry;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityV2LineageManifest;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityV2LineageDigest;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationLineageId;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -19,7 +22,7 @@ import tools.jackson.databind.ObjectMapper;
 
 /** Strict normalizer for a signed, sealed, complete responsibility snapshot. */
 public final class ResponsibilityFullSnapshotNormalizer {
-    private static final Set<String> ROOT_FIELDS = Set.of(
+    private static final Set<String> V1_ROOT_FIELDS = Set.of(
             "$schema",
             "schemaVersion",
             "contractVersion",
@@ -40,11 +43,43 @@ public final class ResponsibilityFullSnapshotNormalizer {
             "partitions",
             "records",
             "traceId");
+    private static final Set<String> V2_ROOT_FIELDS = Set.of(
+            "$schema",
+            "schemaVersion",
+            "contractVersion",
+            "sourceId",
+            "feedId",
+            "consumerProjection",
+            "snapshotId",
+            "businessDate",
+            "cutoffAt",
+            "sourceVersion",
+            "throughWatermark",
+            "supportingIdentityOrgWatermarks",
+            "sealed",
+            "complete",
+            "expectedCount",
+            "canonicalDigest",
+            "signatureDigest",
+            "partitions",
+            "records",
+            "lineageDigestProfile",
+            "lineageCount",
+            "canonicalLineageDigest",
+            "lineages",
+            "traceId");
     private static final Set<String> RECORD_FIELDS = Set.of(
             "relationRefToken",
             "studentEquivalenceDomain",
             "recordVersion",
             "payloadDigest");
+    private static final Set<String> LINEAGE_FIELDS = Set.of(
+            "relationRefToken",
+            "lineageId",
+            "rootEventId",
+            "headEventId",
+            "eventCount",
+            "canonicalChainDigest");
 
     private final ObjectMapper json;
 
@@ -59,9 +94,55 @@ public final class ResponsibilityFullSnapshotNormalizer {
             CheckpointKey requestedKey,
             LocalDate requestedDate,
             String traceId) {
+        return normalize(
+                body,
+                detachedSignature,
+                signatureVerified,
+                "RESPONSIBILITY-AUTHORITY-1.0.0",
+                requestedKey,
+                requestedDate,
+                traceId);
+    }
+
+    public ResponsibilityFullSnapshot normalize(
+            byte[] body,
+            String detachedSignature,
+            boolean signatureVerified,
+            String requestedContractVersion,
+            CheckpointKey requestedKey,
+            LocalDate requestedDate,
+            String traceId) {
         try {
             JsonNode root = json.readTree(body);
-            requireExact(root, ROOT_FIELDS);
+            boolean version2 = "RESPONSIBILITY-AUTHORITY-2.0.0"
+                    .equals(requestedContractVersion);
+            if (!version2
+                    && !"RESPONSIBILITY-AUTHORITY-1.0.0".equals(
+                            requestedContractVersion)) {
+                throw invalid(
+                        "RESPONSIBILITY_SOURCE_CONTRACT_UNAPPROVED");
+            }
+            JsonNode returnedContract = root == null
+                    ? null
+                    : root.get("contractVersion");
+            if (returnedContract != null
+                    && returnedContract.isTextual()) {
+                String returnedVersion = returnedContract.asText();
+                if (!"RESPONSIBILITY-AUTHORITY-1.0.0".equals(
+                                returnedVersion)
+                        && !"RESPONSIBILITY-AUTHORITY-2.0.0".equals(
+                                returnedVersion)) {
+                    throw invalid(
+                            "RESPONSIBILITY_SOURCE_CONTRACT_UNAPPROVED");
+                }
+                if (!requestedContractVersion.equals(returnedVersion)) {
+                    throw invalid(
+                            "RESPONSIBILITY_SOURCE_CONTRACT_VERSION_MISMATCH");
+                }
+            }
+            requireExact(
+                    root,
+                    version2 ? V2_ROOT_FIELDS : V1_ROOT_FIELDS);
             CheckpointKey key = new CheckpointKey(
                     text(root, "sourceId"),
                     text(root, "feedId"),
@@ -72,9 +153,7 @@ public final class ResponsibilityFullSnapshotNormalizer {
                             text(root, "businessDate")))
                     || !traceId.equals(text(root, "traceId"))
                     || !"RESPONSIBILITY-SNAPSHOT-1.0.0".equals(
-                            text(root, "schemaVersion"))
-                    || !"RESPONSIBILITY-AUTHORITY-1.0.0".equals(
-                            text(root, "contractVersion"))) {
+                            text(root, "schemaVersion"))) {
                 throw invalid(
                         "RESPONSIBILITY_SOURCE_CONTRACT_UNAPPROVED");
             }
@@ -140,6 +219,29 @@ public final class ResponsibilityFullSnapshotNormalizer {
                 throw invalid(
                         "RESPONSIBILITY_SNAPSHOT_DIGEST_MISMATCH");
             }
+            List<ResponsibilityV2LineageManifest> lineages =
+                    version2
+                            ? lineages(root.required("lineages"))
+                            : List.of();
+            if (version2
+                    && !ResponsibilityV2LineageDigest.PROFILE.equals(
+                            text(root, "lineageDigestProfile"))) {
+                throw invalid(
+                        "RESPONSIBILITY_V2_LINEAGE_MANIFEST_INVALID");
+            }
+            long lineageCount = version2
+                    ? longValue(root, "lineageCount")
+                    : 0;
+            String canonicalLineageDigest = version2
+                    ? stripDigest(text(
+                            root, "canonicalLineageDigest"))
+                    : ResponsibilityV2LineageManifest.digest(List.of());
+            if (lineageCount != lineages.size()
+                    || !ResponsibilityV2LineageManifest.digest(lineages)
+                            .equals(canonicalLineageDigest)) {
+                throw invalid(
+                        "RESPONSIBILITY_V2_LINEAGE_MANIFEST_INVALID");
+            }
             return new ResponsibilityFullSnapshot(
                     UUID.fromString(text(root, "snapshotId")),
                     key,
@@ -157,14 +259,46 @@ public final class ResponsibilityFullSnapshotNormalizer {
                     expectedCount,
                     canonicalDigest,
                     signatureDigest,
+                    ResponsibilityAuthorityNormalizer.digest(body),
                     signatureVerified,
                     entries,
+                    lineageCount,
+                    canonicalLineageDigest,
+                    lineages,
                     traceId);
         } catch (IdentitySyncException failure) {
             throw failure;
         } catch (RuntimeException malformed) {
             throw invalid("RESPONSIBILITY_SNAPSHOT_INVALID");
         }
+    }
+
+    private static List<ResponsibilityV2LineageManifest> lineages(
+            JsonNode node) {
+        if (!node.isArray() || node.size() > 1_000_000) {
+            throw invalid(
+                    "RESPONSIBILITY_V2_LINEAGE_MANIFEST_INVALID");
+        }
+        List<ResponsibilityV2LineageManifest> result =
+                new ArrayList<>();
+        node.forEach(value -> {
+            requireExact(value, LINEAGE_FIELDS);
+            try {
+                result.add(new ResponsibilityV2LineageManifest(
+                        text(value, "relationRefToken"),
+                        new AccessInvalidationLineageId(
+                                text(value, "lineageId")),
+                        UUID.fromString(text(value, "rootEventId")),
+                        UUID.fromString(text(value, "headEventId")),
+                        longValue(value, "eventCount"),
+                        stripDigest(text(
+                                value, "canonicalChainDigest"))));
+            } catch (IllegalArgumentException invalid) {
+                throw ResponsibilityFullSnapshotNormalizer.invalid(
+                        "RESPONSIBILITY_V2_LINEAGE_MANIFEST_INVALID");
+            }
+        });
+        return List.copyOf(result);
     }
 
     private static Map<String, Long> dependencies(JsonNode node) {

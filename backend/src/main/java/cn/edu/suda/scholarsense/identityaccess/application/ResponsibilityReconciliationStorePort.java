@@ -5,10 +5,15 @@ import java.util.Map;
 import java.time.Instant;
 
 public interface ResponsibilityReconciliationStorePort {
+    default String activeContractVersion(CheckpointKey key) {
+        return "RESPONSIBILITY-AUTHORITY-1.0.0";
+    }
+
     long identityOrgWatermark(String feedId, String partitionId);
 
     List<ResponsibilitySnapshotEntry> actualSnapshot(
             CheckpointKey key,
+            String contractVersion,
             long throughWatermark,
             Instant cutoffAt,
             Map<String, Long> supportingIdentityOrgWatermarks);

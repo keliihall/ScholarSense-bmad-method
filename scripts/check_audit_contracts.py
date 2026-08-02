@@ -21,6 +21,11 @@ AUDIT = Path("contracts/audit")
 LOCK = AUDIT / "audit-contract-lock-1.0.0.json"
 SUCCESSOR_LOCK = AUDIT / "audit-contract-lock-1.1.0.json"
 RESPONSIBILITY_SUCCESSOR_LOCK = AUDIT / "audit-contract-lock-1.2.0.json"
+INVALIDATION_SUCCESSOR_LOCK = AUDIT / "audit-contract-lock-1.3.0.json"
+RESPONSIBILITY_LOCK_DIGEST = (
+    "cabb6259c4c3c9405823dba93a29de16"
+    "c81ef730fbb04592bb20a9ad61f48c19"
+)
 SCHEMAS = {
     AUDIT / "action-catalog-1.0.0.json": AUDIT / "action-catalog.schema.json",
     AUDIT / "identity-access-vocabulary-1.0.0.json": AUDIT / "identity-access-vocabulary.schema.json",
@@ -28,6 +33,8 @@ SCHEMAS = {
     AUDIT / "identity-access-vocabulary-1.1.0.json": AUDIT / "identity-access-vocabulary-1.1.schema.json",
     AUDIT / "action-catalog-1.2.0.json": AUDIT / "action-catalog-1.2.schema.json",
     AUDIT / "identity-access-vocabulary-1.2.0.json": AUDIT / "identity-access-vocabulary-1.2.schema.json",
+    AUDIT / "action-catalog-1.3.0.json": AUDIT / "action-catalog-1.3.schema.json",
+    AUDIT / "identity-access-vocabulary-1.3.0.json": AUDIT / "identity-access-vocabulary-1.3.schema.json",
     AUDIT / "trusted-clock-runtime-binding-1.0.0.json": AUDIT / "trusted-clock-runtime-binding.schema.json",
     AUDIT / "fixtures/valid/local-audit-fact.json": AUDIT / "local-audit-fact.schema.json",
     AUDIT / "fixtures/valid/local-audit-outbox.json": AUDIT / "local-audit-outbox.schema.json",
@@ -88,6 +95,15 @@ def validate(project_root: Path) -> list[str]:
     issues.extend(_catalog_issues(responsibility_catalog))
     issues.extend(_responsibility_successor_issues(
         responsibility_catalog, responsibility_vocabulary))
+    invalidation_catalog = documents.get(
+        AUDIT / "action-catalog-1.3.0.json"
+    )
+    invalidation_vocabulary = documents.get(
+        AUDIT / "identity-access-vocabulary-1.3.0.json"
+    )
+    issues.extend(_catalog_issues(invalidation_catalog))
+    issues.extend(_invalidation_successor_issues(
+        invalidation_catalog, invalidation_vocabulary))
     issues.extend(_outbox_schema_issues(
         loaded_schemas.get(AUDIT / "local-audit-outbox.schema.json"),
         loaded_schemas.get(AUDIT / "local-audit-fact.schema.json")))
@@ -101,6 +117,7 @@ def validate(project_root: Path) -> list[str]:
     issues.extend(_lock_issues(root))
     issues.extend(_successor_lock_issues(root))
     issues.extend(_responsibility_successor_lock_issues(root))
+    issues.extend(_invalidation_successor_lock_issues(root))
     return sorted(set(issues))
 
 
@@ -206,6 +223,48 @@ def _responsibility_successor_issues(
     )
     return [] if all(checks) else [
         "AUDIT_RESPONSIBILITY_SUCCESSOR_INVALID"
+    ]
+
+
+def _invalidation_successor_issues(
+        catalog: Any, vocabulary: Any) -> list[str]:
+    if not isinstance(catalog, dict) or not isinstance(vocabulary, dict):
+        return ["AUDIT_INVALIDATION_SUCCESSOR_INVALID"]
+    actions = {
+        entry.get("code"): entry
+        for entry in catalog.get("actions", [])
+        if isinstance(entry, dict)
+    }
+    checks = (
+        catalog.get("version") == "AUDIT-ACTION-CATALOG-1.3.0",
+        catalog.get("supersedes") == "AUDIT-ACTION-CATALOG-1.2.0",
+        set(actions) == {
+            "access.invalidation.published",
+            "responsibility.sync.rejected",
+            "responsibility.v2.activated",
+            "responsibility.v2.cutover.denied",
+            "responsibility.v2.cutover.failed",
+            "responsibility.v2.cutover.requested",
+            "responsibility.v2.reconciled",
+        },
+        vocabulary.get("version")
+            == "IDENTITY-AUDIT-VOCABULARY-1.3.0",
+        vocabulary.get("supersedes")
+            == "IDENTITY-AUDIT-VOCABULARY-1.2.0",
+        "ACCESS_INVALIDATION_PROPAGATION"
+            in vocabulary.get("purposes", []),
+        "ACCESS_INVALIDATION"
+            in vocabulary.get("projectionScopes", []),
+        "access-invalidation-fact"
+            in vocabulary.get("objectTypes", []),
+        vocabulary.get("policyVersions", {}).get(
+            "accessInvalidationContract")
+            == "ACCESS-INVALIDATION-DATA-1.0.0",
+        vocabulary.get("policyVersions", {}).get("retentionSchedule")
+            == "RS-1.0.0",
+    )
+    return [] if all(checks) else [
+        "AUDIT_INVALIDATION_SUCCESSOR_INVALID"
     ]
 
 
@@ -532,6 +591,48 @@ def _responsibility_successor_lock_issues(root: Path) -> list[str]:
         if actual != entry.get("sha256"):
             issues.append(
                 "AUDIT_RESPONSIBILITY_SUCCESSOR_LOCK_DIGEST_MISMATCH: "
+                f"{entry.get('path')}"
+            )
+    return issues
+
+
+def _invalidation_successor_lock_issues(root: Path) -> list[str]:
+    try:
+        lock = load_json(root / INVALIDATION_SUCCESSOR_LOCK)
+        entries = lock["files"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return ["AUDIT_INVALIDATION_SUCCESSOR_LOCK_INVALID"]
+    expected = sorted({
+        "contracts/audit/action-catalog-1.3.0.json",
+        "contracts/audit/action-catalog-1.3.schema.json",
+        "contracts/audit/identity-access-vocabulary-1.3.0.json",
+        "contracts/audit/identity-access-vocabulary-1.3.schema.json",
+    })
+    paths = [
+        entry.get("path") for entry in entries if isinstance(entry, dict)
+    ]
+    issues: list[str] = []
+    if (
+        lock.get("version") != "AUDIT-CONTRACT-LOCK-1.3.0"
+        or paths != expected
+    ):
+        issues.append("AUDIT_INVALIDATION_SUCCESSOR_LOCK_INVALID")
+    old_digest = hashlib.sha256(
+        (root / RESPONSIBILITY_SUCCESSOR_LOCK).read_bytes()
+    ).hexdigest()
+    if old_digest != RESPONSIBILITY_LOCK_DIGEST:
+        issues.append("AUDIT_RESPONSIBILITY_LOCK_BYTES_CHANGED")
+    for entry in entries:
+        try:
+            actual = hashlib.sha256(
+                (root / entry["path"]).read_bytes()
+            ).hexdigest()
+        except (OSError, KeyError, TypeError):
+            issues.append("AUDIT_INVALIDATION_SUCCESSOR_LOCK_INVALID")
+            continue
+        if actual != entry.get("sha256"):
+            issues.append(
+                "AUDIT_INVALIDATION_SUCCESSOR_LOCK_DIGEST_MISMATCH: "
                 f"{entry.get('path')}"
             )
     return issues

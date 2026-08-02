@@ -57,6 +57,23 @@ class IdentityAuditCatalogContractTest {
                             "RESPONSIBILITY_RECONCILIATION_DIFFERENCES",
                             "RESPONSIBILITY_RECONCILIATION_THRESHOLD_FAILED")),
             Map.entry(
+                    IdentityAuditAction.RESPONSIBILITY_V2_RECONCILED,
+                    Set.of(
+                            "RESPONSIBILITY_V2_RECONCILIATION_MATCHED",
+                            "RESPONSIBILITY_V2_RECONCILIATION_DIFFERENCES")),
+            Map.entry(
+                    IdentityAuditAction.RESPONSIBILITY_V2_CUTOVER_REQUESTED,
+                    Set.of("RESPONSIBILITY_V2_CUTOVER_REQUESTED")),
+            Map.entry(
+                    IdentityAuditAction.RESPONSIBILITY_V2_CUTOVER_DENIED,
+                    Set.of("RESPONSIBILITY_V2_CUTOVER_DENIED")),
+            Map.entry(
+                    IdentityAuditAction.RESPONSIBILITY_V2_CUTOVER_FAILED,
+                    Set.of("RESPONSIBILITY_V2_CUTOVER_FAILED")),
+            Map.entry(
+                    IdentityAuditAction.RESPONSIBILITY_V2_ACTIVATED,
+                    Set.of("RESPONSIBILITY_V2_CUTOVER_ACTIVATED")),
+            Map.entry(
                     IdentityAuditAction.RESPONSIBILITY_EXCEPTION_OPENED,
                     Set.of(
                             "RESPONSIBILITY_COLLEGE_INACTIVE",
@@ -72,21 +89,36 @@ class IdentityAuditCatalogContractTest {
                     IdentityAuditAction.RESPONSIBILITY_EXCEPTION_RESOLVED,
                     Set.of(
                             "RESPONSIBILITY_RECONCILIATION_MATCHED",
-                            "RESPONSIBILITY_VALID")));
+                            "RESPONSIBILITY_VALID")),
+            Map.entry(
+                    IdentityAuditAction.ACCESS_INVALIDATION_PUBLISHED,
+                    Set.of(
+                            "ACCESS_INVALIDATION_CORRECTED",
+                            "ACCESS_INVALIDATION_REVOKED",
+                            "ACCESS_INVALIDATION_EXPIRED",
+                            "ACCESS_INVALIDATION_INVALIDATED",
+                            "ACCESS_INVALIDATION_REVALIDATED")));
 
     @Test
     void everyImplementedIdentityActionAndReasonIsActiveInTheVersionedCatalog() throws Exception {
         ObjectMapper json = new ObjectMapper();
-        Map<String, JsonNode> activeIdentityActions = new HashMap<>();
-        for (String version : List.of("1.0.0", "1.1.0", "1.2.0")) {
+        Map<String, Set<String>> activeIdentityActions = new HashMap<>();
+        for (String version : List.of(
+                "1.0.0", "1.1.0", "1.2.0", "1.3.0")) {
             Path catalogPath = Path.of(
                     "..", "contracts", "audit", "action-catalog-" + version + ".json");
             JsonNode root = json.readTree(Files.readString(catalogPath));
             root.get("actions").valueStream()
                     .filter(action -> "identity-access".equals(action.get("ownerModule").asText()))
                     .filter(action -> "active".equals(action.get("status").asText()))
-                    .forEach(action -> activeIdentityActions.put(
-                            action.get("code").asText(), action));
+                    .forEach(action -> activeIdentityActions
+                            .computeIfAbsent(
+                                    action.get("code").asText(),
+                                    ignored -> new java.util.HashSet<>())
+                            .addAll(action.get("allowedReasonCodes")
+                                    .valueStream()
+                                    .map(JsonNode::asText)
+                                    .toList()));
         }
 
         Set<String> implemented = Arrays.stream(IdentityAuditAction.values())
@@ -95,10 +127,7 @@ class IdentityAuditCatalogContractTest {
         assertEquals(implemented, activeIdentityActions.keySet());
 
         USED_REASONS.forEach((action, reasons) -> {
-            JsonNode catalogAction = activeIdentityActions.get(action.code());
-            Set<String> allowed = catalogAction.get("allowedReasonCodes").valueStream()
-                    .map(JsonNode::asText)
-                    .collect(Collectors.toSet());
+            Set<String> allowed = activeIdentityActions.get(action.code());
             assertTrue(allowed.containsAll(reasons), action.code() + " has an unregistered runtime reason");
         });
     }
@@ -157,9 +186,11 @@ class IdentityAuditCatalogContractTest {
                 "RESPONSIBILITY_IDENTITY_PROJECTION_UNAVAILABLE",
                 "RESPONSIBILITY_REPLAY_RANGE_INVALID",
                 "RESPONSIBILITY_RECONCILIATION_FENCING_STALE",
+                "RESPONSIBILITY_RECONCILIATION_CONTRACT_STALE",
                 "RESPONSIBILITY_RECONCILIATION_PERSISTENCE_UNAVAILABLE",
                 "RESPONSIBILITY_SOURCE_AUTHENTICATION_FAILED",
                 "RESPONSIBILITY_SOURCE_CONTRACT_UNAPPROVED",
+                "RESPONSIBILITY_SOURCE_CONTRACT_VERSION_MISMATCH",
                 "RESPONSIBILITY_SOURCE_DEPENDENCY_UNAVAILABLE",
                 "RESPONSIBILITY_SOURCE_DIGEST_INVALID",
                 "RESPONSIBILITY_SOURCE_ENDPOINT_UNSAFE",
@@ -174,6 +205,7 @@ class IdentityAuditCatalogContractTest {
                 "RESPONSIBILITY_SOURCE_SIGNATURE_INVALID",
                 "RESPONSIBILITY_SOURCE_TIME_INVALID",
                 "RESPONSIBILITY_SOURCE_VERSION_STALE",
+                "RESPONSIBILITY_SOURCE_VERSION_GAP",
                 "RESPONSIBILITY_SNAPSHOT_COUNT_MISMATCH",
                 "RESPONSIBILITY_SNAPSHOT_DIGEST_MISMATCH",
                 "RESPONSIBILITY_SNAPSHOT_INVALID",
@@ -183,6 +215,7 @@ class IdentityAuditCatalogContractTest {
                 "RESPONSIBILITY_SNAPSHOT_UNSEALED",
                 "RESPONSIBILITY_STATUS_INVALID",
                 "RESPONSIBILITY_TYPE_INVALID",
+                "RESPONSIBILITY_V2_REPLAY_REQUIRED",
                 "RESPONSIBILITY_WATERMARK_GAP");
     }
 }

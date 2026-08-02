@@ -20,8 +20,8 @@ inputDocuments:
   - _bmad-output/planning-artifacts/delegated-decision-baseline-2026-07-17.md
   - _bmad-output/planning-artifacts/app-applicability-baseline-2026-07-19.md
 status: controlled-baseline
-baselineVersion: "2.1.1"
-updated: 2026-07-19-story-1.1d-applicability-alignment
+baselineVersion: "2.1.2"
+updated: 2026-07-31-story-1.6c-downstream-activation-alignment
 requirementsBaseline:
   functional: FR-1–FR-62
   businessRules: BR-1–BR-12
@@ -31,12 +31,12 @@ implementationReadiness: ready
 runtimeEvidenceStatus: pending-story-execution
 ---
 
-# ScholarSense-bmad-method - Epic 与 Story 受控基线 v2.1.1
+# ScholarSense-bmad-method - Epic 与 Story 受控基线 v2.1.2
 
 ## 实施与验收规则
 
 - 本文是 2026-07-17 最终 readiness 闭环与 `AUTH-2026-07-17-001` 批准的 Epics/Stories 实施基线；保留 8 个 Epic，范围为 FR-1–FR-62、BR-1–BR-12、NFR-1–NFR-34。
-- 每个 FR 只有一个最终端到端 owner Story；contributing Story 可是更早的前置/phase，也可是更晚的下游消费、hardening 或发布 conformance。contributor 只表示跨 Story 关联，不自行形成执行依赖、不得宣称该 FR 已完成；只有 `dependsOn` 与 `readyWhen` 定义顺序/门槛。
+- 每个 FR 只有一个规划 owner Story；contributing Story 可是更早的前置/phase，也可是更晚的下游消费、hardening 或发布 conformance。涉及尚未安装消费者的跨模块传播时，producer Story 只可完成当前适用 active/required 消费者和激活协议，`planned/not-installed` 必须标记 `runtimeEvidenceClaim=none`。未来消费者的业务 apply、水位、回放与对账由其 owner Story 产生，未完成前不得激活，也不得用 fixture、transport ack 或 producer-observed ack 冒充运行证据。contributor 不自行形成执行依赖；只有 `dependsOn` 与 `readyWhen` 定义顺序/门槛。
 - Story 只能依赖更早 Story 或已冻结基线。DEC-001—018 已 closed，G-01—09 已 approved-for-implementation；不存在外部 DoR 阻塞。契约、性能、可用性、恢复、删除、视觉/无障碍、供应链与 canary 证据由对应 Story/DoD 真实产生，失败时 Story 不得完成、Release 不得提升。
 - type 取 enabler、feature、integration、governance、hardening 或 release；dependsOn 是执行顺序；readyWhen 是开工或验收门槛；estimate 是相对实施估算，不构成日历承诺。
 - 高风险动作必须引用 HRAP-1.0.0；动作未映射、该 actionType 的运行测试未通过、审批过期或版本漂移时默认 deny。D4 必须验证不同自然人 maker/checker。
@@ -79,7 +79,7 @@ runtimeEvidenceStatus: pending-story-execution
 | FR | owner Story | contributing Story | approved baseline / DoD evidence |
 |---|---|---|---|
 | FR-1 | 1.2 | 1.1c,1.1d | G-02/G-05：SSO、宿主、浏览器与 UI 证据 |
-| FR-2 | 1.6c | 1.6a,1.6b | G-02：权威身份、责任关系、撤权传播与对账 |
+| FR-2 | 1.6c（planning owner） | 1.6a,1.6b,1.7；下游激活证据：3.9b,3.14c,5.5,7.2c | G-02：权威身份、责任关系、撤权传播与对账；未来消费者由 owner Story 回放、apply 并推进自有水位 |
 | FR-3 | 1.7 | 1.6a,1.6b,1.6c | G-01/G-02/G-05：七角色对象/展开后 action/scope 矩阵、WORKITEM-A、RFP fixture 与角色化 UI 基线 |
 | FR-4 | 5.5 | 1.9,2.5a,2.5c,3.4,3.9d,3.12,5.1,5.2d | G-04：公共任务全生命周期契约与真实生产者测试 |
 | FR-5 | 1.7 | 1.8 | G-02：对象/动作/scope predicate、冲突算法与 RoleFieldPolicyVersion |
@@ -188,7 +188,7 @@ runtimeEvidenceStatus: pending-story-execution
 | NFR-24 | 1.4,2.6a,2.6b | 全链路 traceId 且遥测最小化 |
 | NFR-25 | 3.1a,3.1c | 规则配置版本化且无需代码发布 |
 | NFR-26 | 3.13,6.3a,6.4 | 唯一 metricId 与口径版本 |
-| NFR-27 | 1.6a,1.6b,1.6c | 身份同步、责任对账和撤权水位 |
+| NFR-27 | 1.6a,1.6b,1.6c（producer/current-scope）；1.7,3.9b,3.14c,5.5,7.2c（真实消费者激活） | 每个发布版本只计算当前适用 active/required consumer；未来 consumer 激活前必须回放、业务 apply 并对账 |
 | NFR-28 | 3.1b,3.1c,4.1a,4.7 | 规则与数据验收门 |
 | NFR-29 | 7.2c | committedAt 到 ui.state-observed P95 |
 | NFR-30 | 1.2 | 可复现 Edge/Chrome 验收矩阵 |
@@ -395,7 +395,7 @@ runtimeEvidenceStatus: pending-story-execution
 
 **type:** feature  
 **dependsOn:** 1.6b  
-**readyWhen:** 更正、撤权、lineage、supersedes 与下游水位契约通过乱序测试  
+**readyWhen:** 更正、撤权、lineage、supersedes、消费者 lifecycle/activation、连续水位与乱序/gap/backfill 合同通过批准 checker；2026-07-31 受控范围提案已获 Hei 批准
 **estimate:** 3d  
 **status:** planned
 
@@ -405,16 +405,23 @@ runtimeEvidenceStatus: pending-story-execution
 
 #### AC-1.6c-HAPPY
 
-**Given** 权威源发布更正、撤销或无效关系版本  
-**When** 失效事实传播到授权、任务、导出和移动会话  
-**Then** 发布带 lineage 与 supersedes 的更正/撤权事实，并推进所有下游失效水位  
-**And** 下一次敏感请求 fail closed，历史事实不改写且异常可按 traceId 对账。
+**Given** 权威源发布更正、撤销、过期或无效的账号、角色、组织/任职或责任关系版本
+**When** identity-access 原子提交 current projection、失效事实、业务 outbox 与审计
+**Then** 发布带 lineage、直接 supersedes、可选 cause 和每聚合连续 aggregateVersion 的不可变事实；下一次敏感 current-scope 请求立即 fail closed，不等待 relay、远程 apply 或 reconciliation
+**And** 只有当前发布版本适用、required 且 active 的真实消费者在本模块完成业务 apply 后推进连续水位；planned/not-installed 消费者保持 `runtimeEvidenceClaim=none`，历史事实不改写且异常可按 traceId 对账。
+
+#### AC-1.6c-DOWNSTREAM-ACTIVATION
+
+**Given** task、transfer、export 或未来 server-side mobile projection 尚未由 owner Story 安装
+**When** 运行 1.6c 完成判定
+**Then** 这些消费者不得进入完成分母、不得由 producer 或 fixture 伪推进，也不得生成业务 apply 通过证据
+**And** owner Story 激活消费者前必须从批准起点回放，原子提交本模块 inbox、业务 apply、apply record、自有 watermark 与 consumer-applied fact，并通过 gap/乱序/reconciliation；mobile 若仅共用服务端 API，则只登记 surface verification。
 
 ### Story 1.7：提供角色化首页与组合对象授权
 
 **type:** feature  
 **dependsOn:** 1.6c  
-**readyWhen:** RFP-1.0.0 的七角色对象/动作/scope 表、冲突算法、字段表与 RFP-FIXTURE-1.0.0 已批准  
+**readyWhen:** RFP-1.0.0 的七角色对象/动作/scope 表、冲突算法、字段表与 RFP-FIXTURE-1.0.0 已批准；复用 1.6c current-scope/invalidation fence，若建立新的授权读模型消费者则登记 owner/required/applicable/起始水位并完成回放与 reconciliation
 **estimate:** 5d  
 **status:** planned
 
@@ -427,7 +434,7 @@ runtimeEvidenceStatus: pending-story-execution
 **Given** RFP-FIXTURE-1.0.0 的七主体、CASE-A/B、R2 对 CASE-A 的 WORKITEM-A、TRANSFER-A/B、REPORT-COL-A/SCHOOL、RULE-1、DQ-A/B、JOB-1 和固定 serverNow  
 **When** 对每个 roleId、objectClass、scopeRelation、actionId 及多角色/未知 action 组合执行表驱动授权  
 **Then** R1—R7 逐行得到委托基线 §3.3 的确定 allow/deny oracle；R2 仅通过 WORKITEM-A 对 CASE-A 执行最小 `care.read`，无督办 workItem 时 deny；R1+R2 对同 object/action 取适用字段最严，R1+R7 中无 care 权的 R7 不降级 R1，含字面 `/` 的 actionId、未知 `care.delete`、缺 policy 或职责冲突均 deny  
-**And** DelegationGrant 恰在 start 生效、恰在 end 失效，关系/objectVersion 并发变化在提交前重检；越界与不存在使用同 status/code/envelope，失败不泄露对象存在性并保存最小拒绝审计。
+**And** DelegationGrant 恰在 start 生效、恰在 end 失效，关系/objectVersion 并发变化在提交前重检；越界与不存在使用同 status/code/envelope，失败不泄露对象存在性并保存最小拒绝审计；完整 RFP 授权由本 Story 验收，不能由 1.6c current-scope 或 conformance fixture 冒充。
 
 ### Story 1.8：执行字段级投影与任务期敏感授权
 
@@ -1431,7 +1438,7 @@ runtimeEvidenceStatus: pending-story-execution
 
 **type:** integration  
 **dependsOn:** 1.6c,3.8  
-**readyWhen:** G-02/ISP/RFP/DCC-1.0.0 的责任关系、来源版本、接收人和异常队列合同已批准  
+**readyWhen:** G-02/ISP/RFP/DCC-1.0.0 的责任关系、来源版本、接收人和异常队列合同已批准；`responsibility.changed` v1 兼容映射、消费者激活起点、Candidate/Clue/workItem apply 与水位合同通过乱序/gap/backfill 测试
 **estimate:** 3d  
 **status:** planned
 
@@ -1443,8 +1450,8 @@ runtimeEvidenceStatus: pending-story-execution
 
 **Given** 权威源发布更高 sourceVersion 的 `responsibility.changed` 且新责任人有效  
 **When** 平台消费该不可变事实  
-**Then** 未完成 Candidate、Clue 和同一 workItemKey 转给新责任人，保存旧/新责任人、来源版本、生效时间和原截止，并通知双方  
-**And** 不创建 DelegationGrant、不重置时钟，已关闭对象只保留历史责任链。
+**Then** clue-care 在同一事务提交 inbox、未完成 Candidate/Clue 与同一 workItemKey 的责任转移、任务更新 outbox、apply record 和自有 watermark，保存旧/新责任人、来源版本、生效时间和原截止，并通知双方
+**And** 随后发布 consumer-applied fact，identity-access 只观察 ack、不写 clue-care 水位；不创建 DelegationGrant、不重置时钟，已关闭对象只保留历史责任链。
 
 #### AC-3.9b-AUTH-DENIAL
 
@@ -1784,7 +1791,7 @@ runtimeEvidenceStatus: pending-story-execution
 
 **type:** hardening  
 **dependsOn:** 3.14b,1.4  
-**readyWhen:** RFP/RS/HRAP-1.0.0 的 download D2、撤权水位、receipt schema 和重试合同已批准  
+**readyWhen:** RFP/RS/HRAP-1.0.0 的 download D2、撤权水位、receipt schema 和重试合同已批准；reporting/export consumer 已从批准起点回放并通过撤权水位、文件撤销、下载重检和 reconciliation
 **estimate:** 5d  
 **status:** planned
 
@@ -1796,14 +1803,14 @@ runtimeEvidenceStatus: pending-story-execution
 
 **Given** 导出完成、RetentionScheduleVersion 仍有效、用户仍有当前对象与字段权限且 sensitive-export.download 门禁通过  
 **When** 请求下载  
-**Then** 按当前授权与申请快照交集返回有效文件  
-**And** 记录 matrixVersion、下载审计和保留版本。
+**Then** 按当前授权与申请快照交集返回有效文件；export apply、文件 revoke 或下载拒绝与 reporting 自有 apply record/watermark 原子提交
+**And** 记录 matrixVersion、下载审计和保留版本；producer send、对象存储操作开始或 fixture 不算业务 apply。
 
 #### AC-3.14c-AUTH-DENIAL
 
 **Given** 用户撤权、换号、字段策略收窄、RS policyVersion 缺失/漂移，或 download actionType 未验证/执行时 deny  
 **When** 请求下载  
-**Then** 文件立即失效并统一拒绝  
+**Then** 文件立即失效并统一拒绝，完成 reporting/export 业务 apply 后才推进该消费者水位
 **And** 不得返回键、长度或旧签名链接。
 
 #### AC-3.14c-ILLEGAL-STATE
@@ -1838,8 +1845,8 @@ runtimeEvidenceStatus: pending-story-execution
 
 **Given** 生成期间发生撤权  
 **When** 作业提交文件  
-**Then** 撤权水位胜出且文件不可下载  
-**And** 保留双方水位和审计。
+**Then** 撤权水位胜出且文件不可下载，旧生成 worker 不得提前推进 consumer watermark
+**And** 保留双方水位、apply record 和审计。
 
 
 ## Epic 4：多场景关怀与受治理学生上下文
@@ -2770,7 +2777,7 @@ runtimeEvidenceStatus: pending-story-execution
 
 **type:** integration  
 **dependsOn:** 1.9,2.5c,3.4,3.9d,3.12,5.2d  
-**readyWhen:** PIC-1.0.0 已批准，前序真实生产者 Story 已通过契约/沙箱/SLO/乱序/对账测试  
+**readyWhen:** PIC-1.0.0 已批准，前序真实生产者 Story 已通过契约/沙箱/SLO/乱序/对账测试；公共任务消费者完成激活回放，五类真实生产者的撤权/关闭 apply、水位和双方对账通过
 **estimate:** 8d  
 **status:** planned
 
@@ -2782,14 +2789,14 @@ runtimeEvidenceStatus: pending-story-execution
 
 **Given** Candidate、正式线索、督办或转介发生可共享状态变化  
 **When** outbox 投递  
-**Then** 按业务键更新唯一外部任务并回写最小化结果摘要  
-**And** 终态关闭或撤销且双方水位一致。
+**Then** 按业务键更新唯一外部任务并回写最小化结果摘要，外部任务实际撤销/关闭与公共任务域 apply record 原子提交
+**And** 业务 apply 后才推进该 consumer 水位，终态关闭或撤销且双方水位一致；发送成功、HTTP 2xx 或 producer-observed ack 不算业务 apply。
 
 #### AC-5.5-PRODUCER-CONFORMANCE
 
 **Given** 质量、Candidate、Clue、督办和 TransferOrder 五类真实生产者  
 **When** 分别触发新建、临期、超期、一次升级、聚合更新、完成、拒绝、合并、撤权和关闭  
-**Then** 每类生产者均更新同一 workItemKey 对应任务，且终态关闭/撤销或合并重定向符合契约  
+**Then** 每类生产者均更新同一 workItemKey 对应任务，且终态关闭/撤销或合并重定向符合契约；每类真实 apply record 与消费者水位可对账
 **And** 每次回写仅包含本地聚合 ID、aggregateVersion、eventId、状态、发生时间、结果类别、traceId 和契约版本，不默认包含自由文本或证据正文。
 
 #### AC-5.5-AUTH-DENIAL
@@ -3326,7 +3333,7 @@ runtimeEvidenceStatus: pending-story-execution
 
 **type:** hardening  
 **dependsOn:** 7.2a,7.2b,1.6c  
-**readyWhen:** PP/AP/HIP/ISP/PIC/UXB-1.0.0 已批准，在线跨端装置、可信时钟和网络恢复 fixture 可用  
+**readyWhen:** PP/AP/HIP/ISP/PIC/UXB-1.0.0 已批准，在线跨端装置、可信时钟和网络恢复 fixture 可用；consumer registry 将 mobile 标记为 `surface-verification`，除非已有批准的独立 server-side projection
 **estimate:** 8d  
 **status:** planned
 
@@ -3352,8 +3359,8 @@ runtimeEvidenceStatus: pending-story-execution
 
 **Given** 责任撤销、代办到期、登出或换号  
 **When** 下一次读取或提交  
-**Then** 立即失权并清除进程内草稿  
-**And** 历史深链不得读取对象。
+**Then** 立即失权并清除对象数据与进程内草稿
+**And** 历史深链不得读取对象；不得仅凭 producer watermark 宣称移动端已清理，必须在目标 WebView/宿主验证下一读写拒绝、易失状态清除和重新认证/授权。
 
 #### AC-7.2c-ILLEGAL-STATE
 

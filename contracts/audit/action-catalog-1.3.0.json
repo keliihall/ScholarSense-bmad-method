@@ -1,0 +1,157 @@
+{
+  "$schema": "./action-catalog-1.3.schema.json",
+  "version": "AUDIT-ACTION-CATALOG-1.3.0",
+  "supersedes": "AUDIT-ACTION-CATALOG-1.2.0",
+  "mode": "successor-delta",
+  "outcomes": ["accepted", "rejected"],
+  "reasonCodes": [
+    "ACCESS_INVALIDATION_CORRECTED",
+    "ACCESS_INVALIDATION_EXPIRED",
+    "ACCESS_INVALIDATION_INVALIDATED",
+    "ACCESS_INVALIDATION_REVALIDATED",
+    "ACCESS_INVALIDATION_REVOKED",
+    "RESPONSIBILITY_RECONCILIATION_CONTRACT_STALE",
+    "RESPONSIBILITY_SOURCE_CONTRACT_VERSION_MISMATCH",
+    "RESPONSIBILITY_SOURCE_VERSION_GAP",
+    "RESPONSIBILITY_V2_REPLAY_REQUIRED",
+    "RESPONSIBILITY_V2_CUTOVER_ACTIVATED",
+    "RESPONSIBILITY_V2_CUTOVER_DENIED",
+    "RESPONSIBILITY_V2_CUTOVER_FAILED",
+    "RESPONSIBILITY_V2_CUTOVER_REQUESTED",
+    "RESPONSIBILITY_V2_RECONCILIATION_DIFFERENCES",
+    "RESPONSIBILITY_V2_RECONCILIATION_MATCHED"
+  ],
+  "actions": [
+    {
+      "code": "access.invalidation.published",
+      "ownerModule": "identity-access",
+      "activationStory": "1-6c",
+      "status": "active",
+      "allowedOutcomes": ["accepted"],
+      "allowedReasonCodes": [
+        "ACCESS_INVALIDATION_CORRECTED",
+        "ACCESS_INVALIDATION_EXPIRED",
+        "ACCESS_INVALIDATION_INVALIDATED",
+        "ACCESS_INVALIDATION_REVALIDATED",
+        "ACCESS_INVALIDATION_REVOKED"
+      ],
+      "allowedResults": [
+        {"outcome": "accepted", "reasonCode": "ACCESS_INVALIDATION_CORRECTED"},
+        {"outcome": "accepted", "reasonCode": "ACCESS_INVALIDATION_EXPIRED"},
+        {"outcome": "accepted", "reasonCode": "ACCESS_INVALIDATION_INVALIDATED"},
+        {"outcome": "accepted", "reasonCode": "ACCESS_INVALIDATION_REVALIDATED"},
+        {"outcome": "accepted", "reasonCode": "ACCESS_INVALIDATION_REVOKED"}
+      ]
+    },
+    {
+      "code": "responsibility.sync.rejected",
+      "ownerModule": "identity-access",
+      "activationStory": "1-6c",
+      "status": "active",
+      "allowedOutcomes": ["rejected"],
+      "allowedReasonCodes": [
+        "RESPONSIBILITY_RECONCILIATION_CONTRACT_STALE",
+        "RESPONSIBILITY_SOURCE_CONTRACT_VERSION_MISMATCH",
+        "RESPONSIBILITY_SOURCE_VERSION_GAP",
+        "RESPONSIBILITY_V2_REPLAY_REQUIRED"
+      ],
+      "allowedResults": [
+        {
+          "outcome": "rejected",
+          "reasonCode": "RESPONSIBILITY_RECONCILIATION_CONTRACT_STALE"
+        },
+        {
+          "outcome": "rejected",
+          "reasonCode": "RESPONSIBILITY_SOURCE_CONTRACT_VERSION_MISMATCH"
+        },
+        {
+          "outcome": "rejected",
+          "reasonCode": "RESPONSIBILITY_SOURCE_VERSION_GAP"
+        },
+        {
+          "outcome": "rejected",
+          "reasonCode": "RESPONSIBILITY_V2_REPLAY_REQUIRED"
+        }
+      ]
+    },
+    {
+      "code": "responsibility.v2.reconciled",
+      "ownerModule": "identity-access",
+      "activationStory": "1-6c",
+      "status": "active",
+      "allowedOutcomes": ["accepted"],
+      "allowedReasonCodes": [
+        "RESPONSIBILITY_V2_RECONCILIATION_DIFFERENCES",
+        "RESPONSIBILITY_V2_RECONCILIATION_MATCHED"
+      ],
+      "allowedResults": [
+        {
+          "outcome": "accepted",
+          "reasonCode": "RESPONSIBILITY_V2_RECONCILIATION_DIFFERENCES"
+        },
+        {
+          "outcome": "accepted",
+          "reasonCode": "RESPONSIBILITY_V2_RECONCILIATION_MATCHED"
+        }
+      ]
+    },
+    {
+      "code": "responsibility.v2.cutover.requested",
+      "ownerModule": "identity-access",
+      "activationStory": "1-6c",
+      "status": "active",
+      "allowedOutcomes": ["accepted"],
+      "allowedReasonCodes": ["RESPONSIBILITY_V2_CUTOVER_REQUESTED"],
+      "allowedResults": [
+        {
+          "outcome": "accepted",
+          "reasonCode": "RESPONSIBILITY_V2_CUTOVER_REQUESTED"
+        }
+      ]
+    },
+    {
+      "code": "responsibility.v2.cutover.denied",
+      "ownerModule": "identity-access",
+      "activationStory": "1-6c",
+      "status": "active",
+      "allowedOutcomes": ["rejected"],
+      "allowedReasonCodes": ["RESPONSIBILITY_V2_CUTOVER_DENIED"],
+      "allowedResults": [
+        {
+          "outcome": "rejected",
+          "reasonCode": "RESPONSIBILITY_V2_CUTOVER_DENIED"
+        }
+      ]
+    },
+    {
+      "code": "responsibility.v2.cutover.failed",
+      "ownerModule": "identity-access",
+      "activationStory": "1-6c",
+      "status": "active",
+      "allowedOutcomes": ["rejected"],
+      "allowedReasonCodes": ["RESPONSIBILITY_V2_CUTOVER_FAILED"],
+      "allowedResults": [
+        {
+          "outcome": "rejected",
+          "reasonCode": "RESPONSIBILITY_V2_CUTOVER_FAILED"
+        }
+      ]
+    },
+    {
+      "code": "responsibility.v2.activated",
+      "ownerModule": "identity-access",
+      "activationStory": "1-6c",
+      "status": "active",
+      "allowedOutcomes": ["accepted"],
+      "allowedReasonCodes": [
+        "RESPONSIBILITY_V2_CUTOVER_ACTIVATED"
+      ],
+      "allowedResults": [
+        {
+          "outcome": "accepted",
+          "reasonCode": "RESPONSIBILITY_V2_CUTOVER_ACTIVATED"
+        }
+      ]
+    }
+  ]
+}

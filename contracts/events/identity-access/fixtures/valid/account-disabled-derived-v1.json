@@ -1,0 +1,63 @@
+{
+  "specversion": "1.0",
+  "id": "019c0000-0000-7000-8000-000000000011",
+  "source": "urn:scholarsense:identity-access",
+  "type": "scholarsense.identity-access.responsibility.changed.v1",
+  "subject": "responsibility/lin_EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+  "time": "2026-07-31T11:01:00Z",
+  "datacontenttype": "application/json",
+  "traceparent": "00-44444444444444444444444444444444-5555555555555555-01",
+  "data": {
+    "schemaVersion": "ACCESS-INVALIDATION-DATA-1.0.0",
+    "eventId": "019c0000-0000-7000-8000-000000000011",
+    "traceId": "44444444444444444444444444444444",
+    "producer": "identity-access",
+    "changeKind": "invalidated",
+    "reasonCode": "ACCOUNT_DISABLED",
+    "lineageId": "lin_EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+    "supersedesId": null,
+    "causeEventId": "019c0000-0000-7000-8000-000000000010",
+    "aggregateType": "responsibility-scope",
+    "aggregateId": "lin_EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+    "aggregateVersion": 1,
+    "invalidationVersion": 1,
+    "effectiveAt": "2026-07-31T11:01:00Z",
+    "sourceVector": {
+      "sourceId": "SRC-P0-RESPONSIBILITY-001",
+      "sourceVersion": 44,
+      "sourceWatermark": 44,
+      "dependencyVector": [
+        {
+          "feedId": "identity-authority",
+          "partitionId": "sandbox-0",
+          "watermark": 44
+        },
+        {
+          "feedId": "responsibility-authority",
+          "partitionId": "sandbox-0",
+          "watermark": 10
+        }
+      ]
+    },
+    "subjectSnapshot": {
+      "subjectToken": "subtok_CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+      "scopeToken": "scptok_EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+      "objectDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "tokenizationProfileVersion": "ACCESS-INVALIDATION-TOKENIZATION-1.0.0"
+    },
+    "authorizationSnapshot": {
+      "currentState": "invalidated",
+      "accountActive": false,
+      "r1EmploymentValid": false,
+      "collegeActive": true,
+      "relationEffective": false,
+      "policyVersion": "RFP-1.0.0"
+    },
+    "retention": {
+      "classification": "restricted",
+      "retentionScheduleVersion": "RS-1.0.0",
+      "retainUntil": "2032-07-31T11:01:00Z",
+      "legalHold": false
+    }
+  }
+}

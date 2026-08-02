@@ -3,8 +3,10 @@ package cn.edu.suda.scholarsense.runtime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +19,7 @@ class ResponsibilityAuthorityRuntimeProfileTest {
                 ResponsibilityAuthorityRuntimeProfile.from(runtime("test"));
 
         assertEquals(
-                "RESPONSIBILITY-AUTHORITY-PROFILE-1.0.0",
+                "RESPONSIBILITY-AUTHORITY-PROFILE-2.0.0",
                 profile.profileVersion());
         assertEquals("responsibility", profile.consumerProjection());
         assertEquals(
@@ -27,6 +29,27 @@ class ResponsibilityAuthorityRuntimeProfileTest {
                 "https://test.responsibility-authority.sandbox.invalid/api/v1/snapshots/2026-07-30",
                 profile.snapshotEndpoint(
                         java.time.LocalDate.of(2026, 7, 30)).toString());
+        assertEquals(
+                "https://test.responsibility-authority.sandbox.invalid/api/v2/incremental",
+                profile.incrementalEndpoint(
+                        "RESPONSIBILITY-AUTHORITY-2.0.0").toString());
+        assertEquals(
+                "https://test.responsibility-authority.sandbox.invalid/api/v2/snapshots/2026-07-30",
+                profile.snapshotEndpoint(
+                        "RESPONSIBILITY-AUTHORITY-2.0.0",
+                        java.time.LocalDate.of(2026, 7, 30)).toString());
+        assertEquals(
+                "RESPONSIBILITY-AUTHORITY-2.0.0",
+                profile.writeContractVersion());
+        assertEquals(
+                Instant.parse("2026-07-31T16:00:00Z"),
+                profile.effectiveAt());
+        assertEquals(Duration.ofHours(336), profile.dualReadWindow());
+        assertEquals(
+                Instant.parse("2026-08-14T16:00:00Z"),
+                profile.dualReadWindowEndsAt());
+        assertTrue(profile.cutoverEnabled());
+        assertEquals("0 */15 * * * *", profile.cutoverCron());
         assertEquals(ZoneId.of("Asia/Shanghai"), profile.scheduleTimeZone());
         assertEquals(Duration.ofHours(24), profile.catchUpWindow());
         assertEquals(8, profile.retryBudget());
@@ -67,7 +90,7 @@ class ResponsibilityAuthorityRuntimeProfileTest {
         values.put(
                 "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
                 "config://" + environment
-                        + "/responsibility-authority-profile-1-0-0");
+                        + "/responsibility-authority-profile-2-0-0");
         return RuntimeConfiguration.from(values);
     }
 }

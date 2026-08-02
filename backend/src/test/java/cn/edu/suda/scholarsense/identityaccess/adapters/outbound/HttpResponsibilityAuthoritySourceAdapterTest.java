@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import cn.edu.suda.scholarsense.identityaccess.application.CheckpointKey;
 import cn.edu.suda.scholarsense.identityaccess.application.EncryptedSecret;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySourcePoisonException;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityAuthoritySourcePort;
 import cn.edu.suda.scholarsense.runtime.ResponsibilityAuthorityRuntimeProfile;
 import cn.edu.suda.scholarsense.shared.time.TimeSourceProfile;
 import cn.edu.suda.scholarsense.shared.time.TrustedTime;
@@ -23,6 +24,8 @@ import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 class HttpResponsibilityAuthoritySourceAdapterTest {
     private static final String SIGNATURE = "responsibility-signature";
@@ -41,14 +44,23 @@ class HttpResponsibilityAuthoritySourceAdapterTest {
             throws Exception {
         AtomicReference<String> authorization = new AtomicReference<>();
         AtomicReference<String> query = new AtomicReference<>();
+        AtomicReference<String> path = new AtomicReference<>();
+        AtomicReference<String> contract = new AtomicReference<>();
         byte[] body = fixture();
-        HttpServer server = server(body, authorization, query);
+        HttpServer server = server(
+                body, authorization, query, path, contract);
         try {
             var batch = adapter(server, true).fetch(KEY, 6, TRACE);
 
             assertEquals("Bearer sandbox-workload", authorization.get());
+            assertEquals("/api/v1/incremental", path.get());
             assertEquals(
-                    "afterWatermark=6&consumerProjection=responsibility",
+                    ResponsibilityAuthoritySourcePort.VERSION_1,
+                    contract.get());
+            assertEquals(
+                    "afterWatermark=6&consumerProjection=responsibility"
+                            + "&contractVersion=RESPONSIBILITY-AUTHORITY-1.0.0"
+                            + "&maximumRecords=1000",
                     query.get());
             assertEquals(7, batch.toWatermark());
             assertEquals(42, batch.supportingIdentityOrgWatermarks()
@@ -72,6 +84,67 @@ class HttpResponsibilityAuthoritySourceAdapterTest {
                             .collegeOrganizationRefDigest());
             assertTrue(batch.signatureVerified());
             assertFalse(batch.noChange());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void explicitV2FetchUsesTheV2RouteAndRequiresAV2Response()
+            throws Exception {
+        AtomicReference<String> authorization = new AtomicReference<>();
+        AtomicReference<String> query = new AtomicReference<>();
+        AtomicReference<String> path = new AtomicReference<>();
+        AtomicReference<String> contract = new AtomicReference<>();
+        HttpServer server = server(
+                fixture(ResponsibilityAuthoritySourcePort.VERSION_2),
+                authorization,
+                query,
+                path,
+                contract);
+        try {
+            var batch = adapter(server, true).fetch(
+                    KEY,
+                    ResponsibilityAuthoritySourcePort.VERSION_2,
+                    6,
+                    TRACE);
+
+            assertEquals("/api/v2/incremental", path.get());
+            assertEquals(
+                    ResponsibilityAuthoritySourcePort.VERSION_2,
+                    contract.get());
+            assertEquals(
+                    "afterWatermark=6&consumerProjection=responsibility"
+                            + "&contractVersion=RESPONSIBILITY-AUTHORITY-2.0.0"
+                            + "&maximumRecords=1000",
+                    query.get());
+            assertEquals(
+                    ResponsibilityAuthoritySourcePort.VERSION_2,
+                    batch.contractVersion());
+            assertTrue(batch.relations().getFirst()
+                    .hasInvalidationMetadata());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void requestedAndReturnedContractVersionsMustMatch()
+            throws Exception {
+        HttpServer server = server(
+                fixture(), new AtomicReference<>(), new AtomicReference<>());
+        try {
+            IdentitySourcePoisonException failure = assertThrows(
+                    IdentitySourcePoisonException.class,
+                    () -> adapter(server, true).fetch(
+                            KEY,
+                            ResponsibilityAuthoritySourcePort.VERSION_2,
+                            6,
+                            TRACE));
+
+            assertEquals(
+                    "RESPONSIBILITY_SOURCE_CONTRACT_VERSION_MISMATCH",
+                    failure.code());
         } finally {
             server.stop(0);
         }
@@ -190,12 +263,30 @@ class HttpResponsibilityAuthoritySourceAdapterTest {
             AtomicReference<String> authorization,
             AtomicReference<String> query)
             throws Exception {
+        return server(
+                body,
+                authorization,
+                query,
+                new AtomicReference<>(),
+                new AtomicReference<>());
+    }
+
+    private static HttpServer server(
+            byte[] body,
+            AtomicReference<String> authorization,
+            AtomicReference<String> query,
+            AtomicReference<String> path,
+            AtomicReference<String> contract)
+            throws Exception {
         HttpServer server = HttpServer.create(
                 new InetSocketAddress("127.0.0.1", 0), 0);
-        server.createContext("/api/v1/incremental", exchange -> {
+        com.sun.net.httpserver.HttpHandler handler = exchange -> {
             authorization.set(
                     exchange.getRequestHeaders().getFirst("Authorization"));
             query.set(exchange.getRequestURI().getQuery());
+            path.set(exchange.getRequestURI().getPath());
+            contract.set(exchange.getRequestHeaders().getFirst(
+                    "X-Responsibility-Authority-Contract-Version"));
             exchange.getResponseHeaders().add(
                     "Content-Type", "application/json");
             exchange.getResponseHeaders().add(
@@ -203,12 +294,19 @@ class HttpResponsibilityAuthoritySourceAdapterTest {
             exchange.sendResponseHeaders(200, body.length);
             exchange.getResponseBody().write(body);
             exchange.close();
-        });
+        };
+        server.createContext("/api/v1/incremental", handler);
+        server.createContext("/api/v2/incremental", handler);
         server.start();
         return server;
     }
 
     private static byte[] fixture() throws Exception {
+        return fixture(ResponsibilityAuthoritySourcePort.VERSION_1);
+    }
+
+    private static byte[] fixture(String contractVersion)
+            throws Exception {
         String value = Files.readString(Path.of(
                 "..",
                 "contracts",
@@ -216,7 +314,7 @@ class HttpResponsibilityAuthoritySourceAdapterTest {
                 "fixtures",
                 "valid",
                 "incremental-batch.json"));
-        return value
+        byte[] version1 = value
                 .replace(
                         "sha256:" + "3".repeat(64),
                         "sha256:"
@@ -224,6 +322,27 @@ class HttpResponsibilityAuthoritySourceAdapterTest {
                                         SIGNATURE.getBytes(
                                                 StandardCharsets.UTF_8)))
                 .getBytes(StandardCharsets.UTF_8);
+        if (ResponsibilityAuthoritySourcePort.VERSION_1.equals(
+                contractVersion)) {
+            return version1;
+        }
+        ObjectMapper json = new ObjectMapper();
+        ObjectNode envelope = (ObjectNode) json.readTree(version1);
+        envelope.put("contractVersion", contractVersion);
+        ObjectNode record = (ObjectNode) json.readTree(Files.readAllBytes(
+                Path.of(
+                        "..",
+                        "contracts",
+                        "responsibility-authority-v2",
+                        "fixtures",
+                        "valid",
+                        "responsibility-relation-corrected.json")));
+        record.remove("$schema");
+        record.remove("contractVersion");
+        ArrayNode records = (ArrayNode) envelope.required("records");
+        records.removeAll();
+        records.add(record);
+        return json.writeValueAsBytes(envelope);
     }
 
     private static TrustedTime trustedNow() {

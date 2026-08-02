@@ -1,0 +1,43 @@
+{
+  "version": "RESPONSIBILITY-POLICY-2.0.0",
+  "contractVersion": "RESPONSIBILITY-AUTHORITY-2.0.0",
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "providedBy": "SRC-P0-RESPONSIBILITY-001 source owner",
+  "approvedBy": "Hei",
+  "approvedAt": "2026-07-31T18:51:41+08:00",
+  "effectiveAt": "2026-08-01T00:00:00+08:00",
+  "lineageProvenance": {
+    "owner": "SRC-P0-RESPONSIBILITY-001 source owner",
+    "lineageId": "source-supplied-stable-business-lineage",
+    "supersedesId": "source-supplied-direct-prior-event",
+    "platformInference": "forbidden",
+    "forkCycleOrCrossLineage": "reject"
+  },
+  "dualRead": {
+    "acceptedContractVersions": [
+      "RESPONSIBILITY-AUTHORITY-1.0.0",
+      "RESPONSIBILITY-AUTHORITY-2.0.0"
+    ],
+    "windowStartsAt": "2026-08-01T00:00:00+08:00",
+    "windowEndsAt": "2026-08-15T00:00:00+08:00",
+    "writeVersion": "RESPONSIBILITY-AUTHORITY-2.0.0",
+    "version1Behavior": "live-until-atomic-activation",
+    "version1MayAdvanceInvalidationWatermark": false,
+    "cutoverCondition": "version2-full-replay-lineage-and-reconciliation-pass",
+    "afterWindow": "reject-version1"
+  },
+  "replay": {
+    "startingWatermark": 0,
+    "mustIncludeInactiveAndExpired": true,
+    "requiresContiguousSourceVersion": true,
+    "requiresLineageReconciliation": true,
+    "missingLineageOutcome": "RESPONSIBILITY_V2_REPLAY_REQUIRED"
+  },
+  "relation": {
+    "stableBusinessKey": "relationRefToken",
+    "effectiveInterval": "[effectiveFrom,effectiveTo)",
+    "duplicateBusinessKey": "reject",
+    "oldFacts": "immutable",
+    "recovery": "append-higher-revalidated-fact"
+  }
+}

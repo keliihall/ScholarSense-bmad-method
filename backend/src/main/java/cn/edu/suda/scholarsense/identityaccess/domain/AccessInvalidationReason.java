@@ -1,0 +1,13 @@
+package cn.edu.suda.scholarsense.identityaccess.domain;
+
+public enum AccessInvalidationReason {
+    DIRECT_RESPONSIBILITY_CHANGE,
+    ACCOUNT_DISABLED,
+    R1_EMPLOYMENT_INVALID,
+    COLLEGE_INVALID,
+    RELATION_EXPIRED,
+    COMPLETE_SNAPSHOT_MISSING,
+    QUALITY_GATE_INVALID,
+    RECONCILIATION_RECOVERED,
+    SOURCE_CORRECTION
+}

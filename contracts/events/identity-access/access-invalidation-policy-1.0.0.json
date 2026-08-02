@@ -1,0 +1,70 @@
+{
+  "version": "ACCESS-INVALIDATION-POLICY-1.0.0",
+  "eventType": "scholarsense.identity-access.responsibility.changed.v1",
+  "schemaVersion": "ACCESS-INVALIDATION-DATA-1.0.0",
+  "source": "urn:scholarsense:identity-access",
+  "approvedBy": "Hei",
+  "approvedAt": "2026-07-31T18:51:41+08:00",
+  "lineage": {
+    "rootSupersedesId": null,
+    "successorRule": "same-lineage-direct-predecessor-only",
+    "crossLineageSupersedes": "reject",
+    "fork": "reject",
+    "cycle": "reject",
+    "futureSupersedes": "reject",
+    "derivedInvalidationRule": "new-scope-lineage-with-causeEventId"
+  },
+  "ordering": {
+    "route": "consumerId|producer|aggregateType|lineageId",
+    "nextVersion": "currentWatermark+1",
+    "duplicateSamePayload": "DUPLICATE",
+    "duplicateDifferentPayload": "CONFLICT",
+    "oldVersion": "OLD_IGNORED",
+    "gap": "GAP_BACKFILL_REQUIRED",
+    "gapScope": "affected-route-only",
+    "aggregateVersion": "per-lineage-contiguous-no-rollback-gap",
+    "globalTotalOrder": "forbidden"
+  },
+  "sourceEvidence": {
+    "sourceVersion": "preserved",
+    "sourceWatermark": "preserved",
+    "dependencyVector": "preserved",
+    "aggregateVersionMayReplaceSourceWatermark": false
+  },
+  "authorization": {
+    "immediateEvidence": "identity-org-and-responsibility-current-query-with-trusted-time",
+    "invalidationConsumerRole": "tightening-fence-and-propagation-watermark",
+    "relayOrConsumerLagMayRestoreScope": false,
+    "delegationGrantMayBypassCurrentScope": false,
+    "relationshipInvalidationEndsWholeSession": false,
+    "accountRevocationUsesSessionRevocation": true
+  },
+  "wire": {
+    "cloudEventsSpecVersion": "1.0",
+    "maximumBytes": 65536,
+    "eventIdEqualsDataEventId": true,
+    "freeTextReason": "forbidden",
+    "rawIdentifiers": "forbidden",
+    "rawSourcePayload": "forbidden"
+  },
+  "recovery": {
+    "allowedChangeKind": "revalidated",
+    "requiredReasonCode": "RECONCILIATION_RECOVERED",
+    "rule": "append-higher-contiguous-source-and-aggregate-version",
+    "deletePriorInvalidation": "forbidden",
+    "clearWatermark": "forbidden"
+  },
+  "retention": {
+    "classification": "restricted",
+    "retentionScheduleVersion": "RS-1.0.0",
+    "eventDeletion": "schedule-and-legal-hold-only"
+  },
+  "completion": {
+    "denominator": "applicable-active-required-consumers",
+    "requiresContinuousAppliedWatermark": true,
+    "requiresReconciliationWithoutGapOrConflict": true,
+    "plannedConsumerCountsAsComplete": false,
+    "transportAckCountsAsApply": false,
+    "producerObservedAckCountsAsApply": false
+  }
+}

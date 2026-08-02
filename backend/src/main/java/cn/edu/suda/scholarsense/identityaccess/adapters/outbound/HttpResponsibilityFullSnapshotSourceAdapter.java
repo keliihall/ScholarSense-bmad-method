@@ -3,6 +3,7 @@ package cn.edu.suda.scholarsense.identityaccess.adapters.outbound;
 import cn.edu.suda.scholarsense.identityaccess.application.CheckpointKey;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySourceSignaturePort;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncException;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityAuthoritySourcePort;
 import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityFullSnapshot;
 import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityFullSnapshotSourcePort;
 import cn.edu.suda.scholarsense.identityaccess.application.WorkloadIdentityAuthenticationPort;
@@ -21,6 +22,8 @@ public final class HttpResponsibilityFullSnapshotSourceAdapter
         implements ResponsibilityFullSnapshotSourcePort {
     private static final String SIGNATURE_HEADER =
             "X-Responsibility-Authority-Signature";
+    private static final String CONTRACT_HEADER =
+            "X-Responsibility-Authority-Contract-Version";
 
     private final HttpClient http;
     private final ResponsibilityAuthorityRuntimeProfile profile;
@@ -48,7 +51,21 @@ public final class HttpResponsibilityFullSnapshotSourceAdapter
             CheckpointKey key,
             LocalDate businessDate,
             String traceId) {
-        requireRequest(key, businessDate, traceId);
+        return fetchVersion(
+                key,
+                businessDate,
+                ResponsibilityAuthoritySourcePort.VERSION_1,
+                traceId);
+    }
+
+    @Override
+    public ResponsibilityFullSnapshot fetchVersion(
+            CheckpointKey key,
+            LocalDate businessDate,
+            String contractVersion,
+            String traceId) {
+        requireRequest(
+                key, businessDate, contractVersion, traceId);
         String authorization = workloadIdentity.authorizationHeader(
                 profile.workloadIdentityReference());
         if (authorization == null
@@ -59,10 +76,12 @@ public final class HttpResponsibilityFullSnapshotSourceAdapter
                     "RESPONSIBILITY_SOURCE_AUTHENTICATION_FAILED");
         }
         HttpRequest request = HttpRequest.newBuilder(
-                        profile.snapshotEndpoint(businessDate))
+                        profile.snapshotEndpoint(
+                                contractVersion, businessDate))
                 .timeout(profile.requestTimeout())
                 .header("Accept", "application/json")
                 .header("Authorization", authorization)
+                .header(CONTRACT_HEADER, contractVersion)
                 .header("X-ScholarSense-Trace-Id", traceId)
                 .GET()
                 .build();
@@ -123,6 +142,7 @@ public final class HttpResponsibilityFullSnapshotSourceAdapter
                     body,
                     detachedSignature,
                     verified,
+                    contractVersion,
                     key,
                     businessDate,
                     traceId);
@@ -134,7 +154,15 @@ public final class HttpResponsibilityFullSnapshotSourceAdapter
     private void requireRequest(
             CheckpointKey key,
             LocalDate businessDate,
+            String contractVersion,
             String traceId) {
+        if (!ResponsibilityAuthoritySourcePort.VERSION_1.equals(
+                        contractVersion)
+                && !ResponsibilityAuthoritySourcePort.VERSION_2.equals(
+                        contractVersion)) {
+            throw failure(
+                    "RESPONSIBILITY_SOURCE_CONTRACT_UNAPPROVED");
+        }
         if (key == null
                 || !profile.sourceId().equals(key.sourceId())
                 || !profile.feedId().equals(key.feedId())

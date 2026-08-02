@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncObservation;
@@ -38,6 +40,19 @@ class MicrometerIdentitySyncObservabilityAdapterTest {
         when(jdbc.queryForObject(
                 contains("case when denominator.total=0"), eq(Double.class)))
                 .thenReturn(0.99);
+        when(jdbc.queryForObject(
+                contains("fact.occurred_at"), eq(Double.class)))
+                .thenReturn(901.0);
+        when(jdbc.queryForObject(
+                contains("job_kind in ('impact', 'expiry')"),
+                eq(Long.class)))
+                .thenReturn(5L);
+        when(jdbc.queryForObject(
+                contains("job_kind='impact'"), eq(Long.class)))
+                .thenReturn(6L);
+        when(jdbc.queryForObject(
+                contains("job_kind='expiry'"), eq(Long.class)))
+                .thenReturn(7L);
         var adapter = new MicrometerIdentitySyncObservabilityAdapter(registry, jdbc);
 
         adapter.record(new IdentitySyncObservation(
@@ -60,6 +75,12 @@ class MicrometerIdentitySyncObservabilityAdapterTest {
         assertEquals(99.0, gauge(registry, "identity_sync_slo_30d_numerator"));
         assertEquals(100.0, gauge(registry, "identity_sync_slo_30d_denominator"));
         assertEquals(0.99, gauge(registry, "identity_sync_slo_30d_rate"));
+        assertEquals(901.0, gauge(registry, "access_invalidation_lag_seconds"));
+        assertEquals(5.0, gauge(registry, "access_invalidation_poison_count"));
+        assertEquals(6.0, gauge(registry, "access_invalidation_fanout_backlog"));
+        assertEquals(7.0, gauge(registry, "access_invalidation_expiry_backlog"));
+        verify(jdbc, never()).queryForObject(
+                contains("last_checked_at"), eq(Double.class));
     }
 
     private static double gauge(SimpleMeterRegistry registry, String name) {

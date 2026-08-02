@@ -1,0 +1,79 @@
+{
+  "version": "ACCESS-INVALIDATION-CONSUMER-REGISTRY-1.0.0",
+  "approvedBy": "Hei",
+  "approvedAt": "2026-07-31T18:51:41+08:00",
+  "completionDenominator": "applicable-active-required-consumers",
+  "consumers": [
+    {
+      "consumerId": "authorization-current-scope",
+      "consumerKind": "invalidation-fence-read-model",
+      "owner": "identity-access",
+      "ownerStory": "1.6c",
+      "lifecycle": "active",
+      "applicableRelease": "1.6c",
+      "required": true,
+      "activationAt": "2026-07-31T18:51:41+08:00",
+      "initialWatermark": 0,
+      "runtimeEvidenceClaim": "current-runtime",
+      "applyBoundary": "identity-access-local-transaction",
+      "activationRule": "replay-from-approved-zero-and-reconcile-before-required",
+      "authorizationBoundary": "fence-only-source-current-query-remains-immediate-deny"
+    },
+    {
+      "consumerId": "public-task",
+      "consumerKind": "business-projection",
+      "owner": "public-task-owner",
+      "ownerStory": "5.5",
+      "lifecycle": "planned/not-installed",
+      "applicableRelease": "owner-story-activation",
+      "required": false,
+      "activationAt": null,
+      "initialWatermark": null,
+      "runtimeEvidenceClaim": "none",
+      "applyBoundary": "future-owner-module-transaction",
+      "activationRule": "owner-registers-replay-start-backfills-and-reconciles-before-active"
+    },
+    {
+      "consumerId": "reporting-export",
+      "consumerKind": "business-projection",
+      "owner": "reporting",
+      "ownerStory": "3.14c",
+      "lifecycle": "planned/not-installed",
+      "applicableRelease": "owner-story-activation",
+      "required": false,
+      "activationAt": null,
+      "initialWatermark": null,
+      "runtimeEvidenceClaim": "none",
+      "applyBoundary": "future-owner-module-transaction",
+      "activationRule": "owner-registers-replay-start-backfills-and-reconciles-before-active"
+    },
+    {
+      "consumerId": "responsibility-transfer",
+      "consumerKind": "business-projection",
+      "owner": "cluecare",
+      "ownerStory": "3.9b",
+      "lifecycle": "planned/not-installed",
+      "applicableRelease": "owner-story-activation",
+      "required": false,
+      "activationAt": null,
+      "initialWatermark": null,
+      "runtimeEvidenceClaim": "none",
+      "applyBoundary": "future-owner-module-transaction",
+      "activationRule": "owner-registers-replay-start-backfills-and-reconciles-before-active"
+    },
+    {
+      "consumerId": "mobile-surface-verification",
+      "consumerKind": "surface-verification",
+      "owner": "experience-mobile",
+      "ownerStory": "7.2c",
+      "lifecycle": "planned/not-installed",
+      "applicableRelease": "owner-story-verification",
+      "required": false,
+      "activationAt": null,
+      "initialWatermark": null,
+      "runtimeEvidenceClaim": "none",
+      "applyBoundary": "shared-server-api-no-independent-projection",
+      "activationRule": "verify-volatile-state-clear-and-next-request-server-deny"
+    }
+  ]
+}
