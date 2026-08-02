@@ -1,0 +1,63 @@
+{
+  "specversion": "1.0",
+  "id": "019c0000-0000-7000-8000-000000000003",
+  "source": "urn:scholarsense:identity-access",
+  "type": "scholarsense.identity-access.responsibility.changed.v1",
+  "subject": "responsibility/lin_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "time": "2026-07-31T10:10:00Z",
+  "datacontenttype": "application/json",
+  "traceparent": "00-33333333333333333333333333333333-3333333333333333-01",
+  "data": {
+    "schemaVersion": "ACCESS-INVALIDATION-DATA-1.0.0",
+    "eventId": "019c0000-0000-7000-8000-000000000003",
+    "traceId": "33333333333333333333333333333333",
+    "producer": "identity-access",
+    "changeKind": "revalidated",
+    "reasonCode": "RECONCILIATION_RECOVERED",
+    "lineageId": "lin_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "supersedesId": "019c0000-0000-7000-8000-000000000002",
+    "causeEventId": null,
+    "aggregateType": "responsibility-scope",
+    "aggregateId": "lin_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "aggregateVersion": 3,
+    "invalidationVersion": 3,
+    "effectiveAt": "2026-07-31T10:10:00Z",
+    "sourceVector": {
+      "sourceId": "SRC-P0-RESPONSIBILITY-001",
+      "sourceVersion": 10,
+      "sourceWatermark": 10,
+      "dependencyVector": [
+        {
+          "feedId": "identity-authority",
+          "partitionId": "sandbox-0",
+          "watermark": 43
+        },
+        {
+          "feedId": "responsibility-authority",
+          "partitionId": "sandbox-0",
+          "watermark": 10
+        }
+      ]
+    },
+    "subjectSnapshot": {
+      "subjectToken": "subtok_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "scopeToken": "scptok_BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "objectDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "tokenizationProfileVersion": "ACCESS-INVALIDATION-TOKENIZATION-1.0.0"
+    },
+    "authorizationSnapshot": {
+      "currentState": "revalidated",
+      "accountActive": true,
+      "r1EmploymentValid": true,
+      "collegeActive": true,
+      "relationEffective": true,
+      "policyVersion": "RFP-1.0.0"
+    },
+    "retention": {
+      "classification": "restricted",
+      "retentionScheduleVersion": "RS-1.0.0",
+      "retainUntil": "2032-07-31T10:10:00Z",
+      "legalHold": false
+    }
+  }
+}

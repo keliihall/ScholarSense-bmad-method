@@ -1,0 +1,51 @@
+{
+  "version": "RESPONSIBILITY-AUTHORITY-CONTRACT-LOCK-2.0.0",
+  "files": [
+    {
+      "path": "contracts/responsibility-authority-v2/fixtures/invalid/negative-fixtures-2.0.0.json",
+      "sha256": "486b93168c89032c97eaf1b0de7d3ad8d4ed1928d080fda5833824cfa72e16a4"
+    },
+    {
+      "path": "contracts/responsibility-authority-v2/fixtures/valid/full-snapshot.json",
+      "sha256": "39a48711f760adc022700f591e3be1d5c812e392873fe775f9e823e7a672f5a1"
+    },
+    {
+      "path": "contracts/responsibility-authority-v2/fixtures/valid/responsibility-relation-corrected.json",
+      "sha256": "4ebd05acd273bea6aed48643c8ceec68a07f726044e40243531700123e784cc3"
+    },
+    {
+      "path": "contracts/responsibility-authority-v2/full-snapshot.schema.json",
+      "sha256": "0d0def578fb72721a5856c105bc27d0a4364b3d5bef59fc97987d5c1ee615490"
+    },
+    {
+      "path": "contracts/responsibility-authority-v2/lineage-digest-profile-1.0.0.json",
+      "sha256": "15a62ab49e5ea76c0955c56a1b0fab06a81de07431de2700ba70d1a4faa172a0"
+    },
+    {
+      "path": "contracts/responsibility-authority-v2/responsibility-policy-2.0.0.json",
+      "sha256": "ef97639c038e65a09535d29cedd23eeaa3163080fe8e7bb873d2ba583aec38e0"
+    },
+    {
+      "path": "contracts/responsibility-authority-v2/responsibility-record.schema.json",
+      "sha256": "5920f4aa2f3cc04457c63c3496d1b6cefbcde76d6a493d72030788c1d430c62d"
+    },
+    {
+      "path": "contracts/responsibility-authority-v2/responsibility-relation.schema.json",
+      "sha256": "f000e12b17a0893efcbcf4ffcba3d1ebbb4c294deaa0e528eef614307e60646b"
+    },
+    {
+      "path": "contracts/responsibility-authority-v2/runtime-profile.schema.json",
+      "sha256": "7287ace9a7ca484c2fa900b25f6a22540b1298f4752849d84579adc01637b707"
+    },
+    {
+      "path": "contracts/responsibility-authority-v2/sandbox-runtime-profile-2.0.0.json",
+      "sha256": "64017d64d1d58827bf2aaa71fab90117564490ded05522ca7a2dcbdae96570b0"
+    }
+  ],
+  "upstreamLocks": [
+    {
+      "path": "contracts/responsibility-authority/responsibility-authority-contract-lock-1.0.0.json",
+      "sha256": "aaaeee17923104bb7a1ab33c8b15aee7498cea84e69d9072d2afab16077e73df"
+    }
+  ]
+}

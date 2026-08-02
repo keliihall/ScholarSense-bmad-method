@@ -1,0 +1,29 @@
+{
+  "$schema": "../../responsibility-record.schema.json",
+  "contractVersion": "RESPONSIBILITY-AUTHORITY-2.0.0",
+  "eventId": "019c0000-0000-7000-8000-000000000101",
+  "payload": {
+    "relationRefToken": "rtok_CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+    "studentSourceRef": {
+      "purposeCode": "RESPONSIBILITY-STUDENT-REF",
+      "keyVersion": "resp-student-v2",
+      "tokenValue": "stok_DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
+      "digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "equivalenceDomain": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "counselorAccountExternalRef": "ACCOUNT-001",
+    "collegeOrganizationExternalRef": "ORG-COLLEGE-001",
+    "responsibilityType": "primary",
+    "status": "inactive",
+    "effectiveFrom": "2026-07-01T00:00:00+08:00",
+    "effectiveTo": "2026-07-31T18:51:41+08:00",
+    "recordVersion": 1,
+    "lineageVersion": 1,
+    "changeKind": "corrected",
+    "reasonCode": "SOURCE_CORRECTION",
+    "effectiveAt": "2026-07-31T18:51:41+08:00",
+    "lineageId": "lin_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "supersedesId": null,
+    "payloadDigest": "sha256:14a50ecb1b62bcc138af5bb2590b8a1fcf4dc28f83ee6d6c1c72555ffbff53e6"
+  }
+}

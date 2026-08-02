@@ -14,8 +14,17 @@ public enum IdentityAuditAction {
     RESPONSIBILITY_SYNC_APPLIED("responsibility.sync.applied"),
     RESPONSIBILITY_SYNC_REJECTED("responsibility.sync.rejected"),
     RESPONSIBILITY_SYNC_RECONCILED("responsibility.sync.reconciled"),
+    RESPONSIBILITY_V2_RECONCILED("responsibility.v2.reconciled"),
+    RESPONSIBILITY_V2_CUTOVER_REQUESTED(
+            "responsibility.v2.cutover.requested"),
+    RESPONSIBILITY_V2_CUTOVER_DENIED(
+            "responsibility.v2.cutover.denied"),
+    RESPONSIBILITY_V2_CUTOVER_FAILED(
+            "responsibility.v2.cutover.failed"),
+    RESPONSIBILITY_V2_ACTIVATED("responsibility.v2.activated"),
     RESPONSIBILITY_EXCEPTION_OPENED("responsibility.exception.opened"),
-    RESPONSIBILITY_EXCEPTION_RESOLVED("responsibility.exception.resolved");
+    RESPONSIBILITY_EXCEPTION_RESOLVED("responsibility.exception.resolved"),
+    ACCESS_INVALIDATION_PUBLISHED("access.invalidation.published");
 
     private final String code;
 

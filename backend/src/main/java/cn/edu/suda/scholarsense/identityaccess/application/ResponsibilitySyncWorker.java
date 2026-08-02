@@ -15,6 +15,8 @@ public final class ResponsibilitySyncWorker {
             "RESPONSIBILITY_IDENTITY_PROJECTION_UNAVAILABLE",
             "RESPONSIBILITY_SLO_COMPENSATION_PERSISTENCE_UNAVAILABLE",
             "RESPONSIBILITY_WATERMARK_GAP",
+            "RESPONSIBILITY_SOURCE_VERSION_GAP",
+            "RESPONSIBILITY_V2_REPLAY_REQUIRED",
             "IDENTITY_SYNC_FENCING_STALE",
             "IDENTITY_SYNC_PERSISTENCE_UNAVAILABLE");
 
@@ -29,6 +31,7 @@ public final class ResponsibilitySyncWorker {
     private final IdentityReplayPort replay;
     private final CheckpointKey routeKey;
     private final ResponsibilitySloRecorder slo;
+    private final Instant version2EffectiveAt;
 
     public ResponsibilitySyncWorker(
             IdentitySyncJobPort jobs,
@@ -52,7 +55,8 @@ public final class ResponsibilitySyncWorker {
                 time,
                 replay,
                 (batch, appliedAt, result) -> {},
-                routeKey);
+                routeKey,
+                Instant.MAX);
     }
 
     public ResponsibilitySyncWorker(
@@ -67,6 +71,61 @@ public final class ResponsibilitySyncWorker {
             IdentityReplayPort replay,
             ResponsibilitySloRecorder slo,
             CheckpointKey routeKey) {
+        this(
+                jobs,
+                source,
+                sync,
+                repository,
+                audit,
+                observability,
+                transactions,
+                time,
+                replay,
+                slo,
+                routeKey,
+                Instant.MAX);
+    }
+
+    public ResponsibilitySyncWorker(
+            IdentitySyncJobPort jobs,
+            ResponsibilityAuthoritySourcePort source,
+            ResponsibilitySyncService sync,
+            ResponsibilitySyncRepository repository,
+            IdentitySyncAuditPort audit,
+            IdentitySyncObservabilityPort observability,
+            IdentitySyncTransactionPort transactions,
+            TrustedTimeSource time,
+            IdentityReplayPort replay,
+            CheckpointKey routeKey,
+            Instant version2EffectiveAt) {
+        this(
+                jobs,
+                source,
+                sync,
+                repository,
+                audit,
+                observability,
+                transactions,
+                time,
+                replay,
+                (batch, appliedAt, result) -> {},
+                routeKey,
+                version2EffectiveAt);
+    }
+
+    public ResponsibilitySyncWorker(
+            IdentitySyncJobPort jobs,
+            ResponsibilityAuthoritySourcePort source,
+            ResponsibilitySyncService sync,
+            ResponsibilitySyncRepository repository,
+            IdentitySyncAuditPort audit,
+            IdentitySyncObservabilityPort observability,
+            IdentitySyncTransactionPort transactions,
+            TrustedTimeSource time,
+            IdentityReplayPort replay,
+            ResponsibilitySloRecorder slo,
+            CheckpointKey routeKey,
+            Instant version2EffectiveAt) {
         this.jobs = java.util.Objects.requireNonNull(jobs);
         this.source = java.util.Objects.requireNonNull(source);
         this.sync = java.util.Objects.requireNonNull(sync);
@@ -77,6 +136,8 @@ public final class ResponsibilitySyncWorker {
         this.time = java.util.Objects.requireNonNull(time);
         this.replay = java.util.Objects.requireNonNull(replay);
         this.slo = java.util.Objects.requireNonNull(slo);
+        this.version2EffectiveAt = java.util.Objects.requireNonNull(
+                version2EffectiveAt, "version2EffectiveAt");
         if (routeKey == null
                 || !"responsibility".equals(
                         routeKey.consumerProjection())) {
@@ -88,6 +149,7 @@ public final class ResponsibilitySyncWorker {
 
     public Optional<IdentitySyncWorkerRun> runNext(String leaseOwner) {
         Instant now = time.now().instant();
+        String contractVersion = contractVersion(now);
         Optional<IdentitySyncJob> due = jobs.nextDue(routeKey, now);
         if (due.isEmpty()) {
             return Optional.empty();
@@ -100,19 +162,23 @@ public final class ResponsibilitySyncWorker {
         RunningIdentitySyncAttempt attempt = started.get();
         java.util.concurrent.atomic.AtomicReference<IdentitySyncJob> saved =
                 new java.util.concurrent.atomic.AtomicReference<>();
+        boolean dualRead =
+                ResponsibilityAuthoritySourcePort.VERSION_2.equals(
+                                contractVersion)
+                        && !repository.v2ShadowActive(
+                                attempt.job().key());
+        java.util.concurrent.atomic.AtomicReference<String>
+                attemptedContract = new java.util.concurrent.atomic.AtomicReference<>(
+                        dualRead
+                                ? ResponsibilityAuthoritySourcePort.VERSION_1
+                                : contractVersion);
         try {
-            Optional<IdentityReplayRange> requested =
-                    replay.nextRequested(attempt.job().key());
-            NormalizedResponsibilityBatch batch = requested.isPresent()
-                    ? source.fetchRange(
-                            attempt.job().key(),
-                            requested.get().fromInclusive(),
-                            requested.get().toInclusive(),
-                            attempt.job().traceId())
-                    : source.fetch(
-                            attempt.job().key(),
-                            attempt.inputWatermark(),
-                            attempt.job().traceId());
+            if (dualRead) {
+                return Optional.of(runDualRead(
+                        attempt, now, saved, attemptedContract));
+            }
+            NormalizedResponsibilityBatch batch = fetch(
+                    attempt, contractVersion);
             IdentitySyncResult result = sync.process(
                     batch,
                     attempt.lease(),
@@ -134,37 +200,52 @@ public final class ResponsibilitySyncWorker {
                 throw new IdentitySyncException(
                         "IDENTITY_SYNC_PERSISTENCE_UNAVAILABLE");
             }
-            Instant committedAt = time.now().instant();
-            try {
-                slo.record(batch, committedAt, result);
-            } catch (IdentitySyncException failure) {
-                if (!"RESPONSIBILITY_SLO_COMPENSATION_PERSISTENCE_UNAVAILABLE"
-                        .equals(failure.code())) {
-                    throw failure;
+            boolean liveProjection =
+                    !ResponsibilityAuthoritySourcePort.VERSION_2.equals(
+                                    contractVersion)
+                            || repository.v2ShadowActive(
+                                    attempt.job().key());
+            if (liveProjection) {
+                Instant committedAt = time.now().instant();
+                try {
+                    slo.record(batch, committedAt, result);
+                } catch (IdentitySyncException failure) {
+                    if (!"RESPONSIBILITY_SLO_COMPENSATION_PERSISTENCE_UNAVAILABLE"
+                            .equals(failure.code())) {
+                        throw failure;
+                    }
+                    scheduleSloRetry(
+                            attempt,
+                            completed,
+                            batch,
+                            result,
+                            committedAt,
+                            contractVersion);
+                    record(
+                            "responsibility_sync_slo_retry_total",
+                            "scheduled",
+                            attempt,
+                            committedAt,
+                            contractVersion);
+                    return Optional.of(result(attempt, completed));
                 }
-                scheduleSloRetry(
-                        attempt,
-                        completed,
-                        batch,
-                        result,
-                        committedAt);
-                record(
-                        "responsibility_sync_slo_retry_total",
-                        "scheduled",
-                        attempt,
-                        committedAt);
-                return Optional.of(result(attempt, completed));
             }
             record(
                     "responsibility_sync_job_total",
                     result.reasonCode(),
                     attempt,
-                    now);
+                    now,
+                    contractVersion);
             return Optional.of(result(attempt, completed));
         } catch (IdentitySourcePoisonException poison) {
-            quarantine(attempt, poison, now);
+            quarantine(
+                    attempt, poison, now, attemptedContract.get());
             return Optional.of(fail(
-                    attempt, poison.code(), false, now));
+                    attempt,
+                    poison.code(),
+                    false,
+                    now,
+                    attemptedContract.get()));
         } catch (IdentitySyncException failure) {
             if (saved.get() != null) {
                 throw failure;
@@ -173,7 +254,8 @@ public final class ResponsibilitySyncWorker {
                     attempt,
                     failure.code(),
                     RETRYABLE_CODES.contains(failure.code()),
-                    now));
+                    now,
+                    attemptedContract.get()));
         } catch (RuntimeException unavailable) {
             if (saved.get() != null) {
                 throw unavailable;
@@ -182,8 +264,90 @@ public final class ResponsibilitySyncWorker {
                     attempt,
                     "RESPONSIBILITY_SOURCE_DEPENDENCY_UNAVAILABLE",
                     true,
-                    now));
+                    now,
+                    attemptedContract.get()));
         }
+    }
+
+    private IdentitySyncWorkerRun runDualRead(
+            RunningIdentitySyncAttempt attempt,
+            Instant startedAt,
+            java.util.concurrent.atomic.AtomicReference<IdentitySyncJob> saved,
+            java.util.concurrent.atomic.AtomicReference<String>
+                    attemptedContract) {
+        NormalizedResponsibilityBatch liveBatch = fetch(
+                attempt, ResponsibilityAuthoritySourcePort.VERSION_1);
+        IdentitySyncResult liveResult = sync.process(
+                liveBatch, attempt.lease());
+        Instant liveCommittedAt = time.now().instant();
+        slo.record(liveBatch, liveCommittedAt, liveResult);
+        record(
+                "responsibility_sync_job_total",
+                liveResult.reasonCode(),
+                attempt,
+                startedAt,
+                ResponsibilityAuthoritySourcePort.VERSION_1);
+
+        attemptedContract.set(
+                ResponsibilityAuthoritySourcePort.VERSION_2);
+        NormalizedResponsibilityBatch shadowBatch = fetch(
+                attempt, ResponsibilityAuthoritySourcePort.VERSION_2);
+        IdentitySyncResult shadowResult = sync.process(
+                shadowBatch, attempt.lease());
+
+        IdentitySyncJob completed = attempt.job().transitionTo(
+                IdentitySyncJobStatus.SUCCEEDED,
+                IdentitySourceHealth.HEALTHY,
+                IdentityProjectionFreshness.FRESH,
+                startedAt,
+                null,
+                null,
+                liveResult.sourceWatermark());
+        jobs.save(attempt, completed, startedAt);
+        saved.set(completed);
+        record(
+                "responsibility_sync_job_total",
+                shadowResult.reasonCode(),
+                attempt,
+                startedAt,
+                ResponsibilityAuthoritySourcePort.VERSION_2);
+        return result(attempt, completed);
+    }
+
+    private NormalizedResponsibilityBatch fetch(
+            RunningIdentitySyncAttempt attempt,
+            String contractVersion) {
+        if (ResponsibilityAuthoritySourcePort.VERSION_2.equals(
+                contractVersion)) {
+            long shadowWatermark = repository
+                    .v2ShadowCheckpoint(attempt.job().key())
+                    .orElseGet(() -> IdentityCheckpoint.initial(
+                            attempt.job().key()))
+                    .watermark();
+            return source.fetch(
+                    attempt.job().key(),
+                    contractVersion,
+                    shadowWatermark,
+                    attempt.job().traceId());
+        }
+        Optional<IdentityReplayRange> requested =
+                replay.nextRequested(attempt.job().key());
+        long liveWatermark = repository
+                .checkpoint(attempt.job().key())
+                .map(IdentityCheckpoint::watermark)
+                .orElse(attempt.inputWatermark());
+        return requested.isPresent()
+                ? source.fetchRange(
+                        attempt.job().key(),
+                        contractVersion,
+                        requested.get().fromInclusive(),
+                        requested.get().toInclusive(),
+                        attempt.job().traceId())
+                : source.fetch(
+                        attempt.job().key(),
+                        contractVersion,
+                        liveWatermark,
+                        attempt.job().traceId());
     }
 
     private void scheduleSloRetry(
@@ -191,7 +355,8 @@ public final class ResponsibilitySyncWorker {
             IdentitySyncJob completed,
             NormalizedResponsibilityBatch batch,
             IdentitySyncResult result,
-            Instant requestedAt) {
+            Instant requestedAt,
+            String contractVersion) {
         IdentitySyncJob retry = new IdentitySyncJob(
                 UUID.fromString(UuidV7.generate(requestedAt)),
                 attempt.job().key(),
@@ -207,11 +372,14 @@ public final class ResponsibilitySyncWorker {
                 "RESPONSIBILITY_SLO_COMPENSATION_PERSISTENCE_UNAVAILABLE",
                 attempt.job().traceId());
         transactions.execute(() -> {
-            replay.request(
-                    batch.key(),
-                    batch.fromWatermark() + 1,
-                    batch.toWatermark(),
-                    batch.traceId());
+            if (ResponsibilityAuthoritySourcePort.VERSION_1.equals(
+                    contractVersion)) {
+                replay.request(
+                        batch.key(),
+                        batch.fromWatermark() + 1,
+                        batch.toWatermark(),
+                        batch.traceId());
+            }
             jobs.enqueueIfEligible(retry);
             return null;
         });
@@ -220,7 +388,8 @@ public final class ResponsibilitySyncWorker {
     private void quarantine(
             RunningIdentitySyncAttempt attempt,
             IdentitySourcePoisonException poison,
-            Instant now) {
+            Instant now,
+            String contractVersion) {
         transactions.execute(() -> {
             if (!repository.leaseIsCurrent(attempt.lease())) {
                 throw new IdentitySyncException(
@@ -251,7 +420,7 @@ public final class ResponsibilitySyncWorker {
                     0,
                     attempt.job().traceId(),
                     now,
-                    policyVersions()));
+                    policyVersions(contractVersion)));
             return null;
         });
     }
@@ -260,7 +429,8 @@ public final class ResponsibilitySyncWorker {
             RunningIdentitySyncAttempt attempt,
             String reasonCode,
             boolean retryable,
-            Instant now) {
+            Instant now,
+            String contractVersion) {
         boolean retry =
                 retryable
                         && attempt.attemptNo()
@@ -293,14 +463,15 @@ public final class ResponsibilitySyncWorker {
                     0,
                     attempt.job().traceId(),
                     now,
-                    policyVersions()));
+                    policyVersions(contractVersion)));
             return null;
         });
         record(
                 "responsibility_sync_job_total",
                 status.wireName(),
                 attempt,
-                now);
+                now,
+                contractVersion);
         return result(attempt, completed);
     }
 
@@ -308,7 +479,8 @@ public final class ResponsibilitySyncWorker {
             String metric,
             String outcome,
             RunningIdentitySyncAttempt attempt,
-            Instant now) {
+            Instant now,
+            String contractVersion) {
         observability.record(new IdentitySyncObservation(
                 metric,
                 1,
@@ -316,6 +488,7 @@ public final class ResponsibilitySyncWorker {
                         "sourceId", attempt.job().key().sourceId(),
                         "feedId", attempt.job().key().feedId(),
                         "consumerProjection", "responsibility",
+                        "responsibilityContract", contractVersion,
                         "outcome", outcome),
                 attempt.job().traceId(),
                 now));
@@ -337,12 +510,18 @@ public final class ResponsibilitySyncWorker {
                 completed.lastSuccessfulWatermark());
     }
 
-    private static Map<String, String> policyVersions() {
+    private String contractVersion(Instant now) {
+        return now.isBefore(version2EffectiveAt)
+                ? ResponsibilityAuthoritySourcePort.VERSION_1
+                : ResponsibilityAuthoritySourcePort.VERSION_2;
+    }
+
+    private static Map<String, String> policyVersions(
+            String contractVersion) {
         return Map.of(
                 "identitySessionPolicy", "ISP-1.0.0",
                 "roleFieldPolicy", "RFP-1.0.0",
-                "responsibilityContract",
-                "RESPONSIBILITY-AUTHORITY-1.0.0",
+                "responsibilityContract", contractVersion,
                 "retentionSchedule", "RS-1.0.0");
     }
 }

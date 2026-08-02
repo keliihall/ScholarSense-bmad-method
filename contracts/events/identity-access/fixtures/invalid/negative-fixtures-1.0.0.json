@@ -1,0 +1,71 @@
+{
+  "version": "ACCESS-INVALIDATION-NEGATIVE-FIXTURES-1.0.0",
+  "baseFixture": "../valid/responsibility-revoked-v2.json",
+  "cases": [
+    {
+      "id": "missing-lineage",
+      "mutation": "remove-data-lineageId",
+      "expectedReasonCode": "EVENT_SCHEMA_REJECTED"
+    },
+    {
+      "id": "event-id-mismatch",
+      "mutation": "replace-data-eventId",
+      "expectedReasonCode": "EVENT_ID_MISMATCH"
+    },
+    {
+      "id": "cross-lineage-supersedes",
+      "mutation": "supersedes-event-from-another-lineage",
+      "expectedReasonCode": "LINEAGE_SUPERSEDES_CROSS_LINEAGE"
+    },
+    {
+      "id": "lineage-fork",
+      "mutation": "two-successors-for-one-event",
+      "expectedReasonCode": "LINEAGE_FORK"
+    },
+    {
+      "id": "future-supersedes",
+      "mutation": "version-one-supersedes-version-two",
+      "expectedReasonCode": "LINEAGE_FUTURE_SUPERSEDES"
+    },
+    {
+      "id": "aggregate-version-gap",
+      "mutation": "replace-aggregateVersion-with-four",
+      "expectedReasonCode": "LINEAGE_VERSION_GAP"
+    },
+    {
+      "id": "same-key-different-payload",
+      "mutation": "reuse-eventId-with-different-reason",
+      "expectedReasonCode": "EVENT_IDEMPOTENCY_CONFLICT"
+    },
+    {
+      "id": "unknown-reason-code",
+      "mutation": "replace-reasonCode-with-free-text",
+      "expectedReasonCode": "EVENT_SCHEMA_REJECTED"
+    },
+    {
+      "id": "raw-identifier-field",
+      "mutation": "add-data-studentId",
+      "expectedReasonCode": "EVENT_PRIVACY_BOUNDARY_VIOLATION"
+    },
+    {
+      "id": "payload-over-64-kib",
+      "mutation": "add-oversized-raw-padding",
+      "expectedReasonCode": "EVENT_PAYLOAD_TOO_LARGE"
+    },
+    {
+      "id": "planned-consumer-ack",
+      "mutation": "advance-public-task-watermark",
+      "expectedReasonCode": "CONSUMER_NOT_ACTIVE"
+    },
+    {
+      "id": "delegation-grant-bypass",
+      "mutation": "treat-grant-as-current-scope-override",
+      "expectedReasonCode": "CURRENT_SCOPE_OVERRIDE_FORBIDDEN"
+    },
+    {
+      "id": "invalid-recovery-reason",
+      "mutation": "revalidated-without-reconciliation-recovered",
+      "expectedReasonCode": "RECOVERY_TAXONOMY_INVALID"
+    }
+  ]
+}

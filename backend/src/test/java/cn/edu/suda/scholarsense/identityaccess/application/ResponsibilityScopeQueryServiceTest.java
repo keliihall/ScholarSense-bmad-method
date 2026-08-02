@@ -8,8 +8,12 @@ import cn.edu.suda.scholarsense.identityaccess.api.ResponsibilityScopeQuery;
 import cn.edu.suda.scholarsense.identityaccess.api.ResponsibilityScopeValidity;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.ResponsibilityScopeQueryAdapter;
 import cn.edu.suda.scholarsense.identityaccess.domain.AuthoritativeResponsibilityRelation;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationChangeKind;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationLineageId;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationReason;
 import cn.edu.suda.scholarsense.identityaccess.domain.EffectiveInterval;
 import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityRecipientEvidence;
+import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityRecipientValidity;
 import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityStatus;
 import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityStudentSourceReference;
 import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityType;
@@ -30,6 +34,9 @@ class ResponsibilityScopeQueryServiceTest {
             UUID.fromString("019c1234-0000-7000-8000-000000000701");
     private static final UUID COLLEGE =
             UUID.fromString("019c1234-0000-7000-8000-000000000702");
+    private static final AccessInvalidationLineageId LINEAGE =
+            new AccessInvalidationLineageId(
+                    "lin_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
     private static final CheckpointKey KEY = new CheckpointKey(
             "SRC-P0-RESPONSIBILITY-001",
             "responsibility-authority",
@@ -152,6 +159,79 @@ class ResponsibilityScopeQueryServiceTest {
         assertNull(failed.counselorAccountId());
     }
 
+    @Test
+    void appliedInvalidationFenceCanOnlyTightenCurrentScope() {
+        var repository = new FakeRepository(List.of(relation("b", 7)));
+        var service = new ResponsibilityScopeQueryAdapter(
+                repository,
+                (relations, now) -> relations.stream()
+                        .map(value -> new ResponsibilityRecipientEvidence(
+                                value,
+                                ACCOUNT,
+                                COLLEGE,
+                                true,
+                                true,
+                                true,
+                                true))
+                        .toList(),
+                ResponsibilityScopeQueryServiceTest::trustedNow,
+                KEY,
+                lineage -> LINEAGE.equals(lineage));
+
+        var view = service.query(
+                new ResponsibilityScopeQuery(STUDENT, NOW));
+
+        assertEquals(
+                ResponsibilityScopeValidity.INVALID,
+                view.validity());
+        assertNull(view.counselorAccountId());
+        assertEquals(
+                "RESPONSIBILITY_RECONCILIATION_DIFFERENCES",
+                view.reasonCode());
+    }
+
+    @Test
+    void cascadeReadBackUsesOnlyExactLineageAccountAndStudent() {
+        AccessInvalidationLineageId unrelatedLineage =
+                new AccessInvalidationLineageId(
+                        "lin_BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
+        AuthoritativeResponsibilityRelation target =
+                relation("b", 7, LINEAGE);
+        AuthoritativeResponsibilityRelation unrelated =
+                relation("c", 8, unrelatedLineage);
+        var repository = new FakeRepository(
+                List.of(target, unrelated));
+        var service = new ResponsibilityScopeQueryAdapter(
+                repository,
+                (relations, now) -> {
+                    assertEquals(List.of(target), relations);
+                    return List.of(new ResponsibilityRecipientEvidence(
+                            target,
+                            ACCOUNT,
+                            COLLEGE,
+                            true,
+                            true,
+                            true,
+                            true));
+                },
+                ResponsibilityScopeQueryServiceTest::trustedNow,
+                KEY,
+                unrelatedLineage::equals);
+
+        ResponsibilityScopeReadBack readBack = service.readBack(
+                LINEAGE,
+                ACCOUNT,
+                target.studentSourceReference().equivalenceDomain(),
+                NOW);
+
+        assertEquals(
+                ResponsibilityRecipientValidity.VALID,
+                readBack.validity());
+        assertEquals(7, readBack.sourceVersion());
+        assertEquals(7, readBack.sourceWatermark());
+        assertEquals(7, readBack.aggregateVersion());
+    }
+
     private static ResponsibilityScopeQueryAdapter service(
             ResponsibilitySyncRepository repository,
             ResponsibilityRecipientEvidencePort evidence) {
@@ -164,6 +244,13 @@ class ResponsibilityScopeQueryServiceTest {
 
     private static AuthoritativeResponsibilityRelation relation(
             String suffix, long version) {
+        return relation(suffix, version, LINEAGE);
+    }
+
+    private static AuthoritativeResponsibilityRelation relation(
+            String suffix,
+            long version,
+            AccessInvalidationLineageId lineage) {
         return new AuthoritativeResponsibilityRelation(
                 UUID.fromString(
                         "019c1234-0000-7000-8000-00000000070"
@@ -185,7 +272,12 @@ class ResponsibilityScopeQueryServiceTest {
                 version,
                 version,
                 version,
-                "2".repeat(64));
+                "2".repeat(64),
+                AccessInvalidationChangeKind.CORRECTED,
+                AccessInvalidationReason.SOURCE_CORRECTION,
+                NOW,
+                lineage,
+                null);
     }
 
     private static TrustedTime trustedNow() {
@@ -254,6 +346,26 @@ class ResponsibilityScopeQueryServiceTest {
                         String studentSourceRefDigest,
                         Instant serverNow) {
             return List.copyOf(relations);
+        }
+
+        @Override
+        public Optional<AuthoritativeResponsibilityRelation>
+                currentCascadeScope(
+                        CheckpointKey key,
+                        AccessInvalidationLineageId accessLineageId,
+                        UUID counselorAccountId,
+                        String studentEquivalenceDigest,
+                        Instant serverNow) {
+            if (!ACCOUNT.equals(counselorAccountId)) {
+                return Optional.empty();
+            }
+            return relations.stream()
+                    .filter(relation -> accessLineageId.equals(
+                            relation.lineageId()))
+                    .filter(relation -> studentEquivalenceDigest.equals(
+                            relation.studentSourceReference()
+                                    .equivalenceDomain()))
+                    .findFirst();
         }
 
         @Override

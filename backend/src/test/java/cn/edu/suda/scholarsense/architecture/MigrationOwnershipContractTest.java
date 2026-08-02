@@ -22,8 +22,8 @@ class MigrationOwnershipContractTest {
         assertEquals(expectedFacts(), result.ownership().entrySet().stream()
                 .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().factOwners())));
         try (var walk = Files.walk(MIGRATIONS)) {
-            assertEquals(7, walk.filter(path -> path.toString().endsWith(".sql")).count(),
-                    "Stories 1.2 through 1.6b own exactly seven forward migrations");
+            assertEquals(8, walk.filter(path -> path.toString().endsWith(".sql")).count(),
+                    "Stories 1.2 through 1.6c own exactly eight forward migrations");
         }
         Path firstMigration = MIGRATIONS.resolve(
                 "identity-access/V000001__identity-access__session_boundary.sql");
@@ -219,6 +219,135 @@ class MigrationOwnershipContractTest {
         assertFalse(lower.contains("studentref"));
         assertFalse(lower.contains("delegationgrant"));
         assertFalse(lower.contains("audit_operations."));
+        assertEquals(
+                "78c5aa44727195b606b4f41ddfadbd0d240258c37d966c69cc118b0096c03a81",
+                sha256(MIGRATIONS.resolve(
+                        "identity-access/V000007__identity-access__responsibility_reconciliation_v1.sql")),
+                "V000007 remains byte-for-byte immutable");
+    }
+
+    @Test
+    void story16cMigrationSeparatesProducerAndLocalConsumerEvidenceRoles()
+            throws Exception {
+        String migration = Files.readString(MIGRATIONS.resolve(
+                "identity-access/V000008__identity-access__access_invalidation_v1.sql"));
+        String lower = migration.toLowerCase();
+
+        for (String table : Set.of(
+                "ia_authoritative_role_binding_history",
+                "ia_responsibility_v2_cutover_command",
+                "ia_access_invalidation_fact",
+                "ia_access_invalidation_lineage_head",
+                "ia_access_invalidation_outbox",
+                "ia_access_invalidation_delivery_attempt",
+                "ia_access_invalidation_consumer_registry",
+                "ia_access_invalidation_observed_ack",
+                "ia_access_invalidation_propagation",
+                "ia_access_invalidation_local_inbox",
+                "ia_access_invalidation_local_apply",
+                "ia_access_invalidation_local_fence",
+                "ia_access_invalidation_consumer_applied_outbox",
+                "ia_access_invalidation_consumer_watermark",
+                "ia_access_invalidation_backfill_request",
+                "ia_access_invalidation_job",
+                "ia_access_invalidation_reconciliation")) {
+            assertTrue(lower.contains("identity_access." + table), table);
+        }
+        assertTrue(lower.contains("append-only guarantee"));
+        assertTrue(lower.contains("no role used"));
+        assertTrue(lower.contains("aggregate_version bigint"));
+        assertTrue(lower.contains("fencing_token bigint"));
+        assertTrue(lower.contains("source_payload_digest char(64) not null"));
+        assertTrue(lower.contains("contract_version, to_watermark"));
+        assertTrue(lower.contains("octet_length(event_payload::text) <= 65536"));
+        assertTrue(lower.contains("'authorization-current-scope'"));
+        assertTrue(lower.contains("'planned/not-installed'"));
+        assertTrue(lower.contains("runtimeevidenceclaim=none"));
+        assertTrue(lower.contains(
+                "primary key (source_id, role_external_ref_digest, source_version)"));
+        assertTrue(lower.contains(
+                "grant select, insert on identity_access\n"
+                        + "    .ia_authoritative_role_binding_history\n"
+                        + "    to scholarsense_identity_sync_worker"));
+        assertTrue(lower.contains(
+                "grant select, insert on identity_access.ia_access_invalidation_fact"));
+        assertTrue(lower.contains(
+                "create role scholarsense_identity_invalidation_consumer nologin"));
+        assertTrue(lower.contains(
+                "create role scholarsense_identity_responsibility_v2_cutover nologin"));
+        assertTrue(lower.contains(
+                "alter role scholarsense_identity_responsibility_v2_cutover\n"
+                        + "    nologin nosuperuser nocreatedb nocreaterole noreplication nobypassrls"));
+        assertTrue(lower.contains(
+                "grant insert (\n"
+                        + "    source_id, feed_id, partition_id, consumer_projection,\n"
+                        + "    source_version, source_watermark, aggregate_version,\n"
+                        + "    replay_started_at_zero, updated_at, trace_id\n"
+                        + ") on identity_access.ia_responsibility_v2_shadow_checkpoint\n"
+                        + "    to scholarsense_identity_sync_worker"));
+        assertTrue(lower.contains(
+                "grant update (\n"
+                        + "    source_version, source_watermark, aggregate_version,\n"
+                        + "    last_successful_at, replay_started_at_zero, updated_at, trace_id\n"
+                        + ") on identity_access.ia_responsibility_v2_shadow_checkpoint\n"
+                        + "    to scholarsense_identity_sync_worker"));
+        assertTrue(lower.contains(
+                "grant select, insert on identity_access\n"
+                        + "    .ia_responsibility_v2_cutover_command\n"
+                        + "    to scholarsense_identity_responsibility_v2_cutover"));
+        assertTrue(lower.contains(
+                "operator_ref ~ '^[a-za-z0-9:/._-]{8,160}$'"));
+        assertTrue(lower.contains(
+                "approval_ref ~ '^[a-za-z0-9:/._-]{8,160}$'"));
+        assertTrue(lower.contains(
+                "signature_digest ~ '^[0-9a-f]{64}$'"));
+        assertTrue(lower.contains(
+                "grant update (\n"
+                        + "    status, reason_code, snapshot_id, updated_at, completed_at\n"
+                        + ") on identity_access.ia_responsibility_v2_cutover_command\n"
+                        + "    to scholarsense_identity_responsibility_v2_cutover"));
+        assertTrue(lower.contains(
+                "grant insert, delete on identity_access.ia_responsibility_current\n"
+                        + "    to scholarsense_identity_responsibility_v2_cutover"));
+        assertTrue(lower.contains(
+                "grant select (\n"
+                        + "    source_id, feed_id, partition_id, consumer_projection\n"
+                        + ") on identity_access.ia_responsibility_current\n"
+                        + "    to scholarsense_identity_responsibility_v2_cutover"));
+        assertTrue(lower.contains(
+                "revoke delete on identity_access.ia_responsibility_current\n"
+                        + "    from public,\n"
+                        + "         scholarsense_identity_sync_worker,\n"
+                        + "         scholarsense_identity_current_reader"));
+        assertTrue(lower.contains(
+                "to scholarsense_identity_invalidation_consumer"));
+        assertTrue(lower.contains(
+                "consumer_id = 'authorization-current-scope'"));
+        assertFalse(lower.contains(
+                "grant select, insert, update on identity_access.ia_access_invalidation_consumer_watermark\n"
+                        + "    to scholarsense_identity_sync_worker"));
+        assertFalse(lower.contains(
+                "grant update on identity_access.ia_access_invalidation_fact"));
+        assertFalse(lower.contains(
+                "grant delete on identity_access.ia_access_invalidation_fact"));
+        assertFalse(lower.contains(
+                "grant select, insert, update on identity_access\n"
+                        + "    .ia_responsibility_v2_shadow_checkpoint\n"
+                        + "    to scholarsense_identity_sync_worker"));
+        assertFalse(lower.contains(
+                "grant select, insert on identity_access\n"
+                        + "    .ia_responsibility_v2_reconciliation_snapshot\n"
+                        + "    to scholarsense_identity_sync_worker"));
+        assertFalse(lower.contains(
+                "grant delete on identity_access.ia_responsibility_current\n"
+                        + "    to scholarsense_identity_sync_worker"));
+        assertFalse(lower.contains(
+                "grant select on identity_access\n"
+                        + "    .ia_responsibility_v2_cutover_command\n"
+                        + "    to scholarsense_identity_current_reader"));
+        assertFalse(lower.contains("cluecare."));
+        assertFalse(lower.contains("reporting."));
+        assertFalse(lower.contains("collaboration."));
     }
 
     @Test

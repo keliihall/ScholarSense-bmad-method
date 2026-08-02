@@ -6,6 +6,9 @@ import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncException
 import cn.edu.suda.scholarsense.identityaccess.application.NormalizedResponsibilityBatch;
 import cn.edu.suda.scholarsense.identityaccess.application.PseudonymizationPort;
 import cn.edu.suda.scholarsense.identityaccess.domain.AuthoritativeResponsibilityRelation;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationChangeKind;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationLineageId;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationReason;
 import cn.edu.suda.scholarsense.identityaccess.domain.EffectiveInterval;
 import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityStatus;
 import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityStudentSourceReference;
@@ -45,7 +48,7 @@ public final class ResponsibilityAuthorityNormalizer {
             "signatureDigest",
             "records");
     private static final Set<String> RECORD_FIELDS = Set.of("eventId", "payload");
-    private static final Set<String> PAYLOAD_FIELDS = Set.of(
+    private static final Set<String> V1_PAYLOAD_FIELDS = Set.of(
             "relationRefToken",
             "studentSourceRef",
             "counselorAccountExternalRef",
@@ -55,6 +58,23 @@ public final class ResponsibilityAuthorityNormalizer {
             "effectiveFrom",
             "effectiveTo",
             "recordVersion",
+            "payloadDigest");
+    private static final Set<String> V2_PAYLOAD_FIELDS = Set.of(
+            "relationRefToken",
+            "studentSourceRef",
+            "counselorAccountExternalRef",
+            "collegeOrganizationExternalRef",
+            "responsibilityType",
+            "status",
+            "effectiveFrom",
+            "effectiveTo",
+            "recordVersion",
+            "lineageVersion",
+            "changeKind",
+            "reasonCode",
+            "effectiveAt",
+            "lineageId",
+            "supersedesId",
             "payloadDigest");
     private static final Set<String> STUDENT_FIELDS =
             Set.of(
@@ -91,12 +111,15 @@ public final class ResponsibilityAuthorityNormalizer {
                     text(root, "feedId"),
                     text(root, "partitionId"),
                     text(root, "consumerProjection"));
+            String contractVersion = text(root, "contractVersion");
             if (!key.equals(requestedKey)
                     || !"responsibility".equals(key.consumerProjection())
                     || !"RESPONSIBILITY-BATCH-1.0.0".equals(
                             text(root, "schemaVersion"))
-                    || !"RESPONSIBILITY-AUTHORITY-1.0.0".equals(
-                            text(root, "contractVersion"))
+                    || (!"RESPONSIBILITY-AUTHORITY-1.0.0"
+                                    .equals(contractVersion)
+                            && !"RESPONSIBILITY-AUTHORITY-2.0.0"
+                                    .equals(contractVersion))
                     || longValue(root, "fromWatermark") != afterWatermark
                     || throughWatermark != null
                             && longValue(root, "toWatermark") != throughWatermark
@@ -134,7 +157,11 @@ public final class ResponsibilityAuthorityNormalizer {
             List<AuthoritativeResponsibilityRelation> relations =
                     new ArrayList<>();
             records.forEach(record -> relations.add(parseRelation(
-                    record, key.sourceId(), sourceVersion, toWatermark)));
+                    record,
+                    key.sourceId(),
+                    sourceVersion,
+                    toWatermark,
+                    contractVersion)));
             return new NormalizedResponsibilityBatch(
                     UUID.fromString(text(root, "batchId")),
                     key,
@@ -174,10 +201,15 @@ public final class ResponsibilityAuthorityNormalizer {
             JsonNode record,
             String sourceId,
             long sourceVersion,
-            long sourceWatermark) {
+            long sourceWatermark,
+            String contractVersion) {
         requireExact(record, RECORD_FIELDS);
         JsonNode payload = record.required("payload");
-        requireExact(payload, PAYLOAD_FIELDS);
+        boolean version2 = "RESPONSIBILITY-AUTHORITY-2.0.0"
+                .equals(contractVersion);
+        requireExact(
+                payload,
+                version2 ? V2_PAYLOAD_FIELDS : V1_PAYLOAD_FIELDS);
         JsonNode student = payload.required("studentSourceRef");
         requireExact(student, STUDENT_FIELDS);
         String studentDigest = stripDigest(text(student, "digest"));
@@ -187,7 +219,8 @@ public final class ResponsibilityAuthorityNormalizer {
             throw invalid("RESPONSIBILITY_SOURCE_PAYLOAD_DIGEST_INVALID");
         }
         String effectiveTo = nullableText(payload, "effectiveTo");
-        return new AuthoritativeResponsibilityRelation(
+        AuthoritativeResponsibilityRelation version1 =
+                new AuthoritativeResponsibilityRelation(
                 UUID.fromString(text(record, "eventId")),
                 sourceId,
                 text(payload, "relationRefToken"),
@@ -223,6 +256,61 @@ public final class ResponsibilityAuthorityNormalizer {
                 longValue(payload, "recordVersion"),
                 sourceVersion,
                 payloadDigest);
+        if (!version2) {
+            return version1;
+        }
+        String supersedesId = nullableText(payload, "supersedesId");
+        Instant changeEffectiveAt = Instant.parse(
+                text(payload, "effectiveAt"));
+        if (!changeEffectiveAt.equals(
+                changeEffectiveAt.truncatedTo(
+                        java.time.temporal.ChronoUnit.MICROS))) {
+            throw invalid("RESPONSIBILITY_SOURCE_TIME_INVALID");
+        }
+        return new AuthoritativeResponsibilityRelation(
+                version1.relationId(),
+                version1.sourceId(),
+                version1.relationRefToken(),
+                version1.studentSourceReference(),
+                version1.counselorAccountRefDigest(),
+                version1.collegeOrganizationRefDigest(),
+                version1.responsibilityType(),
+                version1.status(),
+                version1.effectiveInterval(),
+                version1.sourceVersion(),
+                version1.sourceWatermark(),
+                version1.recordVersion(),
+                longValue(payload, "lineageVersion"),
+                version1.payloadDigest(),
+                switch (text(payload, "changeKind")) {
+                    case "corrected" ->
+                            AccessInvalidationChangeKind.CORRECTED;
+                    case "revoked" ->
+                            AccessInvalidationChangeKind.REVOKED;
+                    case "expired" ->
+                            AccessInvalidationChangeKind.EXPIRED;
+                    case "invalidated" ->
+                            AccessInvalidationChangeKind.INVALIDATED;
+                    case "revalidated" ->
+                            AccessInvalidationChangeKind.REVALIDATED;
+                    default -> throw invalid(
+                            "RESPONSIBILITY_V2_CHANGE_KIND_INVALID");
+                },
+                reason(text(payload, "reasonCode")),
+                changeEffectiveAt,
+                new AccessInvalidationLineageId(
+                        text(payload, "lineageId")),
+                supersedesId == null
+                        ? null
+                        : UUID.fromString(supersedesId));
+    }
+
+    private static AccessInvalidationReason reason(String value) {
+        try {
+            return AccessInvalidationReason.valueOf(value);
+        } catch (IllegalArgumentException unknown) {
+            throw invalid("RESPONSIBILITY_V2_REASON_CODE_INVALID");
+        }
     }
 
     private String identityExternalRefDigest(

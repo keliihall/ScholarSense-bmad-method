@@ -17,6 +17,7 @@ import cn.edu.suda.scholarsense.identityaccess.application.NormalizedIdentityBat
 import cn.edu.suda.scholarsense.identityaccess.domain.AuthoritativeAccount;
 import cn.edu.suda.scholarsense.identityaccess.domain.AuthoritativeStatus;
 import cn.edu.suda.scholarsense.identityaccess.domain.EffectiveInterval;
+import cn.edu.suda.scholarsense.identityaccess.domain.EmploymentRoleBinding;
 import cn.edu.suda.scholarsense.identityaccess.domain.OrganizationNode;
 import cn.edu.suda.scholarsense.identityaccess.domain.OrganizationType;
 import java.sql.Timestamp;
@@ -431,6 +432,7 @@ public final class JdbcIdentitySyncRepository
                     timestamp(appliedAt), batch.traceId(), timestamp(appliedAt));
         }
         for (var role : batch.roleBindings()) {
+            appendRoleBindingHistory(batch, role, appliedAt);
             jdbc.update("""
                 insert into identity_access.ia_authoritative_role_current (
                       binding_id, source_id, feed_id, partition_id, consumer_projection,
@@ -504,6 +506,83 @@ public final class JdbcIdentitySyncRepository
                 batch.key().sourceId(), batch.key().feedId(),
                 batch.key().partitionId(), batch.key().consumerProjection(),
                 batch.fromWatermark() + 1, batch.toWatermark());
+    }
+
+    private void appendRoleBindingHistory(
+            NormalizedIdentityBatch batch,
+            EmploymentRoleBinding role,
+            Instant appliedAt) {
+        int inserted = jdbc.update("""
+                insert into identity_access
+                  .ia_authoritative_role_binding_history (
+                    source_id, role_external_ref_digest, source_version,
+                    binding_id, account_id, organization_id,
+                    source_role_code, target_role_id, mapping_version,
+                    mapping_digest, status, effective_from, effective_to,
+                    recorded_at, trace_id, retention_effective_at,
+                    expires_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                on conflict do nothing
+                """,
+                batch.key().sourceId(),
+                role.externalRefDigest(),
+                role.sourceVersion(),
+                role.bindingId(),
+                role.accountId(),
+                role.organizationId(),
+                role.sourceRoleCode(),
+                role.targetRole().wireName(),
+                role.mappingVersion(),
+                batch.mappingDigest(),
+                role.status().wireName(),
+                timestamp(role.effectiveInterval().effectiveFrom()),
+                timestamp(role.effectiveInterval().effectiveTo()),
+                timestamp(appliedAt),
+                batch.traceId(),
+                timestamp(appliedAt),
+                timestamp(appliedAt.plus(Duration.ofDays(2190))));
+        if (inserted == 1) {
+            return;
+        }
+        Boolean exactReplay = jdbc.queryForObject("""
+                select exists (
+                  select 1
+                    from identity_access
+                      .ia_authoritative_role_binding_history
+                   where source_id=?
+                     and role_external_ref_digest=?
+                     and source_version=?
+                     and binding_id=?
+                     and account_id=?
+                     and organization_id=?
+                     and source_role_code=?
+                     and target_role_id=?
+                     and mapping_version=?
+                     and mapping_digest=?
+                     and status=?
+                     and effective_from=?
+                     and effective_to is not distinct from
+                         cast(? as timestamptz)
+                )
+                """,
+                Boolean.class,
+                batch.key().sourceId(),
+                role.externalRefDigest(),
+                role.sourceVersion(),
+                role.bindingId(),
+                role.accountId(),
+                role.organizationId(),
+                role.sourceRoleCode(),
+                role.targetRole().wireName(),
+                role.mappingVersion(),
+                batch.mappingDigest(),
+                role.status().wireName(),
+                timestamp(role.effectiveInterval().effectiveFrom()),
+                timestamp(role.effectiveInterval().effectiveTo()));
+        if (!Boolean.TRUE.equals(exactReplay)) {
+            throw new IdentitySyncException(
+                    "IDENTITY_ROLE_BINDING_HISTORY_CONFLICT");
+        }
     }
 
     @Override

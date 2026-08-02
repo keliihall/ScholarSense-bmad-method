@@ -22,8 +22,16 @@ AUDIT_REFERENCE_RESOURCES = {
 }
 IDENTITY_AUTHORITY_PROFILE_RESOURCE = "identity-authority-profile-1-0-0"
 RESPONSIBILITY_AUTHORITY_PROFILE_RESOURCE = (
-    "responsibility-authority-profile-1-0-0"
+    "responsibility-authority-profile-2-0-0"
 )
+IDENTITY_SYNC_DATABASE_BINDINGS = {
+    "SCHOLARSENSE_IDENTITY_SYNC_ACCESS_INVALIDATION_CONSUMER_JDBC_URL",
+    "SCHOLARSENSE_IDENTITY_SYNC_ACCESS_INVALIDATION_CONSUMER_USERNAME",
+    "SCHOLARSENSE_IDENTITY_SYNC_ACCESS_INVALIDATION_CONSUMER_PASSWORD",
+    "SCHOLARSENSE_IDENTITY_SYNC_RESPONSIBILITY_V2_CUTOVER_JDBC_URL",
+    "SCHOLARSENSE_IDENTITY_SYNC_RESPONSIBILITY_V2_CUTOVER_USERNAME",
+    "SCHOLARSENSE_IDENTITY_SYNC_RESPONSIBILITY_V2_CUTOVER_PASSWORD",
+}
 RUNTIME_KEYS = {
     "SCHOLARSENSE_ENV",
     "SCHOLARSENSE_ROLE",
@@ -58,7 +66,10 @@ REFERENCE_PATTERNS = {
 }
 STORAGE_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*-(dev|test|stage|prod)$"
 EXTERNAL_URI_PATTERN = r"^https://(dev|test|stage|prod)(?:\.[a-z0-9-]+)*\.invalid(?:/[^#]*)?$"
-EVENT_TYPE_PATTERN = r"^[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.v[1-9][0-9]*$"
+EVENT_TYPE_PATTERN = (
+    r"^(?:scholarsense\.)?[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*"
+    r"\.[a-z][a-z0-9-]*\.v[1-9][0-9]*$"
+)
 
 
 def validate(project_root: Path) -> list[str]:
@@ -329,10 +340,17 @@ def _check_event(event, violations: list[str]) -> None:
     properties = event.get("properties", {})
     if properties.get("specversion", {}).get("const") != "1.0":
         violations.append("CLOUDEVENTS_VERSION_INVALID")
-    if set(event.get("required", [])) != {"specversion", "id", "source", "type", "time", "data"}:
+    if set(event.get("required", [])) != {
+        "specversion",
+        "id",
+        "source",
+        "type",
+        "time",
+        "data",
+    }:
         violations.append("EVENT_ENVELOPE_REQUIRED_INVALID")
     if properties.get("data") != {} or "$defs" in event:
-        violations.append("EVENT_BUSINESS_CONTRACT_PREMATURE")
+        violations.append("EVENT_ENVELOPE_DATA_EXTENSION_INVALID")
     expected_properties = {
         "specversion", "id", "source", "type", "time", "subject",
         "datacontenttype", "traceparent", "data",
@@ -345,7 +363,9 @@ def _check_event(event, violations: list[str]) -> None:
             or properties["source"] != {"type": "string", "format": "uri-reference"} \
             or properties["type"] != {"type": "string", "pattern": EVENT_TYPE_PATTERN} \
             or properties["time"] != {"type": "string", "format": "date-time"} \
-            or properties["subject"] != {"type": "string"} \
+            or properties["subject"] != {
+                "type": "string", "minLength": 1, "maxLength": 256
+            } \
             or properties["datacontenttype"] != {"const": "application/json"} \
             or properties["traceparent"] != {"type": "string"}:
         violations.append("EVENT_ENVELOPE_PROPERTY_INVALID")
@@ -418,6 +438,7 @@ def _check_roles(root: Path, roles, violations: list[str]) -> None:
             "SCHOLARSENSE_IDENTITY_AUTHORITY_PROFILE_REF",
             "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
             "SCHOLARSENSE_IDENTITY_SYNC_SECURITY_DIRECTORY",
+            *IDENTITY_SYNC_DATABASE_BINDINGS,
         },
     }
     for role, definition in definitions.items():

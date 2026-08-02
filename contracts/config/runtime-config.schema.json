@@ -78,7 +78,7 @@
     },
     "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF": {
       "type": "string",
-      "pattern": "^config://(dev|test|stage|prod)/responsibility-authority-profile-1-0-0$",
+      "pattern": "^config://(dev|test|stage|prod)/responsibility-authority-profile-2-0-0$",
       "description": "Environment-scoped immutable responsibility incremental, snapshot, schedule, retry and security binding."
     },
     "SCHOLARSENSE_AUDIT_INGESTION_POLICY_REF": {

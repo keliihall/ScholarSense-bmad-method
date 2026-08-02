@@ -35,7 +35,7 @@ public record RuntimeConfiguration(
     private static final String IDENTITY_AUTHORITY_PROFILE =
             "identity-authority-profile-1-0-0";
     private static final String RESPONSIBILITY_AUTHORITY_PROFILE =
-            "responsibility-authority-profile-1-0-0";
+            "responsibility-authority-profile-2-0-0";
 
     public static RuntimeConfiguration from(Map<String, String> values) {
         RuntimeEnvironment environment = RuntimeEnvironment.parse(required(values, "SCHOLARSENSE_ENV"));

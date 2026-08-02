@@ -1,0 +1,30 @@
+{
+  "version": "RESPONSIBILITY-AUTHORITY-NEGATIVE-FIXTURES-2.0.0",
+  "cases": [
+    {
+      "id": "missing-lineage",
+      "mutation": "remove-lineageId",
+      "expectedReasonCode": "RESPONSIBILITY_V2_SCHEMA_REJECTED"
+    },
+    {
+      "id": "free-text-reason",
+      "mutation": "replace-reasonCode-with-free-text",
+      "expectedReasonCode": "RESPONSIBILITY_V2_SCHEMA_REJECTED"
+    },
+    {
+      "id": "v1-advances-invalidation-watermark",
+      "mutation": "apply-version1-without-v2-replay",
+      "expectedReasonCode": "RESPONSIBILITY_V2_REPLAY_REQUIRED"
+    },
+    {
+      "id": "platform-infers-lineage",
+      "mutation": "derive-lineage-from-current-row",
+      "expectedReasonCode": "RESPONSIBILITY_V2_PROVENANCE_REQUIRED"
+    },
+    {
+      "id": "cross-lineage-supersedes",
+      "mutation": "supersedes-event-from-another-lineage",
+      "expectedReasonCode": "RESPONSIBILITY_V2_LINEAGE_INVALID"
+    }
+  ]
+}

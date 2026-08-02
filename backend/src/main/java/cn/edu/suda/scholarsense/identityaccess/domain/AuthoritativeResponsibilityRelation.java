@@ -18,7 +18,12 @@ public record AuthoritativeResponsibilityRelation(
         long sourceWatermark,
         long recordVersion,
         long aggregateVersion,
-        String payloadDigest) {
+        String payloadDigest,
+        AccessInvalidationChangeKind changeKind,
+        AccessInvalidationReason changeReason,
+        java.time.Instant changeEffectiveAt,
+        AccessInvalidationLineageId lineageId,
+        UUID supersedesId) {
     public AuthoritativeResponsibilityRelation {
         AuthorityValidation.uuidV7(relationId, "RESPONSIBILITY_RELATION_ID");
         AuthorityValidation.sourceId(sourceId);
@@ -41,5 +46,63 @@ public record AuthoritativeResponsibilityRelation(
         AuthorityValidation.positive(recordVersion, "RESPONSIBILITY_RECORD");
         AuthorityValidation.positive(aggregateVersion, "RESPONSIBILITY_AGGREGATE");
         AuthorityValidation.digest(payloadDigest, "RESPONSIBILITY_PAYLOAD");
+        boolean hasMetadata = changeKind != null
+                || changeReason != null
+                || changeEffectiveAt != null
+                || lineageId != null
+                || supersedesId != null;
+        if (hasMetadata
+                && (changeKind == null
+                        || changeReason == null
+                        || changeEffectiveAt == null
+                        || lineageId == null)) {
+            throw new IllegalArgumentException(
+                    "RESPONSIBILITY_V2_CHANGE_METADATA_INCOMPLETE");
+        }
+        if (supersedesId != null) {
+            AuthorityValidation.uuidV7(
+                    supersedesId, "RESPONSIBILITY_SUPERSEDES_ID");
+        }
+    }
+
+    public AuthoritativeResponsibilityRelation(
+            UUID relationId,
+            String sourceId,
+            String relationRefToken,
+            ResponsibilityStudentSourceReference studentSourceReference,
+            String counselorAccountRefDigest,
+            String collegeOrganizationRefDigest,
+            ResponsibilityType responsibilityType,
+            ResponsibilityStatus status,
+            EffectiveInterval effectiveInterval,
+            long sourceVersion,
+            long sourceWatermark,
+            long recordVersion,
+            long aggregateVersion,
+            String payloadDigest) {
+        this(
+                relationId,
+                sourceId,
+                relationRefToken,
+                studentSourceReference,
+                counselorAccountRefDigest,
+                collegeOrganizationRefDigest,
+                responsibilityType,
+                status,
+                effectiveInterval,
+                sourceVersion,
+                sourceWatermark,
+                recordVersion,
+                aggregateVersion,
+                payloadDigest,
+                null,
+                null,
+                null,
+                null,
+                null);
+    }
+
+    public boolean hasInvalidationMetadata() {
+        return changeKind != null;
     }
 }

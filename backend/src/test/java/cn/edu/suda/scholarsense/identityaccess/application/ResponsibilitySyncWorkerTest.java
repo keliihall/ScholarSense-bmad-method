@@ -1,9 +1,11 @@
 package cn.edu.suda.scholarsense.identityaccess.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -15,6 +17,8 @@ import cn.edu.suda.scholarsense.shared.time.TimeSourceProfile;
 import cn.edu.suda.scholarsense.shared.time.TrustedTime;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,7 +53,11 @@ class ResponsibilitySyncWorkerTest {
                 .thenReturn(Optional.of(attempt));
         NormalizedResponsibilityBatch batch =
                 mock(NormalizedResponsibilityBatch.class);
-        when(source.fetch(KEY, 6, job.traceId())).thenReturn(batch);
+        when(source.fetch(
+                KEY,
+                ResponsibilityAuthoritySourcePort.VERSION_1,
+                6,
+                job.traceId())).thenReturn(batch);
         IdentitySyncResult applied = new IdentitySyncResult(
                 IdentitySyncOutcome.APPLIED,
                 "RESPONSIBILITY_SYNC_APPLIED",
@@ -109,7 +117,11 @@ class ResponsibilitySyncWorkerTest {
         when(jobs.nextDue(KEY, NOW)).thenReturn(Optional.of(job));
         when(jobs.start(JOB_ID, "responsibility-worker", NOW))
                 .thenReturn(Optional.of(attempt));
-        when(source.fetch(KEY, 6, job.traceId())).thenThrow(
+        when(source.fetch(
+                KEY,
+                ResponsibilityAuthoritySourcePort.VERSION_1,
+                6,
+                job.traceId())).thenThrow(
                 new IdentitySyncException(
                         "RESPONSIBILITY_SOURCE_DEPENDENCY_UNAVAILABLE"));
 
@@ -151,7 +163,11 @@ class ResponsibilitySyncWorkerTest {
         when(batch.fromWatermark()).thenReturn(6L);
         when(batch.toWatermark()).thenReturn(7L);
         when(batch.traceId()).thenReturn(job.traceId());
-        when(source.fetch(KEY, 6, job.traceId())).thenReturn(batch);
+        when(source.fetch(
+                KEY,
+                ResponsibilityAuthoritySourcePort.VERSION_1,
+                6,
+                job.traceId())).thenReturn(batch);
         IdentitySyncResult applied = new IdentitySyncResult(
                 IdentitySyncOutcome.APPLIED,
                 "RESPONSIBILITY_SYNC_APPLIED",
@@ -217,6 +233,247 @@ class ResponsibilitySyncWorkerTest {
     }
 
     @Test
+    void beforeEffectiveAtUsesTheV1RequestedReplayRange() {
+        IdentitySyncJobPort jobs = mock(IdentitySyncJobPort.class);
+        ResponsibilityAuthoritySourcePort source =
+                mock(ResponsibilityAuthoritySourcePort.class);
+        ResponsibilitySyncService sync =
+                mock(ResponsibilitySyncService.class);
+        ResponsibilitySyncRepository repository =
+                mock(ResponsibilitySyncRepository.class);
+        IdentityReplayPort replay = mock(IdentityReplayPort.class);
+        ResponsibilitySloRecorder slo =
+                mock(ResponsibilitySloRecorder.class);
+        IdentitySyncJob job = job(KEY);
+        RunningIdentitySyncAttempt attempt = attempt(job);
+        when(jobs.nextDue(KEY, NOW)).thenReturn(Optional.of(job));
+        when(jobs.start(JOB_ID, "responsibility-worker", NOW))
+                .thenReturn(Optional.of(attempt));
+        when(replay.nextRequested(KEY)).thenReturn(Optional.of(
+                new IdentityReplayRange(4, 6)));
+        NormalizedResponsibilityBatch batch =
+                mock(NormalizedResponsibilityBatch.class);
+        when(source.fetchRange(
+                KEY,
+                ResponsibilityAuthoritySourcePort.VERSION_1,
+                4,
+                6,
+                job.traceId())).thenReturn(batch);
+        IdentitySyncResult applied = new IdentitySyncResult(
+                IdentitySyncOutcome.APPLIED,
+                "RESPONSIBILITY_SYNC_APPLIED",
+                6,
+                6,
+                6);
+        when(sync.process(eq(batch), eq(attempt.lease()), any()))
+                .thenAnswer(invocation -> {
+                    @SuppressWarnings("unchecked")
+                    Consumer<IdentitySyncResult> callback =
+                            invocation.getArgument(2);
+                    callback.accept(applied);
+                    return applied;
+                });
+
+        new ResponsibilitySyncWorker(
+                jobs,
+                source,
+                sync,
+                repository,
+                ignored -> {},
+                ignored -> {},
+                directTransactions(),
+                ResponsibilitySyncWorkerTest::trustedNow,
+                replay,
+                slo,
+                KEY,
+                NOW.plusSeconds(1))
+                .runNext("responsibility-worker")
+                .orElseThrow();
+
+        verify(source).fetchRange(
+                KEY,
+                ResponsibilityAuthoritySourcePort.VERSION_1,
+                4,
+                6,
+                job.traceId());
+        verify(source, never()).fetch(
+                eq(KEY),
+                eq(ResponsibilityAuthoritySourcePort.VERSION_1),
+                anyLong(),
+                eq(job.traceId()));
+    }
+
+    @Test
+    void atEffectiveAtAdvancesLiveV1AndIndependentV2ShadowTogether()
+            throws Exception {
+        IdentitySyncJobPort jobs = mock(IdentitySyncJobPort.class);
+        ResponsibilityAuthoritySourcePort source =
+                mock(ResponsibilityAuthoritySourcePort.class);
+        ResponsibilitySyncService sync =
+                mock(ResponsibilitySyncService.class);
+        ResponsibilitySyncRepository repository =
+                mock(ResponsibilitySyncRepository.class);
+        IdentityReplayPort replay = mock(IdentityReplayPort.class);
+        ResponsibilitySloRecorder slo =
+                mock(ResponsibilitySloRecorder.class);
+        List<IdentitySyncObservation> observations = new ArrayList<>();
+        IdentitySyncJob job = job(KEY);
+        RunningIdentitySyncAttempt attempt = attempt(job);
+        when(jobs.nextDue(KEY, NOW)).thenReturn(Optional.of(job));
+        when(jobs.start(JOB_ID, "responsibility-worker", NOW))
+                .thenReturn(Optional.of(attempt));
+        when(repository.v2ShadowCheckpoint(KEY)).thenReturn(Optional.of(
+                new IdentityCheckpoint(
+                        KEY,
+                        40,
+                        41,
+                        8,
+                        NOW.minusSeconds(60),
+                        IdentitySourceHealth.HEALTHY,
+                        IdentityProjectionFreshness.FRESH)));
+        when(repository.v2ShadowActive(KEY)).thenReturn(false);
+        NormalizedResponsibilityBatch liveBatch =
+                mock(NormalizedResponsibilityBatch.class);
+        NormalizedResponsibilityBatch shadowBatch =
+                mock(NormalizedResponsibilityBatch.class);
+        when(source.fetch(
+                KEY,
+                ResponsibilityAuthoritySourcePort.VERSION_1,
+                6,
+                job.traceId())).thenReturn(liveBatch);
+        when(source.fetch(
+                KEY,
+                ResponsibilityAuthoritySourcePort.VERSION_2,
+                41,
+                job.traceId())).thenReturn(shadowBatch);
+        IdentitySyncResult liveApplied = new IdentitySyncResult(
+                IdentitySyncOutcome.APPLIED,
+                "RESPONSIBILITY_SYNC_APPLIED",
+                7,
+                7,
+                9);
+        IdentitySyncResult shadowApplied = new IdentitySyncResult(
+                IdentitySyncOutcome.APPLIED,
+                "RESPONSIBILITY_SYNC_APPLIED",
+                42,
+                42,
+                42);
+        when(sync.process(liveBatch, attempt.lease()))
+                .thenReturn(liveApplied);
+        when(sync.process(shadowBatch, attempt.lease()))
+                .thenReturn(shadowApplied);
+
+        IdentitySyncWorkerRun run = new ResponsibilitySyncWorker(
+                jobs,
+                source,
+                sync,
+                repository,
+                ignored -> {},
+                observations::add,
+                directTransactions(),
+                ResponsibilitySyncWorkerTest::trustedNow,
+                replay,
+                slo,
+                KEY,
+                NOW)
+                .runNext("responsibility-worker")
+                .orElseThrow();
+
+        assertEquals(IdentitySyncJobStatus.SUCCEEDED, run.status());
+        verify(replay).nextRequested(KEY);
+        verify(source).fetch(
+                KEY,
+                ResponsibilityAuthoritySourcePort.VERSION_1,
+                6,
+                job.traceId());
+        verify(source).fetch(
+                KEY,
+                ResponsibilityAuthoritySourcePort.VERSION_2,
+                41,
+                job.traceId());
+        verify(source, never()).fetchRange(
+                any(), anyString(), anyLong(), anyLong(), any());
+        verify(slo).record(liveBatch, NOW, liveApplied);
+        assertEquals(2, observations.size());
+        assertEquals(
+                List.of(
+                        ResponsibilityAuthoritySourcePort.VERSION_1,
+                        ResponsibilityAuthoritySourcePort.VERSION_2),
+                observations.stream()
+                        .map(observation -> observation.labels().get(
+                                "responsibilityContract"))
+                        .toList());
+    }
+
+    @Test
+    void v2FailureAuditAndMetricCarryTheNegotiatedContract() {
+        IdentitySyncJobPort jobs = mock(IdentitySyncJobPort.class);
+        ResponsibilityAuthoritySourcePort source =
+                mock(ResponsibilityAuthoritySourcePort.class);
+        ResponsibilitySyncService sync =
+                mock(ResponsibilitySyncService.class);
+        ResponsibilitySyncRepository repository =
+                mock(ResponsibilitySyncRepository.class);
+        IdentityReplayPort replay = mock(IdentityReplayPort.class);
+        List<IdentitySyncAuditEvent> audits = new ArrayList<>();
+        List<IdentitySyncObservation> observations = new ArrayList<>();
+        IdentitySyncJob job = job(KEY);
+        RunningIdentitySyncAttempt attempt = attempt(job);
+        when(jobs.nextDue(KEY, NOW)).thenReturn(Optional.of(job));
+        when(jobs.start(JOB_ID, "responsibility-worker", NOW))
+                .thenReturn(Optional.of(attempt));
+        when(repository.v2ShadowCheckpoint(KEY)).thenReturn(Optional.of(
+                IdentityCheckpoint.initial(KEY)));
+        when(repository.v2ShadowActive(KEY)).thenReturn(false);
+        NormalizedResponsibilityBatch liveBatch =
+                mock(NormalizedResponsibilityBatch.class);
+        when(source.fetch(
+                KEY,
+                ResponsibilityAuthoritySourcePort.VERSION_1,
+                6,
+                job.traceId())).thenReturn(liveBatch);
+        when(sync.process(liveBatch, attempt.lease())).thenReturn(
+                new IdentitySyncResult(
+                        IdentitySyncOutcome.APPLIED,
+                        "RESPONSIBILITY_SYNC_APPLIED",
+                        7,
+                        7,
+                        7));
+        when(source.fetch(
+                KEY,
+                ResponsibilityAuthoritySourcePort.VERSION_2,
+                0,
+                job.traceId())).thenThrow(new IdentitySyncException(
+                        "RESPONSIBILITY_SOURCE_DEPENDENCY_UNAVAILABLE"));
+
+        IdentitySyncWorkerRun run = new ResponsibilitySyncWorker(
+                jobs,
+                source,
+                sync,
+                repository,
+                audits::add,
+                observations::add,
+                directTransactions(),
+                ResponsibilitySyncWorkerTest::trustedNow,
+                replay,
+                KEY,
+                NOW)
+                .runNext("responsibility-worker")
+                .orElseThrow();
+
+        assertEquals(IdentitySyncJobStatus.QUEUED, run.status());
+        assertEquals(
+                ResponsibilityAuthoritySourcePort.VERSION_2,
+                audits.getFirst().policyVersions().get(
+                        "responsibilityContract"));
+        assertEquals(
+                ResponsibilityAuthoritySourcePort.VERSION_2,
+                observations.getLast().labels().get(
+                        "responsibilityContract"));
+        verify(replay).nextRequested(KEY);
+    }
+
+    @Test
     void responsibilityWorkerNeverClaimsIdentityOrgProjection() {
         IdentitySyncJobPort jobs = mock(IdentitySyncJobPort.class);
         ResponsibilityAuthoritySourcePort source =
@@ -231,7 +488,8 @@ class ResponsibilitySyncWorkerTest {
                 .runNext("responsibility-worker")
                 .isEmpty());
         verify(jobs, never()).start(any(), any(), any());
-        verify(source, never()).fetch(any(), anyLong(), any());
+        verify(source, never()).fetch(
+                any(), anyString(), anyLong(), any());
     }
 
     private static ResponsibilitySyncWorker worker(
@@ -258,6 +516,16 @@ class ResponsibilitySyncWorkerTest {
                 ResponsibilitySyncWorkerTest::trustedNow,
                 (key, from, to, trace) -> {},
                 KEY);
+    }
+
+    private static IdentitySyncTransactionPort directTransactions() {
+        return new IdentitySyncTransactionPort() {
+            @Override
+            public <T> T execute(
+                    java.util.function.Supplier<T> work) {
+                return work.get();
+            }
+        };
     }
 
     private static ResponsibilitySyncWorker worker(

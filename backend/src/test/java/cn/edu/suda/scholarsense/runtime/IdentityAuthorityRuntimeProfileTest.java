@@ -65,7 +65,7 @@ class IdentityAuthorityRuntimeProfileTest {
         values.put(
                 "SCHOLARSENSE_RESPONSIBILITY_AUTHORITY_PROFILE_REF",
                 "config://" + environment
-                        + "/responsibility-authority-profile-1-0-0");
+                        + "/responsibility-authority-profile-2-0-0");
         return values;
     }
 }

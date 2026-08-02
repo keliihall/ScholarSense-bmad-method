@@ -28,6 +28,8 @@ public final class ResponsibilityReconciliationService {
     private final IdentitySyncAuditPort audit;
     private final IdentitySyncTransactionPort transactions;
     private final TrustedTimeSource time;
+    private final AccessInvalidationReconciliationChangePublisherPort
+            invalidations;
 
     public ResponsibilityReconciliationService(
             ResponsibilityFullSnapshotSourcePort source,
@@ -35,19 +37,60 @@ public final class ResponsibilityReconciliationService {
             IdentitySyncAuditPort audit,
             IdentitySyncTransactionPort transactions,
             TrustedTimeSource time) {
+        this(
+                source,
+                store,
+                audit,
+                transactions,
+                time,
+                (result, transitions) -> {});
+    }
+
+    public ResponsibilityReconciliationService(
+            ResponsibilityFullSnapshotSourcePort source,
+            ResponsibilityReconciliationStorePort store,
+            IdentitySyncAuditPort audit,
+            IdentitySyncTransactionPort transactions,
+            TrustedTimeSource time,
+            AccessInvalidationReconciliationChangePublisherPort
+                    invalidations) {
         this.source = java.util.Objects.requireNonNull(source);
         this.store = java.util.Objects.requireNonNull(store);
         this.audit = java.util.Objects.requireNonNull(audit);
         this.transactions = java.util.Objects.requireNonNull(transactions);
         this.time = java.util.Objects.requireNonNull(time);
+        this.invalidations =
+                java.util.Objects.requireNonNull(invalidations);
     }
 
     public ResponsibilityReconciliationResult execute(
             RunningResponsibilityReconciliationAttempt attempt,
             Consumer<ResponsibilityReconciliationResult> afterAppend) {
-        ResponsibilityFullSnapshot snapshot = source.fetch(
+        return execute(
+                attempt,
+                activeContractVersion(attempt.key()),
+                afterAppend);
+    }
+
+    public String activeContractVersion(CheckpointKey key) {
+        return store.activeContractVersion(key);
+    }
+
+    public ResponsibilityReconciliationResult execute(
+            RunningResponsibilityReconciliationAttempt attempt,
+            String activeContractVersion,
+            Consumer<ResponsibilityReconciliationResult> afterAppend) {
+        if (!ResponsibilityAuthoritySourcePort.VERSION_1.equals(
+                        activeContractVersion)
+                && !ResponsibilityAuthoritySourcePort.VERSION_2.equals(
+                        activeContractVersion)) {
+            throw new IdentitySyncException(
+                    "RESPONSIBILITY_RECONCILIATION_CONTRACT_STALE");
+        }
+        ResponsibilityFullSnapshot snapshot = source.fetchVersion(
                 attempt.key(),
                 attempt.businessDate(),
+                activeContractVersion,
                 attempt.traceId());
         validate(snapshot, attempt);
         for (var dependency :
@@ -65,6 +108,7 @@ public final class ResponsibilityReconciliationService {
         List<ResponsibilitySnapshotEntry> actual =
                 store.actualSnapshot(
                         attempt.key(),
+                        snapshot.contractVersion(),
                         snapshot.throughWatermark(),
                         snapshot.cutoffAt(),
                         snapshot.supportingIdentityOrgWatermarks());
@@ -99,7 +143,7 @@ public final class ResponsibilityReconciliationService {
                             "identitySessionPolicy", "ISP-1.0.0",
                             "roleFieldPolicy", "RFP-1.0.0",
                             "responsibilityContract",
-                            "RESPONSIBILITY-AUTHORITY-1.0.0",
+                            result.contractVersion(),
                             "retentionSchedule", "RS-1.0.0"),
                     result.runId()));
             for (ResponsibilityExceptionAuditTransition transition :
@@ -120,10 +164,11 @@ public final class ResponsibilityReconciliationService {
                                 "identitySessionPolicy", "ISP-1.0.0",
                                 "roleFieldPolicy", "RFP-1.0.0",
                                 "responsibilityContract",
-                                "RESPONSIBILITY-AUTHORITY-1.0.0",
+                                result.contractVersion(),
                                 "retentionSchedule", "RS-1.0.0"),
                         transition.exceptionId()));
             }
+            invalidations.publish(result, transitions);
             afterAppend.accept(result);
             return null;
         });
@@ -237,6 +282,7 @@ public final class ResponsibilityReconciliationService {
                 UUID.fromString(UuidV7.generate(completedAt)),
                 attempt.jobId(),
                 attempt.key(),
+                expected.contractVersion(),
                 attempt.businessDate(),
                 expected.sourceVersion(),
                 expected.throughWatermark(),

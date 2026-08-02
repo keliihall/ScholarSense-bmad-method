@@ -81,6 +81,7 @@ class IdentityAuthorityPostgreSqlIT {
                   identity_access.ia_identity_reconciliation_sample,
                   identity_access.ia_identity_replay_request,
                   identity_access.ia_identity_rejected_record,
+                  identity_access.ia_authoritative_role_binding_history,
                   identity_access.ia_authoritative_role_current,
                   identity_access.ia_authoritative_organization_current,
                   identity_access.ia_authoritative_subject_binding_history,
@@ -360,6 +361,7 @@ class IdentityAuthorityPostgreSqlIT {
         assertEquals("IDENTITY_SYNC_PERSISTENCE_UNAVAILABLE", rolledBack.code());
         assertEquals(0L, count("ia_identity_source_inbox"));
         assertEquals(0L, count("ia_authoritative_account_current"));
+        assertEquals(0L, count("ia_authoritative_role_binding_history"));
         assertEquals(0L, count("ia_local_audit_fact"));
         assertEquals(0L, jdbc.queryForObject(
                 "select source_watermark from identity_access.ia_identity_sync_checkpoint "
@@ -399,6 +401,7 @@ class IdentityAuthorityPostgreSqlIT {
         assertEquals(1L, count("ia_identity_source_archive"));
         assertEquals(3L, count("ia_identity_source_fact"));
         assertEquals(1L, count("ia_authoritative_account_current"));
+        assertEquals(1L, count("ia_authoritative_role_binding_history"));
         assertEquals("苏州大学", jdbc.queryForObject(
                 "select display_name "
                         + "from identity_access.ia_authoritative_organization_current",

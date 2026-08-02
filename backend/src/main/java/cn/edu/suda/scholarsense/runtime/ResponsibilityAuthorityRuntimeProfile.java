@@ -8,8 +8,10 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -34,15 +36,42 @@ public record ResponsibilityAuthorityRuntimeProfile(
         String scheduleCron,
         Duration catchUpWindow,
         int retryBudget,
-        boolean productionEligible) {
+        boolean productionEligible,
+        URI version2IncrementalEndpoint,
+        URI version2SnapshotEndpointTemplate,
+        String writeContractVersion,
+        Instant effectiveAt,
+        Duration dualReadWindow,
+        boolean cutoverEnabled,
+        String cutoverCron,
+        String lineageDigestProfile,
+        String contractProfileDigest) {
+    private static final String PROFILE_VERSION =
+            "RESPONSIBILITY-AUTHORITY-PROFILE-2.0.0";
+    private static final String VERSION_1 =
+            "RESPONSIBILITY-AUTHORITY-1.0.0";
+    private static final String VERSION_2 =
+            "RESPONSIBILITY-AUTHORITY-2.0.0";
+    private static final Instant VERSION_2_EFFECTIVE_AT =
+            Instant.parse("2026-07-31T16:00:00Z");
+    private static final Duration DUAL_READ_WINDOW =
+            Duration.ofDays(14);
+    private static final String CUTOVER_CRON =
+            "0 */15 * * * *";
+    private static final String LINEAGE_DIGEST_PROFILE =
+            "RESPONSIBILITY-LINEAGE-DIGEST-1.0.0";
+    private static final String CONTRACT_PROFILE_DIGEST =
+            "198e82c1b1cc29cb723e67593166afc9372b79f62c93c659962ed24788e96342";
     private static final Set<String> KEYS = Set.of(
             "profileVersion",
             "sourceId",
             "feedId",
             "partitionId",
             "consumerProjection",
-            "incrementalEndpointTemplate",
-            "snapshotEndpointTemplate",
+            "version1IncrementalEndpointTemplate",
+            "version1SnapshotEndpointTemplate",
+            "version2IncrementalEndpointTemplate",
+            "version2SnapshotEndpointTemplate",
             "maximumResponseBytes",
             "maximumRecordsPerBatch",
             "workloadIdentityResource",
@@ -52,10 +81,17 @@ public record ResponsibilityAuthorityRuntimeProfile(
             "scheduleCron",
             "catchUpWindowHours",
             "retryBudget",
+            "writeContractVersion",
+            "effectiveAt",
+            "dualReadWindowHours",
+            "cutoverEnabled",
+            "cutoverCron",
+            "lineageDigestProfile",
+            "contractProfileDigest",
             "productionEligible");
 
     public ResponsibilityAuthorityRuntimeProfile {
-        if (!"RESPONSIBILITY-AUTHORITY-PROFILE-1.0.0".equals(profileVersion)
+        if (!PROFILE_VERSION.equals(profileVersion)
                 || !"SRC-P0-RESPONSIBILITY-001".equals(sourceId)
                 || feedId == null
                 || !feedId.matches("[a-z][a-z0-9-]{2,63}")
@@ -88,7 +124,20 @@ public record ResponsibilityAuthorityRuntimeProfile(
                 || !ZoneId.of("Asia/Shanghai").equals(scheduleTimeZone)
                 || !"0 0 6 * * *".equals(scheduleCron)
                 || !Duration.ofHours(24).equals(catchUpWindow)
-                || retryBudget < 1) {
+                || retryBudget < 1
+                || !validEndpoint(
+                        version2IncrementalEndpoint, false)
+                || !validEndpoint(
+                        version2SnapshotEndpointTemplate, true)
+                || !VERSION_2.equals(writeContractVersion)
+                || !VERSION_2_EFFECTIVE_AT.equals(effectiveAt)
+                || !DUAL_READ_WINDOW.equals(dualReadWindow)
+                || !cutoverEnabled
+                || !CUTOVER_CRON.equals(cutoverCron)
+                || !LINEAGE_DIGEST_PROFILE.equals(
+                        lineageDigestProfile)
+                || !CONTRACT_PROFILE_DIGEST.equals(
+                        contractProfileDigest)) {
             throw new IllegalArgumentException(
                     "RESPONSIBILITY_AUTHORITY_PROFILE_INVALID");
         }
@@ -108,7 +157,7 @@ public record ResponsibilityAuthorityRuntimeProfile(
             String inboxEncryptionKeyReference,
             boolean productionEligible) {
         this(
-                "RESPONSIBILITY-AUTHORITY-PROFILE-1.0.0",
+                PROFILE_VERSION,
                 sourceId,
                 feedId,
                 partitionId,
@@ -127,7 +176,17 @@ public record ResponsibilityAuthorityRuntimeProfile(
                 "0 0 6 * * *",
                 Duration.ofHours(24),
                 8,
-                productionEligible);
+                productionEligible,
+                successorEndpoint(incrementalEndpoint),
+                snapshotTemplate(successorEndpoint(
+                        incrementalEndpoint)),
+                VERSION_2,
+                VERSION_2_EFFECTIVE_AT,
+                DUAL_READ_WINDOW,
+                true,
+                CUTOVER_CRON,
+                LINEAGE_DIGEST_PROFILE,
+                CONTRACT_PROFILE_DIGEST);
     }
 
     public static ResponsibilityAuthorityRuntimeProfile from(
@@ -156,7 +215,7 @@ public record ResponsibilityAuthorityRuntimeProfile(
         require(
                 values,
                 "profileVersion",
-                "RESPONSIBILITY-AUTHORITY-PROFILE-1.0.0");
+                PROFILE_VERSION);
         require(values, "sourceId", "SRC-P0-RESPONSIBILITY-001");
         require(values, "consumerProjection", "responsibility");
         boolean productionEligible =
@@ -168,9 +227,25 @@ public record ResponsibilityAuthorityRuntimeProfile(
         }
         String environment = runtime.environment().wireName();
         URI incremental = endpoint(
-                values.get("incrementalEndpointTemplate"), environment, false);
+                values.get("version1IncrementalEndpointTemplate"),
+                environment,
+                false,
+                "v1");
         URI snapshot = endpoint(
-                values.get("snapshotEndpointTemplate"), environment, true);
+                values.get("version1SnapshotEndpointTemplate"),
+                environment,
+                true,
+                "v1");
+        URI version2Incremental = endpoint(
+                values.get("version2IncrementalEndpointTemplate"),
+                environment,
+                false,
+                "v2");
+        URI version2Snapshot = endpoint(
+                values.get("version2SnapshotEndpointTemplate"),
+                environment,
+                true,
+                "v2");
         return new ResponsibilityAuthorityRuntimeProfile(
                 values.get("profileVersion"),
                 values.get("sourceId"),
@@ -192,15 +267,35 @@ public record ResponsibilityAuthorityRuntimeProfile(
                 values.get("scheduleCron"),
                 Duration.ofHours(positiveInt(values, "catchUpWindowHours")),
                 positiveInt(values, "retryBudget"),
-                productionEligible);
+                productionEligible,
+                version2Incremental,
+                version2Snapshot,
+                values.get("writeContractVersion"),
+                instant(values, "effectiveAt"),
+                Duration.ofHours(positiveInt(
+                        values, "dualReadWindowHours")),
+                strictBoolean(values.get("cutoverEnabled")),
+                values.get("cutoverCron"),
+                values.get("lineageDigestProfile"),
+                values.get("contractProfileDigest"));
     }
 
     public void requirePublicHttpsEndpoint() {
-        if (!"https".equals(incrementalEndpoint.getScheme())) {
+        for (URI endpoint : List.of(
+                incrementalEndpoint,
+                snapshotEndpointTemplate,
+                version2IncrementalEndpoint,
+                version2SnapshotEndpointTemplate)) {
+            requirePublicHttpsEndpoint(endpoint);
+        }
+    }
+
+    private static void requirePublicHttpsEndpoint(URI endpoint) {
+        if (!"https".equals(endpoint.getScheme())) {
             throw new IllegalArgumentException(
                     "RESPONSIBILITY_SOURCE_ENDPOINT_UNSAFE");
         }
-        String host = incrementalEndpoint.getHost();
+        String host = endpoint.getHost();
         if (InetAddress.getLoopbackAddress()
                         .getHostName()
                         .equalsIgnoreCase(host)
@@ -215,8 +310,42 @@ public record ResponsibilityAuthorityRuntimeProfile(
     }
 
     public URI snapshotEndpoint(java.time.LocalDate businessDate) {
-        return URI.create(snapshotEndpointTemplate.toString().replace(
+        return snapshotEndpoint(VERSION_1, businessDate);
+    }
+
+    public URI version1IncrementalEndpoint() {
+        return incrementalEndpoint;
+    }
+
+    public URI version1SnapshotEndpointTemplate() {
+        return snapshotEndpointTemplate;
+    }
+
+    public URI incrementalEndpoint(String contractVersion) {
+        return switch (contractVersion) {
+            case VERSION_1 -> incrementalEndpoint;
+            case VERSION_2 -> version2IncrementalEndpoint;
+            default -> throw new IllegalArgumentException(
+                    "RESPONSIBILITY_SOURCE_CONTRACT_UNAPPROVED");
+        };
+    }
+
+    public URI snapshotEndpoint(
+            String contractVersion,
+            java.time.LocalDate businessDate) {
+        Objects.requireNonNull(businessDate, "businessDate");
+        URI template = switch (contractVersion) {
+            case VERSION_1 -> snapshotEndpointTemplate;
+            case VERSION_2 -> version2SnapshotEndpointTemplate;
+            default -> throw new IllegalArgumentException(
+                    "RESPONSIBILITY_SOURCE_CONTRACT_UNAPPROVED");
+        };
+        return URI.create(template.toString().replace(
                 "__business_date__", businessDate.toString()));
+    }
+
+    public Instant dualReadWindowEndsAt() {
+        return effectiveAt.plus(dualReadWindow);
     }
 
     private static Map<String, String> load(
@@ -258,7 +387,10 @@ public record ResponsibilityAuthorityRuntimeProfile(
     }
 
     private static URI endpoint(
-            String template, String environment, boolean snapshot) {
+            String template,
+            String environment,
+            boolean snapshot,
+            String apiVersion) {
         String resolved = template.replace("{environment}", environment);
         if (snapshot) {
             resolved = resolved.replace(
@@ -271,6 +403,8 @@ public record ResponsibilityAuthorityRuntimeProfile(
                 || endpoint.getUserInfo() != null
                 || endpoint.getFragment() != null
                 || endpoint.getQuery() != null
+                || !endpoint.getPath().contains(
+                        "/api/" + apiVersion + "/")
                 || (snapshot
                         && !endpoint.getPath()
                                 .endsWith("/__business_date__"))) {
@@ -309,6 +443,15 @@ public record ResponsibilityAuthorityRuntimeProfile(
         }
     }
 
+    private static Instant instant(
+            Map<String, String> values, String key) {
+        try {
+            return Instant.parse(values.get(key));
+        } catch (RuntimeException invalid) {
+            throw invalid();
+        }
+    }
+
     private static boolean strictBoolean(String value) {
         if ("true".equals(value)) {
             return true;
@@ -326,5 +469,32 @@ public record ResponsibilityAuthorityRuntimeProfile(
 
     private static boolean blank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private static boolean validEndpoint(
+            URI endpoint, boolean snapshot) {
+        return endpoint != null
+                && Set.of("http", "https").contains(
+                        endpoint.getScheme())
+                && endpoint.getHost() != null
+                && endpoint.getUserInfo() == null
+                && endpoint.getFragment() == null
+                && endpoint.getQuery() == null
+                && (!snapshot
+                        || endpoint.getPath()
+                                .endsWith("/__business_date__"));
+    }
+
+    private static URI successorEndpoint(URI version1) {
+        String value = version1.toString();
+        return URI.create(value.contains("/v1/")
+                ? value.replaceFirst("/v1/", "/v2/")
+                : value);
+    }
+
+    private static URI snapshotTemplate(URI incremental) {
+        return URI.create(
+                incremental.resolve("./snapshots/").toString()
+                        + "__business_date__");
     }
 }

@@ -33,6 +33,8 @@ public final class HttpResponsibilityAuthoritySourceAdapter
     static final int MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
     private static final String SIGNATURE_HEADER =
             "X-Responsibility-Authority-Signature";
+    private static final String CONTRACT_HEADER =
+            "X-Responsibility-Authority-Contract-Version";
 
     private final HttpClient http;
     private final ObjectMapper json;
@@ -85,7 +87,12 @@ public final class HttpResponsibilityAuthoritySourceAdapter
         this.normalizer =
                 new ResponsibilityAuthorityNormalizer(json, pseudonyms);
         if (allowLoopbackHttpForTests) {
-            requireLoopbackTestEndpoint(profile.incrementalEndpoint());
+            requireLoopbackTestEndpoint(
+                    profile.incrementalEndpoint(
+                            ResponsibilityAuthoritySourcePort.VERSION_1));
+            requireLoopbackTestEndpoint(
+                    profile.incrementalEndpoint(
+                            ResponsibilityAuthoritySourcePort.VERSION_2));
         } else {
             profile.requirePublicHttpsEndpoint();
         }
@@ -94,7 +101,25 @@ public final class HttpResponsibilityAuthoritySourceAdapter
     @Override
     public NormalizedResponsibilityBatch fetch(
             CheckpointKey key, long afterWatermark, String traceId) {
-        return fetch(key, afterWatermark, null, traceId);
+        return fetch(
+                key,
+                ResponsibilityAuthoritySourcePort.VERSION_1,
+                afterWatermark,
+                traceId);
+    }
+
+    @Override
+    public NormalizedResponsibilityBatch fetch(
+            CheckpointKey key,
+            String contractVersion,
+            long afterWatermark,
+            String traceId) {
+        return fetch(
+                key,
+                contractVersion,
+                afterWatermark,
+                null,
+                traceId);
     }
 
     @Override
@@ -103,18 +128,40 @@ public final class HttpResponsibilityAuthoritySourceAdapter
             long fromInclusive,
             long toInclusive,
             String traceId) {
+        return fetchRange(
+                key,
+                ResponsibilityAuthoritySourcePort.VERSION_1,
+                fromInclusive,
+                toInclusive,
+                traceId);
+    }
+
+    @Override
+    public NormalizedResponsibilityBatch fetchRange(
+            CheckpointKey key,
+            String contractVersion,
+            long fromInclusive,
+            long toInclusive,
+            String traceId) {
         if (fromInclusive < 1 || toInclusive < fromInclusive) {
             throw new IdentitySyncException(
                     "RESPONSIBILITY_REPLAY_RANGE_INVALID");
         }
-        return fetch(key, fromInclusive - 1, toInclusive, traceId);
+        return fetch(
+                key,
+                contractVersion,
+                fromInclusive - 1,
+                toInclusive,
+                traceId);
     }
 
     private NormalizedResponsibilityBatch fetch(
             CheckpointKey key,
+            String contractVersion,
             long afterWatermark,
             Long throughWatermark,
             String traceId) {
+        requireApprovedContract(contractVersion);
         requireExpectedKey(key);
         if (afterWatermark < 0
                 || traceId == null
@@ -140,12 +187,18 @@ public final class HttpResponsibilityAuthoritySourceAdapter
                         : "&throughWatermark=" + URLEncoder.encode(
                                 Long.toString(throughWatermark),
                                 StandardCharsets.UTF_8))
-                + "&consumerProjection=responsibility";
+                + "&consumerProjection=responsibility"
+                + "&contractVersion=" + URLEncoder.encode(
+                        contractVersion, StandardCharsets.UTF_8)
+                + "&maximumRecords="
+                + profile.maximumRecordsPerBatch();
         HttpRequest request = HttpRequest.newBuilder(
-                        URI.create(profile.incrementalEndpoint() + query))
+                        URI.create(profile.incrementalEndpoint(
+                                contractVersion) + query))
                 .timeout(profile.requestTimeout())
                 .header("Accept", "application/json")
                 .header("Authorization", authorization)
+                .header(CONTRACT_HEADER, contractVersion)
                 .header("X-ScholarSense-Trace-Id", traceId)
                 .GET()
                 .build();
@@ -206,7 +259,8 @@ public final class HttpResponsibilityAuthoritySourceAdapter
         EncryptedSecret secured = encrypt(body);
         try {
             try {
-                return normalizer.normalize(
+                NormalizedResponsibilityBatch normalized =
+                        normalizer.normalize(
                         body,
                         detachedSignature,
                         secured,
@@ -216,6 +270,12 @@ public final class HttpResponsibilityAuthoritySourceAdapter
                         throughWatermark,
                         traceId,
                         time.now().instant());
+                if (!contractVersion.equals(
+                        normalized.contractVersion())) {
+                    throw new IdentitySyncException(
+                            "RESPONSIBILITY_SOURCE_CONTRACT_VERSION_MISMATCH");
+                }
+                return normalized;
             } catch (IdentitySyncException failure) {
                 throw poison(body, afterWatermark, failure.code());
             }
@@ -289,6 +349,17 @@ public final class HttpResponsibilityAuthoritySourceAdapter
                         key.consumerProjection())) {
             throw new IdentitySyncException(
                     "RESPONSIBILITY_SOURCE_SCOPE_INVALID");
+        }
+    }
+
+    private static void requireApprovedContract(
+            String contractVersion) {
+        if (!ResponsibilityAuthoritySourcePort.VERSION_1.equals(
+                        contractVersion)
+                && !ResponsibilityAuthoritySourcePort.VERSION_2.equals(
+                        contractVersion)) {
+            throw new IdentitySyncException(
+                    "RESPONSIBILITY_SOURCE_CONTRACT_UNAPPROVED");
         }
     }
 

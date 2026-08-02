@@ -14,6 +14,7 @@ public final class ResponsibilityReconciliationWorker {
             "RESPONSIBILITY_DEPENDENCY_WATERMARK_BEHIND",
             "RESPONSIBILITY_SNAPSHOT_PARTITION_MISSING",
             "RESPONSIBILITY_RECONCILIATION_FENCING_STALE",
+            "RESPONSIBILITY_RECONCILIATION_CONTRACT_STALE",
             "RESPONSIBILITY_RECONCILIATION_PERSISTENCE_UNAVAILABLE");
 
     private final ResponsibilityReconciliationJobPort jobs;
@@ -73,21 +74,27 @@ public final class ResponsibilityReconciliationWorker {
         }
         RunningResponsibilityReconciliationAttempt attempt =
                 started.get();
+        String attemptedContract =
+                ResponsibilityAuthoritySourcePort.VERSION_1;
         try {
+            attemptedContract = service.activeContractVersion(
+                    attempt.key());
             return Optional.of(service.execute(
                     attempt,
+                    attemptedContract,
                     result -> jobs.complete(
                             attempt,
                             result,
                             result.completedAt())));
         } catch (IdentitySyncException failure) {
-            fail(attempt, failure.code(), now);
+            fail(attempt, failure.code(), now, attemptedContract);
             return Optional.empty();
         } catch (RuntimeException unavailable) {
             fail(
                     attempt,
                     "RESPONSIBILITY_SOURCE_DEPENDENCY_UNAVAILABLE",
-                    now);
+                    now,
+                    attemptedContract);
             return Optional.empty();
         }
     }
@@ -95,7 +102,8 @@ public final class ResponsibilityReconciliationWorker {
     private void fail(
             RunningResponsibilityReconciliationAttempt attempt,
             String reasonCode,
-            Instant now) {
+            Instant now,
+            String attemptedContract) {
         boolean retry = RETRYABLE.contains(reasonCode)
                 && attempt.attemptNo() < attempt.retryBudget();
         Instant nextAttemptAt = retry
@@ -124,7 +132,7 @@ public final class ResponsibilityReconciliationWorker {
                             "identitySessionPolicy", "ISP-1.0.0",
                             "roleFieldPolicy", "RFP-1.0.0",
                             "responsibilityContract",
-                            "RESPONSIBILITY-AUTHORITY-1.0.0",
+                            attemptedContract,
                             "retentionSchedule", "RS-1.0.0")));
             return null;
         });

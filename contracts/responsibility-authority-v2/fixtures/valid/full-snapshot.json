@@ -1,0 +1,44 @@
+{
+  "$schema": "../../full-snapshot.schema.json",
+  "schemaVersion": "RESPONSIBILITY-SNAPSHOT-1.0.0",
+  "contractVersion": "RESPONSIBILITY-AUTHORITY-2.0.0",
+  "sourceId": "SRC-P0-RESPONSIBILITY-001",
+  "feedId": "responsibility-authority",
+  "consumerProjection": "responsibility",
+  "snapshotId": "019c0000-0000-7000-8000-000000000901",
+  "businessDate": "2026-08-01",
+  "cutoffAt": "2026-08-01T06:00:00+08:00",
+  "sourceVersion": 1,
+  "throughWatermark": 1,
+  "supportingIdentityOrgWatermarks": {
+    "identity-authority|sandbox-0": 42
+  },
+  "sealed": true,
+  "complete": true,
+  "expectedCount": 1,
+  "canonicalDigest": "sha256:7bfb486d6bbf5bd8fc570cbbdf36887bea4d6b4976fd3bee8173dcbd2e306dca",
+  "signatureDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+  "partitions": ["sandbox-0"],
+  "records": [
+    {
+      "relationRefToken": "rtok_CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+      "studentEquivalenceDomain": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "recordVersion": 1,
+      "payloadDigest": "sha256:14a50ecb1b62bcc138af5bb2590b8a1fcf4dc28f83ee6d6c1c72555ffbff53e6"
+    }
+  ],
+  "lineageDigestProfile": "RESPONSIBILITY-LINEAGE-DIGEST-1.0.0",
+  "lineageCount": 1,
+  "canonicalLineageDigest": "sha256:3fae21b23934d182d4f7cd13ff09367df2d4a43a625608eb9d45c6b43fee9c30",
+  "lineages": [
+    {
+      "relationRefToken": "rtok_CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+      "lineageId": "lin_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "rootEventId": "019c0000-0000-7000-8000-000000000101",
+      "headEventId": "019c0000-0000-7000-8000-000000000101",
+      "eventCount": 1,
+      "canonicalChainDigest": "sha256:278ca6e199e96ff9ca061d1d471cac31d326af2b46da8c9358383a9db08a1389"
+    }
+  ],
+  "traceId": "22222222222222222222222222222222"
+}

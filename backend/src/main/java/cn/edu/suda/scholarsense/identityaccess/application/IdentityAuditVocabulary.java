@@ -13,24 +13,31 @@ final class IdentityAuditVocabulary {
             "IDENTITY_AUTHORITY_RECONCILIATION",
             "RESPONSIBILITY_AUTHORITY_SYNC",
             "RESPONSIBILITY_AUTHORITY_RECONCILIATION",
-            "RESPONSIBILITY_EXCEPTION_MANAGEMENT");
+            "RESPONSIBILITY_EXCEPTION_MANAGEMENT",
+            "ACCESS_INVALIDATION_PROPAGATION");
     private static final Set<String> PROJECTION_SCOPES = Set.of(
-            "CURRENT_SESSION", "IDENTITY_ORG", "RESPONSIBILITY");
+            "CURRENT_SESSION", "IDENTITY_ORG", "RESPONSIBILITY",
+            "ACCESS_INVALIDATION");
     private static final Set<String> OBJECT_TYPES = Set.of(
             "identity-session", "identity-sync-job", "identity-reconciliation",
             "responsibility-sync-job", "responsibility-reconciliation",
-            "responsibility-exception");
+            "responsibility-exception", "access-invalidation-fact");
     private static final Set<String> SCOPE_CODES = Set.of(
-            "CURRENT_SESSION", "IDENTITY_ORG", "RESPONSIBILITY");
+            "CURRENT_SESSION", "IDENTITY_ORG", "RESPONSIBILITY",
+            "ACCESS_INVALIDATION");
     private static final Set<String> NOT_APPLICABLE_REASONS = Set.of(
             "PRE_AUTHENTICATION", "NO_ROLE_MODEL", "SERVICE_OPERATION");
-    private static final Map<String, String> POLICY_VERSIONS = Map.of(
-            "identitySessionPolicy", "ISP-1.0.0",
-            "hostIntegrationProfile", "HIP-1.0.0",
-            "roleFieldPolicy", "RFP-1.0.0",
-            "roleMapping", "IDENTITY-ROLE-MAPPING-1.0.0",
-            "responsibilityContract", "RESPONSIBILITY-AUTHORITY-1.0.0",
-            "retentionSchedule", "RS-1.0.0");
+    private static final Map<String, Set<String>> POLICY_VERSIONS = Map.of(
+            "identitySessionPolicy", Set.of("ISP-1.0.0"),
+            "hostIntegrationProfile", Set.of("HIP-1.0.0"),
+            "roleFieldPolicy", Set.of("RFP-1.0.0"),
+            "roleMapping", Set.of("IDENTITY-ROLE-MAPPING-1.0.0"),
+            "responsibilityContract", Set.of(
+                    "RESPONSIBILITY-AUTHORITY-1.0.0",
+                    "RESPONSIBILITY-AUTHORITY-2.0.0"),
+            "accessInvalidationContract",
+                    Set.of("ACCESS-INVALIDATION-DATA-1.0.0"),
+            "retentionSchedule", Set.of("RS-1.0.0"));
     private static final Set<String> SYNC_FAILURE_REASONS = Set.of(
             "IDENTITY_SOURCE_DEPENDENCY_UNAVAILABLE",
             "IDENTITY_SOURCE_AUTHENTICATION_FAILED",
@@ -81,9 +88,11 @@ final class IdentityAuditVocabulary {
                     "RESPONSIBILITY_IDENTITY_PROJECTION_UNAVAILABLE",
                     "RESPONSIBILITY_REPLAY_RANGE_INVALID",
                     "RESPONSIBILITY_RECONCILIATION_FENCING_STALE",
+                    "RESPONSIBILITY_RECONCILIATION_CONTRACT_STALE",
                     "RESPONSIBILITY_RECONCILIATION_PERSISTENCE_UNAVAILABLE",
                     "RESPONSIBILITY_SOURCE_AUTHENTICATION_FAILED",
                     "RESPONSIBILITY_SOURCE_CONTRACT_UNAPPROVED",
+                    "RESPONSIBILITY_SOURCE_CONTRACT_VERSION_MISMATCH",
                     "RESPONSIBILITY_SOURCE_DEPENDENCY_UNAVAILABLE",
                     "RESPONSIBILITY_SOURCE_DIGEST_INVALID",
                     "RESPONSIBILITY_SOURCE_ENDPOINT_UNSAFE",
@@ -98,6 +107,7 @@ final class IdentityAuditVocabulary {
                     "RESPONSIBILITY_SOURCE_SIGNATURE_INVALID",
                     "RESPONSIBILITY_SOURCE_TIME_INVALID",
                     "RESPONSIBILITY_SOURCE_VERSION_STALE",
+                    "RESPONSIBILITY_SOURCE_VERSION_GAP",
                     "RESPONSIBILITY_SNAPSHOT_COUNT_MISMATCH",
                     "RESPONSIBILITY_SNAPSHOT_DIGEST_MISMATCH",
                     "RESPONSIBILITY_SNAPSHOT_INVALID",
@@ -107,6 +117,7 @@ final class IdentityAuditVocabulary {
                     "RESPONSIBILITY_SNAPSHOT_UNSEALED",
                     "RESPONSIBILITY_STATUS_INVALID",
                     "RESPONSIBILITY_TYPE_INVALID",
+                    "RESPONSIBILITY_V2_REPLAY_REQUIRED",
                     "RESPONSIBILITY_WATERMARK_GAP");
     private static final Set<String> RESPONSIBILITY_EXCEPTION_OPEN_REASONS =
             Set.of(
@@ -179,6 +190,33 @@ final class IdentityAuditVocabulary {
                                     "RESPONSIBILITY_RECONCILIATION_DIFFERENCES",
                                     "RESPONSIBILITY_RECONCILIATION_THRESHOLD_FAILED"))),
             Map.entry(
+                    IdentityAuditAction.RESPONSIBILITY_V2_RECONCILED,
+                    Map.of(
+                            "accepted",
+                            Set.of(
+                                    "RESPONSIBILITY_V2_RECONCILIATION_MATCHED",
+                                    "RESPONSIBILITY_V2_RECONCILIATION_DIFFERENCES"))),
+            Map.entry(
+                    IdentityAuditAction.RESPONSIBILITY_V2_CUTOVER_REQUESTED,
+                    Map.of(
+                            "accepted",
+                            Set.of("RESPONSIBILITY_V2_CUTOVER_REQUESTED"))),
+            Map.entry(
+                    IdentityAuditAction.RESPONSIBILITY_V2_CUTOVER_DENIED,
+                    Map.of(
+                            "rejected",
+                            Set.of("RESPONSIBILITY_V2_CUTOVER_DENIED"))),
+            Map.entry(
+                    IdentityAuditAction.RESPONSIBILITY_V2_CUTOVER_FAILED,
+                    Map.of(
+                            "rejected",
+                            Set.of("RESPONSIBILITY_V2_CUTOVER_FAILED"))),
+            Map.entry(
+                    IdentityAuditAction.RESPONSIBILITY_V2_ACTIVATED,
+                    Map.of(
+                            "accepted",
+                            Set.of("RESPONSIBILITY_V2_CUTOVER_ACTIVATED"))),
+            Map.entry(
                     IdentityAuditAction.RESPONSIBILITY_EXCEPTION_OPENED,
                     Map.of(
                             "accepted",
@@ -189,7 +227,17 @@ final class IdentityAuditVocabulary {
                             "accepted",
                             Set.of(
                                     "RESPONSIBILITY_RECONCILIATION_MATCHED",
-                                    "RESPONSIBILITY_VALID"))));
+                                    "RESPONSIBILITY_VALID"))),
+            Map.entry(
+                    IdentityAuditAction.ACCESS_INVALIDATION_PUBLISHED,
+                    Map.of(
+                            "accepted",
+                            Set.of(
+                                    "ACCESS_INVALIDATION_CORRECTED",
+                                    "ACCESS_INVALIDATION_REVOKED",
+                                    "ACCESS_INVALIDATION_EXPIRED",
+                                    "ACCESS_INVALIDATION_INVALIDATED",
+                                    "ACCESS_INVALIDATION_REVALIDATED"))));
 
     private IdentityAuditVocabulary() {}
 
@@ -205,7 +253,9 @@ final class IdentityAuditVocabulary {
             throw new IllegalArgumentException("AUDIT_IDENTITY_VOCABULARY_INVALID");
         }
         for (Map.Entry<String, String> entry : request.policyVersions().entrySet()) {
-            if (!entry.getValue().equals(POLICY_VERSIONS.get(entry.getKey()))) {
+            if (!POLICY_VERSIONS.getOrDefault(
+                            entry.getKey(), Set.of())
+                    .contains(entry.getValue())) {
                 throw new IllegalArgumentException("AUDIT_IDENTITY_POLICY_VERSION_INVALID");
             }
         }
@@ -224,7 +274,10 @@ final class IdentityAuditVocabulary {
             String policyVersion, List<String> scopeCodes, String notApplicableReason) {
         if (!SCOPE_CODES.containsAll(scopeCodes)
                 || notApplicableReason != null && !NOT_APPLICABLE_REASONS.contains(notApplicableReason)
-                || policyVersion != null && !POLICY_VERSIONS.containsValue(policyVersion)) {
+                || policyVersion != null
+                        && POLICY_VERSIONS.values().stream()
+                                .noneMatch(versions ->
+                                        versions.contains(policyVersion))) {
             throw new IllegalArgumentException("AUDIT_IDENTITY_AUTHORIZATION_VOCABULARY_INVALID");
         }
     }

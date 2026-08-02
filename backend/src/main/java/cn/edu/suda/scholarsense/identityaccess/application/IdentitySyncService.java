@@ -2,6 +2,10 @@ package cn.edu.suda.scholarsense.identityaccess.application;
 
 import cn.edu.suda.scholarsense.identityaccess.domain.OrganizationGraph;
 import cn.edu.suda.scholarsense.identityaccess.domain.IdentityAccessException;
+import cn.edu.suda.scholarsense.identityaccess.domain.AuthoritativeStatus;
+import cn.edu.suda.scholarsense.identityaccess.domain.OrganizationType;
+import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityRecipientValidity;
+import cn.edu.suda.scholarsense.identityaccess.domain.TargetRole;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
 import java.time.Duration;
 import java.time.Instant;
@@ -22,6 +26,8 @@ public final class IdentitySyncService {
     private final AuthorizationEffectivenessProbePort currentContexts;
     private final IdentitySloEvidencePort sloEvidence;
     private final TrustedTimeSource time;
+    private final AccessInvalidationChangePublisherPort invalidations;
+    private final IdentityCascadeScopeReadBackPort cascadeReadBack;
 
     public IdentitySyncService(
             IdentitySyncRepository repository,
@@ -32,6 +38,53 @@ public final class IdentitySyncService {
             AuthorizationEffectivenessProbePort currentContexts,
             IdentitySloEvidencePort sloEvidence,
             TrustedTimeSource time) {
+        this(
+                repository,
+                replay,
+                transactions,
+                audit,
+                observability,
+                currentContexts,
+                sloEvidence,
+                time,
+                AccessInvalidationChangePublisherPort.noOp(),
+                IdentityCascadeScopeReadBackPort.noOp());
+    }
+
+    public IdentitySyncService(
+            IdentitySyncRepository repository,
+            IdentityReplayPort replay,
+            IdentitySyncTransactionPort transactions,
+            IdentitySyncAuditPort audit,
+            IdentitySyncObservabilityPort observability,
+            AuthorizationEffectivenessProbePort currentContexts,
+            IdentitySloEvidencePort sloEvidence,
+            TrustedTimeSource time,
+            AccessInvalidationChangePublisherPort invalidations) {
+        this(
+                repository,
+                replay,
+                transactions,
+                audit,
+                observability,
+                currentContexts,
+                sloEvidence,
+                time,
+                invalidations,
+                IdentityCascadeScopeReadBackPort.noOp());
+    }
+
+    public IdentitySyncService(
+            IdentitySyncRepository repository,
+            IdentityReplayPort replay,
+            IdentitySyncTransactionPort transactions,
+            IdentitySyncAuditPort audit,
+            IdentitySyncObservabilityPort observability,
+            AuthorizationEffectivenessProbePort currentContexts,
+            IdentitySloEvidencePort sloEvidence,
+            TrustedTimeSource time,
+            AccessInvalidationChangePublisherPort invalidations,
+            IdentityCascadeScopeReadBackPort cascadeReadBack) {
         this.repository = repository;
         this.replay = replay;
         this.transactions = transactions;
@@ -40,6 +93,9 @@ public final class IdentitySyncService {
         this.currentContexts = currentContexts;
         this.sloEvidence = sloEvidence;
         this.time = time;
+        this.invalidations = invalidations;
+        this.cascadeReadBack = java.util.Objects.requireNonNull(
+                cascadeReadBack);
     }
 
     public IdentitySyncResult process(NormalizedIdentityBatch batch, IdentityLease lease) {
@@ -95,6 +151,8 @@ public final class IdentitySyncService {
                     batch.traceId(),
                     now,
                     policyVersions(batch)));
+            invalidations.publish(
+                    new CommittedIdentityChangeSet(batch, applied, now));
             afterApply.accept(applied);
             return null;
         });
@@ -310,6 +368,21 @@ public final class IdentitySyncService {
     private void recordReadBackSlo(
             NormalizedIdentityBatch batch, Instant appliedAt, long aggregateVersion) {
         for (IdentitySourceFact fact : batch.sourceFacts()) {
+            CascadeReadBackOutcome cascadeOutcome =
+                    recordCascadeReadBackSlo(
+                            batch,
+                            appliedAt,
+                            aggregateVersion,
+                            fact);
+            if (cascadeOutcome == CascadeReadBackOutcome.RECORDED) {
+                continue;
+            }
+            if (cascadeOutcome == CascadeReadBackOutcome.UNAVAILABLE
+                    || requiresCascadeDeny(batch, fact)) {
+                recordEmptyCascadeReadBackSlo(
+                        batch, appliedAt, aggregateVersion, fact);
+                continue;
+            }
             List<AuthorizationEffectiveContext> readBack =
                     readBack(batch, fact);
             Instant effectiveAt = time.now().instant();
@@ -368,6 +441,117 @@ public final class IdentitySyncService {
                     within,
                     reason,
                     batch.traceId());
+            appendSloEvidence(batch, evidence, effectiveAt);
+    }
+
+    private CascadeReadBackOutcome recordCascadeReadBackSlo(
+            NormalizedIdentityBatch batch,
+            Instant appliedAt,
+            long aggregateVersion,
+            IdentitySourceFact fact) {
+        List<IdentityCascadeScopeReadBack> observations;
+        Instant readBackAt = time.now().instant();
+        try {
+            observations = cascadeReadBack.readBack(
+                    fact.recordKind(),
+                    fact.externalRefDigest(),
+                    batch.sourceVersion(),
+                    batch.toWatermark(),
+                    aggregateVersion,
+                    readBackAt);
+        } catch (RuntimeException unavailable) {
+            return CascadeReadBackOutcome.UNAVAILABLE;
+        }
+        if (observations.isEmpty()) {
+            return CascadeReadBackOutcome.EMPTY;
+        }
+        for (IdentityCascadeScopeReadBack observation : observations) {
+            ResponsibilityScopeReadBack readBack = observation.readBack();
+            Instant effectiveAt = readBack.evaluatedAt();
+            boolean identityVersionVisible =
+                    observation.identitySourceVersion()
+                                    == batch.sourceVersion()
+                            && observation.identitySourceWatermark()
+                                    == batch.toWatermark()
+                            && observation.identityAggregateVersion()
+                                    == aggregateVersion;
+            boolean scopeVersionVisible =
+                    readBack.sourceVersion()
+                                    == observation.scopeSourceVersion()
+                            && readBack.sourceWatermark()
+                                    == observation.scopeSourceWatermark()
+                            && readBack.aggregateVersion()
+                                    == observation.scopeAggregateVersion();
+            boolean versionVisible =
+                    identityVersionVisible && scopeVersionVisible;
+            boolean expectedStateVisible = readBack.validity()
+                    == observation.expectedValidity();
+            boolean within = versionVisible
+                    && expectedStateVisible
+                    && !effectiveAt.isAfter(
+                            batch.sourceVisibleAt()
+                                    .plus(Duration.ofMinutes(15)));
+            String reason = readBack.validity()
+                            == ResponsibilityRecipientValidity
+                                    .DEPENDENCY_UNAVAILABLE
+                            ? "IDENTITY_CASCADE_SCOPE_READBACK_UNAVAILABLE"
+                            : !versionVisible
+                                    ? "IDENTITY_AUTHORIZATION_VERSION_MISMATCH"
+                                    : !expectedStateVisible
+                                            ? observation.expectedValidity()
+                                                            == ResponsibilityRecipientValidity
+                                                                    .INVALID
+                                                    ? "IDENTITY_CASCADE_SCOPE_STILL_VALID"
+                                                    : "IDENTITY_CASCADE_SCOPE_EXPECTED_VALID_NOT_VISIBLE"
+                                            : within
+                                                    ? null
+                                                    : "IDENTITY_AUTHORIZATION_EFFECTIVE_LATE";
+            IdentitySloEvidence evidence = new IdentitySloEvidence(
+                    UUID.fromString(UuidV7.generate(effectiveAt)),
+                    observation.counselorAccountId(),
+                    fact.recordKind(),
+                    batch.sourceVersion(),
+                    batch.toWatermark(),
+                    aggregateVersion,
+                    batch.sourceVisibleAt(),
+                    appliedAt,
+                    effectiveAt,
+                    within,
+                    reason,
+                    batch.traceId());
+            appendSloEvidence(batch, evidence, effectiveAt);
+        }
+        return CascadeReadBackOutcome.RECORDED;
+    }
+
+    private void recordEmptyCascadeReadBackSlo(
+            NormalizedIdentityBatch batch,
+            Instant appliedAt,
+            long aggregateVersion,
+            IdentitySourceFact fact) {
+        Instant effectiveAt = time.now().instant();
+        appendSloEvidence(
+                batch,
+                new IdentitySloEvidence(
+                        UUID.fromString(UuidV7.generate(effectiveAt)),
+                        null,
+                        fact.recordKind(),
+                        batch.sourceVersion(),
+                        batch.toWatermark(),
+                        aggregateVersion,
+                        batch.sourceVisibleAt(),
+                        appliedAt,
+                        effectiveAt,
+                        false,
+                        "IDENTITY_AUTHORIZATION_READBACK_EMPTY",
+                        batch.traceId()),
+                effectiveAt);
+    }
+
+    private void appendSloEvidence(
+            NormalizedIdentityBatch batch,
+            IdentitySloEvidence evidence,
+            Instant effectiveAt) {
             try {
                 sloEvidence.append(evidence);
             } catch (RuntimeException unavailable) {
@@ -398,6 +582,39 @@ public final class IdentitySyncService {
                         batch.traceId(),
                         effectiveAt));
             }
+    }
+
+    private static boolean requiresCascadeDeny(
+            NormalizedIdentityBatch batch,
+            IdentitySourceFact fact) {
+        return switch (fact.recordKind()) {
+            case ACCOUNT -> batch.accounts().stream()
+                    .anyMatch(account -> account.externalRefDigest()
+                                    .equals(fact.externalRefDigest())
+                            && account.status()
+                                    == AuthoritativeStatus.INACTIVE);
+            case EMPLOYMENT_ROLE -> batch.roleBindings().stream()
+                    .anyMatch(binding -> binding.externalRefDigest()
+                                    .equals(fact.externalRefDigest())
+                            && binding.targetRole()
+                                    == TargetRole.R1_COUNSELOR
+                            && binding.status()
+                                    == AuthoritativeStatus.INACTIVE);
+            case ORGANIZATION -> batch.organizations().stream()
+                    .anyMatch(organization -> organization
+                                    .externalRefDigest()
+                                    .equals(fact.externalRefDigest())
+                            && organization.organizationType()
+                                    == OrganizationType.COLLEGE
+                            && organization.status()
+                                    == AuthoritativeStatus.INACTIVE);
+        };
+    }
+
+    private enum CascadeReadBackOutcome {
+        RECORDED,
+        EMPTY,
+        UNAVAILABLE
     }
 
     private List<AuthorizationEffectiveContext> readBack(

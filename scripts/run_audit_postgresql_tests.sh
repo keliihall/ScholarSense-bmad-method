@@ -52,6 +52,7 @@ V4="$ROOT/backend/src/main/resources/db/migration/identity-access/V000004__ident
 V5="$ROOT/backend/src/main/resources/db/migration/audit-operations/V000005__audit-operations__authorized_search_retention_v1.sql"
 V6="$ROOT/backend/src/main/resources/db/migration/identity-access/V000006__identity-access__authoritative_identity_org_v1.sql"
 V7="$ROOT/backend/src/main/resources/db/migration/identity-access/V000007__identity-access__responsibility_reconciliation_v1.sql"
+V8="$ROOT/backend/src/main/resources/db/migration/identity-access/V000008__identity-access__access_invalidation_v1.sql"
 
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V1" >/dev/null
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V2" >/dev/null
@@ -60,6 +61,7 @@ V7="$ROOT/backend/src/main/resources/db/migration/identity-access/V000007__ident
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V5" >/dev/null
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V6" >/dev/null
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V7" >/dev/null
+"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V8" >/dev/null
 
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V1" >/dev/null
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade <<'SQL' >/dev/null
@@ -77,6 +79,7 @@ SQL
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V5" >/dev/null
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V6" >/dev/null
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V7" >/dev/null
+"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V8" >/dev/null
 
 for database in scholarsense_audit_clean scholarsense_audit_upgrade; do
   attempts_type=$("$PG_BIN/psql" -At -d "$database" -c "
@@ -90,7 +93,7 @@ for database in scholarsense_audit_clean scholarsense_audit_upgrade; do
   fi
 done
 
-POSTGRES_TESTS="IdentityAuditPostgreSqlIT,IdentityAuthorityPostgreSqlIT,ResponsibilityAuthorityPostgreSqlIT,AuditLedgerPostgreSqlIT"
+POSTGRES_TESTS="IdentityAuditPostgreSqlIT,IdentityAuthorityPostgreSqlIT,ResponsibilityAuthorityPostgreSqlIT,AccessInvalidationPostgreSqlIT,AuditLedgerPostgreSqlIT"
 if [[ -n "${IDENTITY_SANDBOX_ENDPOINT:-}" ]]; then
   POSTGRES_TESTS="$POSTGRES_TESTS,IdentityAuthoritySandboxIT#sameTraceRunsThroughWorkerPostgreSqlAndCurrentAuthorizationReadBack"
 fi
@@ -112,4 +115,4 @@ else
     -Dscholarsense.audit.pg.user="$USER_NAME" test
 fi
 
-echo "audit-postgresql: PASS (PostgreSQL 18.4; clean + V000001..V000007 upgrade + identity/responsibility authority fencing/atomicity/SLO/privilege and audit projection/concurrency/rollback/replay/tamper probes)"
+echo "audit-postgresql: PASS (PostgreSQL 18.4; clean + V000001..V000008 upgrade + identity/responsibility invalidation fencing/atomicity/SLO/privilege and audit projection/concurrency/rollback/replay/tamper probes)"

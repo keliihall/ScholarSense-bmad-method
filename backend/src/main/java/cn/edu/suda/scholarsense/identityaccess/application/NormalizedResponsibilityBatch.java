@@ -37,7 +37,9 @@ public record NormalizedResponsibilityBatch(
         Objects.requireNonNull(key, "key");
         if (!"responsibility".equals(key.consumerProjection())
                 || !"RESPONSIBILITY-BATCH-1.0.0".equals(schemaVersion)
-                || !"RESPONSIBILITY-AUTHORITY-1.0.0".equals(contractVersion)
+                || (!"RESPONSIBILITY-AUTHORITY-1.0.0".equals(contractVersion)
+                        && !"RESPONSIBILITY-AUTHORITY-2.0.0"
+                                .equals(contractVersion))
                 || sourceVersion < 1
                 || fromWatermark < 0
                 || toWatermark < fromWatermark) {
@@ -80,6 +82,12 @@ public record NormalizedResponsibilityBatch(
                     "RESPONSIBILITY_BATCH_ENCRYPTION_INVALID");
         }
         relations = List.copyOf(relations);
+        if ("RESPONSIBILITY-AUTHORITY-2.0.0".equals(contractVersion)
+                && relations.stream().anyMatch(
+                        relation -> !relation.hasInvalidationMetadata())) {
+            throw new IllegalArgumentException(
+                    "RESPONSIBILITY_V2_CHANGE_METADATA_REQUIRED");
+        }
         boolean noChange = toWatermark == fromWatermark;
         if ((noChange && !relations.isEmpty())
                 || (!noChange && relations.isEmpty())

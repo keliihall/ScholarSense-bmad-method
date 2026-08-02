@@ -17,12 +17,47 @@ public record IdentitySyncAuditEvent(
         String traceId,
         Instant occurredAt,
         Map<String, String> policyVersions,
-        UUID auditedObjectId) {
+        UUID auditedObjectId,
+        String actorReference) {
     public IdentitySyncAuditEvent {
         policyVersions = Map.copyOf(policyVersions);
         if (auditedObjectId == null) {
             auditedObjectId = jobId;
         }
+        if (actorReference == null || actorReference.isBlank()) {
+            actorReference = "identity-sync-worker";
+        }
+    }
+
+    public IdentitySyncAuditEvent(
+            String action,
+            String outcome,
+            String reasonCode,
+            UUID jobId,
+            int attemptNo,
+            long fencingToken,
+            long sourceVersion,
+            long sourceWatermark,
+            long aggregateVersion,
+            String traceId,
+            Instant occurredAt,
+            Map<String, String> policyVersions,
+            UUID auditedObjectId) {
+        this(
+                action,
+                outcome,
+                reasonCode,
+                jobId,
+                attemptNo,
+                fencingToken,
+                sourceVersion,
+                sourceWatermark,
+                aggregateVersion,
+                traceId,
+                occurredAt,
+                policyVersions,
+                auditedObjectId,
+                "identity-sync-worker");
     }
 
     public IdentitySyncAuditEvent(
@@ -51,6 +86,7 @@ public record IdentitySyncAuditEvent(
                 traceId,
                 occurredAt,
                 policyVersions,
-                jobId);
+                jobId,
+                "identity-sync-worker");
     }
 }

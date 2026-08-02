@@ -10,6 +10,7 @@ import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditTokenPor
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySourceSignaturePort;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncException;
 import cn.edu.suda.scholarsense.identityaccess.application.PseudonymizationPort;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityV2CutoverCommandSignaturePort;
 import cn.edu.suda.scholarsense.identityaccess.application.WorkloadIdentityAuthenticationPort;
 import cn.edu.suda.scholarsense.runtime.IdentityAuthorityRuntimeProfile;
 import cn.edu.suda.scholarsense.runtime.ResponsibilityAuthorityRuntimeProfile;
@@ -47,9 +48,13 @@ public final class MountedIdentitySyncSecurityBindings
                 EnvelopeEncryptionPort,
                 EnvelopeDecryptionPort,
                 PseudonymizationPort,
-                IdentityAuditTokenPort {
+                IdentityAuditTokenPort,
+                ResponsibilityV2CutoverCommandSignaturePort {
     private static final String SCHEMA = "IDENTITY-SYNC-SECURITY-BINDING-1.0.0";
     private static final int GCM_NONCE_BYTES = 12;
+    private static final byte[] CUTOVER_COMMAND_DOMAIN =
+            "RESPONSIBILITY-V2-CUTOVER-COMMAND-MAC-1.0.0"
+                    .getBytes(StandardCharsets.US_ASCII);
     private static final Set<String> MANIFEST_KEYS = Set.of(
             "schemaVersion",
             "workloadIdentityReference",
@@ -216,6 +221,29 @@ public final class MountedIdentitySyncSecurityBindings
                     detachedSignature.getBytes(StandardCharsets.US_ASCII));
         } finally {
             Arrays.fill(unsigned, (byte) 0);
+        }
+    }
+
+    @Override
+    public String sign(byte[] canonicalPayload) {
+        if (responsibilitySignatureKey == null
+                || canonicalPayload == null) {
+            throw new IdentitySyncException(
+                    "RESPONSIBILITY_V2_CUTOVER_SIGNATURE_UNAVAILABLE");
+        }
+        byte[] domainSeparated = ByteBuffer.allocate(
+                        CUTOVER_COMMAND_DOMAIN.length
+                                + 1
+                                + canonicalPayload.length)
+                .put(CUTOVER_COMMAND_DOMAIN)
+                .put((byte) 0)
+                .put(canonicalPayload)
+                .array();
+        try {
+            return HexFormat.of().formatHex(
+                    hmac(responsibilitySignatureKey, domainSeparated));
+        } finally {
+            Arrays.fill(domainSeparated, (byte) 0);
         }
     }
 

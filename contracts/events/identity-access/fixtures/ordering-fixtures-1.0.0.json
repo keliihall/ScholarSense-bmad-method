@@ -1,0 +1,53 @@
+{
+  "version": "ACCESS-INVALIDATION-ORDERING-FIXTURES-1.0.0",
+  "route": "consumerId|producer|aggregateType|lineageId",
+  "cases": [
+    {
+      "id": "next-contiguous",
+      "currentWatermark": 0,
+      "incomingVersion": 1,
+      "samePayload": true,
+      "expectedDecision": "APPLIED"
+    },
+    {
+      "id": "duplicate-same",
+      "currentWatermark": 1,
+      "incomingVersion": 1,
+      "samePayload": true,
+      "expectedDecision": "DUPLICATE"
+    },
+    {
+      "id": "same-key-different-payload",
+      "currentWatermark": 1,
+      "incomingVersion": 1,
+      "samePayload": false,
+      "expectedDecision": "CONFLICT"
+    },
+    {
+      "id": "old-version",
+      "currentWatermark": 3,
+      "incomingVersion": 2,
+      "samePayload": true,
+      "expectedDecision": "OLD_IGNORED"
+    },
+    {
+      "id": "gap",
+      "currentWatermark": 1,
+      "incomingVersion": 3,
+      "samePayload": true,
+      "expectedDecision": "GAP_BACKFILL_REQUIRED"
+    }
+  ],
+  "outOfOrderDelivery": {
+    "initialWatermark": 0,
+    "incomingVersions": [2, 1, 2],
+    "expectedDecisions": [
+      "GAP_BACKFILL_REQUIRED",
+      "APPLIED",
+      "APPLIED"
+    ],
+    "expectedFinalWatermark": 2,
+    "unrelatedRouteWatermark": 7,
+    "expectedUnrelatedRouteWatermark": 7
+  }
+}

@@ -6,12 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cn.edu.suda.scholarsense.identityaccess.application.CheckpointKey;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncException;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityAuthoritySourcePort;
+import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityV2LineageManifest;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationLineageId;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 class ResponsibilityFullSnapshotNormalizerTest {
     private static final String SIGNATURE = "snapshot-signature";
@@ -87,6 +91,40 @@ class ResponsibilityFullSnapshotNormalizerTest {
                 "RESPONSIBILITY_SNAPSHOT_DIGEST_MISMATCH");
     }
 
+    @Test
+    void acceptsRequestedV2SnapshotAndRejectsAResponseVersionMismatch()
+            throws Exception {
+        byte[] version2 = validV2Fixture();
+
+        var snapshot = normalizer.normalize(
+                version2,
+                SIGNATURE,
+                true,
+                ResponsibilityAuthoritySourcePort.VERSION_2,
+                KEY,
+                LocalDate.of(2026, 7, 30),
+                TRACE);
+
+        assertEquals(
+                ResponsibilityAuthoritySourcePort.VERSION_2,
+                snapshot.contractVersion());
+        assertEquals(1, snapshot.lineageManifests().size());
+
+        IdentitySyncException mismatch = assertThrows(
+                IdentitySyncException.class,
+                () -> normalizer.normalize(
+                        validFixture(),
+                        SIGNATURE,
+                        true,
+                        ResponsibilityAuthoritySourcePort.VERSION_2,
+                        KEY,
+                        LocalDate.of(2026, 7, 30),
+                        TRACE));
+        assertEquals(
+                "RESPONSIBILITY_SOURCE_CONTRACT_VERSION_MISMATCH",
+                mismatch.code());
+    }
+
     private void assertReason(String body, String reasonCode) {
         IdentitySyncException failure = assertThrows(
                 IdentitySyncException.class,
@@ -116,6 +154,42 @@ class ResponsibilityFullSnapshotNormalizerTest {
                                         SIGNATURE.getBytes(
                                                 StandardCharsets.UTF_8)))
                 .getBytes(StandardCharsets.UTF_8);
+    }
+
+    private byte[] validV2Fixture() throws Exception {
+        ObjectMapper json = new ObjectMapper();
+        ObjectNode root = (ObjectNode) json.readTree(validFixture());
+        root.put(
+                "contractVersion",
+                ResponsibilityAuthoritySourcePort.VERSION_2);
+        root.put(
+                "lineageDigestProfile",
+                "RESPONSIBILITY-LINEAGE-DIGEST-1.0.0");
+        var lineage = new ResponsibilityV2LineageManifest(
+                "rtok_CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+                new AccessInvalidationLineageId(
+                        "lin_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+                java.util.UUID.fromString(
+                        "019c0000-0000-7000-8000-000000000201"),
+                java.util.UUID.fromString(
+                        "019c0000-0000-7000-8000-000000000201"),
+                1,
+                "b".repeat(64));
+        root.put("lineageCount", 1);
+        root.put(
+                "canonicalLineageDigest",
+                "sha256:" + ResponsibilityV2LineageManifest.digest(
+                        java.util.List.of(lineage)));
+        ObjectNode lineageJson = root.putArray("lineages").addObject();
+        lineageJson.put("relationRefToken", lineage.relationRefToken());
+        lineageJson.put("lineageId", lineage.lineageId().value());
+        lineageJson.put("rootEventId", lineage.rootEventId().toString());
+        lineageJson.put("headEventId", lineage.headEventId().toString());
+        lineageJson.put("eventCount", lineage.eventCount());
+        lineageJson.put(
+                "canonicalChainDigest",
+                "sha256:" + lineage.canonicalChainDigest());
+        return json.writeValueAsBytes(root);
     }
 
     private cn.edu.suda.scholarsense.identityaccess.application

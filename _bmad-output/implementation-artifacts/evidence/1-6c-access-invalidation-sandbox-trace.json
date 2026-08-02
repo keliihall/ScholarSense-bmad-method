@@ -1,0 +1,126 @@
+{
+  "consumerMatrix": {
+    "command": "/Users/hei/project/ScholarSense-bmad-method/_bmad/scripts/with_pab_toolchain.sh",
+    "exitCode": 0,
+    "succeeded": true,
+    "tests": [
+      "AccessInvalidationDomainTest",
+      "AccessInvalidationPortsTest",
+      "AccessInvalidationPublisherServiceTest",
+      "AccessInvalidationOutboxRelayProcessorTest",
+      "AccessInvalidationWorkersTest",
+      "ResponsibilityScopeQueryServiceTest",
+      "ResponsibilitySyncServiceTest",
+      "IdentitySyncServiceTest",
+      "IdentitySyncConfigurationTest",
+      "MicrometerIdentitySyncObservabilityAdapterTest"
+    ]
+  },
+  "contractChecker": {
+    "command": "/Users/hei/project/ScholarSense-bmad-method/_bmad/scripts/with_pab_toolchain.sh",
+    "exitCode": 0,
+    "succeeded": true
+  },
+  "databaseEvidence": {
+    "command": "/Users/hei/project/ScholarSense-bmad-method/scripts/run_audit_postgresql_tests.sh",
+    "databaseVersion": "PostgreSQL 18.4 (Homebrew) on aarch64-apple-darwin25.4.0, compiled by Apple clang version 21.0.0 (clang-2100.0.123.102), 64-bit",
+    "exitCode": 0,
+    "succeeded": true,
+    "test": "AccessInvalidationPostgreSqlIT#sameTracePostgreSqlEvidenceExecutesReadBackRelayConsumerAndReconciliation"
+  },
+  "environment": "controlled-local-sandbox",
+  "executedAt": "2026-08-01T01:33:14.130002+00:00",
+  "productionEligible": false,
+  "rawPostgreSqlEvidence": {
+    "aggregateVersion": 1,
+    "appliedRequiredConsumerCount": 1,
+    "causeEventId": "019c0000-0000-7000-8000-000000000550",
+    "causeTraceId": "0123456789abcdef0123456789abcdef",
+    "consumerId": "authorization-current-scope",
+    "consumerLastEventId": "019c0000-0000-7000-8000-000000000533",
+    "consumerTraceId": "0123456789abcdef0123456789abcdef",
+    "consumerWatermark": 1,
+    "databaseVersion": "PostgreSQL 18.4 (Homebrew) on aarch64-apple-darwin25.4.0, compiled by Apple clang version 21.0.0 (clang-2100.0.123.102), 64-bit",
+    "deliveryOutcome": "published",
+    "eventId": "019c0000-0000-7000-8000-000000000533",
+    "impactJobCursorLineageId": "lin_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "impactJobStatus": "completed",
+    "lineageId": "lin_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "localFenceState": "invalidated",
+    "localFenceTraceId": "0123456789abcdef0123456789abcdef",
+    "outboxStatus": "published",
+    "outboxTraceId": "0123456789abcdef0123456789abcdef",
+    "plannedConsumersAdvanced": 0,
+    "propagationStatus": "complete",
+    "propagationTraceId": "0123456789abcdef0123456789abcdef",
+    "readBackEvaluatedAt": "2026-07-31T12:00:08Z",
+    "readBackReasonCode": "RESPONSIBILITY_INACTIVE_RECIPIENT",
+    "readBackValidity": "INVALID",
+    "reconciliationOutcome": "healthy",
+    "reconciliationTraceId": "0123456789abcdef0123456789abcdef",
+    "requiredConsumerCount": 1,
+    "sourceVisibleAt": "2026-07-31T12:00:01Z",
+    "traceId": "0123456789abcdef0123456789abcdef",
+    "watermarkBeforeRelay": 0,
+    "withinFifteenMinutes": true
+  },
+  "runtimeEvidenceBoundary": {
+    "authorization-current-scope": "current-runtime",
+    "mobile-surface-verification": "none",
+    "public-task": "none",
+    "reporting-export": "none",
+    "responsibility-transfer": "none"
+  },
+  "sameTraceSequence": [
+    {
+      "eventId": "019c0000-0000-7000-8000-000000000550",
+      "step": "identity-change-published",
+      "traceId": "0123456789abcdef0123456789abcdef"
+    },
+    {
+      "aggregateVersion": 1,
+      "eventId": "019c0000-0000-7000-8000-000000000533",
+      "jobStatus": "completed",
+      "lineageId": "lin_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "step": "impact-fan-out-completed",
+      "traceId": "0123456789abcdef0123456789abcdef"
+    },
+    {
+      "consumerWatermarkBeforeRelay": 0,
+      "deliveryOutcome": "published",
+      "status": "published",
+      "step": "outbox-relayed",
+      "traceId": "0123456789abcdef0123456789abcdef"
+    },
+    {
+      "consumerId": "authorization-current-scope",
+      "continuousWatermark": 1,
+      "lastEventId": "019c0000-0000-7000-8000-000000000533",
+      "localFenceState": "invalidated",
+      "step": "consumer-applied",
+      "traceId": "0123456789abcdef0123456789abcdef"
+    },
+    {
+      "authorizationResult": "deny",
+      "evaluatedAt": "2026-07-31T12:00:08Z",
+      "reasonCode": "RESPONSIBILITY_INACTIVE_RECIPIENT",
+      "sourceVisibleAt": "2026-07-31T12:00:01Z",
+      "step": "current-scope-read-back",
+      "traceId": "0123456789abcdef0123456789abcdef",
+      "withinFifteenMinutes": true
+    },
+    {
+      "appliedRequiredConsumerCount": 1,
+      "outcome": "healthy",
+      "plannedConsumersAdvanced": 0,
+      "propagationStatus": "complete",
+      "requiredConsumerCount": 1,
+      "step": "reconciled",
+      "traceId": "0123456789abcdef0123456789abcdef"
+    }
+  ],
+  "storyId": "1.6c",
+  "traceId": "0123456789abcdef0123456789abcdef",
+  "transport": "local-transport-adapter-test-only",
+  "version": "ACCESS-INVALIDATION-SANDBOX-EVIDENCE-1.0.0"
+}

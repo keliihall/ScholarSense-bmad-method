@@ -6,6 +6,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcResponsibilityReconciliationAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcResponsibilitySyncRepository;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationChangeKind;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationLineageId;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationReason;
+import cn.edu.suda.scholarsense.identityaccess.domain.AuthoritativeResponsibilityRelation;
+import cn.edu.suda.scholarsense.identityaccess.domain.EffectiveInterval;
+import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityRecipientDecision;
+import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityRecipientEvidence;
+import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityRecipientReason;
+import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityStatus;
+import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityStudentSourceReference;
+import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityType;
 import cn.edu.suda.scholarsense.shared.time.TimeSourceProfile;
 import cn.edu.suda.scholarsense.shared.time.TrustedTime;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +34,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +56,10 @@ class ResponsibilityAuthorityPostgreSqlIT {
     private static final String STUDENT = "stok_" + "b".repeat(32);
     private static final String DIGEST_A = "a".repeat(64);
     private static final String DIGEST_B = "b".repeat(64);
+    private static final String DIGEST_C = "c".repeat(64);
+    private static final String DIGEST_D = "d".repeat(64);
+    private static final String STUDENT_EQUIVALENCE = "e".repeat(64);
+    private static final String LINEAGE = "lin_" + "f".repeat(32);
 
     private DataSource dataSource;
     private JdbcTemplate jdbc;
@@ -58,6 +75,16 @@ class ResponsibilityAuthorityPostgreSqlIT {
         now = Instant.now().truncatedTo(ChronoUnit.MICROS);
         jdbc.execute("""
                 truncate table
+                  identity_access.ia_responsibility_v2_snapshot_lineage,
+                  identity_access.ia_responsibility_v2_snapshot_entry,
+                  identity_access.ia_responsibility_v2_cutover_command,
+                  identity_access.ia_responsibility_v2_reconciliation_snapshot,
+                  identity_access.ia_responsibility_v2_shadow_lineage_head,
+                  identity_access.ia_responsibility_v2_shadow_invalidation_fact,
+                  identity_access.ia_responsibility_v2_shadow_current,
+                  identity_access.ia_responsibility_v2_shadow_checkpoint,
+                  identity_access.ia_responsibility_v2_source_fact,
+                  identity_access.ia_responsibility_lineage_binding,
                   identity_access.ia_responsibility_slo_compensation,
                   identity_access.ia_responsibility_slo_evidence,
                   identity_access.ia_responsibility_reconciliation_detail,
@@ -76,7 +103,7 @@ class ResponsibilityAuthorityPostgreSqlIT {
     }
 
     @Test
-    void cleanAndUpgradeContainV7TablesIndexesAndRetentionColumns() {
+    void cleanAndUpgradeContainResponsibilityTablesIndexesAndRetentionColumns() {
         assertEquals("180004", jdbc.queryForObject(
                 "select current_setting('server_version_num')",
                 String.class));
@@ -87,7 +114,15 @@ class ResponsibilityAuthorityPostgreSqlIT {
                    and table_name like 'ia_responsibility_%'
                  order by table_name
                 """, String.class);
-        assertEquals(13, tables.size());
+        assertEquals(23, tables.size());
+        assertTrue(tables.contains(
+                "ia_responsibility_v2_shadow_checkpoint"));
+        assertTrue(tables.contains(
+                "ia_responsibility_v2_shadow_current"));
+        assertTrue(tables.contains(
+                "ia_responsibility_v2_reconciliation_snapshot"));
+        assertTrue(tables.contains(
+                "ia_responsibility_v2_cutover_command"));
         assertTrue(tables.contains(
                 "ia_responsibility_reconciliation_run"));
         assertTrue(tables.contains(
@@ -98,7 +133,7 @@ class ResponsibilityAuthorityPostgreSqlIT {
                  where schemaname='identity_access'
                    and indexname like 'ia_responsibility_%'
                 """, Integer.class) >= 18);
-        assertEquals(13, jdbc.queryForObject("""
+        assertEquals(17, jdbc.queryForObject("""
                 select count(distinct table_name)
                   from information_schema.columns
                  where table_schema='identity_access'
@@ -109,7 +144,7 @@ class ResponsibilityAuthorityPostgreSqlIT {
         JdbcTemplate upgraded = new JdbcTemplate(dataSource(
                 requiredProperty(
                         "scholarsense.audit.pg.upgrade-url")));
-        assertEquals(13, upgraded.queryForObject("""
+        assertEquals(23, upgraded.queryForObject("""
                 select count(*)
                   from information_schema.tables
                  where table_schema='identity_access'
@@ -202,6 +237,143 @@ class ResponsibilityAuthorityPostgreSqlIT {
                 () -> insertInbox(
                         "019c1234-0000-7000-8000-000000000105",
                         1));
+    }
+
+    @Test
+    void v2ReplayGateAndActiveSuccessorHoldAtThePostgreSqlCommitPoint() {
+        JdbcResponsibilitySyncRepository repository =
+                new JdbcResponsibilitySyncRepository(jdbc);
+        TransactionTemplate transaction = new TransactionTemplate(manager);
+        IdentityLease lease = insertSyncLease();
+
+        insertCurrent(
+                uuidV7().toString(),
+                RELATION,
+                KEY.partitionId(),
+                DIGEST_A,
+                DIGEST_A);
+        upsertLiveCheckpoint(1, 1, 1);
+
+        AuthoritativeResponsibilityRelation first = v2Relation(
+                uuidV7(), null, 1, 1, 1, 1, DIGEST_B,
+                AccessInvalidationChangeKind.CORRECTED,
+                AccessInvalidationReason.DIRECT_RESPONSIBILITY_CHANGE,
+                ResponsibilityStatus.ACTIVE);
+        NormalizedResponsibilityBatch firstBatch =
+                v2Batch(1, 0, 1, first);
+        applyV2AsWorker(repository, firstBatch, lease, now, first);
+
+        assertEquals(DIGEST_A, livePayload());
+        assertEquals(DIGEST_B, shadowPayload());
+        assertFalse(repository.v2ShadowActive(KEY));
+        assertEquals(1, repository.v2ShadowCheckpoint(KEY)
+                .orElseThrow().watermark());
+
+        upsertLiveCheckpoint(2, 2, 2);
+        ResponsibilityFullSnapshot staleSnapshot = v2Snapshot(
+                repository, first, List.of(first), 1, 1);
+        IdentitySyncException stale = assertThrows(
+                IdentitySyncException.class,
+                () -> inCutoverTransaction(() ->
+                        repository.recordV2Reconciliation(
+                                staleSnapshot,
+                                now.plusSeconds(1))));
+        assertEquals(
+                "RESPONSIBILITY_V2_RECONCILIATION_STALE",
+                stale.code());
+        assertEquals(0L, count(
+                "ia_responsibility_v2_reconciliation_snapshot"));
+
+        AuthoritativeResponsibilityRelation second = v2Relation(
+                uuidV7(), first.relationId(), 2, 2, 2, 2, DIGEST_C,
+                AccessInvalidationChangeKind.CORRECTED,
+                AccessInvalidationReason.SOURCE_CORRECTION,
+                ResponsibilityStatus.ACTIVE);
+        NormalizedResponsibilityBatch secondBatch =
+                v2Batch(2, 1, 2, second);
+        applyV2AsWorker(
+                repository,
+                secondBatch,
+                lease,
+                now.plusSeconds(2),
+                second);
+
+        ResponsibilityFullSnapshot matchedSnapshot = v2Snapshot(
+                repository, second, List.of(first, second), 2, 2);
+        ResponsibilityV2ReconciliationEvidence evidence =
+                inCutoverTransaction(() ->
+                        repository.recordV2Reconciliation(
+                                matchedSnapshot,
+                                now.plusSeconds(3)));
+        assertTrue(evidence.matched());
+        ResponsibilityV2CutoverRequest cutover =
+                new ResponsibilityV2CutoverRequest(
+                        KEY, matchedSnapshot.snapshotId(), TRACE);
+        int stagedFacts = inCutoverTransaction(() ->
+                repository.v2ShadowInvalidationFacts(KEY).size());
+        inCutoverTransaction(() -> {
+            repository.markV2InvalidationReplayMaterialized(
+                    cutover, stagedFacts);
+            return null;
+        });
+
+        assertThrows(IllegalStateException.class, () ->
+                inCutoverTransaction(() -> {
+                    repository.activateV2Shadow(
+                            cutover, now.plusSeconds(4));
+                    throw new IllegalStateException(
+                            "injected-after-v2-activation");
+                }));
+        assertFalse(repository.v2ShadowActive(KEY));
+        assertEquals(DIGEST_A, livePayload());
+
+        IdentityCheckpoint activated = inCutoverTransaction(() ->
+                repository.activateV2Shadow(
+                        cutover, now.plusSeconds(5)));
+        assertEquals(2, activated.sourceVersion());
+        assertTrue(repository.v2ShadowActive(KEY));
+        assertEquals(DIGEST_C, livePayload());
+        assertEquals(2, liveSourceVersion());
+
+        IdentitySyncException legacyRejected = assertThrows(
+                IdentitySyncException.class,
+                () -> transaction.execute(status -> {
+                    repository.recordHeartbeat(
+                            v1Heartbeat(2),
+                            lease,
+                            now.plusSeconds(6));
+                    return null;
+                }));
+        assertEquals(
+                "RESPONSIBILITY_V2_REPLAY_REQUIRED",
+                legacyRejected.code());
+
+        AuthoritativeResponsibilityRelation successor = v2Relation(
+                uuidV7(), second.relationId(), 3, 3, 3, 3, DIGEST_D,
+                AccessInvalidationChangeKind.REVOKED,
+                AccessInvalidationReason.DIRECT_RESPONSIBILITY_CHANGE,
+                ResponsibilityStatus.INACTIVE);
+        NormalizedResponsibilityBatch successorBatch =
+                v2Batch(3, 2, 3, successor);
+        assertFalse(Boolean.TRUE.equals(jdbc.queryForObject("""
+                select has_table_privilege(
+                  'scholarsense_identity_sync_worker',
+                  'identity_access.ia_responsibility_current',
+                  'DELETE')
+                """, Boolean.class)));
+        applyV2AsWorker(
+                repository,
+                successorBatch,
+                lease,
+                now.plusSeconds(7),
+                successor);
+        assertEquals(DIGEST_D, livePayload());
+        assertEquals(3, liveSourceVersion());
+        assertEquals("inactive", jdbc.queryForObject("""
+                select relation_status
+                  from identity_access.ia_responsibility_current
+                 where source_id=? and relation_ref_token=?
+                """, String.class, KEY.sourceId(), RELATION));
     }
 
     @Test
@@ -347,6 +519,7 @@ class ResponsibilityAuthorityPostgreSqlIT {
         List<ResponsibilitySnapshotEntry> atOne =
                 store().actualSnapshot(
                         KEY,
+                        "RESPONSIBILITY-AUTHORITY-1.0.0",
                         1,
                         now,
                         java.util.Map.of(
@@ -355,6 +528,7 @@ class ResponsibilityAuthorityPostgreSqlIT {
         List<ResponsibilitySnapshotEntry> atTwo =
                 store().actualSnapshot(
                         KEY,
+                        "RESPONSIBILITY-AUTHORITY-1.0.0",
                         2,
                         now,
                         java.util.Map.of(
@@ -368,6 +542,7 @@ class ResponsibilityAuthorityPostgreSqlIT {
         assertEquals(DIGEST_B, atTwo.getFirst().payloadDigest());
         assertFalse(store().actualSnapshot(
                         KEY,
+                        "RESPONSIBILITY-AUTHORITY-1.0.0",
                         2,
                         now,
                         java.util.Map.of(
@@ -486,6 +661,325 @@ class ResponsibilityAuthorityPostgreSqlIT {
                         """,
                         String.class,
                         exceptionId));
+    }
+
+    private IdentityLease insertSyncLease() {
+        UUID jobId = uuidV7();
+        Instant acquiredAt = now.minusSeconds(1);
+        Instant leaseExpiresAt = now.plusSeconds(600);
+        new TransactionTemplate(manager).execute(status -> {
+            jdbc.update("""
+                    delete from identity_access.ia_identity_sync_lease
+                     where source_id=? and feed_id=? and partition_id=?
+                       and consumer_projection='responsibility'
+                    """, KEY.sourceId(), KEY.feedId(), KEY.partitionId());
+            jdbc.update("""
+                    insert into identity_access.ia_identity_sync_job (
+                      job_id, source_id, feed_id, partition_id,
+                      consumer_projection, status, health, freshness,
+                      requested_at, retry_budget, trace_id,
+                      retention_effective_at, expires_at)
+                    values (?, ?, ?, ?, 'responsibility', 'running',
+                            'healthy', 'fresh', ?, 8, ?, ?, ?)
+                    """,
+                    jobId, KEY.sourceId(), KEY.feedId(), KEY.partitionId(),
+                    java.sql.Timestamp.from(acquiredAt), TRACE,
+                    java.sql.Timestamp.from(acquiredAt),
+                    java.sql.Timestamp.from(
+                            acquiredAt.plus(Duration.ofDays(30))));
+            jdbc.update("""
+                    insert into identity_access.ia_identity_sync_attempt (
+                      job_id, attempt_no, fencing_token, status,
+                      input_watermark, started_at, trace_id,
+                      retention_effective_at, expires_at)
+                    values (?, 1, 1, 'running', 0, ?, ?, ?, ?)
+                    """,
+                    jobId, java.sql.Timestamp.from(acquiredAt), TRACE,
+                    java.sql.Timestamp.from(acquiredAt),
+                    java.sql.Timestamp.from(
+                            acquiredAt.plus(Duration.ofDays(30))));
+            jdbc.update("""
+                    insert into identity_access.ia_identity_sync_lease (
+                      source_id, feed_id, partition_id,
+                      consumer_projection, job_id, attempt_no,
+                      fencing_token, lease_owner, acquired_at,
+                      lease_expires_at, retention_effective_at, expires_at)
+                    values (?, ?, ?, 'responsibility', ?, 1, 1,
+                            'pg-v2-worker', ?, ?, ?, ?)
+                    """,
+                    KEY.sourceId(), KEY.feedId(), KEY.partitionId(), jobId,
+                    java.sql.Timestamp.from(acquiredAt),
+                    java.sql.Timestamp.from(leaseExpiresAt),
+                    java.sql.Timestamp.from(acquiredAt),
+                    java.sql.Timestamp.from(
+                            acquiredAt.plus(Duration.ofDays(30))));
+            return null;
+        });
+        return new IdentityLease(
+                KEY,
+                jobId,
+                1,
+                1,
+                "pg-v2-worker",
+                acquiredAt,
+                leaseExpiresAt);
+    }
+
+    private void applyV2AsWorker(
+            JdbcResponsibilitySyncRepository repository,
+            NormalizedResponsibilityBatch batch,
+            IdentityLease lease,
+            Instant appliedAt,
+            AuthoritativeResponsibilityRelation relation) {
+        new TransactionTemplate(manager).execute(status -> {
+            jdbc.execute(
+                    "set local role scholarsense_identity_sync_worker");
+            repository.applyV2Shadow(
+                    batch,
+                    lease,
+                    appliedAt,
+                    List.of(v2Scope(relation)));
+            return null;
+        });
+    }
+
+    private <T> T inCutoverTransaction(Supplier<T> work) {
+        return new TransactionTemplate(manager).execute(status -> {
+            jdbc.execute("set local role "
+                    + "scholarsense_identity_responsibility_v2_cutover");
+            return work.get();
+        });
+    }
+
+    private AuthoritativeResponsibilityRelation v2Relation(
+            UUID eventId,
+            UUID supersedesId,
+            long sourceVersion,
+            long sourceWatermark,
+            long recordVersion,
+            long lineageVersion,
+            String payloadDigest,
+            AccessInvalidationChangeKind changeKind,
+            AccessInvalidationReason reason,
+            ResponsibilityStatus status) {
+        return new AuthoritativeResponsibilityRelation(
+                eventId,
+                KEY.sourceId(),
+                RELATION,
+                new ResponsibilityStudentSourceReference(
+                        "RESPONSIBILITY-STUDENT-REF",
+                        "resp-student-v2",
+                        STUDENT,
+                        DIGEST_B,
+                        STUDENT_EQUIVALENCE),
+                DIGEST_C,
+                DIGEST_D,
+                ResponsibilityType.PRIMARY,
+                status,
+                new EffectiveInterval(now.minus(Duration.ofDays(1)), null),
+                sourceVersion,
+                sourceWatermark,
+                recordVersion,
+                lineageVersion,
+                payloadDigest,
+                changeKind,
+                reason,
+                now.plusSeconds(sourceVersion - 1),
+                new AccessInvalidationLineageId(LINEAGE),
+                supersedesId);
+    }
+
+    private ResponsibilityScopeProjectionUpdate v2Scope(
+            AuthoritativeResponsibilityRelation relation) {
+        return new ResponsibilityScopeProjectionUpdate(
+                STUDENT_EQUIVALENCE,
+                List.of(relation),
+                ResponsibilityRecipientDecision.invalid(
+                        ResponsibilityRecipientReason.ZERO_RECIPIENT),
+                List.of(new ResponsibilityRecipientEvidence(
+                        relation,
+                        null,
+                        null,
+                        false,
+                        false,
+                        false,
+                        false)));
+    }
+
+    private NormalizedResponsibilityBatch v2Batch(
+            long sourceVersion,
+            long fromWatermark,
+            long toWatermark,
+            AuthoritativeResponsibilityRelation relation) {
+        return new NormalizedResponsibilityBatch(
+                uuidV7(),
+                KEY,
+                "RESPONSIBILITY-BATCH-1.0.0",
+                "RESPONSIBILITY-AUTHORITY-2.0.0",
+                sourceVersion,
+                fromWatermark,
+                toWatermark,
+                java.util.Map.of("identity-authority|sandbox-0", 42L),
+                now.minusSeconds(1),
+                now,
+                TRACE,
+                DIGEST_A,
+                DIGEST_B,
+                true,
+                new byte[] {1},
+                new byte[] {2},
+                new byte[] {3},
+                "config://test/responsibility-authority-inbox",
+                "k1",
+                List.of(relation));
+    }
+
+    private NormalizedResponsibilityBatch v1Heartbeat(long watermark) {
+        return new NormalizedResponsibilityBatch(
+                uuidV7(),
+                KEY,
+                "RESPONSIBILITY-BATCH-1.0.0",
+                "RESPONSIBILITY-AUTHORITY-1.0.0",
+                watermark,
+                watermark,
+                watermark,
+                java.util.Map.of("identity-authority|sandbox-0", 42L),
+                now.minusSeconds(1),
+                now,
+                TRACE,
+                DIGEST_A,
+                DIGEST_B,
+                true,
+                new byte[] {1},
+                new byte[] {2},
+                new byte[] {3},
+                "config://test/responsibility-authority-inbox",
+                "k1",
+                List.of());
+    }
+
+    private ResponsibilityFullSnapshot v2Snapshot(
+            JdbcResponsibilitySyncRepository repository,
+            AuthoritativeResponsibilityRelation current,
+            List<AuthoritativeResponsibilityRelation> lineage,
+            long sourceVersion,
+            long throughWatermark) {
+        List<ResponsibilityV2LineageDigestEvent> digestEvents = lineage.stream()
+                .map(relation -> new ResponsibilityV2LineageDigestEvent(
+                        relation.aggregateVersion(),
+                        relation.relationId(),
+                        relation.supersedesId(),
+                        relation.sourceVersion(),
+                        relation.sourceWatermark(),
+                        relation.recordVersion(),
+                        relation.payloadDigest(),
+                        relation.changeKind().name().toLowerCase()
+                                .replace('_', '-'),
+                        relation.changeReason().name(),
+                        relation.changeEffectiveAt()))
+                .toList();
+        ResponsibilityV2LineageManifest manifest =
+                new ResponsibilityV2LineageManifest(
+                        RELATION,
+                        new AccessInvalidationLineageId(LINEAGE),
+                        lineage.getFirst().relationId(),
+                        lineage.getLast().relationId(),
+                        lineage.size(),
+                        ResponsibilityV2LineageDigest.digest(digestEvents));
+        ResponsibilityV2ProjectionFingerprint fingerprint =
+                repository.v2ShadowFingerprint(KEY);
+        assertEquals(
+                fingerprint.canonicalLineageDigest(),
+                ResponsibilityV2LineageManifest.digest(List.of(manifest)));
+        return new ResponsibilityFullSnapshot(
+                uuidV7(),
+                KEY,
+                "RESPONSIBILITY-SNAPSHOT-1.0.0",
+                "RESPONSIBILITY-AUTHORITY-2.0.0",
+                LocalDate.now(),
+                now,
+                sourceVersion,
+                throughWatermark,
+                java.util.Map.of("identity-authority|sandbox-0", 42L),
+                true,
+                true,
+                List.of(KEY.partitionId()),
+                fingerprint.recordCount(),
+                fingerprint.canonicalDigest(),
+                DIGEST_B,
+                DIGEST_A,
+                true,
+                List.of(new ResponsibilitySnapshotEntry(
+                        RELATION,
+                        STUDENT_EQUIVALENCE,
+                        current.recordVersion(),
+                        current.payloadDigest(),
+                        current.status() == ResponsibilityStatus.ACTIVE,
+                        false)),
+                fingerprint.lineageCount(),
+                fingerprint.canonicalLineageDigest(),
+                List.of(manifest),
+                TRACE);
+    }
+
+    private void upsertLiveCheckpoint(
+            long sourceVersion,
+            long sourceWatermark,
+            long aggregateVersion) {
+        jdbc.update("""
+                insert into identity_access.ia_identity_sync_checkpoint (
+                  source_id, feed_id, partition_id, consumer_projection,
+                  source_version, source_watermark, aggregate_version,
+                  last_successful_at, health, freshness, updated_at,
+                  trace_id, retention_effective_at)
+                values (?, ?, ?, 'responsibility', ?, ?, ?, ?, 'healthy',
+                        'fresh', ?, ?, ?)
+                on conflict (source_id, feed_id, partition_id,
+                             consumer_projection)
+                do update set source_version=excluded.source_version,
+                              source_watermark=excluded.source_watermark,
+                              aggregate_version=excluded.aggregate_version,
+                              last_successful_at=excluded.last_successful_at,
+                              health='healthy', freshness='fresh',
+                              updated_at=excluded.updated_at,
+                              trace_id=excluded.trace_id,
+                              retention_effective_at=
+                                  excluded.retention_effective_at
+                """,
+                KEY.sourceId(), KEY.feedId(), KEY.partitionId(),
+                sourceVersion, sourceWatermark, aggregateVersion,
+                java.sql.Timestamp.from(now), java.sql.Timestamp.from(now),
+                TRACE, java.sql.Timestamp.from(now));
+    }
+
+    private String livePayload() {
+        return jdbc.queryForObject("""
+                select payload_digest
+                  from identity_access.ia_responsibility_current
+                 where source_id=? and relation_ref_token=?
+                """, String.class, KEY.sourceId(), RELATION);
+    }
+
+    private String shadowPayload() {
+        return jdbc.queryForObject("""
+                select payload_digest
+                  from identity_access.ia_responsibility_v2_shadow_current
+                 where source_id=? and relation_ref_token=?
+                """, String.class, KEY.sourceId(), RELATION);
+    }
+
+    private long liveSourceVersion() {
+        return jdbc.queryForObject("""
+                select source_version
+                  from identity_access.ia_identity_sync_checkpoint
+                 where source_id=? and feed_id=? and partition_id=?
+                   and consumer_projection='responsibility'
+                """, Long.class, KEY.sourceId(), KEY.feedId(),
+                KEY.partitionId());
+    }
+
+    private UUID uuidV7() {
+        return UUID.fromString(UuidV7.generate(now));
     }
 
     private JdbcResponsibilityReconciliationAdapter store() {
@@ -707,7 +1201,8 @@ class ResponsibilityAuthorityPostgreSqlIT {
                   relation_status,recipient_validity,
                   recipient_reason_code,quality_gate_status,
                   effective_from,source_version,source_watermark,
-                  record_version,aggregate_version,applied_at,trace_id,
+                  record_version,aggregate_version,payload_digest,
+                  applied_at,trace_id,
                   retention_effective_at)
                 values (
                   ?,'SRC-P0-RESPONSIBILITY-001',
@@ -715,7 +1210,7 @@ class ResponsibilityAuthorityPostgreSqlIT {
                   'RESPONSIBILITY-STUDENT-REF','resp-student-v1',?,
                   ?,?,?,?,'primary','active','invalid',
                   'RESPONSIBILITY_RECIPIENT_ACCOUNT_NOT_ACTIVE',
-                  'blocked',?,1,1,1,1,?,?,?)
+                  'blocked',?,1,1,1,1,?,?,?,?)
                 """,
                 UUID.fromString(relationId),
                 partitionId,
@@ -726,6 +1221,7 @@ class ResponsibilityAuthorityPostgreSqlIT {
                 DIGEST_B,
                 collegeDigest,
                 java.sql.Timestamp.from(now.minusSeconds(120)),
+                DIGEST_A,
                 java.sql.Timestamp.from(now),
                 TRACE,
                 java.sql.Timestamp.from(now));

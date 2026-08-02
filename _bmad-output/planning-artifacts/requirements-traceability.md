@@ -1,8 +1,8 @@
 ---
 title: 学林知微需求与实施追踪矩阵
 status: controlled-baseline
-version: 2.1.1
-updated: 2026-07-19-story-1.1d-applicability-alignment
+version: 2.1.2
+updated: 2026-07-31-story-1.6c-downstream-activation-alignment
 implementationReadiness: ready
 externalGateStatus: approved-for-implementation
 runtimeEvidenceStatus: pending-story-execution
@@ -22,7 +22,7 @@ derivedFrom:
 
 # 需求与实施追踪矩阵
 
-本文是 PRD→UX→Architecture→Epic→Story→AC 的唯一派生追踪表，不创建或改写需求。`full` 表示规格已有最终 owner AC；`phase/enabler` 不计为完整交付。`ready` 表示实现参数与 DoR 证据齐备；后续契约、性能、灾备、删除、视觉/无障碍和 canary 实测由绑定 Story/DoD 生成，未通过时禁止完成 Story 或发布，但不再构成外部实现准入阻塞。G-01—G-09 均已依据 `AUTH-2026-07-17-001` 批准进入实现。
+本文是 PRD→UX→Architecture→Epic→Story→AC 的唯一派生追踪表，不创建或改写需求。`full` 表示规格已有规划 owner AC；`phase/enabler` 不计为完整交付。跨模块传播可标记 `runtime staged`：producer Story 只计算当前适用 active/required consumer，未来 owner Story 在激活时产生真实业务 apply、水位、回放与对账证据。`ready` 表示实现参数与 DoR 证据齐备；后续契约、性能、灾备、删除、视觉/无障碍和 canary 实测由绑定 Story/DoD 生成，未通过时禁止完成 Story 或发布，但不再构成外部实现准入阻塞。G-01—G-09 均已依据 `AUTH-2026-07-17-001` 批准进入实现。
 
 最终可实施 oracle 明确包含 `RFP-FIXTURE-1.0.0`（含 R5 星号字段全集/WORKITEM-A）、`CareActionCatalogVersion=CAC-1.0.0`（含单 clueId Observation）、`SeasonalProgramMatrixVersion=SPM-1.0.0`（含 academicCalendarProjection）与 `AcademicCareNodeSetVersion=ACN-1.0.0`；它们关闭静态定义缺口，运行测试仍由对应 Story DoD 产生。
 
@@ -30,17 +30,18 @@ derivedFrom:
 
 | 制品 | 版本 / 状态 | control effective | 批准/证据 | external evidence | 冲突优先级 |
 |---|---|---|---|---|---|
+| `sprint-change-proposal-2026-07-31.md` | approved | 2026-07-31 | Hei 的“批准” | 1.6c producer/current-scope 与未来 owner consumer activation/runtime evidence 分离 | P0：本次 1.6c 受控范围与证据责任 |
 | `sprint-change-proposal-2026-07-17.md` | rev 4 / approved | 2026-07-17 | Hei 的 `yes` 及 AUTH-2026-07-17-001 | 全部纠偏、委托裁决与 IA-01—IA-05 终检闭环 | P0：本次变更范围与理由 |
 | `delegated-decision-baseline-2026-07-17.md` | 1.1.0 / approved | 2026-07-17 | Hei / 2026-07-17 | DEC-001—018、G-01—09 与 RFP/CAC/SPM/ACN 静态基线 | P0-A：窄域决策与实现准入 |
 | `app-applicability-baseline-2026-07-19.md` | AAB-1.0.0 / approved | 2026-07-19 | Hei / `USER-2026-07-19-SCHOOL-APP-NA` | 仅 Story 1.1c/1.1d：App/WebView `not-applicable`、`runtimeEvidenceClaim=none`；不取消 7.x | P0-A：作用域内后续适用性裁决 |
 | `prds/.../prd.md` | 2.1.1 / controlled-baseline | 2026-07-19 | AUTH + AAB-1.0.0 | 产品范围不变；1.1c/d App 运行证据 N/A | P1：产品目标、FR/BR/NFR、分期与业务语义 |
 | `architecture/.../ARCHITECTURE-SPINE.md` | 2.1.1 / controlled-baseline | 2026-07-19 | AUTH + AAB-1.0.0 | G-01—G-09 approved；1.1c/d App 适用性已同步 | P2-A：技术不变量和 Gate |
 | `ux-designs/.../EXPERIENCE.md` + `DESIGN.md` | 2.1.1 / controlled-baseline | 2026-07-19 | AUTH + AAB-1.0.0 | UXB/PAB/CTV/RFP/CAC/SPM 与 1.1c/d App 适用性已冻结 | P2-B：交互行为与视觉契约 |
-| `epics.md` | 2.1.1 / controlled-baseline | 2026-07-19 | AUTH + AAB-1.0.0 | Story planned；1.1d Web 必测、App N/A；DoD fail closed | P3：实施分解、依赖与 AC |
+| `epics.md` | 2.1.2 / controlled-baseline | 2026-07-31 | AUTH + AAB-1.0.0 + 2026-07-31 approved change | 1.6c 当前 active/required consumer；未来 owner 激活回放/apply/水位 | P3：实施分解、依赖与 AC |
 | `rule-catalog.md` | 1.1.0 / approved | 2026-07-17 | Hei / RC/SPM/ACN-1.0.0 | runtime inactive/fused，等待 Story 实测 | 窄域规则/专项矩阵 |
 | `high-risk-action-matrix.md` | 1.0.0 / approved | 2026-07-17 | Hei / HRAP-1.0.0 | runtime 逐 actionType 测试 | 窄域高风险策略 |
 | `open-decisions.md` | 2.1.1 / closed | 2026-07-19 | Hei / AUTH + AAB-1.0.0 | DEC-001—018 closed；后续作用域裁决已登记 | 决策登记 |
-| 本文件 | 2.1.1 / controlled-baseline | 2026-07-19 | 派生对账制品 | 不冒充运行证据 | P4：追踪，不得覆盖上游 |
+| 本文件 | 2.1.2 / controlled-baseline | 2026-07-31 | 派生对账制品 | 不冒充 planned/not-installed consumer 运行证据 | P4：追踪，不得覆盖上游 |
 | `prds/.../addendum.md` | historical / non-normative | superseded | 无 | 与 v1.1 冲突项不再生效 | 历史输入，不参与裁决 |
 | `implementation-readiness-report-2026-07-17-2.md` | audit input | 2026-07-17 | readiness 审计 | 非规范性 | 审计证据，不定义产品 |
 
@@ -51,6 +52,8 @@ derivedFrom:
 Story 1.5 runtime companion（2026-07-23）：FR-8 的授权搜索/字段投影/归档与 retention conformance 由本 Story 提供；`conformanceVerified=true`。生产权威角色尚待 Story 1.6/1.7，因此 `productionAuthorizationEnabled=false`，RFP fixture 不得激活生产搜索。独立生产 WORM adapter 与真实跨域 `DeletionReceipt` 仍分别等待基础设施绑定和 Story 6.6；当前证据只允许 `scopeType=audit-domain`、`nonProductionEvidence=true`。
 
 Story 1.1d 的规划准入与完成平台分离：当前基线足以开始 U1 本地可复现构建合同；真实 Git/CI、digest-addressed store、attestation/signing、受保护环境、正式 Web runner 与 promotion endpoint 必须由 `CISB-1.0.0` 以实际值另行冻结。CISB 未完成时，U2—U4 与整体 `review/done` 保持不可验收，不得把 planning `ready` 解读为已有运行平台。
+
+Story 1.6c runtime companion（2026-07-31）：FR-2 planning owner 仍为 1.6c；1.6c 只计算当前发布版本适用、required 且 active 的真实消费者，并以 `AC-1.6c-HAPPY` 与 `AC-1.6c-DOWNSTREAM-ACTIVATION` 验收。task/transfer/export/mobile 等 `planned/not-installed` 消费者必须保存 `runtimeEvidenceClaim=none`，不得由 fixture、transport ack 或 producer-observed ack 伪推进。1.7、3.9b、3.14c、5.5、7.2c 在各自 owner Story 激活真实消费者或 surface verification 时，必须完成回放、业务 apply、自有 watermark 与 reconciliation；contributor 列不形成 1.6c 的前向执行依赖。
 
 ## Gate 批准登记
 
@@ -90,7 +93,7 @@ Story 1.1d 的规划准入与完成平台分离：当前基线足以开始 U1 �
 | FR | PRD | UX surface | Architecture | owner Story / AC | contributor | approved baseline / DoD evidence | coverage / ready |
 |---|---|---|---|---|---|---|---|
 | FR-1 | §6.1 | unified-shell/会话恢复 | AD-8/12/17/28 | 1.2 / AC-1.2-HAPPY | 1.1c,1.1d | G-02/G-05 | full / ready |
-| FR-2 | §6.1 | 身份/撤权状态 | AD-2/8/17/24/25 | 1.6c / AC-1.6c-HAPPY | 1.6a,1.6b | G-02 | full / ready |
+| FR-2 | §6.1 | 身份/撤权状态 | AD-2/8/17/24/25 | 1.6c（planning owner）/ AC-1.6c-HAPPY + AC-1.6c-DOWNSTREAM-ACTIVATION | 1.6a,1.6b,1.7；下游激活证据：3.9b,3.14c,5.5,7.2c | G-02；future consumer 未激活时 `runtimeEvidenceClaim=none` | planning full / runtime staged |
 | FR-3 | §6.1 | 角色化首页 | AD-8/11/17 | 1.7 / AC-1.7-HAPPY | 1.6a,1.6b,1.6c | G-01/G-02/G-05；RFP matrix/WORKITEM-A/fixture | full / ready |
 | FR-4 | §6.1 | 公共待办深链 | AD-7/13/20/24 | 5.5 / AC-5.5-* | 1.9,2.5a,2.5c,3.4,3.9d,3.12,5.1,5.2d | G-04 | full / ready |
 | FR-5 | §6.2 | 无权限/对象范围 | AD-8/12 | 1.7 / AC-1.7-HAPPY | 1.8 | G-02；RFP scope/action oracle | full / ready |
@@ -201,7 +204,7 @@ Story 1.1d 的规划准入与完成平台分离：当前基线足以开始 U1 �
 | NFR-24 | 2.6b / AC-2.6b-HAPPY | trace association | AD-7/13/16/24 | G-01/DEC-017 |
 | NFR-25 | 3.1c / AC-3.1c-* | rule config/rollback | AD-3/6/13/15 | G-06/DEC-004 |
 | NFR-26 | 6.4 / AC-6.4-* | metric catalog/version | AD-11/21/24 | G-04/G-07 |
-| NFR-27 | 1.6c / AC-1.6c-HAPPY | identity latency/watermark | AD-2/8/17/20/24 | G-02 |
+| NFR-27 | 1.6a,1.6b,1.6c / AC-1.6c-HAPPY + AC-1.6c-DOWNSTREAM-ACTIVATION；activation evidence：1.7,3.9b,3.14c,5.5,7.2c | 当前 active/required consumer 的 identity latency/watermark；未来 consumer 回放/apply/reconciliation | AD-2/8/17/20/24 | G-02；planned/not-installed=`runtimeEvidenceClaim=none` |
 | NFR-28 | 3.1c,4.1a,4.4c,4.7 / AC-*-* | rule/data/SPM gate | AD-5/6/23 | G-03/G-06/DEC-004 |
 | NFR-29 | 7.2c / AC-7.2c-* | committedAt→ui.state-observed | AD-7/17/22/24/26 | G-01/G-02/G-05/DEC-017 |
 | NFR-30 | 1.2 / AC-1.2-HAPPY | exact browser matrix | AD-17/22/28 | G-05 |

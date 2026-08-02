@@ -127,6 +127,17 @@ class MountedIdentitySyncSecurityBindingsTest {
                 payload,
                 hmac(responsibilitySignature, payload),
                 "secret://test/responsibility-authority-signature"));
+        byte[] command = "approved-command".getBytes(
+                StandardCharsets.UTF_8);
+        String commandMac = bindings.sign(command);
+        assertTrue(bindings.verify(command, commandMac));
+        assertFalse(bindings.verify(
+                "tampered-command".getBytes(StandardCharsets.UTF_8),
+                commandMac));
+        assertNotEquals(
+                hmac(responsibilitySignature, command),
+                commandMac,
+                "cutover commands must use a distinct MAC domain");
         var encrypted = bindings.encrypt(
                 "responsibility".toCharArray(),
                 "responsibility-authority-inbox");

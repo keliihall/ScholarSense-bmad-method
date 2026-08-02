@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cn.edu.suda.scholarsense.identityaccess.domain.AuthoritativeResponsibilityRelation;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationChangeKind;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationLineageId;
+import cn.edu.suda.scholarsense.identityaccess.domain.AccessInvalidationReason;
 import cn.edu.suda.scholarsense.identityaccess.domain.EffectiveInterval;
 import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityRecipientEvidence;
 import cn.edu.suda.scholarsense.identityaccess.domain.ResponsibilityRecipientValidity;
@@ -58,6 +61,140 @@ class ResponsibilitySyncServiceTest {
         assertTrue(store.applied);
         assertEquals(42, store.identityWatermark);
         assertEquals("responsibility.sync.applied", audits.getFirst().action());
+    }
+
+    @Test
+    void v2ReplaysFromZeroAgainstShadowAndAuditsActualContractWithoutPublishing() {
+        var store = new FakeRepository();
+        store.v2Checkpoint = Optional.empty();
+        var audits = new ArrayList<IdentitySyncAuditEvent>();
+        var published = new ArrayList<CommittedResponsibilityChangeSet>();
+        var service = service(store, (key, from, to, trace) -> {}, audits,
+                published);
+
+        IdentitySyncResult result = service.process(v2Batch(0, 1), LEASE);
+
+        assertEquals(IdentitySyncOutcome.APPLIED, result.outcome());
+        assertTrue(store.v2Applied);
+        assertFalse(store.applied);
+        assertTrue(published.isEmpty());
+        assertEquals(
+                "RESPONSIBILITY-AUTHORITY-2.0.0",
+                audits.getFirst().policyVersions()
+                        .get("responsibilityContract"));
+    }
+
+    @Test
+    void v2CannotSkipZeroOrRebindStableRelationLineage() {
+        var store = new FakeRepository();
+        store.v2Checkpoint = Optional.empty();
+        var ranges = new ArrayList<String>();
+        var service = service(
+                store,
+                (key, from, to, trace) -> ranges.add(from + ":" + to),
+                new ArrayList<>());
+
+        IdentitySyncException gap = assertThrows(
+                IdentitySyncException.class,
+                () -> service.process(v2Batch(1, 2), LEASE));
+        assertEquals("RESPONSIBILITY_SOURCE_VERSION_GAP", gap.code());
+        assertTrue(ranges.isEmpty());
+
+        store.boundLineage = Optional.of(new AccessInvalidationLineageId(
+                "lin_" + "9".repeat(40)));
+        IdentitySyncException rebind = assertThrows(
+                IdentitySyncException.class,
+                () -> service.process(v2Batch(0, 1), LEASE));
+        assertEquals("RESPONSIBILITY_IDEMPOTENCY_CONFLICT", rebind.code());
+        assertFalse(store.v2Applied);
+    }
+
+    @Test
+    void firstV2DataBatchMustStartAtSourceVersionOne() {
+        var store = new FakeRepository();
+        store.v2Checkpoint = Optional.empty();
+
+        IdentitySyncException gap = assertThrows(
+                IdentitySyncException.class,
+                () -> service(
+                                store,
+                                (key, from, to, trace) -> {},
+                                new ArrayList<>())
+                        .process(v2Batch(0, 2), LEASE));
+
+        assertEquals("RESPONSIBILITY_SOURCE_VERSION_GAP", gap.code());
+        assertFalse(store.v2Applied);
+        assertEquals(1, store.rejections.size());
+        assertEquals(
+                "RESPONSIBILITY_SOURCE_VERSION_GAP",
+                store.rejections.getFirst().reasonCode());
+        assertTrue(store.rejections.getFirst().replayable());
+    }
+
+    @Test
+    void v2DataBatchCannotSkipTheCheckpointSourceVersion() {
+        var store = new FakeRepository();
+        store.v2Checkpoint = Optional.of(new IdentityCheckpoint(
+                KEY,
+                1,
+                1,
+                1,
+                NOW.minusSeconds(10),
+                IdentitySourceHealth.HEALTHY,
+                IdentityProjectionFreshness.FRESH));
+
+        IdentitySyncException gap = assertThrows(
+                IdentitySyncException.class,
+                () -> service(
+                                store,
+                                (key, from, to, trace) -> {},
+                                new ArrayList<>())
+                        .process(v2Batch(1, 3), LEASE));
+
+        assertEquals("RESPONSIBILITY_SOURCE_VERSION_GAP", gap.code());
+        assertFalse(store.v2Applied);
+        assertEquals(1, store.rejections.size());
+        assertEquals(
+                "RESPONSIBILITY_SOURCE_VERSION_GAP",
+                store.rejections.getFirst().reasonCode());
+        assertTrue(store.rejections.getFirst().replayable());
+    }
+
+    @Test
+    void activeV2ShadowRejectsBothV1DataAndHeartbeatWithoutSideEffects() {
+        var store = new FakeRepository();
+        store.v2Active = true;
+        var published = new ArrayList<CommittedResponsibilityChangeSet>();
+        var service = service(
+                store,
+                (key, from, to, trace) -> {},
+                new ArrayList<>(),
+                published);
+
+        IdentitySyncException dataRejected = assertThrows(
+                IdentitySyncException.class,
+                () -> service.process(batch(6, 7), LEASE));
+        IdentitySyncException heartbeatRejected = assertThrows(
+                IdentitySyncException.class,
+                () -> service.process(heartbeat(), LEASE));
+
+        assertEquals(
+                "RESPONSIBILITY_V2_REPLAY_REQUIRED",
+                dataRejected.code());
+        assertEquals(
+                "RESPONSIBILITY_V2_REPLAY_REQUIRED",
+                heartbeatRejected.code());
+        assertFalse(store.applied);
+        assertFalse(store.v2Applied);
+        assertFalse(store.heartbeatRecorded);
+        assertTrue(published.isEmpty());
+        assertEquals(
+                List.of(
+                        "RESPONSIBILITY_V2_REPLAY_REQUIRED",
+                        "RESPONSIBILITY_V2_REPLAY_REQUIRED"),
+                store.rejections.stream()
+                        .map(IdentitySyncRejection::reasonCode)
+                        .toList());
     }
 
     @Test
@@ -266,6 +403,81 @@ class ResponsibilitySyncServiceTest {
         assertEquals(7, audits.get(1).sourceWatermark());
     }
 
+    @Test
+    void publishesOnlyForActivatedV2NotLiveV1ShadowReplayOrHeartbeat() {
+        var store = new FakeRepository();
+        var published = new ArrayList<CommittedResponsibilityChangeSet>();
+        AccessInvalidationChangePublisherPort invalidations =
+                new AccessInvalidationChangePublisherPort() {
+                    @Override
+                    public void publish(CommittedIdentityChangeSet changeSet) {}
+
+                    @Override
+                    public void publish(
+                            CommittedResponsibilityChangeSet changeSet) {
+                        published.add(changeSet);
+                    }
+                };
+        var service = new ResponsibilitySyncService(
+                store,
+                (relations, now) -> relations.stream()
+                        .map(relation -> new ResponsibilityRecipientEvidence(
+                                relation,
+                                null,
+                                null,
+                                false,
+                                false,
+                                false,
+                                false))
+                        .toList(),
+                (key, from, to, trace) -> {},
+                new IdentitySyncTransactionPort() {
+                    @Override
+                    public <T> T execute(
+                            java.util.function.Supplier<T> work) {
+                        return work.get();
+                    }
+                },
+                ignored -> {},
+                ignored -> {},
+                ResponsibilitySyncServiceTest::trustedNow,
+                invalidations);
+
+        NormalizedResponsibilityBatch liveV1 = batch(6, 7);
+        service.process(liveV1, LEASE);
+        assertTrue(published.isEmpty());
+
+        store.v2Checkpoint = Optional.of(new IdentityCheckpoint(
+                KEY,
+                6,
+                6,
+                6,
+                NOW.minusSeconds(10),
+                IdentitySourceHealth.HEALTHY,
+                IdentityProjectionFreshness.FRESH));
+        store.v2Active = true;
+        service.process(v2Batch(6, 7), LEASE);
+        assertEquals(1, published.size());
+        assertEquals(
+                IdentitySyncOutcome.APPLIED,
+                published.getFirst().result().outcome());
+        assertEquals(
+                "RESPONSIBILITY-AUTHORITY-2.0.0",
+                published.getFirst().batch().contractVersion());
+
+        store.heartbeatBatchId = liveV1.batchId();
+        store.heartbeatEnvelopeDigest = liveV1.envelopeDigest();
+        IdentitySyncException staleV1 = assertThrows(
+                IdentitySyncException.class,
+                () -> service.process(liveV1, LEASE));
+        assertEquals(
+                "RESPONSIBILITY_V2_REPLAY_REQUIRED",
+                staleV1.code());
+        service.process(v2Heartbeat(), LEASE);
+        assertTrue(store.v2HeartbeatRecorded);
+        assertEquals(1, published.size());
+    }
+
     private static ResponsibilitySyncService service(
             FakeRepository repository,
             IdentityReplayPort replay,
@@ -282,6 +494,48 @@ class ResponsibilitySyncServiceTest {
                 audits::add,
                 ignored -> {},
                 ResponsibilitySyncServiceTest::trustedNow);
+    }
+
+    private static ResponsibilitySyncService service(
+            FakeRepository repository,
+            IdentityReplayPort replay,
+            List<IdentitySyncAuditEvent> audits,
+            List<CommittedResponsibilityChangeSet> published) {
+        return new ResponsibilitySyncService(
+                repository,
+                (relations, now) -> relations.stream()
+                        .map(relation -> new ResponsibilityRecipientEvidence(
+                                relation,
+                                null,
+                                null,
+                                false,
+                                false,
+                                false,
+                                false,
+                                false,
+                                false))
+                        .toList(),
+                replay,
+                new IdentitySyncTransactionPort() {
+                    @Override
+                    public <T> T execute(
+                            java.util.function.Supplier<T> work) {
+                        return work.get();
+                    }
+                },
+                audits::add,
+                ignored -> {},
+                ResponsibilitySyncServiceTest::trustedNow,
+                new AccessInvalidationChangePublisherPort() {
+                    @Override
+                    public void publish(CommittedIdentityChangeSet changeSet) {}
+
+                    @Override
+                    public void publish(
+                            CommittedResponsibilityChangeSet changeSet) {
+                        published.add(changeSet);
+                    }
+                });
     }
 
     private static NormalizedResponsibilityBatch batch(
@@ -353,6 +607,65 @@ class ResponsibilitySyncServiceTest {
                 List.of());
     }
 
+    private static NormalizedResponsibilityBatch v2Batch(
+            long fromWatermark, long toWatermark) {
+        var v1 = batch(fromWatermark, toWatermark).relations().getFirst();
+        var relation = new AuthoritativeResponsibilityRelation(
+                v1.relationId(), v1.sourceId(), v1.relationRefToken(),
+                v1.studentSourceReference(),
+                v1.counselorAccountRefDigest(),
+                v1.collegeOrganizationRefDigest(),
+                v1.responsibilityType(), v1.status(),
+                v1.effectiveInterval(), v1.sourceVersion(),
+                v1.sourceWatermark(), v1.recordVersion(),
+                v1.aggregateVersion(), v1.payloadDigest(),
+                AccessInvalidationChangeKind.CORRECTED,
+                AccessInvalidationReason.SOURCE_CORRECTION,
+                NOW,
+                new AccessInvalidationLineageId(
+                        "lin_" + "a".repeat(40)),
+                null);
+        NormalizedResponsibilityBatch source = batch(
+                fromWatermark, toWatermark);
+        return new NormalizedResponsibilityBatch(
+                source.batchId(), source.key(), source.schemaVersion(),
+                "RESPONSIBILITY-AUTHORITY-2.0.0",
+                source.sourceVersion(), source.fromWatermark(),
+                source.toWatermark(),
+                source.supportingIdentityOrgWatermarks(),
+                source.sourceVisibleAt(), source.observedAt(),
+                source.traceId(), source.envelopeDigest(),
+                source.signatureDigest(), source.signatureVerified(),
+                source.encryptedEnvelope(), source.wrappedDataKey(),
+                source.encryptionNonce(), source.encryptionKeyRef(),
+                source.encryptionKeyVersion(), List.of(relation));
+    }
+
+    private static NormalizedResponsibilityBatch v2Heartbeat() {
+        NormalizedResponsibilityBatch source = heartbeat();
+        return new NormalizedResponsibilityBatch(
+                source.batchId(),
+                source.key(),
+                source.schemaVersion(),
+                "RESPONSIBILITY-AUTHORITY-2.0.0",
+                source.sourceVersion(),
+                source.fromWatermark(),
+                source.toWatermark(),
+                source.supportingIdentityOrgWatermarks(),
+                source.sourceVisibleAt(),
+                source.observedAt(),
+                source.traceId(),
+                source.envelopeDigest(),
+                source.signatureDigest(),
+                source.signatureVerified(),
+                source.encryptedEnvelope(),
+                source.wrappedDataKey(),
+                source.encryptionNonce(),
+                source.encryptionKeyRef(),
+                source.encryptionKeyVersion(),
+                List.of());
+    }
+
     private static NormalizedResponsibilityBatch withRelations(
             NormalizedResponsibilityBatch source,
             List<AuthoritativeResponsibilityRelation> relations) {
@@ -402,11 +715,18 @@ class ResponsibilitySyncServiceTest {
                         IdentitySourceHealth.HEALTHY,
                         IdentityProjectionFreshness.FRESH));
         private Optional<ResponsibilityRecordState> current = Optional.empty();
+        private Optional<IdentityCheckpoint> v2Checkpoint = Optional.empty();
+        private Optional<ResponsibilityRecordState> v2Current = Optional.empty();
+        private Optional<AccessInvalidationLineageId> boundLineage =
+                Optional.empty();
         private final List<IdentitySyncRejection> rejections = new ArrayList<>();
         private long identityWatermark = 42;
         private boolean leaseCurrent = true;
         private boolean applied;
+        private boolean v2Applied;
+        private boolean v2Active;
         private boolean heartbeatRecorded;
+        private boolean v2HeartbeatRecorded;
         private UUID heartbeatBatchId;
         private String heartbeatEnvelopeDigest;
         private int exceptionWrites;
@@ -434,6 +754,29 @@ class ResponsibilitySyncServiceTest {
         }
 
         @Override
+        public Optional<IdentityCheckpoint> v2ShadowCheckpoint(
+                CheckpointKey key) {
+            return v2Checkpoint;
+        }
+
+        @Override
+        public Optional<String> v2ShadowEnvelopeDigest(UUID batchId) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<ResponsibilityRecordState> v2ShadowCurrentRecord(
+                CheckpointKey key, String relationRefToken) {
+            return v2Current;
+        }
+
+        @Override
+        public Optional<AccessInvalidationLineageId> v2BoundLineage(
+                CheckpointKey key, String relationRefToken) {
+            return boundLineage;
+        }
+
+        @Override
         public long identityOrgWatermark(String feedId, String partitionId) {
             return identityWatermark;
         }
@@ -454,11 +797,34 @@ class ResponsibilitySyncServiceTest {
         }
 
         @Override
+        public void recordV2ShadowHeartbeat(
+                NormalizedResponsibilityBatch batch,
+                IdentityLease lease,
+                Instant appliedAt) {
+            v2HeartbeatRecorded = true;
+        }
+
+        @Override
         public void apply(
                 NormalizedResponsibilityBatch batch,
                 IdentityLease lease,
                 Instant appliedAt) {
             applied = true;
+        }
+
+        @Override
+        public void applyV2Shadow(
+                NormalizedResponsibilityBatch batch,
+                IdentityLease lease,
+                Instant appliedAt,
+                List<ResponsibilityScopeProjectionUpdate> updates) {
+            v2Applied = true;
+            scopeUpdates = List.copyOf(updates);
+        }
+
+        @Override
+        public boolean v2ShadowActive(CheckpointKey key) {
+            return v2Active;
         }
 
         @Override
@@ -485,6 +851,15 @@ class ResponsibilitySyncServiceTest {
         @Override
         public List<AuthoritativeResponsibilityRelation> currentByStudentDigest(
                 CheckpointKey key, String studentSourceRefDigest, Instant serverNow) {
+            return List.of();
+        }
+
+        @Override
+        public List<AuthoritativeResponsibilityRelation>
+                v2ShadowCurrentByStudentDigest(
+                        CheckpointKey key,
+                        String studentSourceRefDigest,
+                        Instant serverNow) {
             return List.of();
         }
 

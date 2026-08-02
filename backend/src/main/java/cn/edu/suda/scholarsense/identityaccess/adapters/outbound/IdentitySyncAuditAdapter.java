@@ -37,6 +37,16 @@ public final class IdentitySyncAuditAdapter implements IdentitySyncAuditPort {
                     IdentityAuditAction.RESPONSIBILITY_SYNC_REJECTED;
             case "responsibility.sync.reconciled" ->
                     IdentityAuditAction.RESPONSIBILITY_SYNC_RECONCILED;
+            case "responsibility.v2.reconciled" ->
+                    IdentityAuditAction.RESPONSIBILITY_V2_RECONCILED;
+            case "responsibility.v2.cutover.requested" ->
+                    IdentityAuditAction.RESPONSIBILITY_V2_CUTOVER_REQUESTED;
+            case "responsibility.v2.cutover.denied" ->
+                    IdentityAuditAction.RESPONSIBILITY_V2_CUTOVER_DENIED;
+            case "responsibility.v2.cutover.failed" ->
+                    IdentityAuditAction.RESPONSIBILITY_V2_CUTOVER_FAILED;
+            case "responsibility.v2.activated" ->
+                    IdentityAuditAction.RESPONSIBILITY_V2_ACTIVATED;
             case "responsibility.exception.opened" ->
                     IdentityAuditAction.RESPONSIBILITY_EXCEPTION_OPENED;
             case "responsibility.exception.resolved" ->
@@ -49,7 +59,22 @@ public final class IdentitySyncAuditAdapter implements IdentitySyncAuditPort {
                 action == IdentityAuditAction.SYNC_RECONCILED
                         || action
                                 == IdentityAuditAction
-                                        .RESPONSIBILITY_SYNC_RECONCILED;
+                                        .RESPONSIBILITY_SYNC_RECONCILED
+                        || action
+                                == IdentityAuditAction
+                                        .RESPONSIBILITY_V2_RECONCILED
+                        || action
+                                == IdentityAuditAction
+                                        .RESPONSIBILITY_V2_CUTOVER_REQUESTED
+                        || action
+                                == IdentityAuditAction
+                                        .RESPONSIBILITY_V2_CUTOVER_DENIED
+                        || action
+                                == IdentityAuditAction
+                                        .RESPONSIBILITY_V2_CUTOVER_FAILED
+                        || action
+                                == IdentityAuditAction
+                                        .RESPONSIBILITY_V2_ACTIVATED;
         boolean exception =
                 action
                                 == IdentityAuditAction
@@ -89,7 +114,7 @@ public final class IdentitySyncAuditAdapter implements IdentitySyncAuditPort {
                 + ":" + event.occurredAt();
         audit.append(facts.create(new IdentityAuditRequest(
                 ActorType.SERVICE,
-                "identity-sync-worker",
+                event.actorReference(),
                 List.of(),
                 new IdentityAuditAuthorizationContext(
                         "not-applicable",

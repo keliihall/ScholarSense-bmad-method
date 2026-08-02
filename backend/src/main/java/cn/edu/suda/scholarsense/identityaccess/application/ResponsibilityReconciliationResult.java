@@ -11,6 +11,7 @@ public record ResponsibilityReconciliationResult(
         UUID runId,
         UUID jobId,
         CheckpointKey key,
+        String contractVersion,
         LocalDate businessDate,
         long sourceVersion,
         long throughWatermark,
@@ -40,6 +41,10 @@ public record ResponsibilityReconciliationResult(
                 || runId.variant() != 2
                 || jobId == null
                 || key == null
+                || !java.util.Set.of(
+                                "RESPONSIBILITY-AUTHORITY-1.0.0",
+                                "RESPONSIBILITY-AUTHORITY-2.0.0")
+                        .contains(contractVersion)
                 || businessDate == null
                 || sourceVersion < 1
                 || throughWatermark < 0
@@ -76,6 +81,64 @@ public record ResponsibilityReconciliationResult(
         supportingIdentityOrgWatermarks =
                 Map.copyOf(supportingIdentityOrgWatermarks);
         differences = List.copyOf(differences);
+    }
+
+    /** Compatibility constructor for V1 reconciliation callers. */
+    public ResponsibilityReconciliationResult(
+            UUID runId,
+            UUID jobId,
+            CheckpointKey key,
+            LocalDate businessDate,
+            long sourceVersion,
+            long throughWatermark,
+            Map<String, Long> supportingIdentityOrgWatermarks,
+            long expectedCount,
+            long actualCount,
+            String expectedDigest,
+            String actualDigest,
+            long matched,
+            long missing,
+            long unexpected,
+            long versionDrift,
+            BigDecimal matchRate,
+            long activeUnmappedCount,
+            long exceptionCount,
+            String jobOutcome,
+            String reconciliationOutcome,
+            String reasonCode,
+            long fencingToken,
+            Instant startedAt,
+            Instant completedAt,
+            String traceId,
+            List<ResponsibilityReconciliationDifference> differences) {
+        this(
+                runId,
+                jobId,
+                key,
+                "RESPONSIBILITY-AUTHORITY-1.0.0",
+                businessDate,
+                sourceVersion,
+                throughWatermark,
+                supportingIdentityOrgWatermarks,
+                expectedCount,
+                actualCount,
+                expectedDigest,
+                actualDigest,
+                matched,
+                missing,
+                unexpected,
+                versionDrift,
+                matchRate,
+                activeUnmappedCount,
+                exceptionCount,
+                jobOutcome,
+                reconciliationOutcome,
+                reasonCode,
+                fencingToken,
+                startedAt,
+                completedAt,
+                traceId,
+                differences);
     }
 
     public boolean qualityPassed() {
