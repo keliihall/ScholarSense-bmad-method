@@ -62,7 +62,7 @@ development_status:
   1-6c-发布撤权-更正与失效传播事实: done
   1-7-提供角色化首页与组合对象授权: done
   1-8-执行字段级投影与任务期敏感授权: done
-  1-9-建立公共任务-消息与回写适配器契约: in-progress
+  1-9-建立公共任务-消息与回写适配器契约: review
   epic-1-retrospective: optional
 
   epic-2: backlog
