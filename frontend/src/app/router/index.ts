@@ -1,9 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { nextTick } from 'vue';
 
-import { IdentitySessionClient, useIdentityState } from '../../domains/identity-access';
+import {
+  AuthorizedShellClient,
+  fetchCurrentAuthorizedShell,
+  IdentitySessionClient,
+  useAuthorizedShellState,
+  useIdentityState,
+} from '../../domains/identity-access';
 import type { ReauthenticationTarget } from '../../domains/identity-access';
 import { auditOperationsRouteContribution } from '../../domains/audit-operations';
+import { queryClient, volatileClientState } from '../state/query-client';
 
 
 /** Transport-neutral route contributions; domains may only expose routes through their public entry. */
@@ -51,13 +58,15 @@ export const router = createRouter({
 });
 
 const identityClient = new IdentitySessionClient();
+const authorizationClient = new AuthorizedShellClient();
 
 router.beforeEach(async (to) => {
   if (to.meta.requiresIdentity !== true) return true;
   const identity = useIdentityState();
+  const authorization = useAuthorizedShellState();
+  let current;
   try {
-    identity.acceptSession(await identityClient.current());
-    return true;
+    current = await identityClient.current();
   } catch (failure) {
     const code = failure instanceof Error ? failure.message : 'IDENTITY_DEPENDENCY_UNAVAILABLE';
     identity.fail(code);
@@ -83,6 +92,50 @@ router.beforeEach(async (to) => {
           },
         };
   }
+
+  const previous = identity.session;
+  if (previous !== undefined
+    && (previous.sessionPseudonym !== current.sessionPseudonym
+      || previous.sessionVersion !== current.sessionVersion)) {
+    volatileClientState.handleLifecycle(
+      previous.sessionPseudonym === current.sessionPseudonym
+        ? 'authorization-version-change' : 'account-switch',
+    );
+    authorization.clear();
+  }
+  identity.acceptSession(current);
+
+  try {
+    const shell = await fetchCurrentAuthorizedShell(queryClient, authorizationClient);
+    if (authorization.accept(shell)) {
+      volatileClientState.handleLifecycle('authorization-version-change');
+    }
+  } catch (failure) {
+    const code = failure instanceof Error
+      ? failure.message : 'IDENTITY_AUTHORIZATION_DEPENDENCY_UNAVAILABLE';
+    if (code === 'IDENTITY_SESSION_REQUIRED' || code === 'IDENTITY_SESSION_EXPIRED') {
+      identity.fail(code);
+      authorization.clear();
+      return prepareRecovery(to.name, identity, code);
+    }
+    volatileClientState.handleLifecycle('authorization-revoked');
+    if (code === 'IDENTITY_AUTHORIZATION_SURFACE_FORBIDDEN') {
+      authorization.rejectSurface();
+      return { name: 'shell-recovery', query: { reason: 'unauthorized' } };
+    }
+    authorization.clear('authorization-unavailable');
+    return { name: 'shell-recovery', query: { reason: 'authorization-unavailable' } };
+  }
+
+  const targetRouteId = protectedTarget(to.name);
+  if (targetRouteId !== undefined && !authorization.canNavigate(targetRouteId)) {
+    authorization.rejectSurface();
+    return {
+      name: 'shell-recovery',
+      query: { reason: 'unauthorized', targetRouteId: 'shell.home' },
+    };
+  }
+  return true;
 });
 
 router.afterEach(async () => {
@@ -96,4 +149,30 @@ function protectedTarget(routeName: unknown): ReauthenticationTarget | undefined
   if (routeName === 'shell-home') return 'shell.home';
   if (routeName === 'audit-search') return 'audit.search';
   return undefined;
+}
+
+async function prepareRecovery(
+  routeName: unknown,
+  identity: ReturnType<typeof useIdentityState>,
+  _code: string,
+) {
+  const targetRouteId = protectedTarget(routeName);
+  if (identity.shellState === 'session-expired' && targetRouteId !== undefined) {
+    try {
+      const csrf = await identityClient.csrfProof();
+      const authorizationUri = await identityClient.createReauthentication(
+        targetRouteId, window.location.origin, csrf,
+      );
+      identity.prepareReauthentication(targetRouteId, authorizationUri);
+    } catch {
+      // The recovery page remains the only explicit next action.
+    }
+  }
+  return {
+    name: 'shell-recovery',
+    query: {
+      reason: identity.shellState,
+      ...(targetRouteId === undefined ? {} : { targetRouteId }),
+    },
+  };
 }

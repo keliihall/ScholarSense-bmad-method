@@ -60,7 +60,11 @@ describe('volatile client state boundary', () => {
     } as unknown as QueryKeyParams)).toThrow('QUERY_KEY_PARAM_INVALID');
   });
 
-  it.each(['logout', 'account-switch', 'refresh', 'webview-destroyed', 'host-session-invalid'] as const)(
+  it.each([
+    'logout', 'account-switch', 'refresh', 'webview-destroyed', 'host-session-invalid',
+    'auth-changed', 'authorization-revoked', 'responsibility-invalid',
+    'authorization-version-change',
+  ] as const)(
     'clears query cache and drafts on %s',
     (event) => {
       const queryClient = new QueryClient();

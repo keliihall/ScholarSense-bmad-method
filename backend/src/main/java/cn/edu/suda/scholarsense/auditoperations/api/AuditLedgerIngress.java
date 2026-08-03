@@ -5,6 +5,8 @@ import cn.edu.suda.scholarsense.auditoperations.application.AuditContractRejecti
 import cn.edu.suda.scholarsense.auditoperations.application.AuditLedgerAppendUseCase;
 import cn.edu.suda.scholarsense.auditoperations.application.LowCardinalityAuditMetrics;
 import cn.edu.suda.scholarsense.shared.outbox.LocalAuditOutboxRecord;
+import cn.edu.suda.scholarsense.shared.outbox.AuditContractRejection;
+import cn.edu.suda.scholarsense.shared.outbox.AuditIngressResult;
 import java.util.Map;
 import java.util.Objects;
 

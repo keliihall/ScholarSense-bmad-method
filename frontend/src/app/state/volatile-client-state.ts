@@ -6,7 +6,11 @@ export type LifecycleBoundary =
   | 'account-switch'
   | 'refresh'
   | 'webview-destroyed'
-  | 'host-session-invalid';
+  | 'host-session-invalid'
+  | 'auth-changed'
+  | 'authorization-revoked'
+  | 'responsibility-invalid'
+  | 'authorization-version-change';
 
 export type QueryKeyValue = string | number | boolean | null | readonly QueryKeyValue[] | QueryKeyObject;
 export interface QueryKeyObject {

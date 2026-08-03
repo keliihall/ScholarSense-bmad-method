@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "AUTHORIZED-SHELL-1.0.0",
+  "policyVersion": "RFP-1.0.0",
+  "fixtureVersion": "RFP-FIXTURE-1.0.0",
+  "evaluatedAt": "2026-07-17T08:00:00Z",
+  "defaultSurface": {"surfaceId": "care-workbench", "title": "关怀工作台", "routeName": "shell.home", "providerState": "not-installed"},
+  "menuItems": [],
+  "entryCapabilities": [{"id": "care-workbench", "state": "not-installed"}],
+  "dependencyStatus": "available"
+}

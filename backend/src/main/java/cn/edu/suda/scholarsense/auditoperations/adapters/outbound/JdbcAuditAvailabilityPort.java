@@ -1,8 +1,8 @@
 package cn.edu.suda.scholarsense.auditoperations.adapters.outbound;
 
 import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityPort;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityResult;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityState;
+import cn.edu.suda.scholarsense.shared.time.AuditAvailabilityResult;
+import cn.edu.suda.scholarsense.shared.time.AuditAvailabilityState;
 import cn.edu.suda.scholarsense.auditoperations.application.AuditClock;
 import java.util.HashSet;
 import java.util.Set;

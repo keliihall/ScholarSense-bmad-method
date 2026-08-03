@@ -99,6 +99,7 @@ run_replay() {
   npm run typecheck
   npm run test:unit
   npm run build
+  python3 "$ROOT_DIR/scripts/scan_privacy_canaries.py" "$replay_root/frontend/dist"
   npm run test:baseline
 
   local lock_sha tree_sha build_sha source_after_suite

@@ -95,6 +95,9 @@ def _release_input() -> tuple[dict, dict]:
             {"id": "formal-web-evidence", "status": "passed", "evidenceIds": [item["id"] for item in evidence if item["kind"] in frontend_only]},
             {"id": "app-webview", "status": "not-applicable", "decisionId": "USER-2026-07-19-SCHOOL-APP-NA", "runtimeEvidenceClaim": "none"},
             {"id": "future-app-device", "status": "pending-story-execution", "ownerStory": "7.1/7.x", "runtimeEvidenceClaim": "none"},
+            {"id": "export-job-download", "status": "pending-story-execution", "ownerStory": "3.14a-3.14c", "runtimeEvidenceClaim": "none"},
+            {"id": "transfer-task", "status": "pending-story-execution", "ownerStory": "3.4-3.10/5.x", "runtimeEvidenceClaim": "none"},
+            {"id": "mobile-projection", "status": "pending-story-execution", "ownerStory": "7.x", "runtimeEvidenceClaim": "none"},
         ],
         "controlledInputs": controlled,
         "locks": [
@@ -316,7 +319,14 @@ class EvidenceIndexLifecycleTest(unittest.TestCase):
                 ("index", index_path, manifest_path),
             ):
                 result = subprocess.run(
-                    [sys.executable, str(PROJECT_ROOT / "scripts/check_release_manifests.py"), mode, str(document), str(subject)],
+                    [
+                        sys.executable,
+                        "-B",
+                        str(PROJECT_ROOT / "scripts/check_release_manifests.py"),
+                        mode,
+                        str(document),
+                        str(subject),
+                    ],
                     check=False,
                     text=True,
                     stdout=subprocess.PIPE,
@@ -325,7 +335,14 @@ class EvidenceIndexLifecycleTest(unittest.TestCase):
                 self.assertEqual(0, result.returncode, result.stderr)
             index_path.write_bytes(index_path.read_bytes().replace(digest.encode("ascii"), ("0" * 64).encode("ascii"), 1))
             rejected = subprocess.run(
-                [sys.executable, str(PROJECT_ROOT / "scripts/check_release_manifests.py"), "index", str(index_path), str(manifest_path)],
+                [
+                    sys.executable,
+                    "-B",
+                    str(PROJECT_ROOT / "scripts/check_release_manifests.py"),
+                    "index",
+                    str(index_path),
+                    str(manifest_path),
+                ],
                 check=False,
                 text=True,
                 stdout=subprocess.PIPE,

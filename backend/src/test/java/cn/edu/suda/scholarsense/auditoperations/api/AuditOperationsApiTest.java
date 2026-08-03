@@ -65,7 +65,7 @@ class AuditOperationsApiTest {
                 metrics);
 
         ingress.ingest(outbox());
-        ingress.rejectContract(new AuditContractRejection(
+        ingress.rejectContract(new cn.edu.suda.scholarsense.shared.outbox.AuditContractRejection(
                 "identity-access", "b".repeat(64), TRACE_ID, NOW));
 
         assertEquals(List.of(

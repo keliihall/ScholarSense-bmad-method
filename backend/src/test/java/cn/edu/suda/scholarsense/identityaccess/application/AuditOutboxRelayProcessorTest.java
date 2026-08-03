@@ -5,9 +5,9 @@ import static cn.edu.suda.scholarsense.auditoperations.AuditLedgerTestFixtures.o
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import cn.edu.suda.scholarsense.auditoperations.api.AuditIngressResult;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditContractRejection;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditLedgerIngressPort;
+import cn.edu.suda.scholarsense.shared.outbox.AuditIngressResult;
+import cn.edu.suda.scholarsense.shared.outbox.AuditContractRejection;
+import cn.edu.suda.scholarsense.shared.outbox.AuditLedgerIngressPort;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;

@@ -1,0 +1,59 @@
+{
+  "$schema": "./action-catalog-1.4.schema.json",
+  "version": "AUDIT-ACTION-CATALOG-1.4.0",
+  "supersedes": "AUDIT-ACTION-CATALOG-1.3.0",
+  "mode": "successor-delta",
+  "outcomes": ["accepted", "rejected"],
+  "reasonCodes": [
+    "AUTHORIZATION_ALLOWED",
+    "AUTHORIZATION_OBJECT_UNAVAILABLE",
+    "AUTHORIZATION_DEPENDENCY_UNAVAILABLE",
+    "AUTHORIZATION_SURFACE_FORBIDDEN",
+    "AUTHORIZATION_DECISION_STALE",
+    "AUTHORIZATION_SHELL_AVAILABLE",
+    "AUTHORIZATION_SHELL_UNAVAILABLE",
+    "AUTHORIZATION_RECHECK_ALLOWED",
+    "AUTHORIZATION_RECHECK_STALE"
+  ],
+  "actions": [
+    {
+      "code": "authorization.object.decided",
+      "ownerModule": "identity-access",
+      "activationStory": "1-7",
+      "status": "active",
+      "allowedOutcomes": ["accepted", "rejected"],
+      "allowedReasonCodes": ["AUTHORIZATION_ALLOWED", "AUTHORIZATION_OBJECT_UNAVAILABLE", "AUTHORIZATION_DEPENDENCY_UNAVAILABLE"],
+      "allowedResults": [
+        {"outcome": "accepted", "reasonCode": "AUTHORIZATION_ALLOWED"},
+        {"outcome": "rejected", "reasonCode": "AUTHORIZATION_OBJECT_UNAVAILABLE"},
+        {"outcome": "rejected", "reasonCode": "AUTHORIZATION_DEPENDENCY_UNAVAILABLE"}
+      ]
+    },
+    {
+      "code": "authorization.shell.viewed",
+      "ownerModule": "identity-access",
+      "activationStory": "1-7",
+      "status": "active",
+      "allowedOutcomes": ["accepted", "rejected"],
+      "allowedReasonCodes": ["AUTHORIZATION_SHELL_AVAILABLE", "AUTHORIZATION_SHELL_UNAVAILABLE", "AUTHORIZATION_SURFACE_FORBIDDEN"],
+      "allowedResults": [
+        {"outcome": "accepted", "reasonCode": "AUTHORIZATION_SHELL_AVAILABLE"},
+        {"outcome": "rejected", "reasonCode": "AUTHORIZATION_SHELL_UNAVAILABLE"},
+        {"outcome": "rejected", "reasonCode": "AUTHORIZATION_SURFACE_FORBIDDEN"}
+      ]
+    },
+    {
+      "code": "authorization.decision.rechecked",
+      "ownerModule": "identity-access",
+      "activationStory": "1-7",
+      "status": "active",
+      "allowedOutcomes": ["accepted", "rejected"],
+      "allowedReasonCodes": ["AUTHORIZATION_RECHECK_ALLOWED", "AUTHORIZATION_RECHECK_STALE", "AUTHORIZATION_DECISION_STALE"],
+      "allowedResults": [
+        {"outcome": "accepted", "reasonCode": "AUTHORIZATION_RECHECK_ALLOWED"},
+        {"outcome": "rejected", "reasonCode": "AUTHORIZATION_RECHECK_STALE"},
+        {"outcome": "rejected", "reasonCode": "AUTHORIZATION_DECISION_STALE"}
+      ]
+    }
+  ]
+}

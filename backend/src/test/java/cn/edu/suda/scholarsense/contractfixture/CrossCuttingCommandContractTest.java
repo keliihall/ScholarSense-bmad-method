@@ -29,7 +29,7 @@ class CrossCuttingCommandContractTest {
                 "V000006__identity-access__authoritative_identity_org_v1.sql");
         assertTrue(Files.isRegularFile(authoritativeIdentityMigration));
         try (var walk = Files.walk(Path.of("src/main/resources/db/migration"))) {
-            assertEquals(8, walk.filter(path -> path.toString().endsWith(".sql")).count());
+            assertEquals(9, walk.filter(path -> path.toString().endsWith(".sql")).count());
         }
     }
 

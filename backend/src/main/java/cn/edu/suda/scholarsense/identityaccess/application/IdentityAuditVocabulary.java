@@ -14,17 +14,32 @@ final class IdentityAuditVocabulary {
             "RESPONSIBILITY_AUTHORITY_SYNC",
             "RESPONSIBILITY_AUTHORITY_RECONCILIATION",
             "RESPONSIBILITY_EXCEPTION_MANAGEMENT",
-            "ACCESS_INVALIDATION_PROPAGATION");
+            "ACCESS_INVALIDATION_PROPAGATION",
+            "OBJECT_AUTHORIZATION", "AUTHORIZED_SHELL_VIEW",
+            "PRE_COMMIT_AUTHORIZATION_RECHECK");
     private static final Set<String> PROJECTION_SCOPES = Set.of(
             "CURRENT_SESSION", "IDENTITY_ORG", "RESPONSIBILITY",
-            "ACCESS_INVALIDATION");
+            "ACCESS_INVALIDATION", "AUTHORIZED_OBJECT", "AUTHORIZED_SHELL");
     private static final Set<String> OBJECT_TYPES = Set.of(
             "identity-session", "identity-sync-job", "identity-reconciliation",
             "responsibility-sync-job", "responsibility-reconciliation",
-            "responsibility-exception", "access-invalidation-fact");
+            "responsibility-exception", "access-invalidation-fact",
+            "authorization-object-token", "authorized-shell");
+    private static final Set<String> AGGREGATE_TYPES = Set.of(
+            "identity-session", "identity-sync-job", "identity-reconciliation",
+            "responsibility-sync-job", "responsibility-reconciliation",
+            "responsibility-exception", "access-invalidation-fact",
+            "authorization-decision", "authorized-shell");
     private static final Set<String> SCOPE_CODES = Set.of(
             "CURRENT_SESSION", "IDENTITY_ORG", "RESPONSIBILITY",
-            "ACCESS_INVALIDATION");
+            "ACCESS_INVALIDATION", "CURRENT_RESPONSIBILITY", "GOVERNANCE_WORK_ITEM",
+            "CURRENT_TRANSFER_ASSIGNMENT", "OWNED_SOURCE", "TECHNICAL_OBJECT",
+            "VALID_DELEGATION_GRANT");
+    private static final Set<String> ROLE_IDS = Set.of("R1", "R2", "R3", "R4", "R5", "R6", "R7");
+    private static final Set<IdentityAuditAction> AUTHORIZATION_ACTIONS = Set.of(
+            IdentityAuditAction.AUTHORIZATION_OBJECT_DECIDED,
+            IdentityAuditAction.AUTHORIZATION_SHELL_VIEWED,
+            IdentityAuditAction.AUTHORIZATION_DECISION_RECHECKED);
     private static final Set<String> NOT_APPLICABLE_REASONS = Set.of(
             "PRE_AUTHENTICATION", "NO_ROLE_MODEL", "SERVICE_OPERATION");
     private static final Map<String, Set<String>> POLICY_VERSIONS = Map.of(
@@ -37,6 +52,8 @@ final class IdentityAuditVocabulary {
                     "RESPONSIBILITY-AUTHORITY-2.0.0"),
             "accessInvalidationContract",
                     Set.of("ACCESS-INVALIDATION-DATA-1.0.0"),
+            "fixture", Set.of("RFP-FIXTURE-1.0.0"),
+            "highRiskActionPolicy", Set.of("HRAP-1.0.0"),
             "retentionSchedule", Set.of("RS-1.0.0"));
     private static final Set<String> SYNC_FAILURE_REASONS = Set.of(
             "IDENTITY_SOURCE_DEPENDENCY_UNAVAILABLE",
@@ -237,7 +254,28 @@ final class IdentityAuditVocabulary {
                                     "ACCESS_INVALIDATION_REVOKED",
                                     "ACCESS_INVALIDATION_EXPIRED",
                                     "ACCESS_INVALIDATION_INVALIDATED",
-                                    "ACCESS_INVALIDATION_REVALIDATED"))));
+                                    "ACCESS_INVALIDATION_REVALIDATED"))),
+            Map.entry(
+                    IdentityAuditAction.AUTHORIZATION_OBJECT_DECIDED,
+                    Map.of(
+                            "accepted", Set.of("AUTHORIZATION_ALLOWED"),
+                            "rejected", Set.of(
+                                    "AUTHORIZATION_OBJECT_UNAVAILABLE",
+                                    "AUTHORIZATION_DEPENDENCY_UNAVAILABLE"))),
+            Map.entry(
+                    IdentityAuditAction.AUTHORIZATION_SHELL_VIEWED,
+                    Map.of(
+                            "accepted", Set.of("AUTHORIZATION_SHELL_AVAILABLE"),
+                            "rejected", Set.of(
+                                    "AUTHORIZATION_SHELL_UNAVAILABLE",
+                                    "AUTHORIZATION_SURFACE_FORBIDDEN"))),
+            Map.entry(
+                    IdentityAuditAction.AUTHORIZATION_DECISION_RECHECKED,
+                    Map.of(
+                            "accepted", Set.of("AUTHORIZATION_RECHECK_ALLOWED"),
+                            "rejected", Set.of(
+                                    "AUTHORIZATION_RECHECK_STALE",
+                                    "AUTHORIZATION_DECISION_STALE"))));
 
     private IdentityAuditVocabulary() {}
 
@@ -248,8 +286,8 @@ final class IdentityAuditVocabulary {
                 || !optionalMember(PURPOSES, request.purpose())
                 || !optionalMember(PROJECTION_SCOPES, request.projectionScope())
                 || !optionalMember(OBJECT_TYPES, request.objectType())
-                || !optionalMember(OBJECT_TYPES, request.aggregateType())
-                || !request.roleIds().isEmpty()) {
+                || !optionalMember(AGGREGATE_TYPES, request.aggregateType())
+                || !validRoles(request)) {
             throw new IllegalArgumentException("AUDIT_IDENTITY_VOCABULARY_INVALID");
         }
         for (Map.Entry<String, String> entry : request.policyVersions().entrySet()) {
@@ -260,6 +298,14 @@ final class IdentityAuditVocabulary {
             }
         }
         validateAuthorization(request.authorizationContext());
+    }
+
+    private static boolean validRoles(IdentityAuditRequest request) {
+        if (!AUTHORIZATION_ACTIONS.contains(request.action())) {
+            return request.roleIds().isEmpty();
+        }
+        return ROLE_IDS.containsAll(request.roleIds())
+                && request.roleIds().stream().distinct().count() == request.roleIds().size();
     }
 
     static void validateAuthorization(IdentityAuditAuthorizationContext context) {

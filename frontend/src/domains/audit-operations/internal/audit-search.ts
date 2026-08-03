@@ -1,6 +1,19 @@
-import type { CsrfProof } from '../../identity-access';
+import type { AuthorizedShellStatus, CsrfProof } from '../../identity-access';
+import type { QueryClient } from '@tanstack/vue-query';
 
 export type AuditSearchViewName = 'business' | 'technical';
+
+export function hasUsableAuditSearchAuthorization(
+  authenticated: boolean,
+  status: AuthorizedShellStatus,
+  hasCurrentShell: boolean,
+  capabilitySignature: string,
+): boolean {
+  return authenticated
+    && (status === 'ready' || status === 'degraded')
+    && hasCurrentShell
+    && capabilitySignature === 'available|available';
+}
 
 export type AuditSearchRequest = Readonly<{
   view: AuditSearchViewName;
@@ -32,17 +45,41 @@ export type AuditSearchResponse = Readonly<{
   projectionStatus: 'current' | 'degraded';
 }>;
 
-const approvedFields = new Set([
+const businessFieldOrder = Object.freeze([
   'recordId', 'ledgerSequence', 'occurredAt', 'outcome', 'factSchemaVersion', 'policyVersion',
   'retentionScheduleVersion', 'actorDisplayRef', 'objectDisplayRef', 'businessActionCategory',
   'businessObjectCategory', 'rolePackageSummary', 'projectionScope', 'producerModule', 'eventType',
   'reasonCode', 'traceId', 'integrityStatus', 'archiveStatus', 'projectionStatus',
-  'sourceNetworkRecorded', 'archiveDigest', 'archiveVersionReference',
-]);
+  'sourceNetworkRecorded',
+] as const);
+const technicalFieldOrder = Object.freeze(businessFieldOrder.filter(
+  (field) => !['actorDisplayRef', 'objectDisplayRef'].includes(field),
+));
+const approvedFieldsByView: Readonly<Record<AuditSearchViewName, ReadonlySet<string>>> = Object.freeze({
+  business: new Set(businessFieldOrder),
+  technical: new Set(technicalFieldOrder),
+});
+const fieldTypes: Readonly<Record<string, 'string' | 'number' | 'boolean'>> = Object.freeze({
+  recordId: 'string', ledgerSequence: 'number', occurredAt: 'string', outcome: 'string',
+  factSchemaVersion: 'string', policyVersion: 'string', retentionScheduleVersion: 'string',
+  actorDisplayRef: 'string', objectDisplayRef: 'string', businessActionCategory: 'string',
+  businessObjectCategory: 'string', rolePackageSummary: 'string', projectionScope: 'string',
+  producerModule: 'string', eventType: 'string', reasonCode: 'string', traceId: 'string',
+  integrityStatus: 'string', archiveStatus: 'string', projectionStatus: 'string',
+  sourceNetworkRecorded: 'boolean',
+});
 const approvedResponseKeys = [
   'asOfSequence', 'dataCutoffAt', 'items', 'page', 'projectionStatus', 'projectionWatermark',
   'retentionScheduleVersion', 'roleFieldPolicyVersion', 'size', 'sourceLedgerHead', 'total',
 ].sort().join();
+const allowedServerFailureCodes = new Set([
+  'AUDIT_SEARCH_FORBIDDEN',
+  'AUDIT_SEARCH_DEPENDENCY_UNAVAILABLE',
+  'AUDIT_SEARCH_PROJECTION_NOT_CAUGHT_UP',
+  'AUDIT_SEARCH_AUDIT_COMMIT_FAILED',
+  'AUDIT_SEARCH_INVALID_REQUEST',
+  'AUDIT_SEARCH_RESPONSE_INVALID',
+]);
 
 export class AuditSearchClient {
   public constructor(
@@ -62,7 +99,7 @@ export class AuditSearchClient {
     });
     if (!response.ok) throw await safeFailure(response);
     const value: unknown = await response.json();
-    if (!isSearchResponse(value)) throw new Error('AUDIT_SEARCH_RESPONSE_INVALID');
+    if (!isSearchResponse(value, query.view)) throw new Error('AUDIT_SEARCH_RESPONSE_INVALID');
     return freezeResponse(value);
   }
 }
@@ -110,6 +147,66 @@ export function clearAuditSearchIdentityBoundary(
   asOfSequence.value = undefined;
 }
 
+export type AuditSearchQueryContext = Readonly<{
+  sessionVersion: number;
+  policyVersion: 'RFP-1.0.0';
+  view: AuditSearchViewName;
+}>;
+
+/** Sensitive filters never enter this key; cached data is stale and collectible immediately. */
+export function auditSearchQueryOptions(
+  context: AuditSearchQueryContext,
+  queryFn: () => Promise<AuditSearchResponse>,
+) {
+  return Object.freeze({
+    queryKey: Object.freeze([
+      'audit-operations',
+      'sensitive-search',
+      Object.freeze({ ...context }),
+    ] as const),
+    queryFn,
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+    networkMode: 'online' as const,
+  });
+}
+
+export function clearAuditSearchQueryBoundary(client: Pick<QueryClient, 'removeQueries'>): void {
+  client.removeQueries({ queryKey: ['audit-operations', 'sensitive-search'], exact: false });
+}
+
+/** Uses the contract order, filtered to keys that are actually present in this response. */
+export function auditSearchColumns(
+  view: AuditSearchViewName,
+  items: readonly AuditSearchItem[],
+): readonly string[] {
+  const present = new Set(items.flatMap((item) => Object.keys(item.fields)));
+  const order = view === 'business' ? businessFieldOrder : technicalFieldOrder;
+  return Object.freeze(order.filter((field) => present.has(field)));
+}
+
+export type AuditSearchValuePresentation = Readonly<{
+  masked: boolean;
+  visual: string;
+  accessibleName?: '已脱敏';
+}>;
+
+export function auditSearchValuePresentation(
+  view: AuditSearchViewName,
+  field: string,
+  value: string | number | boolean,
+): AuditSearchValuePresentation {
+  if (maskedFields(view).has(field)) {
+    return Object.freeze({
+      masked: true,
+      visual: String(expectedMask(field)),
+      accessibleName: '已脱敏' as const,
+    });
+  }
+  return Object.freeze({ masked: false, visual: String(value) });
+}
+
 function validateRequest(query: AuditSearchRequest): void {
   if (!['business', 'technical'].includes(query.view)
     || !Number.isSafeInteger(query.page) || query.page < 0
@@ -118,7 +215,7 @@ function validateRequest(query: AuditSearchRequest): void {
   }
 }
 
-function isSearchResponse(value: unknown): value is AuditSearchResponse {
+function isSearchResponse(value: unknown, view: AuditSearchViewName): value is AuditSearchResponse {
   if (!isRecord(value) || Object.keys(value).sort().join() !== approvedResponseKeys
     || !Array.isArray(value.items)
     || !integers(value, ['page', 'size', 'total', 'asOfSequence', 'sourceLedgerHead', 'projectionWatermark'])
@@ -127,8 +224,37 @@ function isSearchResponse(value: unknown): value is AuditSearchResponse {
     || !['current', 'degraded'].includes(String(value.projectionStatus))
     || typeof value.dataCutoffAt !== 'string' || !Number.isFinite(Date.parse(value.dataCutoffAt))) return false;
   return value.items.every((item) => isRecord(item) && isRecord(item.fields)
-    && Object.keys(item.fields).every((field) => approvedFields.has(field))
-    && Object.values(item.fields).every((field) => ['string', 'number', 'boolean'].includes(typeof field)));
+    && Object.keys(item).length === 1 && Object.hasOwn(item, 'fields')
+    && Object.keys(item.fields).every((field) => approvedFieldsByView[view].has(field))
+    && Object.entries(item.fields).every(([field, fieldValue]) =>
+      validFieldType(field, fieldValue)
+      && (!maskedFields(view).has(field) || fieldValue === expectedMask(field))));
+}
+
+function validFieldType(field: string, value: unknown): boolean {
+  const expected = fieldTypes[field];
+  if (expected === undefined || typeof value !== expected) return false;
+  return expected !== 'number' || (Number.isSafeInteger(value) && Number(value) >= 0);
+}
+
+function maskedFields(view: AuditSearchViewName): ReadonlySet<string> {
+  return view === 'business'
+    ? new Set([
+      'actorDisplayRef', 'objectDisplayRef', 'producerModule', 'eventType', 'reasonCode', 'traceId',
+      'integrityStatus', 'archiveStatus', 'projectionStatus', 'sourceNetworkRecorded',
+    ])
+    : new Set([
+      'businessActionCategory', 'businessObjectCategory', 'rolePackageSummary', 'projectionScope',
+    ]);
+}
+
+function expectedMask(field: string): string | boolean {
+  if (['actorDisplayRef', 'objectDisplayRef'].includes(field)) return '[MASKED-IDENTITY]';
+  if (['businessActionCategory', 'businessObjectCategory', 'rolePackageSummary', 'projectionScope']
+    .includes(field)) return '[MASKED-CATEGORY]';
+  if (field === 'reasonCode') return '[MASKED-CODE]';
+  if (field === 'sourceNetworkRecorded') return false;
+  return '[MASKED-TECHNICAL]';
 }
 
 function freezeResponse(value: AuditSearchResponse): AuditSearchResponse {
@@ -140,7 +266,8 @@ async function safeFailure(response: Response): Promise<Error> {
   let code = response.status === 403 ? 'AUDIT_SEARCH_FORBIDDEN' : 'AUDIT_SEARCH_DEPENDENCY_UNAVAILABLE';
   try {
     const value: unknown = await response.json();
-    if (isRecord(value) && typeof value.code === 'string' && /^[A-Z][A-Z0-9_]{2,127}$/.test(value.code)) {
+    if (isRecord(value) && typeof value.code === 'string'
+      && allowedServerFailureCodes.has(value.code)) {
       code = value.code;
     }
   } catch { /* External text is deliberately ignored. */ }

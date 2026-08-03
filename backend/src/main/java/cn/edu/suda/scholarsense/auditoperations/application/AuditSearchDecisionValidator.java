@@ -27,6 +27,19 @@ final class AuditSearchDecisionValidator {
 
     private AuditSearchDecisionValidator() {}
 
+    /** Audit search delegates field visibility to FieldProjectionPort; only action/scope stay here. */
+    static boolean isContextValid(AuditSearchView view, AuthorizedAuditSearchDecision decision) {
+        if (view == null || decision == null || !decision.allowed()) {
+            return false;
+        }
+        String expectedAction = view == AuditSearchView.BUSINESS
+                ? "audit.search-business-metadata" : "audit.search-technical-metadata";
+        return "RFP-1.0.0".equals(decision.rfpVersion())
+                && expectedAction.equals(decision.action())
+                && decision.scopes().equals(Set.of("audit-domain"))
+                && decision.reasonCode() == null;
+    }
+
     static boolean isValid(AuditSearchView view, AuthorizedAuditSearchDecision decision) {
         if (view == null || decision == null || !decision.allowed()) {
             return false;

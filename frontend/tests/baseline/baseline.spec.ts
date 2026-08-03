@@ -1,12 +1,14 @@
 import { createRequire } from 'node:module';
 
 import { expect, test } from '@playwright/test';
+import { installAuthorizedShellRoute } from './authorized-shell-fixture';
 
 
 const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
 
 test.beforeEach(async ({ page }) => {
+  await installAuthorizedShellRoute(page);
   await page.route(/\/api\/v1\/identity-sessions\/current$/, async (route) => route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -33,7 +35,7 @@ test.describe('deterministic local baseline fixture', () => {
     const response = await page.goto('./');
     expect(response?.status()).toBe(200);
     await expect(page.getByRole('heading', { name: '学林知微' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: '统一身份已确认' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '关怀工作台' })).toBeVisible();
     expect(new URL(page.url()).pathname).toBe('/scholarsense/');
     expect(consoleErrors).toEqual([]);
     expect(failedRequests).toEqual([]);
@@ -43,7 +45,9 @@ test.describe('deterministic local baseline fixture', () => {
     );
     expect(resourcePaths.length).toBeGreaterThan(0);
     expect(resourcePaths.every((path) =>
-      path.startsWith('/scholarsense/') || path === '/api/v1/identity-sessions/current',
+      path.startsWith('/scholarsense/')
+        || path === '/api/v1/identity-sessions/current'
+        || path === '/api/v1/authorized-shell',
     )).toBe(true);
   });
 
@@ -71,7 +75,7 @@ test.describe('deterministic local baseline fixture', () => {
 
   test('supports keyboard focus, live status and non-color network state', async ({ page }) => {
     await page.goto('./');
-    await expect(page.getByRole('heading', { name: '统一身份已确认' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '关怀工作台' })).toBeVisible();
     const skipLink = page.getByRole('link', { name: '跳至主要内容' });
     await skipLink.focus();
     await expect(skipLink).toBeFocused();
@@ -80,7 +84,7 @@ test.describe('deterministic local baseline fixture', () => {
     await expect(page.locator('#main-content')).toBeFocused();
 
     const status = page.locator('.identity-status');
-    await expect(status).toContainText('统一身份已由服务端确认');
+    await expect(status).toContainText('统一身份与当前授权已由服务端确认');
     await expect(status).toHaveAttribute('aria-live', 'polite');
     const border = await status.evaluate((element) => getComputedStyle(element).borderLeftWidth);
     expect(Number.parseFloat(border)).toBeGreaterThan(0);
@@ -127,7 +131,7 @@ test.describe('deterministic local baseline fixture', () => {
 
     const keyContent = [
       page.getByRole('heading', { name: '学林知微' }),
-      page.getByRole('heading', { name: '统一身份已确认' }),
+      page.getByRole('heading', { name: '关怀工作台' }),
       page.getByText('身份与目标只保存在当前内存会话；页面不会保存令牌、学生标识或敏感深链。'),
       page.getByRole('button', { name: '恢复身份与授权后由用户显式重试' }),
     ];

@@ -1,0 +1,14 @@
+package cn.edu.suda.scholarsense.identityaccess.domain;
+
+public enum ScopeAnchor {
+    CURRENT_RESPONSIBILITY,
+    VALID_DELEGATION_GRANT,
+    INITIATOR,
+    COLLEGE_AGGREGATE,
+    GOVERNANCE_WORK_ITEM,
+    SCHOOL_GOVERNANCE,
+    SCHOOL_AGGREGATE,
+    CURRENT_TRANSFER_ASSIGNMENT,
+    OWNED_SOURCE,
+    TECHNICAL_OBJECT
+}

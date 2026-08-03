@@ -12,8 +12,8 @@ import cn.edu.suda.scholarsense.auditoperations.application.AuditAlertRelayProce
 import cn.edu.suda.scholarsense.auditoperations.application.AuditLedgerVerifier;
 import cn.edu.suda.scholarsense.auditoperations.application.LedgerVerificationResult;
 import cn.edu.suda.scholarsense.auditoperations.application.LowCardinalityAuditMetrics;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityResult;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityState;
+import cn.edu.suda.scholarsense.shared.time.AuditAvailabilityResult;
+import cn.edu.suda.scholarsense.shared.time.AuditAvailabilityState;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Set;

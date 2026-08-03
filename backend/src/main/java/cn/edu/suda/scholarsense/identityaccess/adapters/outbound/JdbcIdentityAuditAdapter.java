@@ -49,18 +49,21 @@ public final class JdbcIdentityAuditAdapter implements IdentityAuditPort {
                   audit_id, actor_pseudonym, session_pseudonym, action, result, occurred_at,
                   source_ip_pseudonym, trace_id, profile_version,
                   producer_module, actor_type, actor_search_token, role_ids,
-                  authorization_context, object_type, object_search_token, outcome, reason_code,
+                  authorization_context, authorization_decision_context,
+                  object_type, object_search_token, outcome, reason_code,
                   purpose, projection_scope, recorded_at, time_source_profile, source_ip_search_token,
                   tokenization_profile_version, key_version, aggregate_type, aggregate_id_search_token,
                   aggregate_version, idempotency_key_digest, policy_versions, retention_schedule_version)
                 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, cast(? as jsonb), cast(? as jsonb),
-                        ?, ?, ?, ?, ?, ?, ?, cast(? as jsonb), ?, ?, ?, ?, ?, ?, ?, cast(? as jsonb), ?)
+                        cast(? as jsonb), ?, ?, ?, ?, ?, ?, ?, cast(? as jsonb), ?, ?, ?, ?, ?, ?, ?,
+                        cast(? as jsonb), ?)
                 """,
                 fact.auditId(), actorLegacy, objectLegacy, fact.action(), fact.outcome(),
                 timestamp(fact.occurredAt()), sourceIpLegacy, fact.traceId(),
                 fact.policyVersions().getOrDefault("identitySessionPolicy", "ISP-1.0.0"),
                 fact.producerModule(), fact.actorType().wireName(),
                 fact.actorSearchToken(), toJson(fact.roleIds()), toJson(authorization(fact)),
+                authorizationDecision(record),
                 fact.objectType(), fact.objectSearchToken(), fact.outcome(), fact.reasonCode(),
                 fact.purpose(), fact.projectionScope(), timestamp(fact.recordedAt()),
                 toJson(timeSource(fact)), fact.sourceIpSearchToken(),
@@ -127,6 +130,12 @@ public final class JdbcIdentityAuditAdapter implements IdentityAuditPort {
 
     private static Map<String, Object> authorization(LocalAuditFact fact) {
         return fact.authorizationContext();
+    }
+
+    private String authorizationDecision(IdentityAuditRecord record) {
+        return record.authorizationDecisionContext()
+                .map(context -> toJson(context.asMap()))
+                .orElse(null);
     }
 
     private static Map<String, Object> timeSource(LocalAuditFact fact) {

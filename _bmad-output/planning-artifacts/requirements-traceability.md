@@ -1,8 +1,8 @@
 ---
 title: 学林知微需求与实施追踪矩阵
 status: controlled-baseline
-version: 2.1.2
-updated: 2026-07-31-story-1.6c-downstream-activation-alignment
+version: 2.1.4
+updated: 2026-08-03-story-1.8-review-follow-up
 implementationReadiness: ready
 externalGateStatus: approved-for-implementation
 runtimeEvidenceStatus: pending-story-execution
@@ -41,7 +41,7 @@ derivedFrom:
 | `rule-catalog.md` | 1.1.0 / approved | 2026-07-17 | Hei / RC/SPM/ACN-1.0.0 | runtime inactive/fused，等待 Story 实测 | 窄域规则/专项矩阵 |
 | `high-risk-action-matrix.md` | 1.0.0 / approved | 2026-07-17 | Hei / HRAP-1.0.0 | runtime 逐 actionType 测试 | 窄域高风险策略 |
 | `open-decisions.md` | 2.1.1 / closed | 2026-07-19 | Hei / AUTH + AAB-1.0.0 | DEC-001—018 closed；后续作用域裁决已登记 | 决策登记 |
-| 本文件 | 2.1.2 / controlled-baseline | 2026-07-31 | 派生对账制品 | 不冒充 planned/not-installed consumer 运行证据 | P4：追踪，不得覆盖上游 |
+| 本文件 | 2.1.3 / controlled-baseline | 2026-08-03 | 派生对账制品 | 不冒充 planned/not-installed consumer 运行证据 | P4：追踪，不得覆盖上游 |
 | `prds/.../addendum.md` | historical / non-normative | superseded | 无 | 与 v1.1 冲突项不再生效 | 历史输入，不参与裁决 |
 | `implementation-readiness-report-2026-07-17-2.md` | audit input | 2026-07-17 | readiness 审计 | 非规范性 | 审计证据，不定义产品 |
 
@@ -54,6 +54,8 @@ Story 1.5 runtime companion（2026-07-23）：FR-8 的授权搜索/字段投影/
 Story 1.1d 的规划准入与完成平台分离：当前基线足以开始 U1 本地可复现构建合同；真实 Git/CI、digest-addressed store、attestation/signing、受保护环境、正式 Web runner 与 promotion endpoint 必须由 `CISB-1.0.0` 以实际值另行冻结。CISB 未完成时，U2—U4 与整体 `review/done` 保持不可验收，不得把 planning `ready` 解读为已有运行平台。
 
 Story 1.6c runtime companion（2026-07-31）：FR-2 planning owner 仍为 1.6c；1.6c 只计算当前发布版本适用、required 且 active 的真实消费者，并以 `AC-1.6c-HAPPY` 与 `AC-1.6c-DOWNSTREAM-ACTIVATION` 验收。task/transfer/export/mobile 等 `planned/not-installed` 消费者必须保存 `runtimeEvidenceClaim=none`，不得由 fixture、transport ack 或 producer-observed ack 伪推进。1.7、3.9b、3.14c、5.5、7.2c 在各自 owner Story 激活真实消费者或 surface verification 时，必须完成回放、业务 apply、自有 watermark 与 reconciliation；contributor 列不形成 1.6c 的前向执行依赖。
+
+Story 1.8 runtime companion（2026-08-03）：Story 1.8 的原 v3 隔离候选已通过字段投影合同、current-evidence 授权与返回前最终重检、CryptoPort/key version、成功与失败路径的 audit-before-return、PostgreSQL 18.4、Web/DOM/内存缓存/无障碍树及带累计解压预算的隐私 canary 门禁。定向 re-review 随后确认的 3 条 follow-up 也已修复：audit 1.4 的 11 字段后继证据以 V000009 与冻结 v1 fact 同事务落库，不改动既有 fact/outbox 合同；`surface-forbidden` 不再被视为可搜索状态；File List 纠正纳入新候选。累计 12 条 review finding 已全部关闭，新候选的精确 commit/tree 由 post-run `implementation-artifacts/1-8-verification.md` 与 `implementation-artifacts/evidence/1-8-field-projection-candidate-summary.json` 登记。该证据关闭 NFR-13 的 final-owner 运行证据，并仅关闭 NFR-14 的在线输入/参数化访问/字段投影部分和 NFR-16 的 Story 1.8 当前投影面。FR-6/FR-7 的 full owner 仍为 Story 3.14c；NFR-14 的异步导出输入/文件投影与 NFR-16 的导出及全局零绕过最终证据仍由 Story 3.14b 承担。当前没有 ExportJob、文件、下载、Transfer/Task 或移动端运行能力，也未安装新 consumer；V000009 只是既有审计行的 nullable metadata 旁车，不引入授权决定缓存或 consumer watermark。`export-job-download`、`transfer-task`、`mobile-projection` 必须继续为 `pending-story-execution + runtimeEvidenceClaim=none`。
 
 ## Gate 批准登记
 
@@ -97,8 +99,8 @@ Story 1.6c runtime companion（2026-07-31）：FR-2 planning owner 仍为 1.6c�
 | FR-3 | §6.1 | 角色化首页 | AD-8/11/17 | 1.7 / AC-1.7-HAPPY | 1.6a,1.6b,1.6c | G-01/G-02/G-05；RFP matrix/WORKITEM-A/fixture | full / ready |
 | FR-4 | §6.1 | 公共待办深链 | AD-7/13/20/24 | 5.5 / AC-5.5-* | 1.9,2.5a,2.5c,3.4,3.9d,3.12,5.1,5.2d | G-04 | full / ready |
 | FR-5 | §6.2 | 无权限/对象范围 | AD-8/12 | 1.7 / AC-1.7-HAPPY | 1.8 | G-02；RFP scope/action oracle | full / ready |
-| FR-6 | §6.2 | sensitive-field/导出 | AD-9/10/13/27 | 3.14c / AC-3.14c-* | 1.8 / AC-1.8-HAPPY；3.14a,3.14b | G-02/G-07/DEC-004；RFP C/M/H + R5 星号字段封闭全集 oracle | full / ready |
-| FR-7 | §6.2 | 任务期授权 | AD-8/9/10/13/23/27 | 3.14c / AC-3.14c-* | 1.8 / AC-1.8-HAPPY；3.14a,3.14b | G-02/G-07/DEC-004；purpose/fieldAllowlist/[start,end) | full / ready |
+| FR-6 | §6.2 | sensitive-field/导出 | AD-9/10/13/27 | 3.14c / AC-3.14c-* | 1.8 / AC-1.8-HAPPY（在线 committed-candidate companion passed，不构成 full closure）；3.14a,3.14b | G-02/G-07/DEC-004；RFP C/M/H + R5 星号字段封闭全集 oracle；1.8 verification | full / ready |
+| FR-7 | §6.2 | 任务期授权 | AD-8/9/10/13/23/27 | 3.14c / AC-3.14c-* | 1.8 / AC-1.8-HAPPY（任务期 committed-candidate companion passed，不构成 full closure）；3.14a,3.14b | G-02/G-07/DEC-004；purpose/fieldAllowlist/[start,end)；1.8 verification | full / ready |
 | FR-8 | §6.2 | 审计检索 | AD-3/10/16/24/27 | 1.5 / AC-1.5-HAPPY | 1.3,1.4,3.14c | G-07 | full / ready |
 | FR-9 | §6.3 | 数据源目录 | AD-4/5/13 | 2.1 / AC-2.1-HAPPY | 2.4 | G-03/DEC-012 | full / ready |
 | FR-10 | §6.3 | 标识异常 | AD-4/25 | 2.2 / AC-2.2-HAPPY | 2.1 | G-03 | full / ready |
@@ -190,10 +192,10 @@ Story 1.6c runtime companion（2026-07-31）：FR-2 planning owner 仍为 1.6c�
 | NFR-10 | 3.2 / AC-3.2-HAPPY | fuse negative test | AD-5/6 | G-03/G-06 |
 | NFR-11 | 3.4 / AC-3.4-* | evidence quality snapshot | AD-4/19 | G-03/G-06 |
 | NFR-12 | 6.6 / AC-6.6-* | 全数据类 retention/legal hold/watermark/DeletionReceipt/backup expiry | AD-10/13/27 | G-07 |
-| NFR-13 | 1.8 / AC-1.8-HAPPY；1.1d contributor | sensitive-field/key evidence；CI/store/signing identity 边界 | AD-9/10/15/27 | G-01/G-07 |
-| NFR-14 | 3.14b / AC-3.14b-HAPPY | input/projection tests | AD-8/9/12/24 | G-02/G-07 |
+| NFR-13 | 1.8 / AC-1.8-HAPPY（final-owner runtime evidence closed）；1.1d contributor | sensitive-field/key evidence；CI/store/signing identity 边界 | AD-9/10/15/27 | G-01/G-07；`1-8-verification.md` |
+| NFR-14 | 3.14b / AC-3.14b-HAPPY（异步导出剩余/final owner）；1.8 / AC-1.8-HAPPY（在线输入、参数化访问与字段投影 scope passed） | input/projection tests | AD-8/9/12/24 | G-02/G-07；`1-8-verification.md` |
 | NFR-15 | 1.5 / AC-1.5-HAPPY | audit ledger | AD-10/16/24/27 | G-07 |
-| NFR-16 | 3.14b / AC-3.14b-HAPPY | zero successful bypass | AD-8—10/23 | G-02/G-07/DEC-004 |
+| NFR-16 | 3.14b / AC-3.14b-HAPPY（导出/全局 final owner）；1.7、1.8 contributors（1.8 当前投影面 passed） | zero successful bypass | AD-8—10/23 | G-02/G-07/DEC-004；`1-8-verification.md` |
 | NFR-17 | 1.2 / AC-1.2-HAPPY | Web/WCAG | AD-17/21/22/28 | G-02/G-05 |
 | NFR-18 | 7.1 / AC-7.1-HAPPY | App WebView | AD-17/21/26/28 | G-02/G-05 |
 | NFR-19 | 7.1 / AC-7.1-HAPPY | visual tokens/viewports | AD-21/28 | G-05 |
@@ -222,4 +224,4 @@ Story 1.6c runtime companion（2026-07-31）：FR-2 planning owner 仍为 1.6c�
 
 ## 当前结论
 
-FR/BR/NFR 的规格追踪已闭合，12 个报告阻塞项全部 closed，DEC-001—018 全部 closed，G-01—G-09 全部 `approved-for-implementation`。项目可进入实现与 Story 验收。运行证据仍严格按 owner Story 产生：契约、性能、可用性、灾备、删除、可访问性、供应链或 canary 任一失败时，对应 Story/Release 保持未完成，禁止把委托批准解释为实测通过。
+FR/BR/NFR 的规格追踪已闭合，12 个报告阻塞项全部 closed，DEC-001—018 全部 closed，G-01—G-09 全部 `approved-for-implementation`。项目可进入实现与 Story 验收。Story 1.8 已关闭 NFR-13 final-owner 运行证据，并登记 NFR-14/16 的 scoped companion；全局 `runtimeEvidenceStatus` 仍为 `pending-story-execution`，因为导出、Task/Transfer、移动端及其他 owner Story 尚未执行。运行证据仍严格按 owner Story 产生：契约、性能、可用性、灾备、删除、可访问性、供应链或 canary 任一失败时，对应 Story/Release 保持未完成，禁止把委托批准解释为实测通过。

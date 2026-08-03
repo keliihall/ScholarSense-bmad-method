@@ -1,0 +1,12 @@
+{
+  "$schema": "./authorization-error-profile.schema.json",
+  "version": "AUTHORIZATION-ERROR-PROFILE-1.0.0",
+  "envelopeFields": ["code", "message", "traceId", "fieldErrors"],
+  "responseHeaders": {"Cache-Control": "no-store, no-cache", "Pragma": "no-cache", "Referrer-Policy": "no-referrer"},
+  "errors": [
+    {"condition": "object-unavailable", "httpStatus": 404, "code": "IDENTITY_AUTHORIZATION_OBJECT_UNAVAILABLE", "message": "当前职责范围不包含此对象；本次访问已记录", "disclosure": "no-object-existence-or-sensitive-context"},
+    {"condition": "surface-forbidden", "httpStatus": 403, "code": "IDENTITY_AUTHORIZATION_SURFACE_FORBIDDEN", "message": "当前身份没有可用入口", "disclosure": "no-object-existence-or-sensitive-context"},
+    {"condition": "dependency-unavailable", "httpStatus": 503, "code": "IDENTITY_AUTHORIZATION_DEPENDENCY_UNAVAILABLE", "message": "授权依赖暂时不可用，请重试", "disclosure": "no-object-existence-or-sensitive-context"},
+    {"condition": "decision-stale", "httpStatus": 409, "code": "IDENTITY_AUTHORIZATION_DECISION_STALE", "message": "授权状态已变化，请重新操作", "disclosure": "no-object-existence-or-sensitive-context"}
+  ]
+}

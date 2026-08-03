@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/authorization/role-field-policy.schema.json",
+  "title": "ScholarSense Role Field Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "policyVersion", "fixtureVersion", "status", "evaluationOrder",
+    "unknownSemantics", "objectClasses", "scopeAnchors", "fieldClasses",
+    "visibilityOrder", "roles", "explicitDenies", "separationOfDuty",
+    "hrapRequiredActions", "hrapMappings", "defaultSurfaceSelection",
+    "delegationSemantics"
+  ],
+  "properties": {
+    "$schema": {"const": "./role-field-policy.schema.json"},
+    "policyVersion": {"const": "RFP-1.0.0"},
+    "fixtureVersion": {"const": "RFP-FIXTURE-1.0.0"},
+    "status": {"const": "approved"},
+    "evaluationOrder": {
+      "const": [
+        "validate-effective-policy", "match-role-object-action-scope", "merge-allow",
+        "apply-explicit-deny-and-sod", "merge-applicable-field-visibility"
+      ]
+    },
+    "unknownSemantics": {"const": "fail-closed"},
+    "objectClasses": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
+    "scopeAnchors": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
+    "fieldClasses": {
+      "type": "array", "minItems": 8, "maxItems": 8, "uniqueItems": true,
+      "items": {"enum": ["B", "I", "C", "S", "E", "N", "G", "T"]}
+    },
+    "visibilityOrder": {"const": ["C", "M", "H"]},
+    "roles": {
+      "type": "array", "minItems": 7, "maxItems": 7,
+      "items": {"$ref": "#/$defs/role"}
+    },
+    "explicitDenies": {"type": "array", "minItems": 3, "items": {"$ref": "#/$defs/deny"}},
+    "separationOfDuty": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/sod"}},
+    "hrapRequiredActions": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
+    "hrapMappings": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"}
+    },
+    "defaultSurfaceSelection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["priorityBands", "stableTieBreaker", "changeRule"],
+      "properties": {
+        "priorityBands": {"const": ["pending-responsibility", "governance-quality", "aggregate-situation", "system-administration"]},
+        "stableTieBreaker": {"const": ["R1", "R5", "R3", "R6", "R2", "R4", "R7"]},
+        "changeRule": {"const": "requires-rfp-successor"}
+      }
+    },
+    "delegationSemantics": {
+      "type": "object", "additionalProperties": false,
+      "required": ["timeWindow", "effectivePermission", "preCommitRecheck", "mayExpand"],
+      "properties": {
+        "timeWindow": {"const": "[startAt,endAt)"},
+        "effectivePermission": {"const": "base-intersection-grant"},
+        "preCommitRecheck": {"const": ["relation", "grant", "policy", "objectVersion"]},
+        "mayExpand": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyUniqueStrings": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "role": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "roleId", "code", "objectClasses", "actions", "scopeRules",
+        "fieldVisibility", "defaultSurfaceId", "priorityBand"
+      ],
+      "properties": {
+        "roleId": {"pattern": "^R[1-7]$"},
+        "code": {"type": "string", "pattern": "^[A-Z][A-Z-]+$"},
+        "objectClasses": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
+        "actions": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
+        "scopeRules": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["objectClasses", "anyOfAnchors"],
+            "properties": {
+              "objectClasses": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
+              "anyOfAnchors": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
+              "purposeRequired": {"type": "boolean"}
+            }
+          }
+        },
+        "fieldVisibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "B": {"enum": ["C", "M", "H"]}, "I": {"enum": ["C", "M", "H"]},
+            "C": {"enum": ["C", "M", "H"]}, "S": {"enum": ["C", "M", "H"]},
+            "E": {"enum": ["C", "M", "H"]}, "N": {"enum": ["C", "M", "H"]},
+            "G": {"enum": ["C", "M", "H"]}, "T": {"enum": ["C", "M", "H"]}
+          },
+          "required": ["B", "I", "C", "S", "E", "N", "G", "T"]
+        },
+        "conditionalFieldRules": {"type": "array", "items": {"type": "object"}},
+        "defaultSurfaceId": {"type": "string", "pattern": "^[a-z][a-z0-9-]+$"},
+        "priorityBand": {"enum": ["pending-responsibility", "governance-quality", "aggregate-situation", "system-administration"]}
+      }
+    },
+    "deny": {
+      "type": "object", "additionalProperties": false,
+      "required": ["roleId", "objectClasses", "reason"],
+      "properties": {
+        "roleId": {"pattern": "^R[1-7]$"},
+        "objectClasses": {"$ref": "#/$defs/nonEmptyUniqueStrings"},
+        "reason": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"}
+      }
+    },
+    "sod": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ruleId", "condition", "result"],
+      "properties": {
+        "ruleId": {"type": "string", "pattern": "^SOD-[0-9]+$"},
+        "condition": {"type": "string", "minLength": 1},
+        "result": {"const": "DENY"}
+      }
+    }
+  }
+}

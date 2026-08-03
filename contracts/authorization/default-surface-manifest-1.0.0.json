@@ -1,0 +1,15 @@
+{
+  "$schema": "./default-surface-manifest.schema.json",
+  "version": "DEFAULT-SURFACE-MANIFEST-1.0.0",
+  "policyVersion": "RFP-1.0.0",
+  "fallbackSurfaceId": "shell-home",
+  "surfaces": [
+    {"roleId": "R1", "surfaceId": "care-workbench", "title": "关怀工作台", "routeName": "shell.home", "priorityBand": "pending-responsibility", "providerState": "not-installed", "runtimeEvidenceClaim": "none"},
+    {"roleId": "R2", "surfaceId": "college-governance", "title": "学院治理", "routeName": "shell.home", "priorityBand": "aggregate-situation", "providerState": "not-installed", "runtimeEvidenceClaim": "none"},
+    {"roleId": "R3", "surfaceId": "rule-operations-governance", "title": "规则与运营治理", "routeName": "shell.home", "priorityBand": "governance-quality", "providerState": "not-installed", "runtimeEvidenceClaim": "none"},
+    {"roleId": "R4", "surfaceId": "school-dashboard", "title": "校级驾驶舱", "routeName": "shell.home", "priorityBand": "aggregate-situation", "providerState": "not-installed", "runtimeEvidenceClaim": "none"},
+    {"roleId": "R5", "surfaceId": "collaboration-orders", "title": "协同工单", "routeName": "shell.home", "priorityBand": "pending-responsibility", "providerState": "not-installed", "runtimeEvidenceClaim": "none"},
+    {"roleId": "R6", "surfaceId": "data-quality", "title": "数据质量", "routeName": "shell.home", "priorityBand": "governance-quality", "providerState": "not-installed", "runtimeEvidenceClaim": "none"},
+    {"roleId": "R7", "surfaceId": "technical-operations", "title": "技术运行面板", "routeName": "shell.home", "priorityBand": "system-administration", "providerState": "not-installed", "runtimeEvidenceClaim": "none"}
+  ]
+}

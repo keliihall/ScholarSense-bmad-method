@@ -1,8 +1,8 @@
 package cn.edu.suda.scholarsense.identityaccess.application;
 
-import cn.edu.suda.scholarsense.auditoperations.api.AuditIngressOutcome;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditIngressResult;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditLedgerIngressPort;
+import cn.edu.suda.scholarsense.shared.outbox.AuditIngressOutcome;
+import cn.edu.suda.scholarsense.shared.outbox.AuditIngressResult;
+import cn.edu.suda.scholarsense.shared.outbox.AuditLedgerIngressPort;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;

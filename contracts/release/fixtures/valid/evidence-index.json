@@ -1,14 +1,14 @@
 {
   "version": "EVIDENCE-INDEX-1.0.0",
   "releaseVersion": "1.0.0",
-  "subjectManifestSha256": "cc8ade3ef1b1ca02c860f00ed4720a5e59b746a312ca6ad98ebb5cedf77ce2cd",
+  "subjectManifestSha256": "e225537cacc67e29e820846f0673984e8c054a738c453ef0eb54049eaf6617a3",
   "releaseManifest": {
     "id": "release-manifest",
     "version": "RELEASE-MANIFEST-1.0.0",
     "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:8704d0bd89b77a92a44a249eb6bd4e5c79a93aa5862963c1d125e9179f834241",
     "mediaType": "application/json",
     "size": 1,
-    "binarySha256": "cc8ade3ef1b1ca02c860f00ed4720a5e59b746a312ca6ad98ebb5cedf77ce2cd",
+    "binarySha256": "e225537cacc67e29e820846f0673984e8c054a738c453ef0eb54049eaf6617a3",
     "ociDigest": "sha256:8704d0bd89b77a92a44a249eb6bd4e5c79a93aa5862963c1d125e9179f834241"
   },
   "manifestSignature": {
@@ -21,7 +21,7 @@
     "size": 1,
     "binarySha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     "ociDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    "subjectBinarySha256": "cc8ade3ef1b1ca02c860f00ed4720a5e59b746a312ca6ad98ebb5cedf77ce2cd",
+    "subjectBinarySha256": "e225537cacc67e29e820846f0673984e8c054a738c453ef0eb54049eaf6617a3",
     "dependsOn": [
       "release-manifest"
     ]
@@ -301,7 +301,7 @@
   "versionBindings": [
     {
       "releaseVersion": "1.0.0",
-      "manifestSha256": "cc8ade3ef1b1ca02c860f00ed4720a5e59b746a312ca6ad98ebb5cedf77ce2cd"
+      "manifestSha256": "e225537cacc67e29e820846f0673984e8c054a738c453ef0eb54049eaf6617a3"
     }
   ],
   "createdAt": "2026-07-19T08:01:00+08:00"

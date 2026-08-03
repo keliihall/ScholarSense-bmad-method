@@ -1,15 +1,28 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { IdentitySessionClient, useIdentityState } from '../../identity-access';
-import { AuditSearchClient, AuditSearchMemoryState, clearAuditSearchIdentityBoundary } from './audit-search';
+import { useQueryClient } from '@tanstack/vue-query';
+import { IdentitySessionClient, useAuthorizedShellState, useIdentityState } from '../../identity-access';
+import {
+  AuditSearchClient,
+  AuditSearchMemoryState,
+  auditSearchColumns,
+  auditSearchQueryOptions,
+  auditSearchValuePresentation,
+  clearAuditSearchIdentityBoundary,
+  clearAuditSearchQueryBoundary,
+  hasUsableAuditSearchAuthorization,
+} from './audit-search';
 import type { AuditSearchResponse, AuditSearchViewName } from './audit-search';
 import AuditRetentionEvidencePanel from './AuditRetentionEvidencePanel.vue';
 
-type PageState = 'loading' | 'results' | 'empty' | 'filtered-empty' | 'forbidden' | 'error' | 'degraded';
+type PageState = 'loading' | 'results' | 'empty' | 'filtered-empty' | 'forbidden' | 'error'
+  | 'degraded' | 'cancelled';
 const route = useRoute();
 const router = useRouter();
 const identity = useIdentityState();
+const authorization = useAuthorizedShellState();
+const queryClient = useQueryClient();
 const identityClient = new IdentitySessionClient();
 const client = new AuditSearchClient(undefined, (signal) => identityClient.csrfProof(signal));
 const memory = new AuditSearchMemoryState();
@@ -27,14 +40,48 @@ const occurredTo = ref(textQuery('occurredTo'));
 const traceId = ref('');
 const page = ref(numberQuery('page'));
 const asOfSequence = ref<number>();
+let boundaryRefreshQueued = false;
+let disposed = false;
 const hasFilters = computed(() => [actorRef.value, objectRef.value, objectType.value, action.value,
   outcome.value, occurredFrom.value, occurredTo.value, traceId.value].some(Boolean));
-const columns = computed(() => Array.from(new Set(
-  result.value?.items.flatMap((item) => Object.keys(item.fields)) ?? [],
-)));
+const columns = computed(() => auditSearchColumns(view.value, result.value?.items ?? []));
+const auditCapabilitySignature = computed(() => {
+  const capability = authorization.current?.entryCapabilities.find((item) => item.id === 'audit-search');
+  const menuItem = authorization.current?.menuItems.find((item) => item.routeName === 'audit.search');
+  return `${capability?.state ?? 'missing'}|${menuItem?.providerState ?? 'missing'}`;
+});
+
+function hasCurrentAuditAuthorization(): boolean {
+  return hasUsableAuditSearchAuthorization(
+    identity.authenticated,
+    authorization.status,
+    authorization.current !== undefined,
+    auditCapabilitySignature.value,
+  );
+}
+
+function scheduleAuthorizedRefresh(): void {
+  if (boundaryRefreshQueued || disposed || !hasCurrentAuditAuthorization()) return;
+  boundaryRefreshQueued = true;
+  queueMicrotask(() => {
+    boundaryRefreshQueued = false;
+    if (!disposed && hasCurrentAuditAuthorization()) void search(true);
+  });
+}
 
 async function search(resetSnapshot = true): Promise<void> {
   active.value?.abort();
+  clearAuditSearchQueryBoundary(queryClient);
+  result.value = undefined;
+  const requestedSessionVersion = identity.session?.sessionVersion;
+  const requestedPolicyVersion = authorization.current?.policyVersion;
+  const requestedView = view.value;
+  if (!hasCurrentAuditAuthorization()
+    || requestedSessionVersion === undefined || requestedPolicyVersion === undefined) {
+    active.value = undefined;
+    state.value = 'forbidden';
+    return;
+  }
   const controller = new AbortController();
   active.value = controller;
   state.value = 'loading';
@@ -42,19 +89,29 @@ async function search(resetSnapshot = true): Promise<void> {
   if (resetSnapshot) asOfSequence.value = undefined;
   await persistSafeQuery();
   try {
-    const response = await client.search({
-      view: view.value,
-      ...memory.sensitiveFilters(),
-      ...(objectType.value ? { objectType: objectType.value } : {}),
-      ...(action.value ? { action: action.value } : {}),
-      ...(outcome.value ? { outcome: outcome.value } : {}),
-      ...(occurredFrom.value ? { occurredFrom: new Date(occurredFrom.value).toISOString() } : {}),
-      ...(occurredTo.value ? { occurredTo: new Date(occurredTo.value).toISOString() } : {}),
-      ...(traceId.value ? { traceId: traceId.value } : {}),
-      page: page.value, size: 25,
-      ...(asOfSequence.value === undefined ? {} : { asOfSequence: asOfSequence.value }),
-    }, controller.signal);
-    if (controller.signal.aborted) return;
+    if (!currentSearchBoundary(
+      controller, requestedSessionVersion, requestedPolicyVersion, requestedView,
+    )) return;
+    const request = {
+        view: requestedView,
+        ...memory.sensitiveFilters(),
+        ...(objectType.value ? { objectType: objectType.value } : {}),
+        ...(action.value ? { action: action.value } : {}),
+        ...(outcome.value ? { outcome: outcome.value } : {}),
+        ...(occurredFrom.value ? { occurredFrom: new Date(occurredFrom.value).toISOString() } : {}),
+        ...(occurredTo.value ? { occurredTo: new Date(occurredTo.value).toISOString() } : {}),
+        ...(traceId.value ? { traceId: traceId.value } : {}),
+        page: page.value, size: 25,
+        ...(asOfSequence.value === undefined ? {} : { asOfSequence: asOfSequence.value }),
+      } as const;
+    const response = await queryClient.fetchQuery(auditSearchQueryOptions({
+      sessionVersion: requestedSessionVersion,
+      policyVersion: requestedPolicyVersion,
+      view: requestedView,
+    }, () => client.search(request, controller.signal)));
+    if (!currentSearchBoundary(
+      controller, requestedSessionVersion, requestedPolicyVersion, requestedView,
+    )) return;
     result.value = response;
     asOfSequence.value = response.asOfSequence;
     state.value = response.items.length === 0
@@ -65,7 +122,32 @@ async function search(resetSnapshot = true): Promise<void> {
     result.value = undefined;
     state.value = failure instanceof Error && failure.message === 'AUDIT_SEARCH_FORBIDDEN'
       ? 'forbidden' : 'error';
+  } finally {
+    if (active.value === controller) {
+      active.value = undefined;
+      clearAuditSearchQueryBoundary(queryClient);
+    }
   }
+}
+
+function currentSearchBoundary(
+  controller: AbortController,
+  sessionVersion: number,
+  policyVersion: 'RFP-1.0.0',
+  requestedView: AuditSearchViewName,
+): boolean {
+  return !controller.signal.aborted
+    && active.value === controller
+    && hasCurrentAuditAuthorization()
+    && identity.session?.sessionVersion === sessionVersion
+    && authorization.current?.policyVersion === policyVersion
+    && view.value === requestedView;
+}
+
+function cancelSearch(): void {
+  clearAuditSearchIdentityBoundary(active, result, asOfSequence);
+  clearAuditSearchQueryBoundary(queryClient);
+  state.value = 'cancelled';
 }
 
 async function clearFilters(): Promise<void> {
@@ -102,6 +184,7 @@ function numberQuery(key: string): number {
 
 function clearIdentityBoundary(reason: 'account-switch' | 'session-invalid'): void {
   clearAuditSearchIdentityBoundary(active, result, asOfSequence);
+  clearAuditSearchQueryBoundary(queryClient);
   actorRef.value = '';
   objectRef.value = '';
   memory.clearSensitive(reason);
@@ -109,25 +192,60 @@ function clearIdentityBoundary(reason: 'account-switch' | 'session-invalid'): vo
   state.value = 'forbidden';
 }
 
-watch(() => identity.session?.sessionPseudonym, (current, previous) => {
-  if (previous !== undefined && current !== previous) {
-    clearIdentityBoundary('account-switch');
-    if (current !== undefined && identity.authenticated) void search(true);
-  }
-});
+watch(
+  () => [identity.session?.sessionPseudonym, identity.session?.sessionVersion] as const,
+  (current, previous) => {
+    if (previous?.some((value) => value !== undefined)
+      && current.join('|') !== previous.join('|')) {
+      clearIdentityBoundary('account-switch');
+      scheduleAuthorizedRefresh();
+    }
+  },
+);
 watch(() => identity.authenticated, (authenticated) => {
   if (!authenticated) {
     clearIdentityBoundary('session-invalid');
   }
 });
-onMounted(() => search(page.value === 0));
-onBeforeUnmount(() => { active.value?.abort(); memory.clearSensitive('refresh'); });
+watch(view, () => {
+  clearAuditSearchIdentityBoundary(active, result, asOfSequence);
+  clearAuditSearchQueryBoundary(queryClient);
+  page.value = 0;
+  state.value = 'loading';
+  void search(true);
+});
+watch(
+  () => [
+    authorization.current?.policyVersion,
+    authorization.current?.dependencyStatus,
+    authorization.status,
+    auditCapabilitySignature.value,
+  ] as const,
+  (current, previous) => {
+    if (previous?.some((value) => value !== undefined)
+      && current.join('|') !== previous.join('|')) {
+      clearIdentityBoundary('session-invalid');
+      scheduleAuthorizedRefresh();
+    }
+  },
+);
+onMounted(() => {
+  disposed = false;
+  if (hasCurrentAuditAuthorization()) void search(page.value === 0);
+  else state.value = 'forbidden';
+});
+onBeforeUnmount(() => {
+  disposed = true;
+  clearAuditSearchIdentityBoundary(active, result, asOfSequence);
+  clearAuditSearchQueryBoundary(queryClient);
+  memory.clearSensitive('refresh');
+});
 </script>
 
 <template>
   <section class="audit-search" aria-labelledby="audit-search-heading">
     <h2 id="audit-search-heading" tabindex="-1">授权审计检索</h2>
-    <p>每次查询都会重新鉴权并先记录读取行为。当前生产角色源未启用时，本页会安全拒绝。</p>
+    <p>每次查询都按当前身份、用途和字段策略重新鉴权，并在返回结果前记录读取行为；依赖不可证明时会安全拒绝。</p>
     <form class="audit-filter" aria-label="审计筛选" @submit.prevent="page = 0; search(true)">
       <label>用途视图<select v-model="view"><option value="business">业务元数据</option><option value="technical">技术元数据</option></select></label>
       <label>用户标识<input v-model="actorRef" autocomplete="off"></label>
@@ -145,7 +263,8 @@ onBeforeUnmount(() => { active.value?.abort(); memory.clearSensitive('refresh');
     </form>
 
     <div class="audit-result-state" role="status" aria-live="polite" aria-atomic="true">
-      <template v-if="state === 'loading'"><p>正在冻结快照并检索…</p><button type="button" @click="active?.abort()">取消本次查询</button></template>
+      <template v-if="state === 'loading'"><p>正在冻结快照并检索…</p><button type="button" @click="cancelSearch">取消本次查询</button></template>
+      <template v-else-if="state === 'cancelled'"><p>已取消本次查询，未保留任何结果。</p><button type="button" @click="search(true)">重新查询</button></template>
       <template v-else-if="state === 'empty'"><p>当前完整快照中没有审计记录。</p><button type="button" @click="search(true)">重新查询</button></template>
       <template v-else-if="state === 'filtered-empty'"><p>当前筛选没有匹配记录。</p><button type="button" @click="clearFilters">清除筛选</button></template>
       <template v-else-if="state === 'forbidden'"><p>记录不存在或当前用途无权查看。</p><button type="button" @click="router.replace('/')">返回安全首页</button></template>
@@ -157,7 +276,17 @@ onBeforeUnmount(() => { active.value?.abort(); memory.clearSensitive('refresh');
     <div v-if="result?.items.length" class="audit-table-wrap" tabindex="0" aria-label="审计检索结果，可横向查看列">
       <table><caption>冻结序列 {{ result.asOfSequence }}；投影水位 {{ result.projectionWatermark }}</caption>
         <thead><tr><th v-for="column in columns" :key="column" scope="col">{{ column }}</th></tr></thead>
-        <tbody><tr v-for="(item, index) in result.items" :key="String(item.fields.recordId ?? index)"><td v-for="column in columns" :key="column">{{ item.fields[column] }}</td></tr></tbody>
+        <tbody><tr v-for="(item, index) in result.items" :key="String(item.fields.recordId ?? index)"><td v-for="column in columns" :key="column">
+          <template v-if="Object.hasOwn(item.fields, column)">
+            <span
+              v-if="auditSearchValuePresentation(view, column, item.fields[column]).masked"
+              class="sensitive-field is-masked"
+              role="img"
+              :aria-label="auditSearchValuePresentation(view, column, item.fields[column]).accessibleName"
+            ><span aria-hidden="true">{{ auditSearchValuePresentation(view, column, item.fields[column]).visual }}</span></span>
+            <template v-else>{{ auditSearchValuePresentation(view, column, item.fields[column]).visual }}</template>
+          </template>
+        </td></tr></tbody>
       </table>
     </div>
     <nav v-if="result && result.total > result.size" class="audit-pagination" aria-label="审计结果分页">

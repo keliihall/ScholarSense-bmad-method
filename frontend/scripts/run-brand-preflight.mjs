@@ -105,6 +105,7 @@ if (
 const host = ['127', '0', '0', '1'].join('.');
 const port = '4173';
 const baseURL = `http://${host}:${port}/scholarsense/`;
+const smokeURL = `${baseURL}baseline`;
 const vite = resolve(FRONTEND_ROOT, 'node_modules/vite/bin/vite.js');
 
 let browser;
@@ -140,17 +141,20 @@ try {
     if (message.type() === 'error') consoleErrors.push(message.text());
   });
   page.on('requestfailed', (request) => failedRequests.push(request.url()));
-  const response = await page.goto(baseURL);
-  const heading = (await page.locator('h1').textContent())?.trim();
+  const response = await page.goto(smokeURL);
+  const productHeading = (await page.locator('h1').textContent())?.trim();
+  const baselineHeading = (await page.locator('#baseline-heading').textContent())?.trim();
   if (
     response?.status() !== 200
-    || heading !== 'ScholarSense 前端基线'
+    || productHeading !== '学林知微'
+    || baselineHeading !== '生产启动面已建立'
     || consoleErrors.length > 0
     || failedRequests.length > 0
   ) {
     throw new Error(
       'BRAND_PREFLIGHT_SMOKE_FAILED: '
-      + `status=${response?.status()} heading=${heading} `
+      + `status=${response?.status()} productHeading=${productHeading} `
+      + `baselineHeading=${baselineHeading} `
       + `console=${consoleErrors.join('|')} network=${failedRequests.join('|')}`,
     );
   }
@@ -171,6 +175,7 @@ try {
     approvedExecutableSha256: record.executableSha256 ?? null,
     actualExecutableSha256,
     buildInput: 'current-source-clean-rebuild',
+    smokePath: '/scholarsense/baseline',
     viewport: '1440x900',
     result: 'PASS',
   }));

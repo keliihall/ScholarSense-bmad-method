@@ -1,0 +1,13 @@
+{
+  "actorPseudonym": "ast_v1_k1_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "rolePackages": ["R1", "R2"],
+  "actionId": "care.read",
+  "objectTokenDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "policyVersion": "RFP-1.0.0",
+  "scopeAnchorSummary": ["CURRENT_RESPONSIBILITY", "GOVERNANCE_WORK_ITEM"],
+  "objectVersion": 7,
+  "fieldProjectionSummary": {"B": "C", "I": "M", "C": "H", "S": "H", "E": "M", "N": "H", "G": "C", "T": "M"},
+  "result": "ALLOW",
+  "trustedAt": "2026-07-17T08:00:00Z",
+  "traceId": "0123456789abcdef0123456789abcdef"
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/authorization/default-surface-manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "version", "policyVersion", "fallbackSurfaceId", "surfaces"],
+  "properties": {
+    "$schema": {"const": "./default-surface-manifest.schema.json"},
+    "version": {"const": "DEFAULT-SURFACE-MANIFEST-1.0.0"},
+    "policyVersion": {"const": "RFP-1.0.0"},
+    "fallbackSurfaceId": {"const": "shell-home"},
+    "surfaces": {
+      "type": "array", "minItems": 7, "maxItems": 7,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["roleId", "surfaceId", "title", "routeName", "priorityBand", "providerState", "runtimeEvidenceClaim"],
+        "properties": {
+          "roleId": {"pattern": "^R[1-7]$"},
+          "surfaceId": {"type": "string", "pattern": "^[a-z][a-z0-9-]+$"},
+          "title": {"type": "string", "minLength": 1},
+          "routeName": {"const": "shell.home"},
+          "priorityBand": {"enum": ["pending-responsibility", "governance-quality", "aggregate-situation", "system-administration"]},
+          "providerState": {"const": "not-installed"},
+          "runtimeEvidenceClaim": {"const": "none"}
+        }
+      }
+    }
+  }
+}

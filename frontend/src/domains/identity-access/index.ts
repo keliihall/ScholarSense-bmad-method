@@ -18,3 +18,18 @@ export { useIdentityState } from './internal/session/identity-state';
 export type { ShellState } from './internal/session/identity-state';
 export { IdentityLifecycleCoordinator } from './internal/session/identity-lifecycle';
 export { startRuntimeHostBridge } from './internal/host/runtime-host';
+export { AuthorizedShellClient } from './internal/authorization/authorized-shell-client';
+export type {
+  AuthorizedShellEntryCapability,
+  AuthorizedShellMenuItem,
+  AuthorizedShellProviderState,
+  AuthorizedShellSurface,
+  CurrentAuthorizedShell,
+} from './internal/authorization/authorized-shell-client';
+export {
+  authorizedShellQueryKey,
+  authorizedShellQueryOptions,
+  fetchCurrentAuthorizedShell,
+} from './internal/authorization/authorized-shell-query';
+export { useAuthorizedShellState } from './internal/authorization/authorized-shell-state';
+export type { AuthorizedShellStatus } from './internal/authorization/authorized-shell-state';

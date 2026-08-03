@@ -18,7 +18,8 @@ const copy = computed(() => ({
   'session-expired': ['会话已失效', '当前身份无法确认。', '重新认证'],
   'network-failure': ['网络连接失败', '暂时无法核验当前身份。', '检查连接'],
   'host-degraded': ['门户宿主降级', '门户握手未完成，业务命令已停用。', '重新连接门户'],
-  unauthorized: ['暂时无法访问', '当前目标不可用。', '返回安全首页'],
+  unauthorized: ['当前目标不可访问', '当前职责范围不包含此对象；本次访问已记录', '返回安全首页'],
+  'authorization-unavailable': ['授权依赖暂时不可用', '系统无法证明当前访问权限，未返回任何受保护内容。', '重新检查授权'],
 }[reason.value] ?? ['身份依赖不可用', '当前身份无法确认。', '重新认证']));
 
 async function recover(): Promise<void> {
@@ -28,6 +29,10 @@ async function recover(): Promise<void> {
   }
   if (reason.value === 'network-failure') {
     window.location.reload();
+    return;
+  }
+  if (reason.value === 'authorization-unavailable') {
+    await router.replace('/');
     return;
   }
   if (reason.value === 'host-degraded') {

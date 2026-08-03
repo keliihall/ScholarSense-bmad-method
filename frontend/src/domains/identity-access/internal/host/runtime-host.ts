@@ -1,8 +1,7 @@
 import type { Pinia } from 'pinia';
 import type { Router } from 'vue-router';
 
-import { queryClient } from '../../../../app/state/query-client';
-import { VolatileClientState } from '../../../../app/state/volatile-client-state';
+import { queryClient, volatileClientState } from '../../../../app/state/query-client';
 import { HostBridge } from './host-bridge';
 import type { HostFailureCode } from './host-bridge';
 import { IdentityLifecycleCoordinator } from '../session/identity-lifecycle';
@@ -11,6 +10,9 @@ import {
 } from '../session/identity-session-client';
 import type { HostInputRejectionCode } from '../session/identity-session-client';
 import { useIdentityState } from '../session/identity-state';
+import { AuthorizedShellClient } from '../authorization/authorized-shell-client';
+import { authorizedShellQueryKey } from '../authorization/authorized-shell-query';
+import { useAuthorizedShellState } from '../authorization/authorized-shell-state';
 
 type HostRuntime = Readonly<{
   schemaVersion: 'HIP-1.0.0';
@@ -22,7 +24,9 @@ let activeBridge: HostBridge | undefined;
 export async function startRuntimeHostBridge(router: Router, pinia: Pinia): Promise<void> {
   if (window.parent === window || activeBridge !== undefined) return;
   const identity = useIdentityState(pinia);
+  const authorization = useAuthorizedShellState(pinia);
   const client = new IdentitySessionClient();
+  const shellClient = new AuthorizedShellClient();
   let pendingBridge: HostBridge | undefined;
   try {
     const runtime = await loadRuntime();
@@ -35,11 +39,14 @@ export async function startRuntimeHostBridge(router: Router, pinia: Pinia): Prom
         onAuthChanged: async (context) => {
           const boundary = requiredLifecycle(lifecycle);
           const hostWasReady = identity.hostReady;
-          boundary.clear('host-session-invalid');
+          boundary.clear('auth-changed');
           try {
             const current = await client.current(context.signal);
+            const shell = await shellClient.current(context.signal);
+            queryClient.setQueryData(authorizedShellQueryKey, shell);
             context.commit(() => {
               identity.acceptSession(current);
+              authorization.accept(shell);
               identity.setHostReady(hostWasReady);
             });
           } catch (failure) {
@@ -81,7 +88,10 @@ export async function startRuntimeHostBridge(router: Router, pinia: Pinia): Prom
     );
     pendingBridge = bridge;
     lifecycle = new IdentityLifecycleCoordinator(
-      new VolatileClientState(queryClient), () => identity.clear(), bridge,
+      volatileClientState,
+      () => identity.clear(),
+      () => authorization.clear(),
+      bridge,
     );
     activeBridge = bridge;
     bridge.start();

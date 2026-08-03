@@ -1,7 +1,7 @@
 package cn.edu.suda.scholarsense.identityaccess.adapters;
 
-import cn.edu.suda.scholarsense.auditoperations.api.AuditLedgerIngressPort;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditProducerBacklogPort;
+import cn.edu.suda.scholarsense.shared.outbox.AuditLedgerIngressPort;
+import cn.edu.suda.scholarsense.shared.outbox.AuditProducerBacklogPort;
 import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.IdentityAuditRelayScheduler;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcIdentityAuditBacklogSource;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcIdentityAuditRelayRepository;

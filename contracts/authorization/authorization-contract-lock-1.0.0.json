@@ -1,0 +1,17 @@
+{
+  "version": "AUTHORIZATION-CONTRACT-LOCK-1.0.0",
+  "sourceBaselineCommit": "932cd8d3fbe7656ffe73d7404339af74cee9d72a",
+  "files": [
+    {"path": "contracts/authorization/role-field-policy.schema.json", "sha256": "0a3b60f1a9fea3bfd32fc54c3e835945b6056ee90b672959174751ef5f3f2fa2"},
+    {"path": "contracts/authorization/role-field-policy-rfp-1.0.0.json", "sha256": "84191d8b844b31ef91fb051d34d6731b80981d6d193e42b0f8d19f73caa9ed25"},
+    {"path": "contracts/authorization/rfp-fixture.schema.json", "sha256": "ca8ec27628962c13aaec6015e9bb769a8d831599051d1a87bcd2eb19a74940f0"},
+    {"path": "contracts/authorization/rfp-fixture-1.0.0.json", "sha256": "0f9ae9174dc67efaf4a2629fc0df68180b4a7ad7fc281629bd058202e3ba98e9"},
+    {"path": "contracts/authorization/default-surface-manifest.schema.json", "sha256": "2e30ef72c744e5776f7301591c344621aabd1a0583554a92add2fb532d6a7750"},
+    {"path": "contracts/authorization/default-surface-manifest-1.0.0.json", "sha256": "e83482b61f4ec7fac042e5f84a45864b0d771fd84d98a0d1638c434c6d857f5a"},
+    {"path": "contracts/authorization/authorization-error-profile.schema.json", "sha256": "9df580d6b1bebd2f366f0ac2d2649b2f78b250ef411614201426c23d21fb16f7"},
+    {"path": "contracts/authorization/authorization-error-profile-1.0.0.json", "sha256": "5095641f17b63119633a31f2cab980ab3749d8a6bd1f0b594ac0eb4b5e35221b"},
+    {"path": "contracts/authorization/authorized-shell.schema.json", "sha256": "21abc5f4186c3f00e912136856b65f55bd6fbc4791126de9e7a6e810ceae1a82"},
+    {"path": "contracts/authorization/fixtures/valid/authorized-shell.json", "sha256": "de425018f4a2cacdabd94955c8e75ce4a789b995ec4d94e26d471d37e5318a2c"},
+    {"path": "contracts/authorization/fixtures/invalid/negative-fixtures-1.0.0.json", "sha256": "96c9ed36160a93a635a2fb78cbc75a6cdc003af5bcfad2a42dcac69d976b6323"}
+  ]
+}

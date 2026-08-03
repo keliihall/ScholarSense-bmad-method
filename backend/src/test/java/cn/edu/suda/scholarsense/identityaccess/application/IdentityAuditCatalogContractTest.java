@@ -97,14 +97,32 @@ class IdentityAuditCatalogContractTest {
                             "ACCESS_INVALIDATION_REVOKED",
                             "ACCESS_INVALIDATION_EXPIRED",
                             "ACCESS_INVALIDATION_INVALIDATED",
-                            "ACCESS_INVALIDATION_REVALIDATED")));
+                            "ACCESS_INVALIDATION_REVALIDATED")),
+            Map.entry(
+                    IdentityAuditAction.AUTHORIZATION_OBJECT_DECIDED,
+                    Set.of(
+                            "AUTHORIZATION_ALLOWED",
+                            "AUTHORIZATION_OBJECT_UNAVAILABLE",
+                            "AUTHORIZATION_DEPENDENCY_UNAVAILABLE")),
+            Map.entry(
+                    IdentityAuditAction.AUTHORIZATION_SHELL_VIEWED,
+                    Set.of(
+                            "AUTHORIZATION_SHELL_AVAILABLE",
+                            "AUTHORIZATION_SHELL_UNAVAILABLE",
+                            "AUTHORIZATION_SURFACE_FORBIDDEN")),
+            Map.entry(
+                    IdentityAuditAction.AUTHORIZATION_DECISION_RECHECKED,
+                    Set.of(
+                            "AUTHORIZATION_RECHECK_ALLOWED",
+                            "AUTHORIZATION_RECHECK_STALE",
+                            "AUTHORIZATION_DECISION_STALE")));
 
     @Test
     void everyImplementedIdentityActionAndReasonIsActiveInTheVersionedCatalog() throws Exception {
         ObjectMapper json = new ObjectMapper();
         Map<String, Set<String>> activeIdentityActions = new HashMap<>();
         for (String version : List.of(
-                "1.0.0", "1.1.0", "1.2.0", "1.3.0")) {
+                "1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0")) {
             Path catalogPath = Path.of(
                     "..", "contracts", "audit", "action-catalog-" + version + ".json");
             JsonNode root = json.readTree(Files.readString(catalogPath));

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/authorization/authorization-error-profile.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "version", "envelopeFields", "responseHeaders", "errors"],
+  "properties": {
+    "$schema": {"const": "./authorization-error-profile.schema.json"},
+    "version": {"const": "AUTHORIZATION-ERROR-PROFILE-1.0.0"},
+    "envelopeFields": {"const": ["code", "message", "traceId", "fieldErrors"]},
+    "responseHeaders": {
+      "type": "object", "additionalProperties": false,
+      "required": ["Cache-Control", "Pragma", "Referrer-Policy"],
+      "properties": {
+        "Cache-Control": {"const": "no-store, no-cache"},
+        "Pragma": {"const": "no-cache"},
+        "Referrer-Policy": {"const": "no-referrer"}
+      }
+    },
+    "errors": {
+      "type": "array", "minItems": 4, "maxItems": 4,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["condition", "httpStatus", "code", "message", "disclosure"],
+        "properties": {
+          "condition": {"enum": ["object-unavailable", "surface-forbidden", "dependency-unavailable", "decision-stale"]},
+          "httpStatus": {"enum": [403, 404, 409, 503]},
+          "code": {"pattern": "^IDENTITY_AUTHORIZATION_[A-Z_]+$"},
+          "message": {"type": "string", "minLength": 1},
+          "disclosure": {"const": "no-object-existence-or-sensitive-context"}
+        }
+      }
+    }
+  }
+}

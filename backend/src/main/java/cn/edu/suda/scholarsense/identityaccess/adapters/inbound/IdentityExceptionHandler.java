@@ -13,12 +13,14 @@ public final class IdentityExceptionHandler {
     @ExceptionHandler(IdentityAccessException.class)
     ResponseEntity<IdentityErrorEnvelope> identityFailure(
             IdentityAccessException failure, HttpServletRequest request) {
-        return ResponseEntity.status(status(failure.code())).body(envelope(failure.code(), request));
+        return response(status(failure.code()), envelope(failure.code(), request));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<IdentityErrorEnvelope> invalidRequest(HttpServletRequest request) {
-        return ResponseEntity.badRequest().body(envelope("IDENTITY_REQUEST_INVALID", request));
+        return response(
+                HttpStatus.BAD_REQUEST,
+                envelope("IDENTITY_REQUEST_INVALID", request));
     }
 
     private static IdentityErrorEnvelope envelope(String code, HttpServletRequest request) {
@@ -26,6 +28,18 @@ public final class IdentityExceptionHandler {
     }
 
     private static HttpStatus status(String code) {
+        if ("IDENTITY_AUTHORIZATION_OBJECT_UNAVAILABLE".equals(code)) {
+            return HttpStatus.NOT_FOUND;
+        }
+        if ("IDENTITY_AUTHORIZATION_SURFACE_FORBIDDEN".equals(code)) {
+            return HttpStatus.FORBIDDEN;
+        }
+        if ("IDENTITY_AUTHORIZATION_DECISION_STALE".equals(code)) {
+            return HttpStatus.CONFLICT;
+        }
+        if ("IDENTITY_AUTHORIZATION_DEPENDENCY_UNAVAILABLE".equals(code)) {
+            return HttpStatus.SERVICE_UNAVAILABLE;
+        }
         if (code.endsWith("VERSION_CONFLICT") || code.endsWith("IDEMPOTENCY_MISMATCH")) {
             return HttpStatus.CONFLICT;
         }
@@ -36,6 +50,15 @@ public final class IdentityExceptionHandler {
             return HttpStatus.SERVICE_UNAVAILABLE;
         }
         return HttpStatus.BAD_REQUEST;
+    }
+
+    private static ResponseEntity<IdentityErrorEnvelope> response(
+            HttpStatus status, IdentityErrorEnvelope envelope) {
+        return ResponseEntity.status(status)
+                .header("Cache-Control", "no-store, no-cache")
+                .header("Pragma", "no-cache")
+                .header("Referrer-Policy", "no-referrer")
+                .body(envelope);
     }
 
 }

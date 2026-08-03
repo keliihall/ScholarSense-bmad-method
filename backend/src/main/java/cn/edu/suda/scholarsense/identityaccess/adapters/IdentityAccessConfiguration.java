@@ -7,6 +7,15 @@ import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcSessionTran
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcSensitiveReadTransactionAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcIdentityAuditAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcAuthoritativeIdentityContextAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcAccessInvalidationFenceQueryAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcResponsibilityRecipientEvidenceAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcResponsibilitySyncRepository;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.ResponsibilityScopeQueryAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CurrentEvidenceCompositeAuthorizationAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CompositeAuditSearchAuthorizationAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CompositeAuthorizationRecheckAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CurrentFieldProjectionService;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CurrentAuthorizedShellQueryAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.HttpRemoteIdentityProviderClient;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.KmsEnvelopeClient;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.KmsEnvelopeDecryptClient;
@@ -15,10 +24,15 @@ import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.KmsEnvelopeEncr
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.ClasspathIdentityAuthorizationPolicyAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.RemoteLogoutScheduler;
 import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationRecalculationPort;
+import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationAuditPort;
+import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationAuditService;
+import cn.edu.suda.scholarsense.identityaccess.application.AccessInvalidationFenceQueryPort;
 import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationDecision;
 import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationFreshness;
 import cn.edu.suda.scholarsense.identityaccess.application.ContinuationService;
+import cn.edu.suda.scholarsense.identityaccess.application.CheckpointKey;
 import cn.edu.suda.scholarsense.identityaccess.application.CurrentSessionService;
+import cn.edu.suda.scholarsense.identityaccess.application.CurrentAuthorizedShellQueryPort;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditFactFactory;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditPort;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditTokenPort;
@@ -33,22 +47,42 @@ import cn.edu.suda.scholarsense.identityaccess.application.RemoteLogoutProcessor
 import cn.edu.suda.scholarsense.identityaccess.application.SecureOpaqueCodeGenerator;
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCommandService;
 import cn.edu.suda.scholarsense.identityaccess.application.SessionRefreshService;
+import cn.edu.suda.scholarsense.identityaccess.application.SensitiveFieldCryptoContext;
+import cn.edu.suda.scholarsense.identityaccess.application.SensitiveFieldCryptoException;
+import cn.edu.suda.scholarsense.identityaccess.application.SensitiveFieldCryptoPort;
+import cn.edu.suda.scholarsense.identityaccess.application.SensitiveFieldCryptoService;
+import cn.edu.suda.scholarsense.identityaccess.application.FieldCiphertextEnvelope;
+import cn.edu.suda.scholarsense.identityaccess.application.WipeablePlaintext;
 import cn.edu.suda.scholarsense.identityaccess.application.TokenCustodyService;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
 import cn.edu.suda.scholarsense.shared.time.EvidenceBoundTrustedTimeSource;
 import cn.edu.suda.scholarsense.shared.time.TimeSynchronizationStatusProvider;
 import cn.edu.suda.scholarsense.shared.time.TrustedClockConstraints;
 import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityPort;
+import cn.edu.suda.scholarsense.shared.time.AuditAvailabilityPort;
 import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchAuthorizationPort;
 import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchTokenQueryPort;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthoritativeIdentityContextQueryPort;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapability;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityProvider;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityState;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationObjectEvidenceQueryPort;
+import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationPort;
+import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationRecheckPort;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldProjectionPort;
+import cn.edu.suda.scholarsense.identityaccess.api.SensitiveProjectionAuditPort;
 import cn.edu.suda.scholarsense.identityaccess.api.IdentityFreshness;
+import cn.edu.suda.scholarsense.identityaccess.api.ResponsibilityScopeQueryPort;
+import cn.edu.suda.scholarsense.identityaccess.domain.RoleFieldPolicyCatalog;
+import cn.edu.suda.scholarsense.identityaccess.domain.FieldProjectionCatalog;
+import cn.edu.suda.scholarsense.identityaccess.domain.FieldProjectionEvaluator;
 import java.time.Clock;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.List;
+import java.util.Set;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -83,13 +117,6 @@ public class IdentityAccessConfiguration {
         return (domain, value) -> {
             throw new IllegalStateException("AUDIT_TOKENIZATION_BINDING_UNAVAILABLE");
         };
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(AuditSearchAuthorizationPort.class)
-    AuditSearchAuthorizationPort unavailableAuditSearchAuthorizationPort() {
-        // Story 1.6/1.7 replaces this only after authoritative roles, scopes and revocation are bound.
-        return AuditSearchAuthorizationPort.productionFailClosed();
     }
 
     @Bean
@@ -158,11 +185,177 @@ public class IdentityAccessConfiguration {
     }
 
     @Bean
+    AuthorizationAuditPort authorizationAuditPort(
+            IdentityAuditFactFactory facts, IdentityAuditPort audit) {
+        return new AuthorizationAuditService(facts, audit);
+    }
+
+    @Bean
     @ConditionalOnMissingBean(AuthoritativeIdentityContextQueryPort.class)
     AuthoritativeIdentityContextQueryPort authoritativeIdentityContexts(
             JdbcTemplate jdbc, Clock clock) {
         return new JdbcAuthoritativeIdentityContextAdapter(
                 jdbc, clock, Duration.ofMinutes(15));
+    }
+
+    @Bean
+    AuditSearchAuthorizationPort auditSearchAuthorizationPort(
+            JdbcIdentityAccessStore sessions,
+            AuthoritativeIdentityContextQueryPort contexts,
+            TrustedTimeSource trustedTime) {
+        return new CompositeAuditSearchAuthorizationAdapter(
+                sessions,
+                contexts,
+                trustedTime,
+                RoleFieldPolicyCatalog.approved());
+    }
+
+    @Bean
+    AuthorizedShellCapabilityProvider identityShellCapabilities() {
+        return () -> List.of(new AuthorizedShellCapability(
+                "identity-session",
+                "当前会话",
+                "shell.session",
+                AuthorizedShellCapabilityState.AVAILABLE,
+                Set.of(
+                        "R1-COUNSELOR",
+                        "R2-COLLEGE-MANAGER",
+                        "R3-STUDENT-AFFAIRS",
+                        "R4-SCHOOL-LEADER",
+                        "R5-COLLABORATOR",
+                        "R6-DATA-OWNER",
+                        "R7-PLATFORM-OPS")));
+    }
+
+    @Bean
+    CurrentAuthorizedShellQueryPort currentAuthorizedShellQuery(
+            JdbcIdentityAccessStore sessions,
+            AuthoritativeIdentityContextQueryPort contexts,
+            List<AuthorizedShellCapabilityProvider> providers,
+            TrustedTimeSource trustedTime,
+            AuthorizationAuditPort audit,
+            JdbcSensitiveReadTransactionAdapter transactions) {
+        return new CurrentAuthorizedShellQueryAdapter(
+                sessions,
+                contexts,
+                providers,
+                trustedTime,
+                RoleFieldPolicyCatalog.approved(),
+                audit,
+                transactions);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AccessInvalidationFenceQueryPort.class)
+    AccessInvalidationFenceQueryPort authorizationInvalidationFence(JdbcTemplate jdbc) {
+        return new JdbcAccessInvalidationFenceQueryAdapter(jdbc);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ResponsibilityScopeQueryPort.class)
+    ResponsibilityScopeQueryPort authorizationResponsibilityScopes(
+            JdbcTemplate jdbc,
+            TrustedTimeSource trustedTime,
+            AccessInvalidationFenceQueryPort invalidationFence) {
+        return new ResponsibilityScopeQueryAdapter(
+                new JdbcResponsibilitySyncRepository(jdbc),
+                new JdbcResponsibilityRecipientEvidenceAdapter(jdbc),
+                trustedTime,
+                new CheckpointKey(
+                        "SRC-P0-RESPONSIBILITY-001",
+                        "responsibility-authority",
+                        "sandbox-0",
+                        "responsibility"),
+                invalidationFence);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AuthorizationObjectEvidenceQueryPort.class)
+    AuthorizationObjectEvidenceQueryPort unavailableAuthorizationObjectEvidence() {
+        return AuthorizationObjectEvidenceQueryPort.notInstalled();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(CompositeAuthorizationPort.class)
+    CompositeAuthorizationPort compositeAuthorizationPort(
+            AuthoritativeIdentityContextQueryPort contexts,
+            ResponsibilityScopeQueryPort responsibilities,
+            AuthorizationObjectEvidenceQueryPort objectEvidence,
+            AccessInvalidationFenceQueryPort invalidationFence,
+            TrustedTimeSource trustedTime,
+            AuthorizationAuditPort audit,
+            JdbcIdentityAccessStore sessions) {
+        return new CurrentEvidenceCompositeAuthorizationAdapter(
+                contexts,
+                responsibilities,
+                objectEvidence,
+                invalidationFence,
+                trustedTime,
+                RoleFieldPolicyCatalog.approved(),
+                audit,
+                sessions);
+    }
+
+    CompositeAuthorizationPort compositeAuthorizationPort(
+            AuthoritativeIdentityContextQueryPort contexts,
+            ResponsibilityScopeQueryPort responsibilities,
+            AuthorizationObjectEvidenceQueryPort objectEvidence,
+            AccessInvalidationFenceQueryPort invalidationFence,
+            TrustedTimeSource trustedTime,
+            AuthorizationAuditPort audit) {
+        return new CurrentEvidenceCompositeAuthorizationAdapter(
+                contexts,
+                responsibilities,
+                objectEvidence,
+                invalidationFence,
+                trustedTime,
+                RoleFieldPolicyCatalog.approved(),
+                audit);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(CompositeAuthorizationRecheckPort.class)
+    CompositeAuthorizationRecheckPort compositeAuthorizationRecheckPort(
+            CompositeAuthorizationPort authorization,
+            AuthorizationAuditPort audit) {
+        return new CompositeAuthorizationRecheckAdapter(authorization, audit);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(FieldProjectionPort.class)
+    FieldProjectionPort currentFieldProjectionPort(
+            CompositeAuthorizationPort authorization,
+            CompositeAuthorizationRecheckPort recheck,
+            SensitiveProjectionAuditPort projectionAudit,
+            JdbcSensitiveReadTransactionAdapter transactions) {
+        SensitiveFieldCryptoPort unavailableCrypto = new SensitiveFieldCryptoPort() {
+            @Override
+            public FieldCiphertextEnvelope encrypt(
+                    SensitiveFieldCryptoContext context, WipeablePlaintext plaintext) {
+                throw new SensitiveFieldCryptoException("FIELD_CRYPTO_BINDING_UNAVAILABLE");
+            }
+
+            @Override
+            public WipeablePlaintext decrypt(
+                    SensitiveFieldCryptoContext context, FieldCiphertextEnvelope envelope) {
+                throw new SensitiveFieldCryptoException("FIELD_CRYPTO_BINDING_UNAVAILABLE");
+            }
+        };
+        return new CurrentFieldProjectionService(
+                authorization,
+                recheck,
+                new FieldProjectionEvaluator(),
+                FieldProjectionCatalog.approved(),
+                RoleFieldPolicyCatalog.approved(),
+                reference -> {
+                    throw new SensitiveFieldCryptoException("FIELD_CRYPTO_BINDING_UNAVAILABLE");
+                },
+                new SensitiveFieldCryptoService(unavailableCrypto),
+                () -> "audit-search-v1",
+                projectionAudit,
+                transactions,
+                "scholarsense-backend",
+                "production");
     }
 
     @Bean

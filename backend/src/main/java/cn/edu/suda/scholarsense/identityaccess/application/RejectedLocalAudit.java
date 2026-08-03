@@ -1,6 +1,6 @@
 package cn.edu.suda.scholarsense.identityaccess.application;
 
-import cn.edu.suda.scholarsense.auditoperations.api.AuditContractRejection;
+import cn.edu.suda.scholarsense.shared.outbox.AuditContractRejection;
 import java.util.Objects;
 import java.util.UUID;
 

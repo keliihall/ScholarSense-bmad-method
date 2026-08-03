@@ -55,6 +55,7 @@ class IdentityAuditFactFactoryTest {
         assertEquals("LOCAL-AUDIT-FACT-1.0.0", record.fact().schemaVersion());
         assertEquals("AUDIT-TOKENIZATION-1.0.0", record.fact().tokenizationProfileVersion());
         assertEquals("k1", record.fact().keyVersion());
+        assertTrue(record.authorizationDecisionContext().isEmpty());
         assertFalse(rendered.contains("student-account-raw"));
         assertFalse(rendered.contains("session-cookie-raw"));
         assertFalse(rendered.contains("192.0.2.10"));

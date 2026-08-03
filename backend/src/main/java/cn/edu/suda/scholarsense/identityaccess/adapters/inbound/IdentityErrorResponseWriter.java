@@ -18,6 +18,10 @@ final class IdentityErrorResponseWriter {
             "IDENTITY_DEPENDENCY_UNAVAILABLE",
             "IDENTITY_SESSION_VERSION_CONFLICT",
             "IDENTITY_IDEMPOTENCY_MISMATCH",
+            "IDENTITY_AUTHORIZATION_OBJECT_UNAVAILABLE",
+            "IDENTITY_AUTHORIZATION_SURFACE_FORBIDDEN",
+            "IDENTITY_AUTHORIZATION_DEPENDENCY_UNAVAILABLE",
+            "IDENTITY_AUTHORIZATION_DECISION_STALE",
             "HOST_ORIGIN_FORBIDDEN",
             "HOST_SOURCE_FORBIDDEN",
             "HOST_MESSAGE_INVALID",
@@ -70,6 +74,14 @@ final class IdentityErrorResponseWriter {
                     "HOST_BOOTSTRAP_ALREADY_USED" -> "host request is unavailable";
             case "CONTINUATION_INVALID_OR_EXPIRED" ->
                     "the requested destination is unavailable";
+            case "IDENTITY_AUTHORIZATION_OBJECT_UNAVAILABLE" ->
+                    "当前职责范围不包含此对象；本次访问已记录";
+            case "IDENTITY_AUTHORIZATION_SURFACE_FORBIDDEN" ->
+                    "当前身份没有可用入口";
+            case "IDENTITY_AUTHORIZATION_DEPENDENCY_UNAVAILABLE" ->
+                    "授权依赖暂时不可用，请重试";
+            case "IDENTITY_AUTHORIZATION_DECISION_STALE" ->
+                    "授权状态已变化，请重新操作";
             default -> "identity service is temporarily unavailable";
         };
     }

@@ -708,6 +708,7 @@ public final class AccessInvalidationDatabaseRoleVerifier {
                         "actor_search_token",
                         "role_ids",
                         "authorization_context",
+                        "authorization_decision_context",
                         "object_type",
                         "object_search_token",
                         "outcome",

@@ -7,6 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cn.edu.suda.scholarsense.auditoperations.domain.AuditSearchCriteria;
 import cn.edu.suda.scholarsense.auditoperations.domain.AuditSearchView;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldProjectionFieldResult;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldProjectionResult;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldVisibility;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +38,14 @@ class AuditSearchServiceTest {
         assertEquals(List.of(9L, 8L), result.items().stream()
                 .map(item -> (Long) item.fields().get("ledgerSequence")).toList());
         assertTrue(result.items().getFirst().fields().containsKey("actorDisplayRef"));
-        assertEquals("event-masked", result.items().getFirst().fields().get("eventType"));
+        assertEquals("[MASKED-TECHNICAL]", result.items().getFirst().fields().get("eventType"));
+        assertEquals(Set.of(
+                "recordId", "ledgerSequence", "occurredAt", "outcome", "factSchemaVersion",
+                "policyVersion", "retentionScheduleVersion", "actorDisplayRef", "objectDisplayRef",
+                "businessActionCategory", "businessObjectCategory", "rolePackageSummary",
+                "projectionScope", "producerModule", "eventType", "reasonCode", "traceId",
+                "integrityStatus", "archiveStatus", "projectionStatus", "sourceNetworkRecorded"),
+                result.items().getFirst().fields().keySet());
         assertFalse(result.toString().contains("ast_v1"));
         assertFalse(fixture.audits.getFirst().filterDigest().contains("anonymous-sensitive-actor"));
         assertEquals(List.of("actor", "page", "size", "view"), fixture.audits.getFirst().filterTypes());
@@ -87,6 +97,12 @@ class AuditSearchServiceTest {
         assertEquals("identity-access.local-audit-fact.recorded.v1", fields.get("eventType"));
         assertEquals(true, fields.get("sourceNetworkRecorded"));
         assertFalse(fields.keySet().stream().anyMatch(key -> key.toLowerCase().contains("token")));
+        assertEquals(Set.of(
+                "recordId", "ledgerSequence", "occurredAt", "outcome", "factSchemaVersion",
+                "policyVersion", "retentionScheduleVersion", "businessActionCategory",
+                "businessObjectCategory", "rolePackageSummary", "projectionScope", "producerModule",
+                "eventType", "reasonCode", "traceId", "integrityStatus", "archiveStatus",
+                "projectionStatus", "sourceNetworkRecorded"), fields.keySet());
     }
 
     @Test
@@ -105,27 +121,15 @@ class AuditSearchServiceTest {
     }
 
     @Test
-    void actionScopeAndSensitiveProjectionClassesMustMatchTheFrozenRfpExactly() {
+    void actionAndScopeMustMatchWhileFieldVisibilityComesFromThePublicProjector() {
         AuthorizedAuditSearchDecision valid = Fixture.authorization("r3", AuditSearchView.BUSINESS);
-        Map<String, AuditFieldVisibility> wrongIdentity = new java.util.LinkedHashMap<>(valid.fieldProjection());
-        wrongIdentity.put("I", AuditFieldVisibility.CLEAR);
-        Map<String, AuditFieldVisibility> wrongCategory = new java.util.LinkedHashMap<>(valid.fieldProjection());
-        wrongCategory.put("G", AuditFieldVisibility.HIDDEN);
-        Map<String, AuditFieldVisibility> wrongTechnical = new java.util.LinkedHashMap<>(valid.fieldProjection());
-        wrongTechnical.put("T", AuditFieldVisibility.CLEAR);
         List<AuthorizedAuditSearchDecision> drifts = List.of(
                 new AuthorizedAuditSearchDecision(
                         true, valid.rfpVersion(), "audit.search-technical-metadata",
                         valid.scopes(), valid.fieldProjection(), null),
                 new AuthorizedAuditSearchDecision(
                         true, valid.rfpVersion(), valid.action(),
-                        Set.of("audit-domain", "unexpected-scope"), valid.fieldProjection(), null),
-                new AuthorizedAuditSearchDecision(
-                        true, valid.rfpVersion(), valid.action(), valid.scopes(), wrongIdentity, null),
-                new AuthorizedAuditSearchDecision(
-                        true, valid.rfpVersion(), valid.action(), valid.scopes(), wrongCategory, null),
-                new AuthorizedAuditSearchDecision(
-                        true, valid.rfpVersion(), valid.action(), valid.scopes(), wrongTechnical, null));
+                        Set.of("audit-domain", "unexpected-scope"), valid.fieldProjection(), null));
 
         for (AuthorizedAuditSearchDecision drift : drifts) {
             Fixture fixture = new Fixture("r3");
@@ -136,6 +140,28 @@ class AuditSearchServiceTest {
             assertEquals(0, fixture.rowsRequested);
             assertEquals("rejected", fixture.audits.getFirst().outcome());
         }
+
+        Fixture ignoredLegacyMatrix = new Fixture("r3");
+        ignoredLegacyMatrix.decisionOverride = new AuthorizedAuditSearchDecision(
+                true, valid.rfpVersion(), valid.action(), valid.scopes(), Map.of(), null);
+        ignoredLegacyMatrix.rows.add(row(9, null, null));
+        assertTrue(ignoredLegacyMatrix.service.search(criteria(AuditSearchView.BUSINESS, null))
+                .items().getFirst().fields().containsKey("businessActionCategory"));
+        assertEquals(1, ignoredLegacyMatrix.projectionCalls);
+    }
+
+    @Test
+    void objectTypeFilterNeverReplacesTheFixedAuthorizationScope() {
+        Fixture fixture = new Fixture("r3");
+        fixture.rows.add(row(9, null, null));
+        AuditSearchCriteria filtered = new AuditSearchCriteria(
+                "r3", AuditSearchView.BUSINESS, null, "candidate", null, null,
+                null, null, null, null, 0, 25, null, "trace-search-test-001");
+
+        fixture.service.search(filtered);
+
+        assertEquals("candidate", fixture.authorizationRequests.getFirst().objectType());
+        assertEquals("audit-domain", fixture.authorizationRequests.getFirst().scope());
     }
 
     private static AuditSearchCriteria criteria(AuditSearchView view, Long asOf) {
@@ -160,12 +186,14 @@ class AuditSearchServiceTest {
         private final List<SearchAuditEvent> audits = new ArrayList<>();
         private final List<String> order = new ArrayList<>();
         private final List<String> queriedKeyVersions = new ArrayList<>();
+        private final List<AuthorizedAuditSearchRequest> authorizationRequests = new ArrayList<>();
         private boolean failAudit;
         private boolean policyDrift;
         private boolean tokenDrift;
         private AuthorizedAuditSearchDecision decisionOverride;
         private Instant tokenRetainedFrom;
         private int rowsRequested;
+        private int projectionCalls;
         private final AuditSearchService service;
 
         private Fixture(String session) {
@@ -186,13 +214,16 @@ class AuditSearchServiceTest {
             };
             service = new AuditSearchService(
                     query,
-                    request -> decisionOverride != null
-                            ? decisionOverride
-                            : policyDrift
-                            ? new AuthorizedAuditSearchDecision(true, "RFP-2.0.0",
-                                    "audit.search-business-metadata", Set.of("audit-domain"),
-                                    authorization("r3", AuditSearchView.BUSINESS).fieldProjection(), null)
-                            : authorization(session, request.view()),
+                    request -> {
+                        authorizationRequests.add(request);
+                        return decisionOverride != null
+                                ? decisionOverride
+                                : policyDrift
+                                ? new AuthorizedAuditSearchDecision(true, "RFP-2.0.0",
+                                        "audit.search-business-metadata", Set.of("audit-domain"),
+                                        authorization("r3", AuditSearchView.BUSINESS).fieldProjection(), null)
+                                : authorization(session, request.view());
+                    },
                     tokenQuery -> {
                         tokenRetainedFrom = tokenQuery.retainedFrom();
                         var result = List.of(
@@ -208,7 +239,49 @@ class AuditSearchServiceTest {
                         order.add("audit:" + event.outcome());
                     },
                     () -> NOW,
-                    requested -> session);
+                    requested -> session,
+                    request -> {
+                        projectionCalls++;
+                        boolean business = "AGGREGATE_REPORT".equals(
+                                request.authorizationRequest().objectClass());
+                        List<FieldProjectionFieldResult> projected = new ArrayList<>();
+                        for (var reference : request.valueReferences()) {
+                            FieldVisibility visibility = visibility(business, reference.fieldClass());
+                            if (visibility == FieldVisibility.HIDDEN) continue;
+                            if (visibility == FieldVisibility.MASKED) {
+                                projected.add(new FieldProjectionFieldResult(
+                                        reference.fieldName(), visibility, java.util.Optional.empty(),
+                                        java.util.Optional.of(mask(reference.fieldClass()))));
+                            } else {
+                                projected.add(new FieldProjectionFieldResult(
+                                        reference.fieldName(), visibility,
+                                        java.util.Optional.of(reference.serverOwnedValueReference()
+                                                .orElseThrow().resolve()),
+                                        java.util.Optional.empty()));
+                            }
+                        }
+                        return new FieldProjectionResult(
+                                true, "FIELD_PROJECTION_ALLOWED", projected);
+                    },
+                    "audit-search-v1");
+        }
+
+        private static FieldVisibility visibility(boolean business, String fieldClass) {
+            if ("B".equals(fieldClass)) return FieldVisibility.CLEAR;
+            if (business && "G".equals(fieldClass)) return FieldVisibility.CLEAR;
+            if (business && Set.of("I", "T").contains(fieldClass)) return FieldVisibility.MASKED;
+            if (!business && "T".equals(fieldClass)) return FieldVisibility.CLEAR;
+            if (!business && "G".equals(fieldClass)) return FieldVisibility.MASKED;
+            return FieldVisibility.HIDDEN;
+        }
+
+        private static Object mask(String fieldClass) {
+            return switch (fieldClass) {
+                case "I" -> "[MASKED-IDENTITY]";
+                case "G" -> "[MASKED-CATEGORY]";
+                case "T" -> "[MASKED-TECHNICAL]";
+                default -> throw new IllegalArgumentException("unexpected mask");
+            };
         }
 
         private static AuthorizedAuditSearchDecision authorization(String session, AuditSearchView view) {

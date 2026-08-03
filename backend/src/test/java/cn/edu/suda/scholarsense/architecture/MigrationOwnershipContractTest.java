@@ -22,8 +22,8 @@ class MigrationOwnershipContractTest {
         assertEquals(expectedFacts(), result.ownership().entrySet().stream()
                 .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().factOwners())));
         try (var walk = Files.walk(MIGRATIONS)) {
-            assertEquals(8, walk.filter(path -> path.toString().endsWith(".sql")).count(),
-                    "Stories 1.2 through 1.6c own exactly eight forward migrations");
+            assertEquals(9, walk.filter(path -> path.toString().endsWith(".sql")).count(),
+                    "Stories 1.2 through 1.8 own exactly nine forward migrations");
         }
         Path firstMigration = MIGRATIONS.resolve(
                 "identity-access/V000001__identity-access__session_boundary.sql");
@@ -348,6 +348,22 @@ class MigrationOwnershipContractTest {
         assertFalse(lower.contains("cluecare."));
         assertFalse(lower.contains("reporting."));
         assertFalse(lower.contains("collaboration."));
+    }
+
+    @Test
+    void story18MigrationPersistsSuccessorAuthorizationEvidenceWithoutChangingTheV1Fact()
+            throws Exception {
+        String migration = Files.readString(MIGRATIONS.resolve(
+                "identity-access/V000009__identity-access__authorization_audit_context_v1.sql"));
+        String lower = migration.toLowerCase();
+
+        assertTrue(lower.contains("add column authorization_decision_context jsonb"));
+        assertTrue(lower.contains("authorization_decision_context - array["));
+        assertTrue(lower.contains("'trustedat', 'traceid'"));
+        assertTrue(lower.contains("historical rows"));
+        assertTrue(lower.contains("grant insert (authorization_decision_context)"));
+        assertFalse(lower.contains("update identity_access.ia_local_audit_fact"));
+        assertFalse(lower.contains("audit_operations."));
     }
 
     @Test
