@@ -1,0 +1,38 @@
+{
+  "version": "PIC-AUDIT-1.0.0",
+  "contractVersion": "PIC-1.0.0",
+  "scope": "test-contract-conformance-only",
+  "localAuditFactSchemaVersion": "LOCAL-AUDIT-FACT-1.0.0",
+  "productionEmitter": "none",
+  "auditSuccessorVersion": "none",
+  "actionVocabulary": [
+    {"path": "accepted", "action": "public-integration.delivery.accepted", "outcome": "accepted", "reasonCode": "PIC_DELIVERY_ACCEPTED", "result": "accepted", "allowedErrorCodes": ["NONE"]},
+    {"path": "rejected", "action": "public-integration.delivery.rejected", "outcome": "rejected", "reasonCode": "PIC_AUTHORIZATION_REJECTED", "result": "rejected", "allowedErrorCodes": ["AUTHORIZATION_DENIED"]},
+    {"path": "retry", "action": "public-integration.retry.scheduled", "outcome": "accepted", "reasonCode": "PIC_RETRY_SCHEDULED", "result": "retry", "allowedErrorCodes": ["TARGET_TRANSIENT"]},
+    {"path": "confirmed", "action": "public-integration.delivery.confirmed", "outcome": "accepted", "reasonCode": "PIC_DELIVERY_CONFIRMED", "result": "confirmed", "allowedErrorCodes": ["NONE"]},
+    {"path": "failed", "action": "public-integration.delivery.failed", "outcome": "rejected", "reasonCode": "PIC_RETRY_EXHAUSTED", "result": "failed", "allowedErrorCodes": ["RETRY_EXHAUSTED"]},
+    {"path": "reconcile", "action": "public-integration.reconciliation.completed", "outcome": "accepted", "reasonCode": "PIC_RECONCILIATION_COMPLETED", "result": "reconciled", "allowedErrorCodes": ["NONE"]},
+    {"path": "replay", "action": "public-integration.replay.detected", "outcome": "accepted", "reasonCode": "PIC_REPLAY_DETECTED", "result": "replayed", "allowedErrorCodes": ["NONE"]},
+    {"path": "gap", "action": "public-integration.route.gap-detected", "outcome": "rejected", "reasonCode": "PIC_ROUTE_GAP", "result": "gap", "allowedErrorCodes": ["ROUTE_GAP"]},
+    {"path": "poison", "action": "public-integration.payload.quarantined", "outcome": "rejected", "reasonCode": "PIC_PAYLOAD_POISON", "result": "poison", "allowedErrorCodes": ["PAYLOAD_POISON"]}
+  ],
+  "recordShape": {
+    "commonIntegrationFields": ["channelId", "contractVersion", "provenanceMode", "generationKeyToken", "sourceAggregateVersion", "attemptNo", "result", "errorCode"],
+    "streamFields": ["eventId", "sourceFactIdToken", "routeSequence", "sourceFactDigest"],
+    "intentFields": ["deliveryIntentIdToken", "notificationType", "escalationVersion"]
+  },
+  "observability": {
+    "safeErrorCodes": ["NONE", "AUTHORIZATION_DENIED", "TARGET_TRANSIENT", "RETRY_EXHAUSTED", "ROUTE_GAP", "PAYLOAD_POISON"],
+    "logs": {"allowedFields": ["action", "channelId", "contractVersion", "provenanceMode", "result", "errorCode", "traceId"]},
+    "metrics": {"allowedLabels": ["action", "channelId", "contractMajor", "result", "errorCode"]},
+    "traces": {"allowedAttributes": ["action", "channelId", "contractVersion", "provenanceMode", "result", "errorCode", "generationKeyToken"]},
+    "evidence": {"allowedFields": ["scenarioId", "result", "errorCode", "receiptOrChallengeDigest", "sideEffectCount", "failedCount", "skippedCount", "evidenceDigest"]},
+    "forbiddenReachableFields": ["externalBody", "externalErrorBody", "secret", "studentId", "studentName", "freeText", "evidenceBody", "nonce", "signature", "token", "phone", "email"]
+  },
+  "productionBoundary": {
+    "syntheticEvidenceIncludedInRuntimeDenominator": false,
+    "realBusinessObjectsCreated": 0,
+    "productionConsumerInstalled": false,
+    "productionRuntimeClaim": "none"
+  }
+}

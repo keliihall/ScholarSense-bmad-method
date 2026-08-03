@@ -25,7 +25,12 @@ def main(argv: list[str]) -> int:
         if not isinstance(document, dict) or not isinstance(subject, dict):
             raise ValueError("MANIFEST_OBJECT_REQUIRED")
         contract = "release-manifest" if argv[1] == "release" else "evidence-index"
-        schema = load_json(PROJECT_ROOT / f"contracts/release/{contract}.schema.json")
+        suffix = "-2" if document.get("version") in {
+            "RELEASE-MANIFEST-2.0.0", "EVIDENCE-INDEX-2.0.0"
+        } else ""
+        schema = load_json(
+            PROJECT_ROOT / f"contracts/release/{contract}{suffix}.schema.json"
+        )
         issues = schema_issues(document, schema)
         issues.extend(
             release_manifest_issues(document, subject)

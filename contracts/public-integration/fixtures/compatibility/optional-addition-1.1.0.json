@@ -1,0 +1,9 @@
+{
+  "version": "PIC-COMPATIBILITY-FIXTURE-1.1.0",
+  "change": "add-optional-field",
+  "field": "providerCapabilityHint",
+  "producerSchemaVersion": "1.1.0",
+  "consumerSchemaVersion": "1.0.0",
+  "downProjection": "remove-providerCapabilityHint",
+  "expected": "compatible"
+}

@@ -1,0 +1,7 @@
+{
+  "version": "PIC-COMPATIBILITY-NEGATIVE-1.0.0",
+  "change": "remove-required-field",
+  "field": "generationKey",
+  "declaredMajor": 1,
+  "expected": "PIC_BREAKING_CHANGE_REQUIRES_MAJOR"
+}

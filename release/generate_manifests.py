@@ -15,7 +15,12 @@ from release_json import load_json, schema_issues  # noqa: E402
 
 
 def _schema_issues(name: str, document: dict) -> list[str]:
-    schema = load_json(PROJECT_ROOT / f"contracts/release/{name}.schema.json")
+    suffix = "-2" if document.get("version") in {
+        "RELEASE-MANIFEST-2.0.0", "EVIDENCE-INDEX-2.0.0"
+    } else ""
+    schema = load_json(
+        PROJECT_ROOT / f"contracts/release/{name}{suffix}.schema.json"
+    )
     return schema_issues(document, schema)
 
 
@@ -28,7 +33,9 @@ def main(argv: list[str]) -> int:
         if not isinstance(payload, dict):
             raise ValueError("MANIFEST_INPUT_OBJECT_REQUIRED")
         if argv[1] == "release":
-            document = create_release_manifest(payload)
+            document = create_release_manifest(
+                payload, manifest_version=str(payload.get("manifestVersion", "1"))
+            )
             contract = "release-manifest"
         else:
             document = create_evidence_index(

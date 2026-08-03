@@ -1,0 +1,93 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "ScholarSense Public Integration Contract",
+    "version": "1.0.0"
+  },
+  "servers": [{"url": "https://authority.invalid/scholarsense-public-integration"}],
+  "paths": {
+    "/v1/operations/{channelId}": {
+      "post": {
+        "operationId": "submitPublicIntegrationOperation",
+        "parameters": [
+          {"name": "channelId", "in": "path", "required": true, "schema": {"type": "string"}},
+          {"name": "Idempotency-Key", "in": "header", "required": true, "schema": {"type": "string", "minLength": 16, "maxLength": 128}},
+          {"name": "Content-Digest", "in": "header", "required": true, "schema": {"type": "string", "pattern": "^sha-256=:[A-Za-z0-9+/]{43}=:?"}},
+          {"name": "X-ScholarSense-Contract-Version", "in": "header", "required": true, "schema": {"const": "PIC-1.0.0"}}
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {"schema": {"$ref": "../events/public-integration/public-integration-command.schema.json"}}
+          }
+        },
+        "responses": {
+          "202": {"description": "Provider accepted one operation", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OperationReceipt"}}}},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"},
+          "403": {"$ref": "#/components/responses/Error"},
+          "409": {"$ref": "#/components/responses/Error"},
+          "422": {"$ref": "#/components/responses/Error"},
+          "429": {"$ref": "#/components/responses/Error"},
+          "500": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/v1/callbacks/{channelId}": {
+      "post": {
+        "operationId": "receivePublicIntegrationCallback",
+        "parameters": [
+          {"name": "channelId", "in": "path", "required": true, "schema": {"type": "string"}},
+          {"name": "Content-Digest", "in": "header", "required": true, "schema": {"type": "string"}},
+          {"name": "Signature-Input", "in": "header", "required": true, "schema": {"type": "string"}},
+          {"name": "Signature", "in": "header", "required": true, "schema": {"type": "string"}},
+          {"name": "X-ScholarSense-Callback-Timestamp", "in": "header", "required": true, "schema": {"type": "string"}},
+          {"name": "X-ScholarSense-Callback-Nonce", "in": "header", "required": true, "schema": {"type": "string"}}
+        ],
+        "requestBody": {"required": true, "content": {"application/cloudevents+json": {"schema": {"$ref": "../events/public-integration/public-integration-event.schema.json"}}}},
+        "responses": {
+          "204": {"description": "Technical callback applied or safely replayed"},
+          "401": {"$ref": "#/components/responses/Error"},
+          "403": {"$ref": "#/components/responses/Error"},
+          "409": {"$ref": "#/components/responses/Error"},
+          "422": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "workloadIdentity": {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"},
+      "mutualTls": {"type": "mutualTLS"}
+    },
+    "schemas": {
+      "OperationReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["operationReceiptId", "resultCode", "acceptedAt", "providerEffectKeyToken", "traceId"],
+        "properties": {
+          "operationReceiptId": {"type": "string", "format": "uuid"},
+          "resultCode": {"enum": ["ACCEPTED", "DUPLICATE"]},
+          "acceptedAt": {"type": "string", "format": "date-time"},
+          "providerEffectKeyToken": {"type": "string"},
+          "traceId": {"type": "string"}
+        }
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message", "traceId", "fieldErrors"],
+        "properties": {
+          "code": {"type": "string"},
+          "message": {"type": "string"},
+          "traceId": {"type": "string"},
+          "fieldErrors": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["field", "code"], "properties": {"field": {"type": "string"}, "code": {"type": "string"}}}}
+        }
+      }
+    },
+    "responses": {
+      "Error": {"description": "Stable safe error", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}}
+    }
+  },
+  "security": [{"mutualTls": [], "workloadIdentity": []}]
+}

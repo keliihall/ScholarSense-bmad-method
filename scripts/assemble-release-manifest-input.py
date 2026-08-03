@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import os
 import subprocess
 import sys
@@ -47,10 +48,15 @@ def _pull(oras: Path, uri: str, output: Path) -> None:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 3:
-        print("usage: assemble-release-manifest-input.py RELEASE_VERSION OUTPUT.json", file=sys.stderr)
-        return 2
-    output = Path(argv[2]).resolve()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("release_version")
+    parser.add_argument("output")
+    parser.add_argument("--manifest-version", choices=("1", "2"), default="1")
+    try:
+        args = parser.parse_args(argv[1:])
+    except SystemExit as error:
+        return int(error.code)
+    output = Path(args.output).resolve()
     if output.exists():
         print("RELEASE_ASSEMBLY_OUTPUT_ALREADY_EXISTS", file=sys.stderr)
         return 1
@@ -71,7 +77,7 @@ def main(argv: list[str]) -> int:
             build_root = root / "artifact/release-out/build"
             payload = assemble_release_manifest_input(
                 PROJECT_ROOT,
-                argv[1],
+                args.release_version,
                 uris["artifact"],
                 build_root,
                 uris["sbom"],
@@ -81,6 +87,15 @@ def main(argv: list[str]) -> int:
                 uris["web"],
                 root / "web",
                 datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+                manifest_version=args.manifest_version,
+                public_integration_target_evidence_uri=(
+                    _required("PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI")
+                    if args.manifest_version == "2" else None
+                ),
+                public_integration_target_evidence_path=(
+                    Path(_required("PUBLIC_INTEGRATION_TARGET_EVIDENCE_FILE"))
+                    if args.manifest_version == "2" else None
+                ),
             )
             if os.environ.get("GITHUB_SHA") and payload["buildManifest"].get("sourceCommit") != os.environ["GITHUB_SHA"]:
                 raise ValueError("RELEASE_ASSEMBLY_WORKFLOW_SOURCE_MISMATCH")

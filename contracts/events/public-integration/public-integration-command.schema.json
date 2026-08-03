@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:scholarsense:public-integration:command:1.0.0",
+  "title": "PIC single-operation command",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "channelId",
+    "generationKey",
+    "providerEffectKey",
+    "operation",
+    "aggregateType",
+    "aggregateId",
+    "aggregateVersion",
+    "requestDigest",
+    "traceId",
+    "payload"
+  ],
+  "properties": {
+    "contractVersion": {"const": "PIC-1.0.0"},
+    "channelId": {"type": "string", "pattern": "^pic\\.[a-z0-9-]+\\.v1$"},
+    "generationKey": {"type": "string", "pattern": "^g1\\.[A-Za-z0-9_-]{43}$"},
+    "providerEffectKey": {"type": "string", "pattern": "^pe1\\.[A-Za-z0-9_-]{43}$"},
+    "operation": {"enum": ["create", "update", "close", "revoke", "merge", "writeback", "publish"]},
+    "aggregateType": {"type": "string", "minLength": 1, "maxLength": 64},
+    "aggregateId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "aggregateVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "requestDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "payload": {"type": "object", "additionalProperties": false, "properties": {}}
+  }
+}

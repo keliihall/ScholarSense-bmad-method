@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:scholarsense:public-integration:event:1.0.0",
+  "title": "PIC strict CloudEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "specversion",
+    "id",
+    "source",
+    "type",
+    "subject",
+    "time",
+    "datacontenttype",
+    "traceparent",
+    "data"
+  ],
+  "properties": {
+    "specversion": {"const": "1.0"},
+    "id": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "source": {"type": "string", "pattern": "^urn:scholarsense:[a-z0-9-]+$"},
+    "type": {"type": "string", "pattern": "^scholarsense\\.[a-z0-9-]+\\.[a-z0-9-]+\\.[a-z0-9-]+\\.v1$"},
+    "subject": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9-]{0,63}/[A-Za-z0-9._~-]{1,128}$"},
+    "time": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"},
+    "datacontenttype": {"const": "application/cloudevents+json"},
+    "traceparent": {"type": "string", "pattern": "^00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]$"},
+    "contentEncoding": {"const": "identity"},
+    "data": {"$ref": "#/$defs/data"}
+  },
+  "$defs": {
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "eventId",
+        "sourceFactId",
+        "sourceFactDigest",
+        "eventPayloadDigest",
+        "traceId",
+        "producer",
+        "aggregateType",
+        "aggregateId",
+        "aggregateVersion",
+        "channelId",
+        "routeSequence",
+        "contractVersion",
+        "correlationId",
+        "causationId",
+        "occurredAt",
+        "payload"
+      ],
+      "properties": {
+        "schemaVersion": {"type": "string", "pattern": "^1\\.[0-9]+\\.[0-9]+$"},
+        "eventId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "sourceFactId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "sourceFactDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "eventPayloadDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "producer": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+        "aggregateType": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9-]{0,63}$"},
+        "aggregateId": {"type": "string", "pattern": "^[A-Za-z0-9._~-]{1,128}$"},
+        "aggregateVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "channelId": {"type": "string", "pattern": "^pic\\.[a-z0-9-]+\\.v1$"},
+        "routeSequence": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "contractVersion": {"const": "PIC-1.0.0"},
+        "correlationId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "causationId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "occurredAt": {"type": "string", "format": "date-time", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$"},
+        "payload": {"$ref": "#/$defs/payload"}
+      }
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workItemKey", "operation"],
+      "properties": {
+        "workItemKey": {"type": "string", "pattern": "^wk1\\.[A-Za-z0-9_-]{8,128}$"},
+        "operation": {"enum": ["create", "update", "close", "revoke", "merge", "writeback", "publish"]},
+        "itemType": {"enum": ["candidate", "clue", "task", "transfer", "metric"]},
+        "ownerRef": {"type": "string", "pattern": "^owner1\\.[A-Za-z0-9_-]{8,128}$"},
+        "priority": {"enum": ["urgent", "normal"]},
+        "dueAt": {"type": ["string", "null"], "format": "date-time"},
+        "progressState": {"enum": ["pending", "in-progress", "waiting", "completed"]},
+        "taskStatus": {"enum": ["open", "closed", "revoked", "merged"]},
+        "deepLinkRouteId": {"enum": ["care-work-item", "transfer-work-order", "report-job"]},
+        "routeState": {"type": "string", "pattern": "^[A-Za-z0-9._~-]{1,256}$"},
+        "notificationType": {"enum": ["due", "overdue", "escalation", "responsibility-changed"]},
+        "escalationVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "status": {"enum": ["accepted", "rejected", "processing", "completed", "failed"]},
+        "resultCategory": {"enum": ["accepted", "completed", "supplement-required", "rejected", "failed"]},
+        "numerator": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+        "denominator": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+        "metricVersion": {"type": "string", "pattern": "^MPP-[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "suppressed": {"type": "boolean"}
+      }
+    }
+  }
+}

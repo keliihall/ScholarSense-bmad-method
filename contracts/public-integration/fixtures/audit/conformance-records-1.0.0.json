@@ -1,0 +1,63 @@
+{
+  "version": "PIC-AUDIT-CONFORMANCE-1.0.0",
+  "profileVersion": "PIC-AUDIT-1.0.0",
+  "baseLocalAuditFact": {
+    "auditId": "019fc688-380d-7391-b3d0-877e0f9b3026",
+    "schemaVersion": "LOCAL-AUDIT-FACT-1.0.0",
+    "producerModule": "audit-operations",
+    "actorType": "service",
+    "actorSearchToken": "ast_v1_k1_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "roleIds": [],
+    "authorizationContext": {"decision": "not-applicable", "policyVersion": null, "scopeCodes": [], "grantSearchTokens": [], "notApplicableReason": "SERVICE_OPERATION"},
+    "action": "public-integration.delivery.accepted",
+    "objectType": "integration-delivery",
+    "objectSearchToken": "ost_v1_k1_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "outcome": "accepted",
+    "reasonCode": "PIC_DELIVERY_ACCEPTED",
+    "purpose": "INTEGRATION_CONFORMANCE",
+    "projectionScope": "SYNTHETIC_ONLY",
+    "occurredAt": "2026-08-03T08:00:00Z",
+    "recordedAt": "2026-08-03T08:00:01Z",
+    "timeSourceProfile": {"sourceId": "pic-test-clock", "profileVersion": "AUDIT-CLOCK-BINDING-1.0.0", "offsetMs": 0, "observedAt": "2026-08-03T08:00:00Z", "freshUntil": "2026-08-03T08:05:00Z", "evidenceRef": "evidence://signed/pic/conformance-clock"},
+    "sourceIpSearchToken": null,
+    "tokenizationProfileVersion": "AUDIT-TOKENIZATION-1.0.0",
+    "keyVersion": "k1",
+    "traceId": "0123456789abcdef0123456789abcdef",
+    "aggregateType": "integration-delivery",
+    "aggregateIdSearchToken": "agt_v1_k1_cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "aggregateVersion": 1,
+    "idempotencyKeyDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "policyVersions": {"integrationContract": "PIC-1.0.0", "retentionSchedule": "RS-1.0.0"},
+    "retentionScheduleVersion": "RS-1.0.0"
+  },
+  "baseIntegrationContext": {
+    "channelId": "public-task",
+    "contractVersion": "PIC-1.0.0",
+    "provenanceMode": "aggregate-stream",
+    "generationKeyToken": "gkt_v1_k1_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "sourceAggregateVersion": 1,
+    "attemptNo": 1,
+    "result": "accepted",
+    "errorCode": "NONE",
+    "eventId": "019fc688-380d-7391-b3d0-877e0f9b3027",
+    "sourceFactIdToken": "sft_v1_k1_ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "routeSequence": 1,
+    "sourceFactDigest": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "records": [
+    {"id": "accepted-stream", "path": "accepted", "localAuditFactOverrides": {}, "integrationContextOverrides": {}},
+    {"id": "rejected-stream", "path": "rejected", "localAuditFactOverrides": {"action": "public-integration.delivery.rejected", "outcome": "rejected", "reasonCode": "PIC_AUTHORIZATION_REJECTED"}, "integrationContextOverrides": {"result": "rejected", "errorCode": "AUTHORIZATION_DENIED"}},
+    {"id": "retry-stream", "path": "retry", "localAuditFactOverrides": {"action": "public-integration.retry.scheduled", "reasonCode": "PIC_RETRY_SCHEDULED"}, "integrationContextOverrides": {"result": "retry", "errorCode": "TARGET_TRANSIENT", "attemptNo": 2}},
+    {"id": "confirmed-intent", "path": "confirmed", "localAuditFactOverrides": {"action": "public-integration.delivery.confirmed", "reasonCode": "PIC_DELIVERY_CONFIRMED"}, "integrationContextOverrides": {"provenanceMode": "intent-command", "result": "confirmed", "deliveryIntentIdToken": "dit_v1_k1_2222222222222222222222222222222222222222222222222222222222222222", "notificationType": "overdue", "escalationVersion": 1}, "removeIntegrationFields": ["eventId", "sourceFactIdToken", "routeSequence", "sourceFactDigest"]},
+    {"id": "failed-stream", "path": "failed", "localAuditFactOverrides": {"action": "public-integration.delivery.failed", "outcome": "rejected", "reasonCode": "PIC_RETRY_EXHAUSTED"}, "integrationContextOverrides": {"result": "failed", "errorCode": "RETRY_EXHAUSTED", "attemptNo": 5}},
+    {"id": "reconcile-stream", "path": "reconcile", "localAuditFactOverrides": {"action": "public-integration.reconciliation.completed", "reasonCode": "PIC_RECONCILIATION_COMPLETED"}, "integrationContextOverrides": {"result": "reconciled"}},
+    {"id": "replay-stream", "path": "replay", "localAuditFactOverrides": {"action": "public-integration.replay.detected", "reasonCode": "PIC_REPLAY_DETECTED"}, "integrationContextOverrides": {"result": "replayed"}},
+    {"id": "gap-stream", "path": "gap", "localAuditFactOverrides": {"action": "public-integration.route.gap-detected", "outcome": "rejected", "reasonCode": "PIC_ROUTE_GAP"}, "integrationContextOverrides": {"result": "gap", "errorCode": "ROUTE_GAP", "routeSequence": 3}},
+    {"id": "poison-stream", "path": "poison", "localAuditFactOverrides": {"action": "public-integration.payload.quarantined", "outcome": "rejected", "reasonCode": "PIC_PAYLOAD_POISON"}, "integrationContextOverrides": {"result": "poison", "errorCode": "PAYLOAD_POISON"}}
+  ],
+  "negativeCases": [
+    {"id": "tagged-provenance-both", "path": "accepted", "localAuditFactOverrides": {}, "integrationContextOverrides": {"deliveryIntentIdToken": "dit_v1_k1_2222222222222222222222222222222222222222222222222222222222222222", "notificationType": "overdue", "escalationVersion": 1}, "expectedIssue": "PIC_AUDIT_PROVENANCE_TAG_BOTH"},
+    {"id": "tagged-provenance-none", "path": "accepted", "localAuditFactOverrides": {}, "integrationContextOverrides": {}, "removeIntegrationFields": ["eventId", "sourceFactIdToken", "routeSequence", "sourceFactDigest"], "expectedIssue": "PIC_AUDIT_PROVENANCE_TAG_NONE"},
+    {"id": "tagged-provenance-mismatch", "path": "accepted", "localAuditFactOverrides": {}, "integrationContextOverrides": {"provenanceMode": "intent-command"}, "expectedIssue": "PIC_AUDIT_PROVENANCE_TAG_MISMATCH"}
+  ]
+}

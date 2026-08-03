@@ -1,0 +1,27 @@
+{
+  "version": "PIC-TARGET-SCENARIOS-1.0.0",
+  "contractVersion": "PIC-1.0.0",
+  "executionProtocol": {
+    "version": "PIC-TARGET-EXECUTION-1.0.0",
+    "method": "POST",
+    "scenarioPathTemplate": "/_scholarsense/pic/conformance/v1/scenarios/{scenarioId}",
+    "cleanupPath": "/_scholarsense/pic/conformance/v1/cleanup",
+    "requestMediaType": "application/json",
+    "responseMediaType": "application/json"
+  },
+  "requiredScenarios": [
+    {"id": "contract-auth", "sideEffectExpected": false},
+    {"id": "create", "sideEffectExpected": true},
+    {"id": "update", "sideEffectExpected": true},
+    {"id": "close", "sideEffectExpected": true},
+    {"id": "revoke", "sideEffectExpected": true},
+    {"id": "transient-retry", "sideEffectExpected": true},
+    {"id": "duplicate-idempotency", "sideEffectExpected": false},
+    {"id": "out-of-order", "sideEffectExpected": false},
+    {"id": "dual-id-route-watermark-reconcile", "sideEffectExpected": false},
+    {"id": "slo-five-minute-budget", "sideEffectExpected": true}
+  ],
+  "cleanupRequired": true,
+  "conditionalSkipAllowed": false,
+  "unsupportedResult": "fail-correct-course-required"
+}

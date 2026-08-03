@@ -89,8 +89,12 @@ def validate(project_root: Path) -> list[str]:
         build_fixture = load_json(contracts / "fixtures/valid/build-manifest.json")
         release_fixture = load_json(contracts / "fixtures/valid/release-manifest.json")
         index_fixture = load_json(contracts / "fixtures/valid/evidence-index.json")
+        release_v2_fixture = load_json(contracts / "fixtures/valid/release-manifest-2.json")
+        index_v2_fixture = load_json(contracts / "fixtures/valid/evidence-index-2.json")
         issues.extend(f"release-manifest fixture: {issue}" for issue in release_manifest_issues(release_fixture, build_fixture))
         issues.extend(f"evidence-index fixture: {issue}" for issue in evidence_index_issues(index_fixture, release_fixture))
+        issues.extend(f"release-manifest-v2 fixture: {issue}" for issue in release_manifest_issues(release_v2_fixture, build_fixture))
+        issues.extend(f"evidence-index-v2 fixture: {issue}" for issue in evidence_index_issues(index_v2_fixture, release_v2_fixture))
     except (OSError, TypeError, ValueError) as error:
         issues.append(f"RELEASE_LIFECYCLE_FIXTURE_INVALID: {error}")
     return sorted(set(issues))

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:scholarsense:public-integration:target-handoff:1.0.0",
+  "title": "Protected PIC target handoff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["handoffVersion", "handoffId", "revision", "previousRevisionDigest", "issuedAt", "notBefore", "expiresAt", "signerKeyId", "authority", "environment", "trustAnchorDigest", "peerSpkiSha256", "capabilities", "protocols", "credentialRef", "targetDescriptor"],
+  "properties": {
+    "handoffVersion": {"const": "PIC-TARGET-HANDOFF-1.0.0"},
+    "handoffId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "revision": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "previousRevisionDigest": {"type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$"},
+    "issuedAt": {"type": "string", "format": "date-time"},
+    "notBefore": {"type": "string", "format": "date-time"},
+    "expiresAt": {"type": "string", "format": "date-time"},
+    "signerKeyId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "authority": {"type": "string", "minLength": 1, "maxLength": 128},
+    "environment": {"const": "non-production-sandbox"},
+    "trustAnchorDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "peerSpkiSha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "capabilities": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true, "items": {"type": "string"}},
+    "protocols": {"type": "object", "additionalProperties": false, "required": ["receipt", "challenge", "sandboxCleanup", "terminalByStableWorkItemKey", "rejectStaleSourceVersion"], "properties": {"receipt": {"type": "string"}, "challenge": {"type": "string"}, "sandboxCleanup": {"type": "string"}, "terminalByStableWorkItemKey": {"type": "boolean"}, "rejectStaleSourceVersion": {"type": "boolean"}}},
+    "credentialRef": {"type": "string", "pattern": "^credential-ref:[A-Za-z0-9._/-]{1,256}$"},
+    "targetDescriptor": {"type": "object", "additionalProperties": false, "required": ["descriptorVersion", "baseUri"], "properties": {"descriptorVersion": {"const": "PIC-TARGET-DESCRIPTOR-1.0.0"}, "baseUri": {"type": "string", "pattern": "^https://"}}}
+  }
+}

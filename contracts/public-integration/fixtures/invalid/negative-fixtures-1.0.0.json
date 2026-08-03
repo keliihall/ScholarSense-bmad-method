@@ -1,0 +1,24 @@
+{
+  "version": "PIC-NEGATIVE-FIXTURES-1.0.0",
+  "cases": [
+    {"id": "tagged-provenance-both", "expectedCode": "PIC_PROVENANCE_MODE_INVALID"},
+    {"id": "tagged-provenance-none", "expectedCode": "PIC_PROVENANCE_MODE_INVALID"},
+    {"id": "event-id-mismatch", "expectedCode": "EVENT_ID_MISMATCH"},
+    {"id": "source-fact-digest-conflict", "expectedCode": "SOURCE_FACT_DIGEST_CONFLICT"},
+    {"id": "route-sequence-zero", "expectedCode": "EVENT_SCHEMA_REJECTED"},
+    {"id": "route-sequence-overflow", "expectedCode": "EVENT_SCHEMA_REJECTED"},
+    {"id": "aggregate-version-zero", "expectedCode": "EVENT_SCHEMA_REJECTED"},
+    {"id": "payload-65537-bytes", "expectedCode": "EVENT_PAYLOAD_TOO_LARGE"},
+    {"id": "compressed-body", "expectedCode": "EVENT_CONTENT_ENCODING_UNSUPPORTED"},
+    {"id": "unknown-envelope-key", "expectedCode": "EVENT_SCHEMA_REJECTED"},
+    {"id": "breaking-without-major", "expectedCode": "PIC_BREAKING_CHANGE_REQUIRES_MAJOR"},
+    {"id": "deep-link-absolute", "expectedCode": "PIC_DEEP_LINK_INVALID"},
+    {"id": "deep-link-double-encoded", "expectedCode": "PIC_DEEP_LINK_INVALID"},
+    {"id": "tsp-unapproved-pause", "expectedCode": "TSP_PAUSE_NOT_APPROVED"},
+    {"id": "mpp-normal-n9", "expectedCode": "MPP_SUPPRESSED"},
+    {"id": "mpp-normal-n10", "expectedCode": "MPP_PUBLISHABLE"},
+    {"id": "mpp-sensitive-n19", "expectedCode": "MPP_SUPPRESSED"},
+    {"id": "mpp-sensitive-n20", "expectedCode": "MPP_PUBLISHABLE"},
+    {"id": "mpp-anti-differencing", "expectedCode": "MPP_DIFFERENCING_BLOCKED"}
+  ]
+}
