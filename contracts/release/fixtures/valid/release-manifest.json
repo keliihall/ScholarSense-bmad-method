@@ -145,6 +145,24 @@
       "status": "pending-story-execution",
       "ownerStory": "7.1/7.x",
       "runtimeEvidenceClaim": "none"
+    },
+    {
+      "id": "export-job-download",
+      "status": "pending-story-execution",
+      "ownerStory": "3.14a-3.14c",
+      "runtimeEvidenceClaim": "none"
+    },
+    {
+      "id": "transfer-task",
+      "status": "pending-story-execution",
+      "ownerStory": "3.4-3.10/5.x",
+      "runtimeEvidenceClaim": "none"
+    },
+    {
+      "id": "mobile-projection",
+      "status": "pending-story-execution",
+      "ownerStory": "7.x",
+      "runtimeEvidenceClaim": "none"
     }
   ],
   "controlledInputs": [
@@ -156,6 +174,15 @@
       "size": 1,
       "binarySha256": "2222222222222222222222222222222222222222222222222222222222222222",
       "ociDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    {
+      "id": "AuthorizationAudit",
+      "version": "AUDIT-CONTRACT-LOCK-1.4.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:1212121212121212121212121212121212121212121212121212121212121212",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "1212121212121212121212121212121212121212121212121212121212121212",
+      "ociDigest": "sha256:1212121212121212121212121212121212121212121212121212121212121212"
     },
     {
       "id": "Availability",
@@ -192,6 +219,15 @@
       "size": 1,
       "binarySha256": "6666666666666666666666666666666666666666666666666666666666666666",
       "ociDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+    },
+    {
+      "id": "FieldProjection",
+      "version": "FIELD-PROJECTION-CONTRACT-LOCK-1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:1414141414141414141414141414141414141414141414141414141414141414",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "1414141414141414141414141414141414141414141414141414141414141414",
+      "ociDigest": "sha256:1414141414141414141414141414141414141414141414141414141414141414"
     },
     {
       "id": "MetricPublication",
@@ -240,12 +276,21 @@
     },
     {
       "id": "RoleField",
-      "version": "1.0.0",
+      "version": "RFP-1.0.0",
       "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       "mediaType": "application/json",
       "size": 1,
       "binarySha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
       "ociDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    {
+      "id": "RoleFieldFixture",
+      "version": "RFP-FIXTURE-1.0.0",
+      "uri": "oci://ghcr.io/keliihall/scholarsense/evidence@sha256:1313131313131313131313131313131313131313131313131313131313131313",
+      "mediaType": "application/json",
+      "size": 1,
+      "binarySha256": "1313131313131313131313131313131313131313131313131313131313131313",
+      "ociDigest": "sha256:1313131313131313131313131313131313131313131313131313131313131313"
     },
     {
       "id": "Rule",

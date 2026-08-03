@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/vue-query';
+import { VolatileClientState } from './volatile-client-state';
 
 
 export const queryClient = new QueryClient({
@@ -15,3 +16,5 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+export const volatileClientState = new VolatileClientState(queryClient);

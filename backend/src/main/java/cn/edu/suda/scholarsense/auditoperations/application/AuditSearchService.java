@@ -2,16 +2,23 @@ package cn.edu.suda.scholarsense.auditoperations.application;
 
 import cn.edu.suda.scholarsense.auditoperations.domain.AuditSearchCriteria;
 import cn.edu.suda.scholarsense.auditoperations.domain.AuditSearchView;
+import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationRequest;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldProjectionObjectClass;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldProjectionObjectEvidence;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldProjectionPort;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldProjectionRequest;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldProjectionSafeDocument;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldProjectionValueReference;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HexFormat;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 /** Authorizes every request, freezes a complete snapshot, projects fields, then audits before return. */
 public final class AuditSearchService {
@@ -21,6 +28,8 @@ public final class AuditSearchService {
     private final SearchAuditPort audit;
     private final AuditClock clock;
     private final AuditRequesterResolver requester;
+    private final FieldProjectionPort fieldProjection;
+    private final String projectionKeyStateVersion;
 
     public AuditSearchService(
             AuditSearchQueryPort queries,
@@ -28,13 +37,21 @@ public final class AuditSearchService {
             AuditSearchTokenGateway tokenization,
             SearchAuditPort audit,
             AuditClock clock,
-            AuditRequesterResolver requester) {
+            AuditRequesterResolver requester,
+            FieldProjectionPort fieldProjection,
+            String projectionKeyStateVersion) {
         this.queries = Objects.requireNonNull(queries);
         this.authorization = Objects.requireNonNull(authorization);
         this.tokenization = Objects.requireNonNull(tokenization);
         this.audit = Objects.requireNonNull(audit);
         this.clock = Objects.requireNonNull(clock);
         this.requester = Objects.requireNonNull(requester);
+        this.fieldProjection = Objects.requireNonNull(fieldProjection);
+        if (projectionKeyStateVersion == null
+                || !projectionKeyStateVersion.matches("[a-z0-9][a-z0-9._-]{2,63}")) {
+            throw new IllegalArgumentException("AUDIT_SEARCH_KEY_STATE_INVALID");
+        }
+        this.projectionKeyStateVersion = projectionKeyStateVersion;
     }
 
     public AuditSearchPage search(AuditSearchCriteria criteria) {
@@ -46,7 +63,7 @@ public final class AuditSearchService {
                     session,
                     criteria.view(),
                     criteria.objectType() == null ? "audit-record" : criteria.objectType(),
-                    criteria.objectType() == null ? "audit-domain" : criteria.objectType(),
+                    "audit-domain",
                     criteria.requestTraceId()));
         } catch (RuntimeException unavailable) {
             return reject(criteria, "AUDIT_SEARCH_DEPENDENCY_UNAVAILABLE", null);
@@ -54,7 +71,7 @@ public final class AuditSearchService {
         if (!decision.allowed()) {
             return reject(criteria, "AUDIT_SEARCH_FORBIDDEN", null);
         }
-        if (!AuditSearchDecisionValidator.isValid(criteria.view(), decision)) {
+        if (!AuditSearchDecisionValidator.isContextValid(criteria.view(), decision)) {
             return reject(criteria, "AUDIT_SEARCH_DEPENDENCY_UNAVAILABLE", null);
         }
 
@@ -85,7 +102,12 @@ public final class AuditSearchService {
         } catch (RuntimeException unavailable) {
             return reject(criteria, "AUDIT_SEARCH_DEPENDENCY_UNAVAILABLE", asOf);
         }
-        List<ProjectedAuditRecord> items = project(slice.rows(), decision);
+        List<ProjectedAuditRecord> items;
+        try {
+            items = project(slice.rows(), criteria, session, decision.action());
+        } catch (RuntimeException projectionFailure) {
+            return reject(criteria, "AUDIT_SEARCH_DEPENDENCY_UNAVAILABLE", asOf);
+        }
         commitAudit(criteria, decision.action(), "accepted", null, asOf);
         return new AuditSearchPage(
                 items, criteria.page(), criteria.size(), slice.total(), asOf,
@@ -135,79 +157,87 @@ public final class AuditSearchService {
         }
     }
 
-    private static List<ProjectedAuditRecord> project(
-            List<AuditSearchRow> rows, AuthorizedAuditSearchDecision decision) {
-        Map<String, String> actorAliases = new LinkedHashMap<>();
-        Map<String, String> objectAliases = new LinkedHashMap<>();
+    private List<ProjectedAuditRecord> project(
+            List<AuditSearchRow> rows,
+            AuditSearchCriteria criteria,
+            String session,
+            String action) {
         List<ProjectedAuditRecord> result = new ArrayList<>();
         for (AuditSearchRow row : rows) {
-            Map<String, Object> fields = new LinkedHashMap<>();
-            fields.put("recordId", row.recordId());
-            fields.put("ledgerSequence", row.ledgerSequence());
-            fields.put("occurredAt", row.occurredAt());
-            fields.put("outcome", row.outcome());
-            fields.put("factSchemaVersion", row.factSchemaVersion());
-            fields.put("policyVersion", row.policyVersion());
-            fields.put("retentionScheduleVersion", row.retentionScheduleVersion());
-            if (decision.fieldProjection().get("I") == AuditFieldVisibility.MASKED) {
-                alias(fields, "actorDisplayRef", "actor", row.actorSearchToken(), actorAliases);
-                alias(fields, "objectDisplayRef", "object", row.objectSearchToken(), objectAliases);
+            CompositeAuthorizationRequest authorization = new CompositeAuthorizationRequest(
+                    session,
+                    criteria.view() == AuditSearchView.BUSINESS ? "AGGREGATE_REPORT" : "TELEMETRY",
+                    action,
+                    digest(row.recordId().toString()),
+                    row.ledgerSequence(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    digest(criteria.requestTraceId()).substring(0, 32));
+            var projection = fieldProjection.project(new FieldProjectionRequest(
+                    authorization,
+                    FieldProjectionObjectClass.AUDIT_SEARCH_RECORD,
+                    new FieldProjectionObjectEvidence(
+                            action,
+                            clock.now(),
+                            Optional.empty(),
+                            true,
+                            false,
+                            false,
+                            Set.of(),
+                            Optional.empty(),
+                            projectionKeyStateVersion),
+                    valueReferences(row)));
+            if (!projection.allowed()) {
+                throw new IllegalStateException("AUDIT_SEARCH_FIELD_PROJECTION_REJECTED");
             }
-            putCategoryFields(fields, row, decision.fieldProjection().get("G"));
-            putTechnicalFields(fields, row, decision.fieldProjection().get("T"));
-            result.add(new ProjectedAuditRecord(fields));
+            result.add(new ProjectedAuditRecord(FieldProjectionSafeDocument.from(projection).jsonValues()));
         }
         return List.copyOf(result);
     }
 
-    private static void alias(
-            Map<String, Object> fields, String field, String prefix, String token, Map<String, String> aliases) {
-        if (token != null) {
-            fields.put(field, aliases.computeIfAbsent(
-                    token, ignored -> "%s-%08X".formatted(prefix, aliases.size() + 1)));
+    private static List<FieldProjectionValueReference> valueReferences(AuditSearchRow row) {
+        List<FieldProjectionValueReference> values = new ArrayList<>();
+        values.add(value("recordId", "B", "string", () -> row.recordId().toString()));
+        values.add(value("ledgerSequence", "B", "integer", row::ledgerSequence));
+        values.add(value("occurredAt", "B", "timestamp", row::occurredAt));
+        add(values, "outcome", "B", "string", row.outcome());
+        add(values, "factSchemaVersion", "B", "string", row.factSchemaVersion());
+        add(values, "policyVersion", "B", "string", row.policyVersion());
+        add(values, "retentionScheduleVersion", "B", "string", row.retentionScheduleVersion());
+        add(values, "actorDisplayRef", "I", "string", row.actorSearchToken());
+        add(values, "objectDisplayRef", "I", "string", row.objectSearchToken());
+        add(values, "businessActionCategory", "G", "string", row.businessActionCategory());
+        add(values, "businessObjectCategory", "G", "string", row.businessObjectCategory());
+        add(values, "rolePackageSummary", "G", "string", row.rolePackageSummary());
+        add(values, "projectionScope", "G", "string", row.projectionScope());
+        add(values, "producerModule", "T", "string", row.producerModule());
+        add(values, "eventType", "T", "string", row.eventType());
+        add(values, "reasonCode", "T", "string", row.reasonCode());
+        add(values, "traceId", "T", "string", row.traceId());
+        values.add(value("integrityStatus", "T", "string", () -> "verified"));
+        values.add(value("archiveStatus", "T", "string", () -> "online"));
+        values.add(value("projectionStatus", "T", "string", () -> "current"));
+        values.add(value("sourceNetworkRecorded", "T", "boolean", row::sourceNetworkRecorded));
+        return List.copyOf(values);
+    }
+
+    private static void add(
+            List<FieldProjectionValueReference> values,
+            String name,
+            String fieldClass,
+            String valueType,
+            Object value) {
+        if (value != null) {
+            values.add(value(name, fieldClass, valueType, () -> value));
         }
     }
 
-    private static void putCategoryFields(
-            Map<String, Object> fields, AuditSearchRow row, AuditFieldVisibility visibility) {
-        if (visibility == AuditFieldVisibility.CLEAR) {
-            put(fields, "businessActionCategory", row.businessActionCategory());
-            put(fields, "businessObjectCategory", row.businessObjectCategory());
-            put(fields, "rolePackageSummary", row.rolePackageSummary());
-            put(fields, "projectionScope", row.projectionScope());
-        } else if (visibility == AuditFieldVisibility.MASKED) {
-            fields.put("businessActionCategory", "category-masked");
-            fields.put("businessObjectCategory", "category-masked");
-            fields.put("rolePackageSummary", "role-package-masked");
-            fields.put("projectionScope", "scope-masked");
-        }
-    }
-
-    private static void putTechnicalFields(
-            Map<String, Object> fields, AuditSearchRow row, AuditFieldVisibility visibility) {
-        if (visibility == AuditFieldVisibility.CLEAR) {
-            put(fields, "producerModule", row.producerModule());
-            put(fields, "eventType", row.eventType());
-            put(fields, "reasonCode", row.reasonCode());
-            put(fields, "traceId", row.traceId());
-            fields.put("integrityStatus", "verified");
-            fields.put("archiveStatus", "online");
-            fields.put("projectionStatus", "current");
-            fields.put("sourceNetworkRecorded", row.sourceNetworkRecorded());
-        } else if (visibility == AuditFieldVisibility.MASKED) {
-            fields.put("producerModule", "module-masked");
-            fields.put("eventType", "event-masked");
-            fields.put("reasonCode", "REASON_MASKED");
-            fields.put("traceId", "trace-masked");
-            fields.put("integrityStatus", "verified");
-            fields.put("archiveStatus", "online");
-            fields.put("projectionStatus", "current");
-            fields.put("sourceNetworkRecorded", row.sourceNetworkRecorded());
-        }
-    }
-
-    private static void put(Map<String, Object> fields, String key, Object value) {
-        if (value != null) fields.put(key, value);
+    private static FieldProjectionValueReference value(
+            String name,
+            String fieldClass,
+            String valueType,
+            cn.edu.suda.scholarsense.identityaccess.api.ServerOwnedFieldValueReference value) {
+        return FieldProjectionValueReference.serverOwned(name, fieldClass, valueType, value);
     }
 
     private static List<String> filterTypes(AuditSearchCriteria criteria) {

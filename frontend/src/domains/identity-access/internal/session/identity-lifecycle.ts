@@ -6,12 +6,14 @@ export class IdentityLifecycleCoordinator {
   public constructor(
     private readonly volatileState: VolatileClientState,
     private readonly clearIdentityProjection: () => void,
+    private readonly clearAuthorizationProjection: () => void,
     private readonly hostBridge: Pick<HostBridge, 'clearReplayCache'>,
   ) {}
 
   public clear(event: LifecycleBoundary): void {
     this.volatileState.handleLifecycle(event);
     this.clearIdentityProjection();
+    this.clearAuthorizationProjection();
     this.hostBridge.clearReplayCache();
   }
 }

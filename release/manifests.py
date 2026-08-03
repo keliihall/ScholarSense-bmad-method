@@ -24,16 +24,19 @@ REQUIRED_BASELINE_IDS = frozenset({"AAB", "CISB", "FPB", "PAB", "TEST-ENV", "UXB
 REQUIRED_CONTROLLED_INPUT_IDS = frozenset(
     {
         "AcademicCareNodeSet",
+        "AuthorizationAudit",
         "Availability",
         "BusinessCalendar",
         "CareActionCatalog",
         "EvidenceSchema",
+        "FieldProjection",
         "MetricPublication",
         "PerformanceProfile",
         "QualityRecovery",
         "Queue",
         "RetentionSchedule",
         "RoleField",
+        "RoleFieldFixture",
         "Rule",
         "SeasonalProgramMatrix",
         "StrategyGate",
@@ -57,7 +60,17 @@ FRONTEND_EVIDENCE_KINDS = frozenset(
 )
 HOST_SSO_EVIDENCE_KIND = "host-sso-runtime-evidence"
 BLOCKING_RUNTIME_IDS = frozenset({"formal-web-evidence", "supply-chain-evidence"})
-RUNTIME_IDS = frozenset({"app-webview", "formal-web-evidence", "future-app-device", "supply-chain-evidence"})
+RUNTIME_IDS = frozenset(
+    {
+        "app-webview",
+        "export-job-download",
+        "formal-web-evidence",
+        "future-app-device",
+        "mobile-projection",
+        "supply-chain-evidence",
+        "transfer-task",
+    }
+)
 FORBIDDEN_RELEASE_KEYS = frozenset(
     {"evidenceIndex", "evidenceIndexUri", "manifestSignature", "manifestSignatureUri", "promotion", "promotionUri"}
 )
@@ -272,6 +285,15 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
     future = runtime_by_id.get("future-app-device", {})
     if future.get("status") != "pending-story-execution" or future.get("runtimeEvidenceClaim") != "none" or not future.get("ownerStory") or "evidenceIds" in future:
         issues.append("RELEASE_FUTURE_STORY_STATUS_INVALID")
+    for identity in ("export-job-download", "transfer-task", "mobile-projection"):
+        future_boundary = runtime_by_id.get(identity, {})
+        if (
+            future_boundary.get("status") != "pending-story-execution"
+            or future_boundary.get("runtimeEvidenceClaim") != "none"
+            or not future_boundary.get("ownerStory")
+            or "evidenceIds" in future_boundary
+        ):
+            issues.append(f"RELEASE_FUTURE_STORY_STATUS_INVALID: {identity}")
     return sorted(set(issues))
 
 

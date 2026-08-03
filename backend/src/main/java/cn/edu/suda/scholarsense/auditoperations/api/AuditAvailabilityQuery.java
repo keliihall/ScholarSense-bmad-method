@@ -6,6 +6,8 @@ import cn.edu.suda.scholarsense.auditoperations.application.AuditClock;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
+import cn.edu.suda.scholarsense.shared.time.AuditAvailabilityResult;
+import cn.edu.suda.scholarsense.shared.time.AuditAvailabilityState;
 
 public final class AuditAvailabilityQuery implements AuditAvailabilityPort {
     private final AuditAvailabilityUseCase useCase;

@@ -1,5 +1,5 @@
 # generated: 2026-07-17T20:58:14+0800
-# last_updated: 2026-07-31T18:51:41+0800
+# last_updated: 2026-08-03T12:20:00+0800
 # project: ScholarSense-bmad-method
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - 回顾产生的行动项追加到 action_items，sprint-status 会呈现未完成项
 
 generated: 2026-07-17T20:58:14+0800
-last_updated: 2026-07-31T18:51:41+0800
+last_updated: 2026-08-03T12:20:00+0800
 project: ScholarSense-bmad-method
 project_key: NOKEY
 tracking_system: file-system
@@ -60,8 +60,8 @@ development_status:
   1-6a-同步权威身份与组织: done
   1-6b-同步责任关系并执行每日对账: done
   1-6c-发布撤权-更正与失效传播事实: done
-  1-7-提供角色化首页与组合对象授权: backlog
-  1-8-执行字段级投影与任务期敏感授权: backlog
+  1-7-提供角色化首页与组合对象授权: done
+  1-8-执行字段级投影与任务期敏感授权: done
   1-9-建立公共任务-消息与回写适配器契约: backlog
   epic-1-retrospective: optional
 

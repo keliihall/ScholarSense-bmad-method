@@ -16,6 +16,9 @@ import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchTokenQuery;
 import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchTokenQueryPort;
 import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchSecurityAuditPort;
 import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchCsrfProofPort;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapability;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityProvider;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityState;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -33,6 +36,21 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "scholarsense.identity.enabled", havingValue = "true")
 public class AuditSearchIdentityBridgeConfiguration {
+    @Bean
+    AuthorizedShellCapabilityProvider auditSearchShellCapabilities(
+            AuditSearchAuthorizationPort authorization) {
+        AuthorizedShellCapabilityState state = authorization.capabilityManifest()
+                .productionAuthorizationEnabled()
+                ? AuthorizedShellCapabilityState.AVAILABLE
+                : AuthorizedShellCapabilityState.UNAVAILABLE;
+        return () -> List.of(new AuthorizedShellCapability(
+                "audit-search",
+                "审计检索",
+                "audit.search",
+                state,
+                java.util.Set.of("R3-STUDENT-AFFAIRS", "R7-PLATFORM-OPS")));
+    }
+
     @Bean
     @ConditionalOnMissingBean(AuditSearchAuthorizationGateway.class)
     AuditSearchAuthorizationGateway auditSearchAuthorizationGateway(AuditSearchAuthorizationPort identity) {

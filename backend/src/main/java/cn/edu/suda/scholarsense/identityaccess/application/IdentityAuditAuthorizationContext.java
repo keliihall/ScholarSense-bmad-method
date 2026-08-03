@@ -3,6 +3,7 @@ package cn.edu.suda.scholarsense.identityaccess.application;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Identity-owned authorization evidence mapped into the common audit fact contract. */
 public record IdentityAuditAuthorizationContext(
@@ -10,13 +11,29 @@ public record IdentityAuditAuthorizationContext(
         String policyVersion,
         List<String> scopeCodes,
         List<String> grantSearchTokens,
-        String notApplicableReason) {
+        String notApplicableReason,
+        String actionId,
+        Map<String, String> fieldProjectionSummary,
+        Long objectVersion,
+        String result) {
+    public IdentityAuditAuthorizationContext(
+            String decision,
+            String policyVersion,
+            List<String> scopeCodes,
+            List<String> grantSearchTokens,
+            String notApplicableReason) {
+        this(
+                decision, policyVersion, scopeCodes, grantSearchTokens,
+                notApplicableReason, null, Map.of(), null, null);
+    }
+
     public IdentityAuditAuthorizationContext {
         if (!List.of("allow", "deny", "not-applicable").contains(decision)) {
             throw new IllegalArgumentException("AUDIT_AUTHORIZATION_DECISION_INVALID");
         }
         scopeCodes = List.copyOf(scopeCodes);
         grantSearchTokens = List.copyOf(grantSearchTokens);
+        fieldProjectionSummary = Map.copyOf(fieldProjectionSummary);
         if (("not-applicable".equals(decision)) != (notApplicableReason != null)) {
             throw new IllegalArgumentException("AUDIT_AUTHORIZATION_CONTEXT_INCOMPLETE");
         }
@@ -29,6 +46,18 @@ public record IdentityAuditAuthorizationContext(
         }
         IdentityAuditVocabulary.validateAuthorizationValues(
                 policyVersion, scopeCodes, notApplicableReason);
+        boolean successor = result != null || actionId != null
+                || objectVersion != null || !fieldProjectionSummary.isEmpty();
+        if (successor
+                && (actionId == null || !actionId.matches("[a-z][a-z0-9.-]+")
+                    || !Set.of("ALLOW", "DENY", "DEPENDENCY_UNAVAILABLE").contains(result)
+                    || fieldProjectionSummary.size() != 8
+                    || !fieldProjectionSummary.keySet().equals(
+                            Set.of("B", "I", "C", "S", "E", "N", "G", "T"))
+                    || !Set.of("C", "M", "H").containsAll(fieldProjectionSummary.values())
+                    || objectVersion != null && objectVersion < 1)) {
+            throw new IllegalArgumentException("AUDIT_AUTHORIZATION_CONTEXT_INCOMPLETE");
+        }
     }
 
     public Map<String, Object> asFactFields() {

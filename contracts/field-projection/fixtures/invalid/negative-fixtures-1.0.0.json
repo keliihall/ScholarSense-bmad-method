@@ -1,0 +1,65 @@
+{
+  "version": "FIELD-PROJECTION-NEGATIVE-FIXTURES-1.0.0",
+  "cases": [
+    {
+      "caseId": "unknown-schema-version",
+      "expectedCode": "FIELD_PROJECTION_FIXTURE_SCHEMA_VERSION_INVALID",
+      "document": {
+        "schemaVersion": "FIELD-PROJECTION-FIXTURE-9.9.9",
+        "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.0.0",
+        "roleMatrixOracle": {},
+        "scenarios": []
+      }
+    },
+    {
+      "caseId": "unknown-role",
+      "expectedCode": "FIELD_PROJECTION_FIXTURE_ROLE_UNKNOWN",
+      "document": {
+        "schemaVersion": "FIELD-PROJECTION-FIXTURE-1.0.0",
+        "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.0.0",
+        "roleMatrixOracle": {"R8": {"B": "C"}},
+        "scenarios": []
+      }
+    },
+    {
+      "caseId": "invalid-half-open-window",
+      "expectedCode": "FIELD_PROJECTION_FIXTURE_WINDOW_INVALID",
+      "document": {
+        "schemaVersion": "FIELD-PROJECTION-FIXTURE-1.0.0",
+        "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.0.0",
+        "roleMatrixOracle": {},
+        "scenarios": [{
+          "scenarioId": "bad-window",
+          "roles": ["R5"],
+          "objectClass": "TransferOrder",
+          "objectToken": "TRANSFER-A",
+          "purpose": "transfer.process",
+          "serverNow": "2026-07-17T08:00:00Z",
+          "startAt": "2026-07-18T08:00:00Z",
+          "endAt": "2026-07-17T08:00:00Z",
+          "authorizationOutcome": "ALLOW",
+          "values": {}
+        }]
+      }
+    },
+    {
+      "caseId": "unapproved-field-name",
+      "expectedCode": "FIELD_PROJECTION_FIXTURE_FIELD_UNKNOWN",
+      "document": {
+        "schemaVersion": "FIELD-PROJECTION-FIXTURE-1.0.0",
+        "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.0.0",
+        "roleMatrixOracle": {},
+        "scenarios": [{
+          "scenarioId": "unknown-field",
+          "roles": ["R3"],
+          "objectClass": "AuditSearchRecord",
+          "objectToken": "AUDIT-1",
+          "purpose": "audit.search-business-metadata",
+          "serverNow": "2026-07-17T08:00:00Z",
+          "authorizationOutcome": "ALLOW",
+          "values": {"clientInjectedSecret": "do-not-reflect"}
+        }]
+      }
+    }
+  ]
+}

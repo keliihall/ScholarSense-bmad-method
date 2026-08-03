@@ -170,7 +170,8 @@ public record LocalAuditFact(
         Map<String, Object> copy = new LinkedHashMap<>();
         fields.forEach((key, value) -> copy.put(
                 Objects.requireNonNull(key, "authorizationContext key"),
-                value instanceof List<?> list ? List.copyOf(list) : value));
+                value instanceof List<?> list ? List.copyOf(list)
+                        : value instanceof Map<?, ?> map ? Map.copyOf(map) : value));
         return Collections.unmodifiableMap(copy);
     }
 }

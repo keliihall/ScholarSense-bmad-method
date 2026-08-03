@@ -4,6 +4,7 @@ import cn.edu.suda.scholarsense.identityaccess.application.AuthorizedClientSecre
 import cn.edu.suda.scholarsense.identityaccess.application.ContinuationRepository;
 import cn.edu.suda.scholarsense.identityaccess.application.EncryptedAuthorizedClient;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySessionRepository;
+import cn.edu.suda.scholarsense.identityaccess.application.IdentitySessionByPseudonymQueryPort;
 import cn.edu.suda.scholarsense.identityaccess.application.HostBootstrapRepository;
 import cn.edu.suda.scholarsense.identityaccess.application.RemoteLogoutOutboxPort;
 import cn.edu.suda.scholarsense.identityaccess.application.RemoteLogoutWorkRepository;
@@ -33,6 +34,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 /** PostgreSQL shared correctness store. It never persists bearer-token plaintext. */
 public final class JdbcIdentityAccessStore implements
         IdentitySessionRepository,
+        IdentitySessionByPseudonymQueryPort,
         SessionIdempotencyRepository,
         ContinuationRepository,
         HostBootstrapRepository,
@@ -51,6 +53,14 @@ public final class JdbcIdentityAccessStore implements
         return jdbc.query("""
                 select * from identity_access.ia_identity_session where session_id = ?
                 """, JdbcIdentityAccessStore::mapSession, sessionId).stream().findFirst();
+    }
+
+    @Override
+    public Optional<IdentitySession> findCurrent(String sessionPseudonym) {
+        return jdbc.query("""
+                select * from identity_access.ia_identity_session
+                 where session_pseudonym = ?
+                """, JdbcIdentityAccessStore::mapSession, sessionPseudonym).stream().findFirst();
     }
 
     @Override

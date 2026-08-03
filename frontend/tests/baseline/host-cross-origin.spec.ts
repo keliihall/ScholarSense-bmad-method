@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { authorizedShell, installAuthorizedShellRoute } from './authorized-shell-fixture';
 
 
 const PORTAL_ORIGIN = 'http://127.0.0.1:4174';
@@ -24,6 +25,7 @@ async function configure(page: import('@playwright/test').Page) {
   const bootstrapRequests: Array<{ origin?: string; body: unknown }> = [];
   const logoutRequests: Array<{ idempotencyKey?: string; csrf?: string; body: unknown }> = [];
   await page.clock.setFixedTime(now);
+  await installAuthorizedShellRoute(page);
   await page.route(/\/api\/v1\/identity-runtime$/, async (route) => route.fulfill({
     status: 200, contentType: 'application/json',
     body: JSON.stringify({ schemaVersion: 'HIP-1.0.0', portalOrigin: PORTAL_ORIGIN }),
@@ -100,7 +102,7 @@ async function sendFromPortal(
 test('acknowledges the exact cross-origin parent and reuses replay results without repeating navigation', async ({ page }) => {
   const { requestCount, bootstrapRequests } = await configure(page);
   await page.goto(`${PORTAL_ORIGIN}/`);
-  await expect(page.frameLocator('#scholarsense-frame').getByRole('heading', { name: '统一身份已确认' }))
+  await expect(page.frameLocator('#scholarsense-frame').getByRole('heading', { name: '关怀工作台' }))
     .toBeVisible();
 
   await sendFromPortal(page, message());
@@ -136,7 +138,7 @@ test('acknowledges the exact cross-origin parent and reuses replay results witho
 test('acknowledges logout only after the CSRF and idempotent BFF command succeeds', async ({ page }) => {
   const { requestCount, logoutRequests } = await configure(page);
   await page.goto(`${PORTAL_ORIGIN}/`);
-  await expect(page.frameLocator('#scholarsense-frame').getByRole('heading', { name: '统一身份已确认' }))
+  await expect(page.frameLocator('#scholarsense-frame').getByRole('heading', { name: '关怀工作台' }))
     .toBeVisible();
 
   await sendFromPortal(page, message({
@@ -164,7 +166,7 @@ test('clears the old identity before auth.changed recheck and keeps failure visi
   await configure(page);
   await page.goto(`${PORTAL_ORIGIN}/`);
   const frame = page.frameLocator('#scholarsense-frame');
-  await expect(frame.getByRole('heading', { name: '统一身份已确认' })).toBeVisible();
+  await expect(frame.getByRole('heading', { name: '关怀工作台' })).toBeVisible();
   await sendFromPortal(page, message());
   await expect.poll(() => page.evaluate(() =>
     (window as unknown as { hostResponses: unknown[] }).hostResponses.length)).toBe(1);
@@ -188,8 +190,78 @@ test('clears the old identity before auth.changed recheck and keeps failure visi
   await expect(frame.getByText('正在安全确认统一身份')).toBeVisible();
 });
 
+test('audit search clears on auth change and refetches only after capability is available', async ({ page }) => {
+  await configure(page);
+  let sessionVersion = 3;
+  let shell = authorizedShell;
+  let auditCalls = 0;
+  await page.unroute(/\/api\/v1\/identity-sessions\/current$/);
+  await page.route(/\/api\/v1\/identity-sessions\/current$/, (route) => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({
+      authenticated: true, sessionPseudonym: 'sp_RWxQcW41M2dSeHVIZ0JpYw', sessionVersion,
+      expiresAt: '2026-07-20T02:00:00Z', warningAt: '2026-07-20T01:55:00Z',
+      profileVersion: 'ISP-1.0.0',
+    }),
+  }));
+  await page.unroute(/\/api\/v1\/authorized-shell$/);
+  await page.route(/\/api\/v1\/authorized-shell$/, (route) => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify(shell),
+  }));
+  await page.route(/\/api\/v1\/audit-records\/search$/, (route) => {
+    auditCalls += 1;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      items: [{ fields: { recordId: `record-${auditCalls}` } }], page: 0, size: 25, total: 1,
+      asOfSequence: 42, sourceLedgerHead: 42, projectionWatermark: 42,
+      dataCutoffAt: '2026-07-20T00:00:00Z', retentionScheduleVersion: 'RS-1.0.0',
+      roleFieldPolicyVersion: 'RFP-1.0.0', projectionStatus: 'current',
+    }) });
+  });
+
+  await page.goto(`${PORTAL_ORIGIN}/`);
+  await page.evaluate(() => {
+    (window as unknown as { hostChallenges: unknown[] }).hostChallenges = [];
+    (window as unknown as { hostResponses: unknown[] }).hostResponses = [];
+  });
+  const applicationFrame = page.frames().find((frame) => frame !== page.mainFrame());
+  expect(applicationFrame).toBeDefined();
+  await applicationFrame!.goto(`${APP_ORIGIN}/scholarsense/audit/search`);
+  const frame = page.frameLocator('#scholarsense-frame');
+  await expect(frame.getByText('record-1')).toBeVisible();
+  await expect.poll(() => page.evaluate(() =>
+    (window as unknown as { hostChallenges: unknown[] }).hostChallenges.length)).toBeGreaterThan(0);
+  await sendFromPortal(page, message(), false);
+
+  sessionVersion = 4;
+  shell = {
+    ...authorizedShell,
+    evaluatedAt: '2026-07-20T00:01:00Z',
+    menuItems: authorizedShell.menuItems.map((item) => item.id === 'audit-search'
+      ? { ...item, providerState: 'unavailable' as const } : item),
+    entryCapabilities: authorizedShell.entryCapabilities.map((item) => item.id === 'audit-search'
+      ? { ...item, state: 'unavailable' as const } : item),
+  };
+  const callsBeforeRevocation = auditCalls;
+  await sendFromPortal(page, message({
+    eventType: 'auth.changed', messageId: '018f7b87-ee53-7942-9aec-d5948b86b831',
+    nonce: 'abcdefghijklmnopqrstuvwxyzABCDE7', payload: {},
+  }), false);
+  await expect(frame.getByText('记录不存在或当前用途无权查看。')).toBeVisible();
+  await expect(frame.getByRole('table')).toHaveCount(0);
+  expect(auditCalls).toBe(callsBeforeRevocation);
+
+  sessionVersion = 5;
+  shell = { ...authorizedShell, evaluatedAt: '2026-07-20T00:02:00Z' };
+  await sendFromPortal(page, message({
+    eventType: 'auth.changed', messageId: '018f7b87-ee53-7942-9aec-d5948b86b832',
+    nonce: 'abcdefghijklmnopqrstuvwxyzABCDE8', payload: {},
+  }), false);
+  await expect.poll(() => auditCalls).toBe(callsBeforeRevocation + 1);
+  await expect(frame.getByText(`record-${callsBeforeRevocation + 1}`)).toBeVisible();
+});
+
 test('routes runtime load failure to one persistent host recovery action', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-reference');
+  await installAuthorizedShellRoute(page);
   await page.route(/\/api\/v1\/identity-runtime$/, async (route) => route.fulfill({ status: 503 }));
   await page.route(/\/api\/v1\/identity-sessions\/current$/, async (route) => route.fulfill({
     status: 200, contentType: 'application/json',
@@ -227,7 +299,7 @@ test('stops accepting host commands after the five-second handshake deadline', a
 test('returns explicit failure for an unknown field and ignores a lookalike parent origin', async ({ page }) => {
   await configure(page);
   await page.goto(`${PORTAL_ORIGIN}/`);
-  await expect(page.frameLocator('#scholarsense-frame').getByRole('heading', { name: '统一身份已确认' }))
+  await expect(page.frameLocator('#scholarsense-frame').getByRole('heading', { name: '关怀工作台' }))
     .toBeVisible();
   await sendFromPortal(page, { ...message(), unexpectedField: 'forbidden' });
   await expect.poll(() => page.evaluate(() => (window as unknown as { hostResponses: unknown[] }).hostResponses.length))

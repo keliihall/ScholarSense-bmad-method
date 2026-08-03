@@ -1,0 +1,193 @@
+{
+  "version": "STORY-1.8-CANDIDATE-SUMMARY-1.0.0",
+  "storyId": "1.8",
+  "evidenceClass": "local-isolated-committed-candidate",
+  "result": "passed",
+  "workflowDisposition": "done",
+  "productionEligible": false,
+  "postRunRecord": true,
+  "includedInCandidate": false,
+  "reviewFindingsResolved": {
+    "high": 6,
+    "medium": 4,
+    "low": 2,
+    "total": 12
+  },
+  "candidate": {
+    "commit": "a14f88cd578685c114b8714c73473ccfc0503492",
+    "tree": "a12c8cfbaaccb3e1f4edd5249a661d04ab4c875c",
+    "parent": "3b811064fb24063532f90df8b532c1c4464e4e2b",
+    "ref": "refs/codex/review-candidates/story-1.8",
+    "worktreeClean": true,
+    "originalHeadUnchanged": true,
+    "originalIndexUnchanged": true,
+    "originalIndexSha256": "9e46f4d5f66fabd79918606eedee2153fe8b7e2234f27abfc6691427937333c4",
+    "normalizedManifestFileCount": 1768,
+    "normalizedManifestSha256": "e056ae478f15eae6b6962457a8391b0c51e9069226c45868b6a5c29134d6112c"
+  },
+  "execution": {
+    "startedAt": "2026-08-03T12:27:42+08:00",
+    "completedAt": "2026-08-03T12:45:00+08:00",
+    "timezone": "Asia/Shanghai",
+    "commands": [
+      {
+        "id": "bootstrap",
+        "command": "./scripts/bootstrap.sh",
+        "exitCode": 0,
+        "result": "passed",
+        "logBytes": 58109,
+        "logSha256": "be00c9c6e9901b5266939c87a4de15cedb9dbaef107c728d5a20ccc3ec34af3c"
+      },
+      {
+        "id": "verify",
+        "command": "./scripts/verify.sh",
+        "exitCode": 0,
+        "result": "passed",
+        "logBytes": 447445,
+        "logSha256": "acabe44d801873eca328fa40548d4ef7cbb72668cf270107449000a776dcd3b1"
+      },
+      {
+        "id": "privacy-final",
+        "command": "python3 -B scripts/scan_privacy_canaries.py <candidate-logs> backend/target/classes backend/target/scholarsense-backend.jar backend/target/surefire-reports",
+        "exitCode": 0,
+        "result": "passed",
+        "logBytes": 87,
+        "logSha256": "21e666cbd9a558b19c254c886e106974d055e106353b5550577310e6f815ca54"
+      }
+    ]
+  },
+  "toolchain": {
+    "java": "OpenJDK 25.0.3",
+    "maven": "3.9.16",
+    "node": "24.18.0",
+    "npm": "11.16.0",
+    "python": "3.14.6",
+    "postgresql": "18.4",
+    "git": "2.50.1 (Apple Git-155)",
+    "os": "macOS 26.5.2 arm64"
+  },
+  "testResults": {
+    "maven": {
+      "tests": 468,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "python": {
+      "bmadTests": 145,
+      "projectTests": 299,
+      "failures": 0
+    },
+    "postgresqlTargetTests": {
+      "tests": 70,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "frontendPerReplay": {
+      "vitestFiles": 9,
+      "vitestTests": 70,
+      "playwrightPassed": 113,
+      "designMatrixSkipped": 15,
+      "directVerifyCoreReplayCount": 2,
+      "initialRawTotal": 197834,
+      "reviewPatchTargetPlaywrightTests": 10
+    },
+    "approvedBrowserAuditSearch": {
+      "profiles": 4,
+      "viewportsPerProfile": 4,
+      "testsPerProfile": 36,
+      "failures": 0
+    }
+  },
+  "postgresql": {
+    "version": "18.4",
+    "migration": "V000009__identity-access__authorization_audit_context_v1.sql",
+    "migrationRange": "V000001..V000009",
+    "cleanUpgradeEquivalent": true,
+    "schemaFingerprint": "bccf4f372d54ecbe5d8a92d9b42074ffe836cedbbd97440aa9e755c705bf9099",
+    "schemaInventorySummary": "85|1380|1765|229|0|0",
+    "consumerInstalled": false,
+    "owner": "identity-access",
+    "applicable": "new authorization-decision audit writes after V000009",
+    "startWatermark": "not-applicable-synchronous-append-no-consumer",
+    "historicalReplay": "none-unrecoverable-fields-remain-null",
+    "reconciliation": "database-exact-key-constraint-and-11-key-postgresql-assertion",
+    "rollback": "forward-retain-nullable-column; N-1 writers omit it",
+    "retentionScheduleVersion": "RS-1.0.0"
+  },
+  "contractBindings": [
+    {
+      "id": "RoleField",
+      "version": "RFP-1.0.0",
+      "sha256": "84191d8b844b31ef91fb051d34d6731b80981d6d193e42b0f8d19f73caa9ed25"
+    },
+    {
+      "id": "RoleFieldFixture",
+      "version": "RFP-FIXTURE-1.0.0",
+      "sha256": "0f9ae9174dc67efaf4a2629fc0df68180b4a7ad7fc281629bd058202e3ba98e9"
+    },
+    {
+      "id": "FieldProjection",
+      "version": "FIELD-PROJECTION-CONTRACT-LOCK-1.0.0",
+      "sha256": "9b81341bab67d0c9c04858c90946c1184d5e02de67ff5c7752b3439b913ffee6"
+    },
+    {
+      "id": "AuthorizationAudit",
+      "version": "AUDIT-CONTRACT-LOCK-1.4.0",
+      "sha256": "5244325f843b534ff0535c83446d44399b1cf2af8c521ec80920b2863046ae5a"
+    },
+    {
+      "id": "RetentionSchedule",
+      "version": "RS-1.0.0",
+      "source": "delegated-decision-baseline-2026-07-17.md#8",
+      "sourceDocumentSha256": "94e0943902140ee0d3f79fceab711e1498a6186a0402f7a26bf7f20bf7c9d97a"
+    }
+  ],
+  "releaseContract": {
+    "releaseManifestFixtureValidated": true,
+    "releaseManifestCanonicalSha256": "e225537cacc67e29e820846f0673984e8c054a738c453ef0eb54049eaf6617a3",
+    "evidenceIndexFixtureValidated": true,
+    "artifactSetSha256": "9cd8929f5bbdd4999e99ff0edaca9f08f00078db214a70a486aafa20a3fa86ca",
+    "productionReleaseManifestClaim": "none",
+    "productionEvidenceIndexClaim": "none",
+    "signatureClaim": "none",
+    "promotionClaim": "none"
+  },
+  "runtimeEvidenceBoundary": {
+    "nfr13": "closed",
+    "fr6": "online-contributor-only",
+    "fr7": "task-window-contributor-only",
+    "nfr14": "online-scope-passed-export-pending-story-3.14b",
+    "nfr16": "story-1.8-surface-passed-global-pending-story-3.14b",
+    "migration": "V000009-metadata-sidecar",
+    "consumer": "none",
+    "export-job-download": {
+      "status": "pending-story-execution",
+      "ownerStory": "3.14a-3.14c",
+      "runtimeEvidenceClaim": "none"
+    },
+    "transfer-task": {
+      "status": "pending-story-execution",
+      "ownerStory": "3.4-3.10/5.x",
+      "runtimeEvidenceClaim": "none"
+    },
+    "mobile-projection": {
+      "status": "pending-story-execution",
+      "ownerStory": "7.x",
+      "runtimeEvidenceClaim": "none"
+    }
+  },
+  "privacy": {
+    "canaryDefinitionCount": 5,
+    "aggregateFilesScanned": 21157,
+    "aggregateBytesScanned": 157305976,
+    "archiveMembersScanned": 20091,
+    "maxArchiveMembers": 100000,
+    "maxArchiveUncompressedBytes": 1073741824,
+    "matches": 0,
+    "successfulUnauthorizedReads": 0,
+    "plaintextOutputs": 0,
+    "auditBypasses": 0
+  }
+}

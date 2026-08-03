@@ -1,0 +1,12 @@
+{
+  "version": "AUDIT-CONTRACT-LOCK-1.4.0",
+  "sourceBaselineCommit": "932cd8d3fbe7656ffe73d7404339af74cee9d72a",
+  "files": [
+    {"path": "contracts/audit/action-catalog-1.4.0.json", "sha256": "1b4015290ae5184d20ff39beda5e2ab40127fdfb02272d5144b1c4d008b9578d"},
+    {"path": "contracts/audit/action-catalog-1.4.schema.json", "sha256": "12051b0331d63bb58f17848892d239928baa211c1dba1d8cafe7c7a58c8d8a47"},
+    {"path": "contracts/audit/authorization-audit-context.schema.json", "sha256": "622118432b25333ed2fcce12ab245d79bd0d8a67acf1efde86299f547d4bdcbc"},
+    {"path": "contracts/audit/fixtures/valid/authorization-decision.json", "sha256": "a3cad05c4cb9f6c7d4f53f334fd73d58b1e823adb7097c31728a8d14c359856a"},
+    {"path": "contracts/audit/identity-access-vocabulary-1.4.0.json", "sha256": "7590d7f10b01de63d01dec73470195098754d7cd23b8a1c01a2d2c4aa99637ed"},
+    {"path": "contracts/audit/identity-access-vocabulary-1.4.schema.json", "sha256": "b81e6d7548c132451aafb21155600911bfd3e7d201f808a149c17015879598dd"}
+  ]
+}

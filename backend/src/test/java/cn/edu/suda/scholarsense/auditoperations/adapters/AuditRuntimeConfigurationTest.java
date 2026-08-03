@@ -109,4 +109,38 @@ class AuditRuntimeConfigurationTest {
                         Instant.parse("2026-07-22T10:00:30Z"),
                         "evidence://signed/clock/campus-ntp-a.json"))).now());
     }
+
+    @Test
+    void onlineOwnerEvidenceSupportsOnlyTheTwoApprovedAuditProjectionContexts() {
+        var owner = new AuditOnlineConfiguration().auditSearchObjectEvidence();
+        var account = java.util.UUID.fromString("019c1234-0000-7000-8000-000000000701");
+        var query = new cn.edu.suda.scholarsense.identityaccess.api.AuthorizationObjectEvidenceQuery(
+                "session-pseudonym",
+                account,
+                java.util.Set.of(),
+                "AGGREGATE_REPORT",
+                "audit.search-business-metadata",
+                "a".repeat(64),
+                9,
+                java.time.Instant.parse("2026-08-02T00:00:00Z"));
+
+        var evidence = owner.resolve(query);
+        assertEquals(
+                cn.edu.suda.scholarsense.identityaccess.api.AuthorizationEvidenceAvailability.AVAILABLE,
+                evidence.availability());
+        assertEquals(9, evidence.objectVersion());
+        assertEquals(
+                java.util.Set.of(cn.edu.suda.scholarsense.identityaccess.api.AuthorizationScopeAnchor
+                        .SCHOOL_GOVERNANCE),
+                evidence.scopeEvidence().stream().map(
+                        cn.edu.suda.scholarsense.identityaccess.api.AuthorizationScopeEvidence::anchor)
+                        .collect(java.util.stream.Collectors.toSet()));
+
+        assertEquals(
+                cn.edu.suda.scholarsense.identityaccess.api.AuthorizationEvidenceAvailability.NOT_INSTALLED,
+                owner.resolve(new cn.edu.suda.scholarsense.identityaccess.api.AuthorizationObjectEvidenceQuery(
+                        "session-pseudonym", account, java.util.Set.of(), "AGGREGATE_REPORT",
+                        "audit.search-technical-metadata", "a".repeat(64), 9,
+                        java.time.Instant.parse("2026-08-02T00:00:00Z"))).availability());
+    }
 }

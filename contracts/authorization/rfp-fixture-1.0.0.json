@@ -1,0 +1,53 @@
+{
+  "$schema": "./rfp-fixture.schema.json",
+  "fixtureVersion": "RFP-FIXTURE-1.0.0",
+  "policyVersion": "RFP-1.0.0",
+  "serverNow": "2026-07-17T08:00:00Z",
+  "subjects": [
+    {"subjectId": "SUBJECT-R1", "roleIds": ["R1"], "identityVersion": 11, "responsibilityVersion": 21, "invalidationVersion": 3},
+    {"subjectId": "SUBJECT-R2", "roleIds": ["R2"], "identityVersion": 12, "responsibilityVersion": 22, "invalidationVersion": 3},
+    {"subjectId": "SUBJECT-R3", "roleIds": ["R3"], "identityVersion": 13, "responsibilityVersion": 23, "invalidationVersion": 3},
+    {"subjectId": "SUBJECT-R4", "roleIds": ["R4"], "identityVersion": 14, "responsibilityVersion": 24, "invalidationVersion": 3},
+    {"subjectId": "SUBJECT-R5", "roleIds": ["R5"], "identityVersion": 15, "responsibilityVersion": 25, "invalidationVersion": 3},
+    {"subjectId": "SUBJECT-R6", "roleIds": ["R6"], "identityVersion": 16, "responsibilityVersion": 26, "invalidationVersion": 3},
+    {"subjectId": "SUBJECT-R7", "roleIds": ["R7"], "identityVersion": 17, "responsibilityVersion": 27, "invalidationVersion": 3},
+    {"subjectId": "SUBJECT-R1+R2", "roleIds": ["R1", "R2"], "identityVersion": 18, "responsibilityVersion": 28, "invalidationVersion": 3},
+    {"subjectId": "SUBJECT-R1+R7", "roleIds": ["R1", "R7"], "identityVersion": 19, "responsibilityVersion": 29, "invalidationVersion": 3}
+  ],
+  "objects": [
+    {"objectToken": "CASE-A", "objectClass": "Clue", "objectVersion": 7, "anchors": ["current-responsibility"], "fieldAllowlist": []},
+    {"objectToken": "CASE-B", "objectClass": "Clue", "objectVersion": 4, "anchors": [], "fieldAllowlist": []},
+    {"objectToken": "WORKITEM-A", "objectClass": "Task", "objectVersion": 2, "anchors": ["governance-work-item"], "fieldAllowlist": []},
+    {"objectToken": "TRANSFER-A", "objectClass": "TransferOrder", "objectVersion": 9, "anchors": ["current-transfer-assignment", "initiator"], "purpose": "STUDENT_SUPPORT_REFERRAL", "fieldAllowlist": ["studentContactPhone", "requestedServiceCode", "referralSummary", "resultSummary"], "taskWindow": {"startAt": "2026-07-17T07:00:00Z", "endAt": "2026-07-17T09:00:00Z"}},
+    {"objectToken": "TRANSFER-B", "objectClass": "TransferOrder", "objectVersion": 5, "anchors": ["initiator"], "purpose": "STUDENT_SUPPORT_REFERRAL", "fieldAllowlist": [], "taskWindow": {"startAt": "2026-07-17T09:00:00Z", "endAt": "2026-07-17T10:00:00Z"}},
+    {"objectToken": "REPORT-COL-A", "objectClass": "AggregateReport", "objectVersion": 3, "anchors": ["college-aggregate"], "fieldAllowlist": []},
+    {"objectToken": "REPORT-SCHOOL", "objectClass": "AggregateReport", "objectVersion": 8, "anchors": ["school-aggregate", "school-governance"], "fieldAllowlist": []},
+    {"objectToken": "RULE-1", "objectClass": "Rule", "objectVersion": 6, "anchors": ["school-governance"], "fieldAllowlist": []},
+    {"objectToken": "DQ-A", "objectClass": "QualitySnapshot", "objectVersion": 12, "anchors": ["owned-source"], "fieldAllowlist": []},
+    {"objectToken": "DQ-B", "objectClass": "QualitySnapshot", "objectVersion": 13, "anchors": [], "fieldAllowlist": []},
+    {"objectToken": "JOB-1", "objectClass": "Job", "objectVersion": 2, "anchors": ["technical-object"], "fieldAllowlist": []}
+  ],
+  "oracle": [
+    {"scenarioId": "R1-CASE-A", "subjectId": "SUBJECT-R1", "objectToken": "CASE-A", "actionId": "care.read", "expectedResult": "ALLOW", "expectedReason": "ROLE_SCOPE_MATCHED", "expectedFieldVisibility": {"B": "C", "I": "C", "C": "C", "S": "C", "E": "C", "N": "C", "G": "C", "T": "M"}},
+    {"scenarioId": "R1-CASE-B", "subjectId": "SUBJECT-R1", "objectToken": "CASE-B", "actionId": "care.read", "expectedResult": "DENY", "expectedReason": "SCOPE_NOT_PROVEN"},
+    {"scenarioId": "R1-TRANSFER-A", "subjectId": "SUBJECT-R1", "objectToken": "TRANSFER-A", "actionId": "transfer.read", "expectedResult": "ALLOW", "expectedReason": "ROLE_SCOPE_MATCHED"},
+    {"scenarioId": "R2-REPORT-COL", "subjectId": "SUBJECT-R2", "objectToken": "REPORT-COL-A", "actionId": "aggregate.read", "expectedResult": "ALLOW", "expectedReason": "ROLE_SCOPE_MATCHED"},
+    {"scenarioId": "R2-CASE-A-WORKITEM", "subjectId": "SUBJECT-R2", "objectToken": "CASE-A", "actionId": "care.read", "additionalAnchors": ["governance-work-item"], "expectedResult": "ALLOW", "expectedReason": "ROLE_SCOPE_MATCHED", "expectedFieldVisibility": {"B": "C", "I": "M", "C": "H", "S": "H", "E": "M", "N": "H", "G": "C", "T": "M"}},
+    {"scenarioId": "R2-CASE-A-NO-WORKITEM", "subjectId": "SUBJECT-R2", "objectToken": "CASE-A", "actionId": "care.read", "expectedResult": "DENY", "expectedReason": "EXPLICIT_WORKITEM_REQUIRED"},
+    {"scenarioId": "R3-RULE-READ", "subjectId": "SUBJECT-R3", "objectToken": "RULE-1", "actionId": "governance.read", "expectedResult": "ALLOW", "expectedReason": "ROLE_SCOPE_MATCHED"},
+    {"scenarioId": "R3-RULE-PUBLISH", "subjectId": "SUBJECT-R3", "objectToken": "RULE-1", "actionId": "governance.publish", "expectedResult": "DENY", "expectedReason": "HRAP_APPROVAL_REQUIRED"},
+    {"scenarioId": "R3-AUDIT-BUSINESS", "subjectId": "SUBJECT-R3", "objectToken": "REPORT-SCHOOL", "actionId": "audit.search-business-metadata", "expectedResult": "ALLOW", "expectedReason": "ROLE_SCOPE_MATCHED"},
+    {"scenarioId": "R4-SCHOOL-REPORT", "subjectId": "SUBJECT-R4", "objectToken": "REPORT-SCHOOL", "actionId": "aggregate.read", "expectedResult": "ALLOW", "expectedReason": "ROLE_SCOPE_MATCHED"},
+    {"scenarioId": "R4-CASE-A", "subjectId": "SUBJECT-R4", "objectToken": "CASE-A", "actionId": "care.read", "expectedResult": "DENY", "expectedReason": "EXPLICIT_INDIVIDUAL_DRILLDOWN_DENIED"},
+    {"scenarioId": "R5-TRANSFER-A", "subjectId": "SUBJECT-R5", "objectToken": "TRANSFER-A", "actionId": "transfer.process", "expectedResult": "ALLOW", "expectedReason": "ROLE_SCOPE_MATCHED"},
+    {"scenarioId": "R5-TRANSFER-B", "subjectId": "SUBJECT-R5", "objectToken": "TRANSFER-B", "actionId": "transfer.process", "expectedResult": "DENY", "expectedReason": "TASK_WINDOW_INACTIVE"},
+    {"scenarioId": "R6-DQ-A", "subjectId": "SUBJECT-R6", "objectToken": "DQ-A", "actionId": "data-quality.read", "expectedResult": "ALLOW", "expectedReason": "ROLE_SCOPE_MATCHED"},
+    {"scenarioId": "R6-DQ-B", "subjectId": "SUBJECT-R6", "objectToken": "DQ-B", "actionId": "data-quality.read", "expectedResult": "DENY", "expectedReason": "SCOPE_NOT_PROVEN"},
+    {"scenarioId": "R7-JOB-1", "subjectId": "SUBJECT-R7", "objectToken": "JOB-1", "actionId": "platform.read", "expectedResult": "ALLOW", "expectedReason": "ROLE_SCOPE_MATCHED"},
+    {"scenarioId": "R7-CASE-A", "subjectId": "SUBJECT-R7", "objectToken": "CASE-A", "actionId": "care.read", "expectedResult": "DENY", "expectedReason": "EXPLICIT_BUSINESS_OBJECT_DENIED"},
+    {"scenarioId": "R1R2-CASE-A", "subjectId": "SUBJECT-R1+R2", "objectToken": "CASE-A", "actionId": "care.read", "additionalAnchors": ["governance-work-item"], "expectedResult": "ALLOW", "expectedReason": "ROLE_SCOPE_MATCHED", "expectedFieldVisibility": {"B": "C", "I": "M", "C": "H", "S": "H", "E": "M", "N": "H", "G": "C", "T": "M"}},
+    {"scenarioId": "R1R7-CASE-A", "subjectId": "SUBJECT-R1+R7", "objectToken": "CASE-A", "actionId": "care.read", "expectedResult": "ALLOW", "expectedReason": "ROLE_SCOPE_MATCHED", "expectedFieldVisibility": {"B": "C", "I": "C", "C": "C", "S": "C", "E": "C", "N": "C", "G": "C", "T": "M"}},
+    {"scenarioId": "UNKNOWN-ACTION", "subjectId": "SUBJECT-R1", "objectToken": "CASE-A", "actionId": "care.delete", "expectedResult": "DENY", "expectedReason": "ACTION_UNKNOWN"},
+    {"scenarioId": "LITERAL-SLASH-ACTION", "subjectId": "SUBJECT-R1", "objectToken": "CASE-A", "actionId": "care.read/candidate.review", "expectedResult": "DENY", "expectedReason": "ACTION_NOT_EXPANDED"}
+  ]
+}

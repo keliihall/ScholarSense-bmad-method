@@ -97,13 +97,14 @@ public final class JdbcSearchAuditRepository implements SearchAuditPort {
                 "RS-1.0.0");
         LocalAuditOutboxRecord outbox = LocalAuditOutboxRecord.forFact(eventId, fact, recordedAt);
         String factJson = factCodec.writeFact(fact);
+        String localEvidenceJson = localEvidence(event, recordedAt);
         String envelopeJson = envelope(outbox, factJson);
         transactions.executeWithoutResult(status -> {
             jdbc.update("""
                     insert into audit_operations.ao_local_audit_fact (
                       audit_id, fact, filter_category_digest, created_at)
                     values (?, cast(? as jsonb), ?, ?)
-                    """, auditId, factJson, event.filterDigest(), Timestamp.from(recordedAt));
+                    """, auditId, localEvidenceJson, event.filterDigest(), Timestamp.from(recordedAt));
             jdbc.update("""
                     insert into audit_operations.ao_local_audit_outbox (
                       event_id, audit_id, event_type, schema_version, envelope,
@@ -112,6 +113,26 @@ public final class JdbcSearchAuditRepository implements SearchAuditPort {
                     """, eventId, auditId, outbox.eventType(), outbox.schemaVersion(), envelopeJson,
                     Timestamp.from(recordedAt), Timestamp.from(recordedAt));
         });
+    }
+
+    private String localEvidence(SearchAuditEvent event, Instant recordedAt) {
+        try {
+            Map<String, Object> evidence = new LinkedHashMap<>();
+            evidence.put("schemaVersion", "AUDIT-SEARCH-LOCAL-EVIDENCE-1.0.0");
+            evidence.put("action", event.action());
+            evidence.put("outcome", event.outcome());
+            evidence.put("errorCode", event.errorCode());
+            evidence.put("filterTypes", event.filterTypes());
+            evidence.put("filterDigest", event.filterDigest());
+            evidence.put("asOfSequence", event.asOfSequence());
+            evidence.put("traceId", event.traceId());
+            evidence.put("occurredAt", event.occurredAt().toString());
+            evidence.put("recordedAt", recordedAt.toString());
+            evidence.put("roleFieldPolicyVersion", "RFP-1.0.0");
+            return json.writeValueAsString(evidence);
+        } catch (JacksonException failure) {
+            throw new IllegalStateException("AUDIT_SEARCH_AUDIT_SERIALIZATION_FAILED", failure);
+        }
     }
 
     private String envelope(LocalAuditOutboxRecord outbox, String factJson) {

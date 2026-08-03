@@ -1,0 +1,11 @@
+{
+  "version": "FIELD-PROJECTION-CONTRACT-LOCK-1.0.0",
+  "sourceBaselineCommit": "3b811064fb24063532f90df8b532c1c4464e4e2b",
+  "files": [
+    {"path": "contracts/field-projection/field-projection.schema.json", "sha256": "2a21e1c7285c9956ff15123ba0b4df011fe4e99440a1c34414a75dd7d6118c28"},
+    {"path": "contracts/field-projection/field-projection-fixture.schema.json", "sha256": "da39d2bf426a4e5c84a329301e154d00333026eca19c1e5027607cc8a54f5edb"},
+    {"path": "contracts/field-projection/field-projection-policy-binding-1.0.0.json", "sha256": "5a0592296a43049bf745f9e826df65dc3f4b0479cea17fd822e98ac04d92f880"},
+    {"path": "contracts/field-projection/fixtures/valid/field-projection-oracle-1.0.0.json", "sha256": "123350691bf4ae29cb5cfefdb4a3b305f466da568572b94df3bac770c3f50785"},
+    {"path": "contracts/field-projection/fixtures/invalid/negative-fixtures-1.0.0.json", "sha256": "75f94f3e2e2d4ffad24782168b720c9151eebae8a555b02d98f03678373d200b"}
+  ]
+}

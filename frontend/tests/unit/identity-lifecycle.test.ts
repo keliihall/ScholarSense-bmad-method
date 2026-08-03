@@ -5,7 +5,11 @@ import { VolatileClientState } from '../../src/app/state/volatile-client-state';
 import { IdentityLifecycleCoordinator } from '../../src/domains/identity-access';
 
 describe('identity lifecycle teardown', () => {
-  it.each(['logout', 'account-switch', 'refresh', 'host-session-invalid'] as const)(
+  it.each([
+    'logout', 'account-switch', 'refresh', 'host-session-invalid',
+    'auth-changed', 'authorization-revoked', 'responsibility-invalid',
+    'authorization-version-change',
+  ] as const)(
     'clears all volatile boundaries on %s',
     (event) => {
       const query = new QueryClient();
@@ -13,9 +17,10 @@ describe('identity lifecycle teardown', () => {
       const volatile = new VolatileClientState(query);
       volatile.setDraft('continuation-proof', { opaque: true });
       const clearIdentity = vi.fn();
+      const clearAuthorization = vi.fn();
       const clearReplayCache = vi.fn();
       const coordinator = new IdentityLifecycleCoordinator(
-        volatile, clearIdentity, { clearReplayCache },
+        volatile, clearIdentity, clearAuthorization, { clearReplayCache },
       );
 
       coordinator.clear(event);
@@ -23,6 +28,7 @@ describe('identity lifecycle teardown', () => {
       expect(query.getQueryCache().getAll()).toHaveLength(0);
       expect(volatile.draftCount).toBe(0);
       expect(clearIdentity).toHaveBeenCalledOnce();
+      expect(clearAuthorization).toHaveBeenCalledOnce();
       expect(clearReplayCache).toHaveBeenCalledOnce();
     },
   );

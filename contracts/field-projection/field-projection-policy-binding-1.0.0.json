@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "FIELD-PROJECTION-1.0.0",
+  "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.0.0",
+  "status": "approved",
+  "unknownSemantics": "fail-closed",
+  "roleFieldPolicy": {
+    "version": "RFP-1.0.0",
+    "path": "contracts/authorization/role-field-policy-rfp-1.0.0.json",
+    "sha256": "84191d8b844b31ef91fb051d34d6731b80981d6d193e42b0f8d19f73caa9ed25"
+  },
+  "maskProfiles": {
+    "boolean": {"fixedValue": false, "lengthIndependent": true, "accessibleLabel": "已脱敏"},
+    "category": {"fixedValue": "[MASKED-CATEGORY]", "lengthIndependent": true, "accessibleLabel": "已脱敏"},
+    "code": {"fixedValue": "[MASKED-CODE]", "lengthIndependent": true, "accessibleLabel": "已脱敏"},
+    "identity": {"fixedValue": "[MASKED-IDENTITY]", "lengthIndependent": true, "accessibleLabel": "已脱敏"},
+    "narrative": {"fixedValue": "[MASKED-NARRATIVE]", "lengthIndependent": true, "accessibleLabel": "已脱敏"},
+    "technical": {"fixedValue": "[MASKED-TECHNICAL]", "lengthIndependent": true, "accessibleLabel": "已脱敏"},
+    "timestamp": {"fixedValue": "[MASKED-TIME]", "lengthIndependent": true, "accessibleLabel": "已脱敏"}
+  },
+  "fields": [
+    {"name": "recordId", "fieldClass": "B", "valueType": "string", "globalHidden": false},
+    {"name": "ledgerSequence", "fieldClass": "B", "valueType": "integer", "globalHidden": false},
+    {"name": "occurredAt", "fieldClass": "B", "valueType": "timestamp", "maskProfile": "timestamp", "globalHidden": false},
+    {"name": "outcome", "fieldClass": "B", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "factSchemaVersion", "fieldClass": "B", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "policyVersion", "fieldClass": "B", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "retentionScheduleVersion", "fieldClass": "B", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "actorDisplayRef", "fieldClass": "I", "valueType": "string", "maskProfile": "identity", "globalHidden": false},
+    {"name": "objectDisplayRef", "fieldClass": "I", "valueType": "string", "maskProfile": "identity", "globalHidden": false},
+    {"name": "businessActionCategory", "fieldClass": "G", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "businessObjectCategory", "fieldClass": "G", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "rolePackageSummary", "fieldClass": "G", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "projectionScope", "fieldClass": "G", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "producerModule", "fieldClass": "T", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "eventType", "fieldClass": "T", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "reasonCode", "fieldClass": "T", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "traceId", "fieldClass": "T", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "integrityStatus", "fieldClass": "T", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "archiveStatus", "fieldClass": "T", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "projectionStatus", "fieldClass": "T", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "sourceNetworkRecorded", "fieldClass": "T", "valueType": "boolean", "maskProfile": "boolean", "globalHidden": false},
+
+    {"name": "transferOrderId", "fieldClass": "B", "valueType": "string", "globalHidden": false},
+    {"name": "status", "fieldClass": "B", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "startAt", "fieldClass": "B", "valueType": "timestamp", "maskProfile": "timestamp", "globalHidden": false},
+    {"name": "endAt", "fieldClass": "B", "valueType": "timestamp", "maskProfile": "timestamp", "globalHidden": false},
+    {"name": "studentDisplayRef", "fieldClass": "I", "valueType": "string", "maskProfile": "identity", "globalHidden": false},
+    {"name": "studentContactPhone", "fieldClass": "C", "valueType": "string", "maskProfile": "identity", "globalHidden": false},
+    {"name": "studentContactEmail", "fieldClass": "C", "valueType": "string", "maskProfile": "identity", "globalHidden": false},
+    {"name": "referralReasonCode", "fieldClass": "S", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "requestedServiceCode", "fieldClass": "S", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "urgencyLevel", "fieldClass": "E", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "referralSummary", "fieldClass": "N", "valueType": "string", "maskProfile": "narrative", "globalHidden": false},
+    {"name": "supplementRequestText", "fieldClass": "N", "valueType": "string", "maskProfile": "narrative", "globalHidden": false},
+    {"name": "resultSummary", "fieldClass": "N", "valueType": "string", "maskProfile": "narrative", "globalHidden": false},
+    {"name": "departmentCategory", "fieldClass": "G", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "objectVersion", "fieldClass": "T", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "transferPolicyVersion", "fieldClass": "T", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "keyVersion", "fieldClass": "T", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+
+    {"name": "exceptionId", "fieldClass": "B", "valueType": "string", "globalHidden": false},
+    {"name": "subjectOfficialRef", "fieldClass": "I", "valueType": "string", "maskProfile": "identity", "globalHidden": false},
+    {"name": "exceptionCode", "fieldClass": "E", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "sourceSystem", "fieldClass": "E", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "sourceOwner", "fieldClass": "G", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "detectedAt", "fieldClass": "T", "valueType": "timestamp", "maskProfile": "timestamp", "globalHidden": false},
+
+    {"name": "diagnosisText", "fieldClass": "N", "valueType": "string", "globalHidden": true},
+    {"name": "counselingText", "fieldClass": "N", "valueType": "string", "globalHidden": true},
+    {"name": "evidenceBody", "fieldClass": "N", "valueType": "string", "globalHidden": true},
+    {"name": "networkContent", "fieldClass": "T", "valueType": "string", "globalHidden": true},
+    {"name": "thirdPartyContact", "fieldClass": "C", "valueType": "string", "globalHidden": true},
+    {"name": "keyValue", "fieldClass": "T", "valueType": "string", "globalHidden": true}
+  ],
+  "objectSchemas": [
+    {
+      "objectClass": "AuditSearchRecord",
+      "approvedPurposes": ["audit.search-business-metadata", "audit.search-technical-metadata"],
+      "fields": [
+        "recordId", "ledgerSequence", "occurredAt", "outcome", "factSchemaVersion",
+        "policyVersion", "retentionScheduleVersion", "actorDisplayRef", "objectDisplayRef",
+        "businessActionCategory", "businessObjectCategory", "rolePackageSummary", "projectionScope",
+        "producerModule", "eventType", "reasonCode", "traceId", "integrityStatus", "archiveStatus",
+        "projectionStatus", "sourceNetworkRecorded", "evidenceBody", "networkContent", "keyValue"
+      ]
+    },
+    {
+      "objectClass": "SubjectMappingException",
+      "approvedPurposes": ["subject-mapping-repair"],
+      "fields": [
+        "exceptionId", "status", "subjectOfficialRef", "exceptionCode", "sourceSystem",
+        "sourceOwner", "detectedAt", "evidenceBody", "keyValue"
+      ]
+    },
+    {
+      "objectClass": "TransferOrder",
+      "approvedPurposes": [
+        "transfer.read", "transfer.accept", "transfer.process", "transfer.request-supplement",
+        "transfer.fill-result", "transfer.close"
+      ],
+      "fields": [
+        "transferOrderId", "status", "startAt", "endAt", "studentDisplayRef",
+        "studentContactPhone", "studentContactEmail", "referralReasonCode", "requestedServiceCode",
+        "urgencyLevel", "referralSummary", "supplementRequestText", "resultSummary",
+        "departmentCategory", "objectVersion", "transferPolicyVersion", "keyVersion",
+        "diagnosisText", "counselingText", "evidenceBody", "networkContent", "thirdPartyContact", "keyValue"
+      ]
+    }
+  ],
+  "conditionalRules": {
+    "R2": {"individualReadRequiresCurrentWorkItem": true},
+    "R5": {
+      "objectClass": "TransferOrder",
+      "approvedPurposes": [
+        "transfer.read", "transfer.accept", "transfer.process", "transfer.request-supplement",
+        "transfer.fill-result", "transfer.close"
+      ],
+      "closedFieldUniverse": [
+        "studentContactPhone", "studentContactEmail", "referralReasonCode",
+        "requestedServiceCode", "referralSummary", "supplementRequestText", "resultSummary"
+      ],
+      "windowSemantics": "[startAt,endAt)",
+      "intersectionOrder": ["rfp", "object-schema", "field-allowlist", "purpose", "task-window", "base-authorization", "delegation"]
+    },
+    "R6": {
+      "objectClass": "SubjectMappingException",
+      "purpose": "subject-mapping-repair",
+      "requiresOwnedSource": true
+    },
+    "delegation": {"semantics": "intersection-only", "canExpand": false}
+  },
+  "globalHiddenFields": [
+    "diagnosisText", "counselingText", "evidenceBody", "networkContent", "thirdPartyContact", "keyValue"
+  ],
+  "projectionOrder": [
+    "current-composite-authorization", "approved-owner-catalog", "current-recheck",
+    "field-decision", "decrypt-clear-only", "safe-dto", "audit-commit", "serialize"
+  ],
+  "errors": [
+    {"condition": "denied-or-unknown", "status": 403, "code": "FIELD_PROJECTION_DENIED", "message": "请求的数据不可用"},
+    {"condition": "dependency-unavailable", "status": 503, "code": "FIELD_PROJECTION_DEPENDENCY_UNAVAILABLE", "message": "敏感数据服务暂不可用"},
+    {"condition": "decision-stale", "status": 409, "code": "FIELD_PROJECTION_DECISION_STALE", "message": "授权状态已变更"},
+    {"condition": "crypto-failed", "status": 503, "code": "FIELD_PROJECTION_CRYPTO_FAILED", "message": "敏感数据服务暂不可用"},
+    {"condition": "audit-commit-failed", "status": 503, "code": "FIELD_PROJECTION_AUDIT_COMMIT_FAILED", "message": "敏感数据服务暂不可用"}
+  ]
+}

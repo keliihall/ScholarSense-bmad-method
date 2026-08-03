@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/field-projection/field-projection.schema.json",
+  "title": "ScholarSense field projection policy binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "policyBindingVersion", "status", "unknownSemantics",
+    "roleFieldPolicy", "maskProfiles", "fields", "objectSchemas",
+    "conditionalRules", "globalHiddenFields", "projectionOrder", "errors"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "FIELD-PROJECTION-1.0.0"},
+    "policyBindingVersion": {"const": "FIELD-PROJECTION-POLICY-BINDING-1.0.0"},
+    "status": {"const": "approved"},
+    "unknownSemantics": {"const": "fail-closed"},
+    "roleFieldPolicy": {"$ref": "#/$defs/digestReference"},
+    "maskProfiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boolean", "category", "code", "identity", "narrative", "technical", "timestamp"],
+      "properties": {
+        "boolean": {"$ref": "#/$defs/maskProfile"},
+        "category": {"$ref": "#/$defs/maskProfile"},
+        "code": {"$ref": "#/$defs/maskProfile"},
+        "identity": {"$ref": "#/$defs/maskProfile"},
+        "narrative": {"$ref": "#/$defs/maskProfile"},
+        "technical": {"$ref": "#/$defs/maskProfile"},
+        "timestamp": {"$ref": "#/$defs/maskProfile"}
+      }
+    },
+    "fields": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/field"}
+    },
+    "objectSchemas": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/objectSchema"}
+    },
+    "conditionalRules": {
+      "type": "object", "additionalProperties": false,
+      "required": ["R2", "R5", "R6", "delegation"],
+      "properties": {
+        "R2": {
+          "type": "object", "additionalProperties": false,
+          "required": ["individualReadRequiresCurrentWorkItem"],
+          "properties": {"individualReadRequiresCurrentWorkItem": {"const": true}}
+        },
+        "R5": {
+          "type": "object", "additionalProperties": false,
+          "required": ["objectClass", "approvedPurposes", "closedFieldUniverse", "windowSemantics", "intersectionOrder"],
+          "properties": {
+            "objectClass": {"const": "TransferOrder"},
+            "approvedPurposes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "closedFieldUniverse": {"type": "array", "minItems": 7, "maxItems": 7, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "windowSemantics": {"const": "[startAt,endAt)"},
+            "intersectionOrder": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+          }
+        },
+        "R6": {
+          "type": "object", "additionalProperties": false,
+          "required": ["objectClass", "purpose", "requiresOwnedSource"],
+          "properties": {
+            "objectClass": {"const": "SubjectMappingException"},
+            "purpose": {"const": "subject-mapping-repair"},
+            "requiresOwnedSource": {"const": true}
+          }
+        },
+        "delegation": {
+          "type": "object", "additionalProperties": false,
+          "required": ["semantics", "canExpand"],
+          "properties": {
+            "semantics": {"const": "intersection-only"},
+            "canExpand": {"const": false}
+          }
+        }
+      }
+    },
+    "globalHiddenFields": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "projectionOrder": {
+      "const": [
+        "current-composite-authorization", "approved-owner-catalog", "current-recheck",
+        "field-decision", "decrypt-clear-only", "safe-dto", "audit-commit", "serialize"
+      ]
+    },
+    "errors": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/error"}
+    }
+  },
+  "$defs": {
+    "digestReference": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "path", "sha256"],
+      "properties": {
+        "version": {"const": "RFP-1.0.0"},
+        "path": {"const": "contracts/authorization/role-field-policy-rfp-1.0.0.json"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "maskProfile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fixedValue", "lengthIndependent", "accessibleLabel"],
+      "properties": {
+        "fixedValue": {"type": ["string", "boolean", "integer"]},
+        "lengthIndependent": {"const": true},
+        "accessibleLabel": {"const": "已脱敏"}
+      }
+    },
+    "field": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "fieldClass", "valueType", "globalHidden"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]*$"},
+        "fieldClass": {"enum": ["B", "I", "C", "S", "E", "N", "G", "T"]},
+        "valueType": {"enum": ["string", "integer", "boolean", "timestamp"]},
+        "maskProfile": {"type": "string", "minLength": 1},
+        "globalHidden": {"type": "boolean"}
+      }
+    },
+    "objectSchema": {
+      "type": "object", "additionalProperties": false,
+      "required": ["objectClass", "approvedPurposes", "fields"],
+      "properties": {
+        "objectClass": {"enum": ["AuditSearchRecord", "SubjectMappingException", "TransferOrder"]},
+        "approvedPurposes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "fields": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "error": {
+      "type": "object", "additionalProperties": false,
+      "required": ["condition", "status", "code", "message"],
+      "properties": {
+        "condition": {"type": "string", "minLength": 1},
+        "status": {"enum": [403, 409, 503]},
+        "code": {"type": "string", "pattern": "^FIELD_PROJECTION_[A-Z_]+$"},
+        "message": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

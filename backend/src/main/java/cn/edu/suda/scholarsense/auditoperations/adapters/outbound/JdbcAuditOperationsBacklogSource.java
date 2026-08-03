@@ -1,7 +1,7 @@
 package cn.edu.suda.scholarsense.auditoperations.adapters.outbound;
 
 import cn.edu.suda.scholarsense.auditoperations.api.AuditProducerBacklogPort;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditProducerBacklogSnapshot;
+import cn.edu.suda.scholarsense.shared.outbox.AuditProducerBacklogSnapshot;
 import cn.edu.suda.scholarsense.auditoperations.application.AuditSearchRelayClock;
 import java.sql.Timestamp;
 import org.springframework.jdbc.core.JdbcTemplate;

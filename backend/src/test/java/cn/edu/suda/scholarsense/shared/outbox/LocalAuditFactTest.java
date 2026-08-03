@@ -75,6 +75,28 @@ class LocalAuditFactTest {
     }
 
     @Test
+    void frozenV1FactRejectsSuccessorAuthorizationFields() {
+        LocalAuditFact valid = fact(List.of("R1"), Map.of());
+        Map<String, Object> successor = new java.util.LinkedHashMap<>(valid.authorizationContext());
+        successor.put("actionId", "care.read");
+        successor.put("fieldProjectionSummary", Map.of(
+                "B", "C", "I", "M", "C", "H", "S", "H",
+                "E", "M", "N", "H", "G", "C", "T", "M"));
+        successor.put("objectVersion", 7L);
+        successor.put("result", "ALLOW");
+
+        assertThrows(IllegalArgumentException.class, () -> new LocalAuditFact(
+                valid.auditId(), valid.schemaVersion(), valid.producerModule(), valid.actorType(),
+                valid.actorSearchToken(), valid.roleIds(), successor, valid.action(), valid.objectType(),
+                valid.objectSearchToken(), valid.outcome(), valid.reasonCode(), valid.purpose(),
+                valid.projectionScope(), valid.occurredAt(), valid.recordedAt(), valid.timeSourceProfile(),
+                valid.sourceIpSearchToken(), valid.tokenizationProfileVersion(), valid.keyVersion(),
+                valid.traceId(), valid.aggregateType(), valid.aggregateIdSearchToken(),
+                valid.aggregateVersion(), valid.idempotencyKeyDigest(), valid.policyVersions(),
+                valid.retentionScheduleVersion()));
+    }
+
+    @Test
     void notApplicableAuthorizationCannotCarryPolicyScopesOrGrants() {
         assertThrows(IllegalArgumentException.class, () -> new
                 cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditAuthorizationContext(

@@ -1,7 +1,7 @@
 package cn.edu.suda.scholarsense.identityaccess.adapters.outbound;
 
-import cn.edu.suda.scholarsense.auditoperations.api.AuditProducerBacklogPort;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditProducerBacklogSnapshot;
+import cn.edu.suda.scholarsense.shared.outbox.AuditProducerBacklogPort;
+import cn.edu.suda.scholarsense.shared.outbox.AuditProducerBacklogSnapshot;
 import cn.edu.suda.scholarsense.identityaccess.application.AuditRelayClock;
 import java.sql.Timestamp;
 import java.time.Instant;

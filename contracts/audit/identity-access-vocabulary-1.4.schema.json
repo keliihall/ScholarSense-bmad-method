@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/audit/identity-access-vocabulary-1.4.schema.json",
+  "title": "Identity-access authorization audit vocabulary successor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "version", "supersedes", "module", "roleIds", "scopeCodes", "purposes", "projectionScopes", "objectTypes", "aggregateTypes", "notApplicableReasons", "policyVersions"],
+  "properties": {
+    "$schema": {"const": "./identity-access-vocabulary-1.4.schema.json"},
+    "version": {"const": "IDENTITY-AUDIT-VOCABULARY-1.4.0"},
+    "supersedes": {"const": "IDENTITY-AUDIT-VOCABULARY-1.3.0"},
+    "module": {"const": "identity-access"},
+    "roleIds": {"const": ["R1", "R2", "R3", "R4", "R5", "R6", "R7"]},
+    "scopeCodes": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"type": "string"}},
+    "purposes": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "string"}},
+    "projectionScopes": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string"}},
+    "objectTypes": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string"}},
+    "aggregateTypes": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string"}},
+    "notApplicableReasons": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "policyVersions": {"type": "object", "additionalProperties": {"type": ["string", "array"]}}
+  }
+}

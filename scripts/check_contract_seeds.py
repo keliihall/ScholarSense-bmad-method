@@ -9,6 +9,8 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from check_authorization_contracts import validate as validate_authorization_contracts
+
 
 ENVIRONMENTS = ("dev", "test", "stage", "prod")
 AUDIT_REFERENCE_RESOURCES = {
@@ -88,6 +90,9 @@ def validate(project_root: Path) -> list[str]:
     _check_openapi(openapi, violations)
     _check_event(event, violations)
     _check_roles(root, roles, violations)
+    violations.extend(
+        validate_authorization_contracts(root, include_successors=False)
+    )
     return sorted(set(violations))
 
 

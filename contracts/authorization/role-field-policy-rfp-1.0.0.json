@@ -1,0 +1,156 @@
+{
+  "$schema": "./role-field-policy.schema.json",
+  "policyVersion": "RFP-1.0.0",
+  "fixtureVersion": "RFP-FIXTURE-1.0.0",
+  "status": "approved",
+  "evaluationOrder": [
+    "validate-effective-policy",
+    "match-role-object-action-scope",
+    "merge-allow",
+    "apply-explicit-deny-and-sod",
+    "merge-applicable-field-visibility"
+  ],
+  "unknownSemantics": "fail-closed",
+  "objectClasses": [
+    "Candidate", "Clue", "CareAction", "Observation", "Task", "TransferOrder",
+    "DelegationGrant", "AggregateReport", "Rule", "Tag", "Program", "Governance",
+    "Strategy", "Source", "Dependency", "QualitySnapshot", "RecoveryTask",
+    "SubjectMappingException", "Runtime", "Job", "Delivery", "Telemetry", "Config"
+  ],
+  "scopeAnchors": [
+    "current-responsibility", "valid-delegation-grant", "initiator", "college-aggregate",
+    "governance-work-item", "school-governance", "school-aggregate",
+    "current-transfer-assignment", "owned-source", "technical-object"
+  ],
+  "fieldClasses": ["B", "I", "C", "S", "E", "N", "G", "T"],
+  "visibilityOrder": ["C", "M", "H"],
+  "roles": [
+    {
+      "roleId": "R1",
+      "code": "COUNSELOR",
+      "objectClasses": ["Candidate", "Clue", "CareAction", "Observation", "Task", "TransferOrder", "DelegationGrant"],
+      "actions": ["care.read", "candidate.review", "clue.follow-up", "observation.manage", "transfer.submit", "transfer.read", "transfer.resubmit", "delegation.issue", "delegation.revoke"],
+      "scopeRules": [
+        {"objectClasses": ["Candidate", "Clue", "CareAction", "Observation", "Task"], "anyOfAnchors": ["current-responsibility", "valid-delegation-grant"]},
+        {"objectClasses": ["TransferOrder"], "anyOfAnchors": ["initiator"]},
+        {"objectClasses": ["DelegationGrant"], "anyOfAnchors": ["current-responsibility"]}
+      ],
+      "fieldVisibility": {"B": "C", "I": "C", "C": "C", "S": "C", "E": "C", "N": "C", "G": "C", "T": "M"},
+      "defaultSurfaceId": "care-workbench",
+      "priorityBand": "pending-responsibility"
+    },
+    {
+      "roleId": "R2",
+      "code": "COLLEGE-MANAGER",
+      "objectClasses": ["AggregateReport", "Candidate", "Clue", "CareAction", "Governance"],
+      "actions": ["aggregate.read", "aggregate.export", "care.read", "governance-action.record", "governance-action.manage"],
+      "scopeRules": [
+        {"objectClasses": ["AggregateReport", "Governance"], "anyOfAnchors": ["college-aggregate"]},
+        {"objectClasses": ["Candidate", "Clue", "CareAction"], "anyOfAnchors": ["governance-work-item"]}
+      ],
+      "fieldVisibility": {"B": "C", "I": "M", "C": "H", "S": "H", "E": "M", "N": "H", "G": "C", "T": "M"},
+      "defaultSurfaceId": "college-governance",
+      "priorityBand": "aggregate-situation"
+    },
+    {
+      "roleId": "R3",
+      "code": "STUDENT-AFFAIRS",
+      "objectClasses": ["Rule", "Tag", "Program", "Governance", "Strategy", "AggregateReport", "Candidate", "Clue", "CareAction"],
+      "actions": ["governance.read", "governance.edit", "governance.review", "governance.publish", "governance.rollback", "whitelist.change", "bulk.execute", "aggregate.read", "aggregate.export", "governance-action.record", "governance-action.manage", "audit.search-business-metadata", "sensitive-export.create", "sensitive-export.download"],
+      "scopeRules": [
+        {"objectClasses": ["Rule", "Tag", "Program", "Governance", "Strategy", "AggregateReport"], "anyOfAnchors": ["school-governance"]},
+        {"objectClasses": ["Candidate", "Clue", "CareAction"], "anyOfAnchors": ["governance-work-item"]}
+      ],
+      "fieldVisibility": {"B": "C", "I": "M", "C": "H", "S": "M", "E": "M", "N": "H", "G": "C", "T": "M"},
+      "defaultSurfaceId": "rule-operations-governance",
+      "priorityBand": "governance-quality"
+    },
+    {
+      "roleId": "R4",
+      "code": "SCHOOL-LEADER",
+      "objectClasses": ["AggregateReport", "Governance"],
+      "actions": ["aggregate.read", "aggregate.export", "governance-action.record", "governance-action.manage"],
+      "scopeRules": [{"objectClasses": ["AggregateReport", "Governance"], "anyOfAnchors": ["school-aggregate", "college-aggregate"]}],
+      "fieldVisibility": {"B": "C", "I": "H", "C": "H", "S": "H", "E": "H", "N": "H", "G": "C", "T": "M"},
+      "defaultSurfaceId": "school-dashboard",
+      "priorityBand": "aggregate-situation"
+    },
+    {
+      "roleId": "R5",
+      "code": "COLLABORATOR",
+      "objectClasses": ["TransferOrder"],
+      "actions": ["care.read", "transfer.read", "transfer.accept", "transfer.process", "transfer.request-supplement", "transfer.fill-result", "transfer.close"],
+      "scopeRules": [{"objectClasses": ["TransferOrder"], "anyOfAnchors": ["current-transfer-assignment"], "purposeRequired": true}],
+      "fieldVisibility": {"B": "C", "I": "C", "C": "C", "S": "C", "E": "M", "N": "C", "G": "H", "T": "M"},
+      "conditionalFieldRules": [
+        {"fieldClass": "C", "clearAllowlist": ["studentContactPhone", "studentContactEmail"]},
+        {"fieldClass": "S", "clearAllowlist": ["referralReasonCode", "requestedServiceCode"]},
+        {"fieldClass": "N", "clearAllowlist": ["referralSummary", "supplementRequestText", "resultSummary"]}
+      ],
+      "defaultSurfaceId": "collaboration-orders",
+      "priorityBand": "pending-responsibility"
+    },
+    {
+      "roleId": "R6",
+      "code": "DATA-OWNER",
+      "objectClasses": ["Source", "Dependency", "QualitySnapshot", "RecoveryTask", "SubjectMappingException"],
+      "actions": ["data-quality.read", "data-quality.repair", "data-quality.reconcile", "quality-fuse.recover", "platform.read-source", "sensitive-export.create", "sensitive-export.download"],
+      "scopeRules": [{"objectClasses": ["Source", "Dependency", "QualitySnapshot", "RecoveryTask", "SubjectMappingException"], "anyOfAnchors": ["owned-source"]}],
+      "fieldVisibility": {"B": "C", "I": "M", "C": "H", "S": "H", "E": "C", "N": "H", "G": "C", "T": "C"},
+      "conditionalFieldRules": [{"fieldClass": "I", "purpose": "SUBJECT_MAPPING_EXCEPTION_REPAIR", "visibility": "C", "otherwise": "M"}],
+      "defaultSurfaceId": "data-quality",
+      "priorityBand": "governance-quality"
+    },
+    {
+      "roleId": "R7",
+      "code": "PLATFORM-OPS",
+      "objectClasses": ["Runtime", "Job", "Delivery", "Telemetry", "Config"],
+      "actions": ["platform.read", "platform.diagnose", "platform.retry", "platform.reconcile", "role-binding.apply-approved", "audit.search-technical-metadata"],
+      "scopeRules": [{"objectClasses": ["Runtime", "Job", "Delivery", "Telemetry", "Config"], "anyOfAnchors": ["technical-object"]}],
+      "fieldVisibility": {"B": "C", "I": "H", "C": "H", "S": "H", "E": "H", "N": "H", "G": "M", "T": "C"},
+      "defaultSurfaceId": "technical-operations",
+      "priorityBand": "system-administration"
+    }
+  ],
+  "explicitDenies": [
+    {"roleId": "R2", "objectClasses": ["Candidate", "Clue", "CareAction"], "reason": "EXPLICIT_WORKITEM_REQUIRED"},
+    {"roleId": "R4", "objectClasses": ["Candidate", "Clue", "CareAction", "Observation", "Task", "TransferOrder"], "reason": "EXPLICIT_INDIVIDUAL_DRILLDOWN_DENIED"},
+    {"roleId": "R7", "objectClasses": ["Candidate", "Clue", "CareAction", "Observation", "Task", "TransferOrder", "DelegationGrant"], "reason": "EXPLICIT_BUSINESS_OBJECT_DENIED"}
+  ],
+  "separationOfDuty": [
+    {"ruleId": "SOD-1", "condition": "actor-applies-or-approves-own-role-binding", "result": "DENY"}
+  ],
+  "hrapRequiredActions": [
+    "delegation.issue", "delegation.revoke", "whitelist.change", "bulk.execute",
+    "Rule:governance.publish", "Rule:governance.rollback",
+    "Strategy:governance.publish", "Strategy:governance.rollback",
+    "governance-action.record", "sensitive-export.create", "sensitive-export.download",
+    "quality-fuse.recover", "transfer.submit"
+  ],
+  "hrapMappings": {
+    "delegation.issue": "temporary-grant.issue",
+    "delegation.revoke": "temporary-grant.revoke",
+    "whitelist.change": "whitelist.create-or-change",
+    "bulk.execute": "bulk-governance.execute",
+    "Rule:governance.publish": "rule.publish",
+    "Rule:governance.rollback": "rule.rollback",
+    "Strategy:governance.publish": "strategy.publish",
+    "Strategy:governance.rollback": "strategy.rollback",
+    "governance-action.record": "leader-action.record",
+    "sensitive-export.create": "sensitive-export.create",
+    "sensitive-export.download": "sensitive-export.download",
+    "quality-fuse.recover": "quality-fuse.recover",
+    "transfer.submit": "transfer.submit"
+  },
+  "defaultSurfaceSelection": {
+    "priorityBands": ["pending-responsibility", "governance-quality", "aggregate-situation", "system-administration"],
+    "stableTieBreaker": ["R1", "R5", "R3", "R6", "R2", "R4", "R7"],
+    "changeRule": "requires-rfp-successor"
+  },
+  "delegationSemantics": {
+    "timeWindow": "[startAt,endAt)",
+    "effectivePermission": "base-intersection-grant",
+    "preCommitRecheck": ["relation", "grant", "policy", "objectVersion"],
+    "mayExpand": false
+  }
+}

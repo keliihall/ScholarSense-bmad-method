@@ -1,0 +1,12 @@
+{
+  "version": "AUTHORIZATION-NEGATIVE-FIXTURES-1.0.0",
+  "cases": [
+    {"caseId": "unknown-role", "mutation": "replace-role-id", "value": "R8", "expectedReason": "AUTHORIZATION_ROLE_SET_INVALID"},
+    {"caseId": "unknown-object", "mutation": "append-object-class", "value": "UnknownObject", "expectedReason": "AUTHORIZATION_OBJECT_UNKNOWN"},
+    {"caseId": "unknown-action", "mutation": "append-action", "value": "care.delete", "expectedReason": "AUTHORIZATION_ACTION_UNKNOWN"},
+    {"caseId": "literal-slash", "mutation": "append-action", "value": "care.read/candidate.review", "expectedReason": "AUTHORIZATION_ACTION_NOT_EXPANDED"},
+    {"caseId": "unknown-field", "mutation": "append-field", "value": "X", "expectedReason": "AUTHORIZATION_FIELD_MATRIX_INVALID"},
+    {"caseId": "missing-policy-version", "mutation": "remove-policy-version", "expectedReason": "AUTHORIZATION_POLICY_VERSION_INVALID"},
+    {"caseId": "missing-hrap-mapping", "mutation": "remove-hrap-mapping", "value": "transfer.submit", "expectedReason": "AUTHORIZATION_HRAP_MAPPING_INVALID"}
+  ]
+}

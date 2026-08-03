@@ -1,8 +1,8 @@
 package cn.edu.suda.scholarsense.identityaccess.application;
 
-import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityPort;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityResult;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityState;
+import cn.edu.suda.scholarsense.shared.time.AuditAvailabilityPort;
+import cn.edu.suda.scholarsense.shared.time.AuditAvailabilityResult;
+import cn.edu.suda.scholarsense.shared.time.AuditAvailabilityState;
 import cn.edu.suda.scholarsense.identityaccess.domain.IdentityAccessException;
 import java.time.Instant;
 import java.util.Objects;

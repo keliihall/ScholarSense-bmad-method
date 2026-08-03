@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/audit/authorization-audit-context.schema.json",
+  "title": "Minimal authorization decision audit context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["actorPseudonym", "rolePackages", "actionId", "objectTokenDigest", "policyVersion", "scopeAnchorSummary", "objectVersion", "fieldProjectionSummary", "result", "trustedAt", "traceId"],
+  "properties": {
+    "actorPseudonym": {"type": "string", "pattern": "^ast_v1_k[0-9]+_[0-9a-f]{64}$"},
+    "rolePackages": {"type": "array", "uniqueItems": true, "items": {"pattern": "^R[1-7]$"}},
+    "actionId": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"},
+    "objectTokenDigest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "policyVersion": {"const": "RFP-1.0.0"},
+    "scopeAnchorSummary": {"type": "array", "uniqueItems": true, "items": {"enum": ["CURRENT_RESPONSIBILITY", "GOVERNANCE_WORK_ITEM", "CURRENT_TRANSFER_ASSIGNMENT", "OWNED_SOURCE", "TECHNICAL_OBJECT", "VALID_DELEGATION_GRANT"]}},
+    "objectVersion": {"type": ["integer", "null"], "minimum": 1},
+    "fieldProjectionSummary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["B", "I", "C", "S", "E", "N", "G", "T"],
+      "properties": {
+        "B": {"enum": ["C", "M", "H"]}, "I": {"enum": ["C", "M", "H"]},
+        "C": {"enum": ["C", "M", "H"]}, "S": {"enum": ["C", "M", "H"]},
+        "E": {"enum": ["C", "M", "H"]}, "N": {"enum": ["C", "M", "H"]},
+        "G": {"enum": ["C", "M", "H"]}, "T": {"enum": ["C", "M", "H"]}
+      }
+    },
+    "result": {"enum": ["ALLOW", "DENY", "DEPENDENCY_UNAVAILABLE"]},
+    "trustedAt": {"type": "string", "format": "date-time"},
+    "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
+  }
+}

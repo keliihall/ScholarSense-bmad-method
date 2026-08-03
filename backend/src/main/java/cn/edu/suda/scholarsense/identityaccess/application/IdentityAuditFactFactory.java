@@ -13,6 +13,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public final class IdentityAuditFactFactory {
@@ -82,7 +83,10 @@ public final class IdentityAuditFactFactory {
                     "RS-1.0.0");
             LocalAuditOutboxRecord outbox = LocalAuditOutboxRecord.forFact(
                     UUID.fromString(UuidV7.generate(recorded.instant())), fact, recorded.instant());
-            return new IdentityAuditRecord(fact, outbox);
+            return new IdentityAuditRecord(
+                    fact,
+                    outbox,
+                    authorizationDecisionContext(request, actor, occurred));
         } catch (TrustedTimeException unavailable) {
             throw unavailable("IDENTITY_AUDIT_TIME_UNAVAILABLE");
         } catch (IdentityAccessException failure) {
@@ -134,6 +138,35 @@ public final class IdentityAuditFactFactory {
         } catch (NoSuchAlgorithmException impossible) {
             throw new IllegalStateException("SHA-256 unavailable", impossible);
         }
+    }
+
+    private static Optional<AuthorizationDecisionAuditContext> authorizationDecisionContext(
+            IdentityAuditRequest request,
+            AuditSearchToken actor,
+            TrustedTime occurred) {
+        IdentityAuditAuthorizationContext context = request.authorizationContext();
+        if (context.result() == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new AuthorizationDecisionAuditContext(
+                value(actor),
+                request.roleIds(),
+                context.actionId(),
+                digestUnlessAlreadyDigest(request.objectIdentity()),
+                context.policyVersion(),
+                context.scopeCodes(),
+                context.objectVersion(),
+                context.fieldProjectionSummary(),
+                context.result(),
+                occurred.instant(),
+                request.traceId()));
+    }
+
+    private static String digestUnlessAlreadyDigest(String value) {
+        if (value != null && value.matches("^[0-9a-f]{64}$")) {
+            return value;
+        }
+        return digestOrNull(value);
     }
 
     private static IdentityAccessException unavailable(String code) {

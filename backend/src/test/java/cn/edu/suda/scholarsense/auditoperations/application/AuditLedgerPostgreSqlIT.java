@@ -3,17 +3,43 @@ package cn.edu.suda.scholarsense.auditoperations.application;
 import static cn.edu.suda.scholarsense.auditoperations.AuditLedgerTestFixtures.NOW;
 import static cn.edu.suda.scholarsense.auditoperations.AuditLedgerTestFixtures.fact;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditEvidenceRepository;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditLedgerRepository;
+import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditSearchQueryRepository;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditVerificationRunRepository;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcAuditSearchProjectionWriter;
+import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.JdbcSearchAuditRepository;
 import cn.edu.suda.scholarsense.auditoperations.adapters.outbound.SpringAuditTransactionAdapter;
 import cn.edu.suda.scholarsense.auditoperations.domain.FindingCode;
+import cn.edu.suda.scholarsense.auditoperations.domain.AuditSearchCriteria;
+import cn.edu.suda.scholarsense.auditoperations.domain.AuditSearchView;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CurrentFieldProjectionService;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcSensitiveReadTransactionAdapter;
+import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationDecision;
+import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationDecisionToken;
+import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationOutcome;
+import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationRecheckDecision;
+import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationRecheckOutcome;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldProjectionPort;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldVisibility;
+import cn.edu.suda.scholarsense.identityaccess.application.FieldCiphertextEnvelope;
+import cn.edu.suda.scholarsense.identityaccess.application.SensitiveFieldCryptoContext;
+import cn.edu.suda.scholarsense.identityaccess.application.SensitiveFieldCryptoException;
+import cn.edu.suda.scholarsense.identityaccess.application.SensitiveFieldCryptoPort;
+import cn.edu.suda.scholarsense.identityaccess.application.SensitiveFieldCryptoService;
+import cn.edu.suda.scholarsense.identityaccess.application.WipeablePlaintext;
+import cn.edu.suda.scholarsense.identityaccess.domain.FieldProjectionCatalog;
+import cn.edu.suda.scholarsense.identityaccess.domain.FieldProjectionEvaluator;
+import cn.edu.suda.scholarsense.identityaccess.domain.RoleFieldPolicyCatalog;
+import cn.edu.suda.scholarsense.identityaccess.domain.RolePackage;
 import cn.edu.suda.scholarsense.shared.outbox.LocalAuditFact;
 import cn.edu.suda.scholarsense.shared.outbox.LocalAuditOutboxRecord;
+import cn.edu.suda.scholarsense.shared.time.TimeSourceProfile;
+import cn.edu.suda.scholarsense.shared.time.TrustedTime;
 import cn.edu.suda.scholarsense.runtime.JdbcAuditSearchCsrfProofAdapter;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -22,9 +48,13 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +67,19 @@ import tools.jackson.databind.ObjectMapper;
 
 /** Exact PostgreSQL 18.4 ledger evidence, launched only by run_audit_postgresql_tests.sh. */
 class AuditLedgerPostgreSqlIT {
+    private static final Set<String> R3_FIELDS = Set.of(
+            "recordId", "ledgerSequence", "occurredAt", "outcome", "factSchemaVersion",
+            "policyVersion", "retentionScheduleVersion", "actorDisplayRef", "objectDisplayRef",
+            "businessActionCategory", "businessObjectCategory", "rolePackageSummary",
+            "projectionScope", "producerModule", "eventType", "reasonCode", "traceId",
+            "integrityStatus", "archiveStatus", "projectionStatus", "sourceNetworkRecorded");
+    private static final Set<String> R7_FIELDS = Set.of(
+            "recordId", "ledgerSequence", "occurredAt", "outcome", "factSchemaVersion",
+            "policyVersion", "retentionScheduleVersion", "businessActionCategory",
+            "businessObjectCategory", "rolePackageSummary", "projectionScope", "producerModule",
+            "eventType", "reasonCode", "traceId", "integrityStatus", "archiveStatus",
+            "projectionStatus", "sourceNetworkRecorded");
+
     private DataSource dataSource;
     private JdbcTemplate jdbc;
     private AtomicLong identifiers;
@@ -77,6 +120,9 @@ class AuditLedgerPostgreSqlIT {
         jdbc.execute("drop trigger if exists audit_ledger_insert_failure "
                 + "on audit_operations.ao_audit_ledger");
         jdbc.execute("drop function if exists audit_operations.audit_ledger_insert_failure()");
+        jdbc.execute("drop trigger if exists audit_search_outbox_insert_failure "
+                + "on audit_operations.ao_local_audit_outbox");
+        jdbc.execute("drop function if exists audit_operations.audit_search_outbox_insert_failure()");
         identifiers = new AtomicLong(10_000);
         clockTicks = new AtomicLong();
     }
@@ -156,6 +202,126 @@ class AuditLedgerPostgreSqlIT {
                     order by occurred_at desc, ledger_sequence desc limit 10
                     """, String.class));
             assertTrue(plan.contains("ao_audit_search_projection_sort_idx"), plan);
+        }
+    }
+
+    @Test
+    void realR3R7SearchUsesPublicProjectionParameterizedFiltersAndFrozenSnapshot() {
+        AuditLedgerAppendService append = appendService(dataSource);
+        for (int index = 1; index <= 30; index++) append.append(searchSource(index));
+        AuditSearchService searches = searchService(dataSource);
+
+        AuditSearchPage first = searches.search(searchCriteria(
+                "actor-r3", AuditSearchView.BUSINESS, 0, 10, null, null, 2_001));
+        assertEquals(30L, first.asOfSequence());
+        assertEquals(30L, first.total());
+        assertEquals(10, first.items().size());
+        assertEquals(R3_FIELDS, first.items().getFirst().fields().keySet());
+        assertEquals("[MASKED-IDENTITY]", first.items().getFirst().fields().get("actorDisplayRef"));
+        assertEquals("[MASKED-TECHNICAL]", first.items().getFirst().fields().get("eventType"));
+        assertFalse(first.toString().contains("ast_v1_"));
+        assertFalse(first.toString().contains("ost_v1_"));
+
+        append.append(searchSource(31));
+        AuditSearchPage second = searches.search(searchCriteria(
+                "actor-r3", AuditSearchView.BUSINESS, 1, 10, first.asOfSequence(), null, 2_002));
+        Set<Long> firstSequences = sequences(first);
+        Set<Long> secondSequences = sequences(second);
+        assertEquals(30L, second.total());
+        assertTrue(firstSequences.stream().noneMatch(secondSequences::contains));
+        assertTrue(secondSequences.stream().allMatch(sequence -> sequence <= first.asOfSequence()));
+        assertFalse(secondSequences.contains(31L));
+
+        AuditSearchPage technical = searches.search(searchCriteria(
+                "actor-r7", AuditSearchView.TECHNICAL, 0, 10, first.asOfSequence(), null, 2_003));
+        Map<String, Object> technicalFields = technical.items().getFirst().fields();
+        assertEquals(R7_FIELDS, technicalFields.keySet());
+        assertFalse(technicalFields.containsKey("actorDisplayRef"));
+        assertFalse(technicalFields.containsKey("objectDisplayRef"));
+        assertEquals("[MASKED-CATEGORY]", technicalFields.get("businessActionCategory"));
+        assertEquals("identity-access", technicalFields.get("producerModule"));
+
+        AuditSearchPage malicious = searches.search(searchCriteria(
+                "actor-r3", AuditSearchView.BUSINESS, 0, 100, first.asOfSequence(),
+                "identity-session' OR '1'='1", 2_004));
+        assertEquals(0L, malicious.total());
+        assertTrue(malicious.items().isEmpty());
+        assertEquals(31L, scalar("select count(*) from audit_operations.ao_audit_search_projection"));
+        assertEquals(0L, scalar("""
+                select count(*) from audit_operations.ao_local_audit_fact
+                where fact ?| array['actorRef','objectRef','actorSearchToken','objectSearchToken']
+                """));
+        Number maliciousAuditLeak = jdbc.queryForObject("""
+                select count(*) from audit_operations.ao_local_audit_fact f
+                join audit_operations.ao_local_audit_outbox o using (audit_id)
+                where f.fact::text like ? or o.envelope::text like ?
+                """, Number.class, "%identity-session' OR '1'='1%", "%identity-session' OR '1'='1%");
+        assertEquals(0L, maliciousAuditLeak == null ? -1L : maliciousAuditLeak.longValue());
+    }
+
+    @Test
+    void concurrentR3R7SearchesKeepRoleSchemasAndCommitEveryAuditAtomically() throws Exception {
+        AuditLedgerAppendService append = appendService(dataSource);
+        for (int index = 1; index <= 12; index++) append.append(searchSource(index));
+        AuditSearchService searches = searchService(dataSource);
+        CountDownLatch ready = new CountDownLatch(8);
+        CountDownLatch start = new CountDownLatch(1);
+
+        try (var executor = Executors.newFixedThreadPool(8)) {
+            var futures = new ArrayList<java.util.concurrent.Future<AuditSearchPage>>();
+            for (int index = 0; index < 8; index++) {
+                int current = index;
+                futures.add(executor.submit(() -> {
+                    ready.countDown();
+                    if (!start.await(10, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("concurrent search start timeout");
+                    }
+                    boolean business = current % 2 == 0;
+                    return searches.search(searchCriteria(
+                            business ? "actor-r3" : "actor-r7",
+                            business ? AuditSearchView.BUSINESS : AuditSearchView.TECHNICAL,
+                            0, 4, 12L, null, 3_000 + current));
+                }));
+            }
+            assertTrue(ready.await(10, TimeUnit.SECONDS));
+            start.countDown();
+            for (int index = 0; index < futures.size(); index++) {
+                AuditSearchPage page = futures.get(index).get();
+                assertEquals(index % 2 == 0 ? R3_FIELDS : R7_FIELDS,
+                        page.items().getFirst().fields().keySet());
+            }
+        }
+
+        assertEquals(40L, scalar("select count(*) from audit_operations.ao_local_audit_fact"));
+        assertEquals(40L, scalar("select count(*) from audit_operations.ao_local_audit_outbox"));
+    }
+
+    @Test
+    void projectionAuditFailureRollsBackAndReturnsNoSearchContent() {
+        appendService(dataSource).append(searchSource(1));
+        jdbc.execute("""
+                create function audit_operations.audit_search_outbox_insert_failure() returns trigger
+                language plpgsql as $body$
+                begin raise exception 'injected projection audit rollback' using errcode='23514'; end
+                $body$
+                """);
+        jdbc.execute("""
+                create trigger audit_search_outbox_insert_failure before insert
+                on audit_operations.ao_local_audit_outbox for each row
+                execute function audit_operations.audit_search_outbox_insert_failure()
+                """);
+        try {
+            AuditSearchException failure = assertThrows(AuditSearchException.class, () ->
+                    searchService(dataSource).search(searchCriteria(
+                            "actor-r3", AuditSearchView.BUSINESS, 0, 10, 1L, null, 4_001)));
+            assertEquals("AUDIT_SEARCH_AUDIT_COMMIT_FAILED", failure.code());
+            assertEquals(0L, scalar("select count(*) from audit_operations.ao_local_audit_fact"));
+            assertEquals(0L, scalar("select count(*) from audit_operations.ao_local_audit_outbox"));
+            assertEquals(1L, scalar("select count(*) from audit_operations.ao_audit_search_projection"));
+        } finally {
+            jdbc.execute("drop trigger audit_search_outbox_insert_failure "
+                    + "on audit_operations.ao_local_audit_outbox");
+            jdbc.execute("drop function audit_operations.audit_search_outbox_insert_failure()");
         }
     }
 
@@ -347,6 +513,185 @@ class AuditLedgerPostgreSqlIT {
                 "select count(*) from audit_operations.ao_alert_outbox"));
     }
 
+    private AuditSearchService searchService(DataSource source) {
+        JdbcTemplate template = new JdbcTemplate(source);
+        TransactionTemplate transactions = new TransactionTemplate(
+                new DataSourceTransactionManager(source));
+        var tokenization = (AuditSearchTokenGateway) request -> List.of(
+                new AuditTokenQueryValue(
+                        "ast_v1_k7_" + "a".repeat(64),
+                        "AUDIT-TOKENIZATION-1.0.0",
+                        "k7"));
+        var trustedTime = new TrustedTime(
+                NOW,
+                new TimeSourceProfile(
+                        "ntp-primary",
+                        "AUDIT-CLOCK-BINDING-1.0.0",
+                        0,
+                        NOW.minusSeconds(1),
+                        NOW.plusSeconds(60),
+                        "evidence://signed/postgresql-it"));
+        var searchAudit = new JdbcSearchAuditRepository(
+                template,
+                transactions,
+                new ObjectMapper(),
+                tokenization,
+                () -> trustedTime);
+        FieldProjectionPort projection = fieldProjection(
+                searchAudit,
+                new JdbcSensitiveReadTransactionAdapter(transactions));
+        return new AuditSearchService(
+                new JdbcAuditSearchQueryRepository(template),
+                request -> auditSearchAuthorization(
+                        request.sessionPseudonym(), request.view()),
+                tokenization,
+                searchAudit,
+                () -> NOW,
+                requesterKey -> requesterKey,
+                projection,
+                "audit-search-v1");
+    }
+
+    private static FieldProjectionPort fieldProjection(
+            JdbcSearchAuditRepository searchAudit,
+            JdbcSensitiveReadTransactionAdapter transactions) {
+        RoleFieldPolicyCatalog rolePolicy = RoleFieldPolicyCatalog.approved();
+        SensitiveFieldCryptoPort unavailableCrypto = new SensitiveFieldCryptoPort() {
+            @Override
+            public FieldCiphertextEnvelope encrypt(
+                    SensitiveFieldCryptoContext context, WipeablePlaintext plaintext) {
+                throw new SensitiveFieldCryptoException("FIELD_CRYPTO_BINDING_UNAVAILABLE");
+            }
+
+            @Override
+            public WipeablePlaintext decrypt(
+                    SensitiveFieldCryptoContext context, FieldCiphertextEnvelope envelope) {
+                throw new SensitiveFieldCryptoException("FIELD_CRYPTO_BINDING_UNAVAILABLE");
+            }
+        };
+        return new CurrentFieldProjectionService(
+                request -> fieldAuthorization(request, rolePolicy),
+                request -> new CompositeAuthorizationRecheckDecision(
+                        request.priorDecisionToken().objectVersion()
+                                        == request.currentRequest().expectedObjectVersion()
+                                ? CompositeAuthorizationRecheckOutcome.CURRENT
+                                : CompositeAuthorizationRecheckOutcome.STALE,
+                        request.priorDecisionToken().objectVersion()
+                                        == request.currentRequest().expectedObjectVersion()
+                                ? "AUTHORIZATION_CURRENT"
+                                : "AUTHORIZATION_STALE"),
+                new FieldProjectionEvaluator(),
+                FieldProjectionCatalog.approved(),
+                rolePolicy,
+                reference -> {
+                    throw new SensitiveFieldCryptoException("FIELD_CRYPTO_BINDING_UNAVAILABLE");
+                },
+                new SensitiveFieldCryptoService(unavailableCrypto),
+                () -> "audit-search-v1",
+                record -> searchAudit.commit(new SearchAuditEvent(
+                        record.actorPseudonym(),
+                        record.actionId(),
+                        "accepted",
+                        null,
+                        List.of("fieldClassSummary", "projectionCounts", "projectionVersions"),
+                        "e".repeat(64),
+                        record.objectVersion(),
+                        record.traceId(),
+                        record.trustedTime())),
+                transactions,
+                "scholarsense-backend",
+                "test");
+    }
+
+    private static CompositeAuthorizationDecision fieldAuthorization(
+            cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationRequest request,
+            RoleFieldPolicyCatalog rolePolicy) {
+        boolean business = "actor-r3".equals(request.actorPseudonym())
+                && "AGGREGATE_REPORT".equals(request.objectClass())
+                && "audit.search-business-metadata".equals(request.actionId());
+        boolean technical = "actor-r7".equals(request.actorPseudonym())
+                && "TELEMETRY".equals(request.objectClass())
+                && "audit.search-technical-metadata".equals(request.actionId());
+        RolePackage role = business ? RolePackage.R3 : technical ? RolePackage.R7 : null;
+        var token = new CompositeAuthorizationDecisionToken(
+                1, 1, 1, 1, 1, request.expectedObjectVersion(), "RFP-1.0.0");
+        if (role == null) {
+            return new CompositeAuthorizationDecision(
+                    CompositeAuthorizationOutcome.DENY,
+                    "AUTHORIZATION_DENIED",
+                    Set.of(),
+                    Set.of(),
+                    Map.of(),
+                    Set.of(),
+                    "RFP-1.0.0",
+                    request.expectedObjectVersion(),
+                    NOW,
+                    token);
+        }
+        Map<String, FieldVisibility> visibility = rolePolicy.fieldVisibility(role).entrySet().stream()
+                .collect(Collectors.toUnmodifiableMap(
+                        entry -> entry.getKey().code(),
+                        entry -> FieldVisibility.valueOf(entry.getValue().name())));
+        return new CompositeAuthorizationDecision(
+                CompositeAuthorizationOutcome.ALLOW,
+                "AUTHORIZATION_ALLOWED",
+                Set.of(role.authorityId()),
+                Set.of(business ? "SCHOOL_GOVERNANCE" : "TECHNICAL_OBJECT"),
+                visibility,
+                Set.of(),
+                "RFP-1.0.0",
+                request.expectedObjectVersion(),
+                NOW,
+                token);
+    }
+
+    private static AuthorizedAuditSearchDecision auditSearchAuthorization(
+            String session,
+            AuditSearchView view) {
+        boolean allowed = "actor-r3".equals(session) && view == AuditSearchView.BUSINESS
+                || "actor-r7".equals(session) && view == AuditSearchView.TECHNICAL;
+        return new AuthorizedAuditSearchDecision(
+                allowed,
+                "RFP-1.0.0",
+                view == AuditSearchView.BUSINESS
+                        ? "audit.search-business-metadata"
+                        : "audit.search-technical-metadata",
+                allowed ? Set.of("audit-domain") : Set.of(),
+                Map.of(),
+                allowed ? null : "AUDIT_SEARCH_FORBIDDEN");
+    }
+
+    private static AuditSearchCriteria searchCriteria(
+            String requester,
+            AuditSearchView view,
+            int page,
+            int size,
+            Long asOf,
+            String objectType,
+            long traceSuffix) {
+        return new AuditSearchCriteria(
+                requester,
+                view,
+                null,
+                objectType,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                page,
+                size,
+                asOf,
+                trace(traceSuffix));
+    }
+
+    private static Set<Long> sequences(AuditSearchPage page) {
+        return page.items().stream()
+                .map(item -> (Long) item.fields().get("ledgerSequence"))
+                .collect(Collectors.toUnmodifiableSet());
+    }
+
     private AuditLedgerAppendService appendService(DataSource source) {
         JdbcTemplate template = new JdbcTemplate(source);
         var manager = new DataSourceTransactionManager(source);
@@ -369,11 +714,19 @@ class AuditLedgerPostgreSqlIT {
     }
 
     private LocalAuditOutboxRecord source(int index) {
+        return source(index, fact().roleIds());
+    }
+
+    private LocalAuditOutboxRecord searchSource(int index) {
+        return source(index, List.of("R3"));
+    }
+
+    private LocalAuditOutboxRecord source(int index, List<String> roleIds) {
         LocalAuditFact base = fact();
         UUID auditId = uuid(1_000L + index);
         LocalAuditFact changed = new LocalAuditFact(
                 auditId, base.schemaVersion(), base.producerModule(), base.actorType(),
-                base.actorSearchToken(), base.roleIds(), base.authorizationContext(), base.action(),
+                base.actorSearchToken(), roleIds, base.authorizationContext(), base.action(),
                 base.objectType(), base.objectSearchToken(), base.outcome(), base.reasonCode(),
                 base.purpose(), base.projectionScope(), base.occurredAt(), base.recordedAt(),
                 base.timeSourceProfile(), base.sourceIpSearchToken(), base.tokenizationProfileVersion(),

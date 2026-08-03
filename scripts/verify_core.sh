@@ -16,6 +16,11 @@ echo "[verify-core] verify the complete Maven resolution lock before lifecycle e
 echo "[verify-core] clean backend build and contract tests"
 "$TOOLCHAIN" "$ROOT_DIR/backend/mvnw" -f "$ROOT_DIR/backend/pom.xml" clean verify
 
+echo "[verify-core] production backend plaintext-canary scan"
+"$TOOLCHAIN" python3 -B "$ROOT_DIR/scripts/scan_privacy_canaries.py" \
+  "$ROOT_DIR/backend/target/classes" \
+  "$ROOT_DIR/backend/target/scholarsense-backend.jar"
+
 echo "[verify-core] audit and standard-library regression"
 (
   cd "$ROOT_DIR"
@@ -27,6 +32,8 @@ echo "[verify-core] audit and standard-library regression"
   "$TOOLCHAIN" python3 -B scripts/check_identity_authority_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_responsibility_authority_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_access_invalidation_contracts.py .
+  "$TOOLCHAIN" python3 -B scripts/check_authorization_contracts.py .
+  "$TOOLCHAIN" python3 -B scripts/check_field_projection_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_ledger_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_retention_contracts.py .

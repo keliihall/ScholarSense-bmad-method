@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/field-projection/field-projection-fixture.schema.json",
+  "title": "ScholarSense field projection conformance fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "policyBindingVersion", "roleMatrixOracle", "scenarios"],
+  "properties": {
+    "schemaVersion": {"const": "FIELD-PROJECTION-FIXTURE-1.0.0"},
+    "policyBindingVersion": {"const": "FIELD-PROJECTION-POLICY-BINDING-1.0.0"},
+    "roleMatrixOracle": {
+      "type": "object",
+      "required": ["R1", "R2", "R3", "R4", "R5", "R6", "R7"],
+      "properties": {
+        "R1": {"$ref": "#/$defs/roleMatrix"},
+        "R2": {"$ref": "#/$defs/roleMatrix"},
+        "R3": {"$ref": "#/$defs/roleMatrix"},
+        "R4": {"$ref": "#/$defs/roleMatrix"},
+        "R5": {"$ref": "#/$defs/roleMatrix"},
+        "R6": {"$ref": "#/$defs/roleMatrix"},
+        "R7": {"$ref": "#/$defs/roleMatrix"}
+      },
+      "additionalProperties": false
+    },
+    "scenarios": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/scenario"}
+    }
+  },
+  "$defs": {
+    "roleMatrix": {
+      "type": "object",
+      "required": ["B", "I", "C", "S", "E", "N", "G", "T"],
+      "properties": {
+        "B": {"enum": ["C", "M", "H"]},
+        "I": {"enum": ["C", "M", "H"]},
+        "C": {"enum": ["C", "M", "H"]},
+        "S": {"enum": ["C", "M", "H"]},
+        "E": {"enum": ["C", "M", "H"]},
+        "N": {"enum": ["C", "M", "H"]},
+        "G": {"enum": ["C", "M", "H"]},
+        "T": {"enum": ["C", "M", "H"]}
+      },
+      "additionalProperties": false
+    },
+    "scenario": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "scenarioId", "roles", "objectClass", "objectToken", "purpose",
+        "serverNow", "authorizationOutcome", "values"
+      ],
+      "properties": {
+        "scenarioId": {"type": "string", "minLength": 1},
+        "roles": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"pattern": "^R[1-7]$"}},
+        "objectClass": {"type": "string", "minLength": 1},
+        "objectToken": {"type": "string", "minLength": 1},
+        "purpose": {"type": "string", "minLength": 1},
+        "serverNow": {"type": "string", "format": "date-time"},
+        "startAt": {"type": "string", "format": "date-time"},
+        "endAt": {"type": "string", "format": "date-time"},
+        "authorizationOutcome": {"enum": ["ALLOW", "DENY"]},
+        "assigned": {"type": "boolean"},
+        "currentWorkItem": {"type": "boolean"},
+        "ownedSource": {"type": "boolean"},
+        "fieldAllowlist": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "delegationFields": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "values": {"type": "object", "additionalProperties": {"type": ["string", "integer", "boolean", "null"]}}
+      }
+    }
+  }
+}

@@ -7,7 +7,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import cn.edu.suda.scholarsense.auditoperations.api.AuditProducerBacklogSnapshot;
+import cn.edu.suda.scholarsense.shared.outbox.AuditProducerBacklogSnapshot;
 import cn.edu.suda.scholarsense.auditoperations.application.AuditBacklogMeasurement;
 import cn.edu.suda.scholarsense.auditoperations.application.FindingRepository;
 import java.util.List;

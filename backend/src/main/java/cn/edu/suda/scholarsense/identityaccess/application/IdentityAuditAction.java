@@ -24,7 +24,10 @@ public enum IdentityAuditAction {
     RESPONSIBILITY_V2_ACTIVATED("responsibility.v2.activated"),
     RESPONSIBILITY_EXCEPTION_OPENED("responsibility.exception.opened"),
     RESPONSIBILITY_EXCEPTION_RESOLVED("responsibility.exception.resolved"),
-    ACCESS_INVALIDATION_PUBLISHED("access.invalidation.published");
+    ACCESS_INVALIDATION_PUBLISHED("access.invalidation.published"),
+    AUTHORIZATION_OBJECT_DECIDED("authorization.object.decided"),
+    AUTHORIZATION_SHELL_VIEWED("authorization.shell.viewed"),
+    AUTHORIZATION_DECISION_RECHECKED("authorization.decision.rechecked");
 
     private final String code;
 

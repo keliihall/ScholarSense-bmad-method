@@ -1,6 +1,6 @@
 package cn.edu.suda.scholarsense.identityaccess.adapters.outbound;
 
-import cn.edu.suda.scholarsense.auditoperations.api.AuditContractRejection;
+import cn.edu.suda.scholarsense.shared.outbox.AuditContractRejection;
 import cn.edu.suda.scholarsense.identityaccess.application.AuditRelayClaim;
 import cn.edu.suda.scholarsense.identityaccess.application.ClaimedLocalAudit;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditRelayWorkRepository;

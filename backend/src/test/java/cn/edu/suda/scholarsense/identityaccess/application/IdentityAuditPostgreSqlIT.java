@@ -10,6 +10,10 @@ import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcIdentityAud
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcSessionTransactionAdapter;
 import cn.edu.suda.scholarsense.identityaccess.domain.IdentityAccessException;
 import cn.edu.suda.scholarsense.identityaccess.domain.IdentitySession;
+import cn.edu.suda.scholarsense.identityaccess.domain.FieldClass;
+import cn.edu.suda.scholarsense.identityaccess.domain.RolePackage;
+import cn.edu.suda.scholarsense.identityaccess.domain.ScopeAnchor;
+import cn.edu.suda.scholarsense.identityaccess.domain.Visibility;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -18,7 +22,9 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
@@ -84,10 +90,52 @@ class IdentityAuditPostgreSqlIT {
                 "select schema_version from identity_access.ia_local_audit_fact "
                         + "where trace_id='trace-legacy-upgrade'",
                 String.class));
+        assertEquals(0L, upgraded.queryForObject(
+                "select count(*) from identity_access.ia_local_audit_fact "
+                        + "where authorization_decision_context is not null",
+                Long.class));
         assertEquals(1, upgraded.queryForObject(
                 "select count(*) from information_schema.tables "
                         + "where table_schema='identity_access' and table_name='ia_local_audit_outbox'",
                 Integer.class));
+    }
+
+    @Test
+    void authorizationDecisionPersistsTheSuccessorContextBesideTheFrozenV1Fact() {
+        var service = new AuthorizationAuditService(AuditTestSupport.factory(), audit);
+        service.record(new AuthorizationAuditRequest(
+                AuthorizationAuditKind.OBJECT_DECISION,
+                "actor-sensitive-pseudonym",
+                Set.of(RolePackage.R1),
+                "care.read",
+                "a".repeat(64),
+                null,
+                Set.of(ScopeAnchor.CURRENT_RESPONSIBILITY),
+                7L,
+                authorizationFields(),
+                "ALLOW",
+                Instant.parse("2026-07-20T02:00:00Z"),
+                "0123456789abcdef0123456789abcdef",
+                null));
+
+        assertEquals(5L, scalarLong(
+                "select count(*) from identity_access.ia_local_audit_fact, "
+                        + "lateral jsonb_object_keys(authorization_context)"));
+        assertEquals(11L, scalarLong(
+                "select count(*) from identity_access.ia_local_audit_fact, "
+                        + "lateral jsonb_object_keys(authorization_decision_context)"));
+        assertEquals("care.read", jdbc.queryForObject(
+                "select authorization_decision_context->>'actionId' "
+                        + "from identity_access.ia_local_audit_fact",
+                String.class));
+        assertEquals("a".repeat(64), jdbc.queryForObject(
+                "select authorization_decision_context->>'objectTokenDigest' "
+                        + "from identity_access.ia_local_audit_fact",
+                String.class));
+        assertEquals("ALLOW", jdbc.queryForObject(
+                "select authorization_decision_context->>'result' "
+                        + "from identity_access.ia_local_audit_fact",
+                String.class));
     }
 
     @Test
@@ -298,6 +346,14 @@ class IdentityAuditPostgreSqlIT {
         } catch (java.security.NoSuchAlgorithmException impossible) {
             throw new IllegalStateException(impossible);
         }
+    }
+
+    private static EnumMap<FieldClass, Visibility> authorizationFields() {
+        EnumMap<FieldClass, Visibility> fields = new EnumMap<>(FieldClass.class);
+        for (FieldClass field : FieldClass.values()) {
+            fields.put(field, Visibility.HIDDEN);
+        }
+        return fields;
     }
 
     private static Object executeOrFailure(SessionCommandService service, SessionCommand command) {
