@@ -1,0 +1,1 @@
+{"fixtureVersion":"DCC-COMPAT-1.0.0","fromVersion":"TIMETABLE-SLICE-1.0.0","toVersion":"TIMETABLE-SLICE-1.1.0","change":{"kind":"add-optional","field":"activityCategory"},"expectedCode":"DCC_COMPATIBLE"}

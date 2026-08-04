@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/data-catalog/data-catalog-target-report.schema.json",
+  "title": "DataCatalogTargetReport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reportVersion", "contractVersion", "qualityGateVersion", "authority", "environment", "candidateCommit", "candidateTree", "catalogDigest", "qualityGateDigest", "sourceCount", "sources", "privacy", "occurredAt", "runtimeEvidenceClaim", "result", "evidenceDigest"],
+  "properties": {
+    "reportVersion": {"const": "DCC-TARGET-REPORT-1.0.0"},
+    "contractVersion": {"const": "DCC-1.0.0"},
+    "qualityGateVersion": {"const": "QG-1.0.0"},
+    "authority": {"type": "string", "minLength": 1},
+    "environment": {"enum": ["test", "stage", "prod"]},
+    "candidateCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "candidateTree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "catalogDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "qualityGateDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "sourceCount": {"const": 17},
+    "sources": {
+      "type": "array",
+      "minItems": 17,
+      "maxItems": 17,
+      "items": {"type": "object"}
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["studentPlaintextStored", "rawBodyStored"],
+      "properties": {
+        "studentPlaintextStored": {"const": false},
+        "rawBodyStored": {"const": false}
+      }
+    },
+    "occurredAt": {"type": "string", "format": "date-time"},
+    "runtimeEvidenceClaim": {"const": "target-verified"},
+    "result": {"const": "pass"},
+    "evidenceDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

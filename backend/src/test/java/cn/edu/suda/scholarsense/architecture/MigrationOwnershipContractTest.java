@@ -21,9 +21,10 @@ class MigrationOwnershipContractTest {
         assertTrue(result.violations().isEmpty(), () -> String.join("\n", result.violations()));
         assertEquals(expectedFacts(), result.ownership().entrySet().stream()
                 .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().factOwners())));
-        try (var walk = Files.walk(MIGRATIONS)) {
-            assertEquals(9, walk.filter(path -> path.toString().endsWith(".sql")).count(),
-                    "Stories 1.2 through 1.8 own exactly nine forward migrations");
+        assertFalse(result.migrations().isEmpty(), "production migration inventory must be discoverable");
+        for (int index = 0; index < result.migrations().size(); index++) {
+            assertEquals(index + 1, result.migrations().get(index).version(),
+                    "production migrations must use one continuous global sequence");
         }
         Path firstMigration = MIGRATIONS.resolve(
                 "identity-access/V000001__identity-access__session_boundary.sql");
@@ -367,6 +368,30 @@ class MigrationOwnershipContractTest {
     }
 
     @Test
+    void story21MigrationCreatesIngestionQualityCatalogOwnershipAndAtomicAuditTables()
+            throws Exception {
+        String migration = Files.readString(MIGRATIONS.resolve(
+                "ingestion-quality/V000010__ingestion-quality__data_source_catalog_v1.sql"));
+        String lower = migration.toLowerCase();
+        for (String table : Set.of(
+                "iq_data_source_catalog", "iq_source_contract", "iq_dependency_binding",
+                "iq_source_id_reservation", "iq_dependency_id_reservation",
+                "iq_catalog_validation_attempt", "iq_catalog_evidence",
+                "iq_catalog_current", "iq_catalog_idempotency",
+                "iq_local_audit_fact", "iq_local_audit_outbox")) {
+            assertTrue(lower.contains("ingestion_quality." + table), table);
+        }
+        assertTrue(lower.contains("aggregate_version bigint"));
+        assertTrue(lower.contains("retention_schedule_version varchar(64) not null default 'rs-1.0.0'"));
+        assertTrue(lower.contains("create role scholarsense_ingestion_quality_online nologin"));
+        assertTrue(lower.contains("create role scholarsense_ingestion_quality_relay nologin"));
+        assertFalse(lower.contains("identity_access."));
+        assertFalse(lower.contains("audit_operations."));
+        assertFalse(lower.contains("grant update on ingestion_quality.iq_source_id_reservation"));
+        assertFalse(lower.contains("grant delete on ingestion_quality.iq_data_source_catalog"));
+    }
+
+    @Test
     void invalidMigrationFixturesAreRejectedForEveryRequiredReason() throws Exception {
         assertRejected("duplicate-version", "MIGRATION_VERSION_DUPLICATE");
         assertRejected("unknown-owner", "UNKNOWN_OWNER");
@@ -421,7 +446,9 @@ class MigrationOwnershipContractTest {
         return Map.of(
                 "identity-access", Set.of("IdentityPolicy", "Grant", "DelegationGrant"),
                 "subject-registry", Set.of("StudentRef", "SubjectMapping"),
-                "ingestion-quality", Set.of("DataBatch", "NormalizedFact", "QualitySnapshot"),
+                "ingestion-quality", Set.of(
+                        "DataBatch", "NormalizedFact", "QualitySnapshot",
+                        "DataSourceCatalog", "SourceContract", "DependencyBinding"),
                 "rule-governance", Set.of("RuleDefinition", "RuleVersion", "Tag", "GovernanceApproval", "QueuePolicyVersion"),
                 "signal-evaluation", Set.of("RuleEvaluation"),
                 "clue-care", Set.of("CandidateAdmissionDecision", "Candidate", "Clue", "EvidenceSnapshot", "CareAction", "Observation", "TaskLink", "ExplanationFeedback"),

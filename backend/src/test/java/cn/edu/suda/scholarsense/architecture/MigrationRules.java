@@ -57,7 +57,7 @@ final class MigrationRules {
         Map<String, Ownership> ownership = readRegistry(registry, violations);
         if (!Files.isDirectory(migrationRoot)) {
             violations.add("MIGRATION_ROOT_MISSING: " + migrationRoot);
-            return new Result(ownership, violations.stream().distinct().sorted().toList());
+            return new Result(ownership, List.of(), violations.stream().distinct().sorted().toList());
         }
         for (String module : ownership.keySet()) {
             if (!Files.isDirectory(migrationRoot.resolve(module))) {
@@ -71,7 +71,11 @@ final class MigrationRules {
                 inspectMigration(sql, migrationRoot, ownership, versions, violations);
             }
         }
-        return new Result(ownership, violations.stream().distinct().sorted().toList());
+        List<Migration> migrations = versions.entrySet().stream()
+                .map(entry -> new Migration(Integer.parseInt(entry.getKey()), entry.getValue()))
+                .sorted(java.util.Comparator.comparingInt(Migration::version))
+                .toList();
+        return new Result(ownership, migrations, violations.stream().distinct().sorted().toList());
     }
 
     private static Map<String, Ownership> readRegistry(Path registry, List<String> violations) throws IOException {
@@ -394,5 +398,7 @@ final class MigrationRules {
 
     private record ScopedAlias(String name, List<Integer> scope) {}
 
-    record Result(Map<String, Ownership> ownership, List<String> violations) {}
+    record Migration(int version, Path path) {}
+
+    record Result(Map<String, Ownership> ownership, List<Migration> migrations, List<String> violations) {}
 }

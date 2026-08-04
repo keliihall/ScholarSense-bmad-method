@@ -45,38 +45,31 @@ export PGHOST=127.0.0.1 PGPORT="$PORT" PGUSER="$USER_NAME"
 "$PG_BIN/createdb" scholarsense_audit_clean
 "$PG_BIN/createdb" scholarsense_audit_upgrade
 
-V1="$ROOT/backend/src/main/resources/db/migration/identity-access/V000001__identity-access__session_boundary.sql"
-V2="$ROOT/backend/src/main/resources/db/migration/identity-access/V000002__identity-access__local_audit_v1.sql"
-V3="$ROOT/backend/src/main/resources/db/migration/audit-operations/V000003__audit-operations__immutable_ledger_v1.sql"
-V4="$ROOT/backend/src/main/resources/db/migration/identity-access/V000004__identity-access__audit_delivery_attempts_bigint.sql"
-V5="$ROOT/backend/src/main/resources/db/migration/audit-operations/V000005__audit-operations__authorized_search_retention_v1.sql"
-V6="$ROOT/backend/src/main/resources/db/migration/identity-access/V000006__identity-access__authoritative_identity_org_v1.sql"
-V7="$ROOT/backend/src/main/resources/db/migration/identity-access/V000007__identity-access__responsibility_reconciliation_v1.sql"
-V8="$ROOT/backend/src/main/resources/db/migration/identity-access/V000008__identity-access__access_invalidation_v1.sql"
-V9="$ROOT/backend/src/main/resources/db/migration/identity-access/V000009__identity-access__authorization_audit_context_v1.sql"
-
-EXPECTED_MIGRATIONS="$(printf '%s\n' "$V1" "$V2" "$V3" "$V4" "$V5" "$V6" "$V7" "$V8" "$V9" \
-  | LC_ALL=C sort)"
-DISCOVERED_MIGRATIONS="$(find "$ROOT/backend/src/main/resources/db/migration" \
-  -type f -name 'V*.sql' -print | LC_ALL=C sort)"
-if [[ "$DISCOVERED_MIGRATIONS" != "$EXPECTED_MIGRATIONS" ]]; then
-  echo "audit-postgresql: the registered migration set is not exactly V000001..V000009" >&2
-  diff -u <(printf '%s\n' "$EXPECTED_MIGRATIONS") \
-    <(printf '%s\n' "$DISCOVERED_MIGRATIONS") >&2 || true
+MIGRATIONS=()
+while IFS= read -r migration; do
+  MIGRATIONS+=("$migration")
+done < <(find "$ROOT/backend/src/main/resources/db/migration" \
+  -type f -name 'V*.sql' -print | while IFS= read -r path; do
+    printf '%s\t%s\n' "$(basename "$path")" "$path"
+  done | LC_ALL=C sort | cut -f2-)
+if [[ "${#MIGRATIONS[@]}" -eq 0 ]]; then
+  echo "audit-postgresql: production migration inventory is empty" >&2
   exit 1
 fi
+for index in "${!MIGRATIONS[@]}"; do
+  filename="$(basename "${MIGRATIONS[$index]}")"
+  printf -v expected_version '%06d' "$((index + 1))"
+  if [[ ! "$filename" =~ ^V([0-9]{6})__ ]] || [[ "${BASH_REMATCH[1]}" != "$expected_version" ]]; then
+    echo "audit-postgresql: production migration inventory must be continuous at V$expected_version: $filename" >&2
+    exit 1
+  fi
+done
 
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V1" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V2" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V3" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V4" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V5" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V6" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V7" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V8" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$V9" >/dev/null
+for migration in "${MIGRATIONS[@]}"; do
+  "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_clean -f "$migration" >/dev/null
+done
 
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V1" >/dev/null
+"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "${MIGRATIONS[0]}" >/dev/null
 "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade <<'SQL' >/dev/null
 insert into identity_access.ia_local_audit_fact (
   audit_id, actor_pseudonym, session_pseudonym, action, result, occurred_at,
@@ -86,14 +79,9 @@ values (
   'identity.session.login', 'accepted', '2026-07-20T01:00:00Z',
   'legacy-ip', 'trace-legacy-upgrade', 'ISP-1.0.0');
 SQL
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V2" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V3" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V4" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V5" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V6" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V7" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V8" >/dev/null
-"$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$V9" >/dev/null
+for migration in "${MIGRATIONS[@]:1}"; do
+  "$PG_BIN/psql" -v ON_ERROR_STOP=1 -d scholarsense_audit_upgrade -f "$migration" >/dev/null
+done
 
 schema_inventory() {
   "$PG_BIN/psql" -X -v ON_ERROR_STOP=1 -At -d "$1" <<'SQL'
@@ -103,44 +91,44 @@ from (
       pg_get_userbyid(c.relowner)) inventory
   from pg_catalog.pg_class c
   join pg_catalog.pg_namespace n on n.oid=c.relnamespace
-  where n.nspname in ('identity_access', 'audit_operations')
+  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality')
   union all
   select 'column|' || concat_ws('|', table_schema, table_name, ordinal_position::text,
       column_name, data_type, udt_schema, udt_name, coalesce(character_maximum_length::text, ''),
       coalesce(numeric_precision::text, ''), coalesce(numeric_scale::text, ''), is_nullable,
       coalesce(column_default, ''), is_identity, is_generated)
   from information_schema.columns
-  where table_schema in ('identity_access', 'audit_operations')
+  where table_schema in ('identity_access', 'audit_operations', 'ingestion_quality')
   union all
   select 'constraint|' || concat_ws('|', n.nspname, rel.relname, con.conname, con.contype,
       pg_get_constraintdef(con.oid, true))
   from pg_catalog.pg_constraint con
   join pg_catalog.pg_class rel on rel.oid=con.conrelid
   join pg_catalog.pg_namespace n on n.oid=rel.relnamespace
-  where n.nspname in ('identity_access', 'audit_operations')
+  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality')
   union all
   select 'index|' || concat_ws('|', schemaname, tablename, indexname, indexdef)
   from pg_catalog.pg_indexes
-  where schemaname in ('identity_access', 'audit_operations')
+  where schemaname in ('identity_access', 'audit_operations', 'ingestion_quality')
   union all
   select 'trigger|' || concat_ws('|', n.nspname, rel.relname, trg.tgname,
       pg_get_triggerdef(trg.oid, true))
   from pg_catalog.pg_trigger trg
   join pg_catalog.pg_class rel on rel.oid=trg.tgrelid
   join pg_catalog.pg_namespace n on n.oid=rel.relnamespace
-  where n.nspname in ('identity_access', 'audit_operations') and not trg.tgisinternal
+  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality') and not trg.tgisinternal
   union all
   select 'function|' || concat_ws('|', n.nspname, proc.proname,
       pg_get_function_identity_arguments(proc.oid), pg_get_function_result(proc.oid),
       proc.prokind, proc.provolatile, proc.prosecdef::text, md5(pg_get_functiondef(proc.oid)))
   from pg_catalog.pg_proc proc
   join pg_catalog.pg_namespace n on n.oid=proc.pronamespace
-  where n.nspname in ('identity_access', 'audit_operations')
+  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality')
   union all
   select 'grant|' || concat_ws('|', table_schema, table_name, grantee, privilege_type,
       is_grantable)
   from information_schema.role_table_grants
-  where table_schema in ('identity_access', 'audit_operations')
+  where table_schema in ('identity_access', 'audit_operations', 'ingestion_quality')
 ) catalog
 order by inventory;
 SQL
@@ -159,20 +147,20 @@ SCHEMA_FINGERPRINT="$(shasum -a 256 "$CLEAN_SCHEMA" | awk '{print $1}')"
 SCHEMA_SUMMARY="$($PG_BIN/psql -X -v ON_ERROR_STOP=1 -At -d scholarsense_audit_clean -c "
   select concat_ws('|',
     (select count(*) from information_schema.tables
-      where table_schema in ('identity_access','audit_operations') and table_type='BASE TABLE'),
+      where table_schema in ('identity_access','audit_operations','ingestion_quality') and table_type='BASE TABLE'),
     (select count(*) from information_schema.columns
-      where table_schema in ('identity_access','audit_operations')),
+      where table_schema in ('identity_access','audit_operations','ingestion_quality')),
     (select count(*) from pg_catalog.pg_constraint c join pg_catalog.pg_namespace n
-      on n.oid=c.connamespace where n.nspname in ('identity_access','audit_operations')),
+      on n.oid=c.connamespace where n.nspname in ('identity_access','audit_operations','ingestion_quality')),
     (select count(*) from pg_catalog.pg_indexes
-      where schemaname in ('identity_access','audit_operations')),
+      where schemaname in ('identity_access','audit_operations','ingestion_quality')),
     (select count(*) from pg_catalog.pg_trigger t join pg_catalog.pg_class r on r.oid=t.tgrelid
       join pg_catalog.pg_namespace n on n.oid=r.relnamespace
-      where n.nspname in ('identity_access','audit_operations') and not t.tgisinternal),
+      where n.nspname in ('identity_access','audit_operations','ingestion_quality') and not t.tgisinternal),
     (select count(*) from pg_catalog.pg_proc p join pg_catalog.pg_namespace n
-      on n.oid=p.pronamespace where n.nspname in ('identity_access','audit_operations')))
+      on n.oid=p.pronamespace where n.nspname in ('identity_access','audit_operations','ingestion_quality')))
   ")"
-echo "audit-postgresql: schema fingerprint=$SCHEMA_FINGERPRINT summary=tables|columns|constraints|indexes|triggers|functions=$SCHEMA_SUMMARY (clean=upgrade; migration=V000009 authorization-audit-context; historical rows remain null)"
+echo "audit-postgresql: schema fingerprint=$SCHEMA_FINGERPRINT summary=tables|columns|constraints|indexes|triggers|functions=$SCHEMA_SUMMARY (clean=upgrade; inventory=${#MIGRATIONS[@]} migrations; V000009 authorization-audit-context historical rows remain null)"
 
 for database in scholarsense_audit_clean scholarsense_audit_upgrade; do
   attempts_type=$("$PG_BIN/psql" -At -d "$database" -c "
@@ -186,7 +174,7 @@ for database in scholarsense_audit_clean scholarsense_audit_upgrade; do
   fi
 done
 
-POSTGRES_TESTS="IdentityAuditPostgreSqlIT,IdentityAuthorityPostgreSqlIT,ResponsibilityAuthorityPostgreSqlIT,AccessInvalidationPostgreSqlIT,AuditLedgerPostgreSqlIT,PublicIntegrationPostgreSqlIT"
+POSTGRES_TESTS="IdentityAuditPostgreSqlIT,IdentityAuthorityPostgreSqlIT,ResponsibilityAuthorityPostgreSqlIT,AccessInvalidationPostgreSqlIT,AuditLedgerPostgreSqlIT,PublicIntegrationPostgreSqlIT,DataSourceCatalogPostgreSqlIT"
 if [[ -n "${IDENTITY_SANDBOX_ENDPOINT:-}" ]]; then
   POSTGRES_TESTS="$POSTGRES_TESTS,IdentityAuthoritySandboxIT#sameTraceRunsThroughWorkerPostgreSqlAndCurrentAuthorizationReadBack"
 fi
@@ -208,4 +196,4 @@ else
     -Dscholarsense.audit.pg.user="$USER_NAME" test
 fi
 
-echo "audit-postgresql: PASS (PostgreSQL 18.4; clean + V000001..V000009 upgrade + authorization successor persistence + identity/responsibility invalidation fencing/atomicity/SLO/privilege + PIC test-scope queue/current/mapping/fence/retention + audit projection/concurrency/rollback/replay/tamper probes)"
+echo "audit-postgresql: PASS (PostgreSQL 18.4; clean + full production inventory upgrade + authorization successor persistence + identity/responsibility invalidation fencing/atomicity/SLO/privilege + PIC test-scope queue/current/mapping/fence/retention + audit projection/concurrency/rollback/replay/tamper probes)"

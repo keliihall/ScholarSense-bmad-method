@@ -35,6 +35,7 @@ class ArchitectureBoundaryTest {
         assertRejected("shared-qualified-business", "SHARED_DEPENDS_ON_BUSINESS_MODULE");
         assertRejected("comment-package-bypass", "TOP_LEVEL_PACKAGE_NOT_APPROVED");
         assertRejected("root-package-bypass", "ROOT_PACKAGE_TYPE_NOT_APPROVED");
+        assertRejected("audit-api-alias-import", "AUDIT_API_ALIAS_IMPORT_FORBIDDEN");
     }
 
     @Test

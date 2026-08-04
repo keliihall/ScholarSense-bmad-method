@@ -10,6 +10,7 @@ import {
 } from '../../domains/identity-access';
 import type { ReauthenticationTarget } from '../../domains/identity-access';
 import { auditOperationsRouteContribution } from '../../domains/audit-operations';
+import { ingestionQualityRouteContribution } from '../../domains/ingestion-quality';
 import { queryClient, volatileClientState } from '../state/query-client';
 
 
@@ -21,6 +22,7 @@ export type RouteContribution = Readonly<{
 
 export const routeContributions: readonly RouteContribution[] = Object.freeze([
   auditOperationsRouteContribution,
+  ingestionQualityRouteContribution,
 ]);
 
 export const router = createRouter({
@@ -54,6 +56,7 @@ export const router = createRouter({
       component: () => import('../views/ShellRecoveryView.vue'),
     },
     ...auditOperationsRouteContribution.routes,
+    ...ingestionQualityRouteContribution.routes,
   ],
 });
 
@@ -148,6 +151,7 @@ function protectedTarget(routeName: unknown): ReauthenticationTarget | undefined
   if (routeName === 'shell-session') return 'shell.session';
   if (routeName === 'shell-home') return 'shell.home';
   if (routeName === 'audit-search') return 'audit.search';
+  if (routeName === 'data-quality-catalogs') return 'data-quality.catalogs';
   return undefined;
 }
 

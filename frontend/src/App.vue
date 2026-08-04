@@ -26,6 +26,7 @@ function localRouteName(routeId: string): string | undefined {
     'shell.home': 'shell-home',
     'shell.session': 'shell-session',
     'audit.search': 'audit-search',
+    'data-quality.catalogs': 'data-quality-catalogs',
   }[routeId];
 }
 </script>

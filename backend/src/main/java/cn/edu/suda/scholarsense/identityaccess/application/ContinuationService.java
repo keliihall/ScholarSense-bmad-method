@@ -13,7 +13,8 @@ import java.util.Arrays;
 import java.util.Set;
 
 public final class ContinuationService {
-    private static final Set<String> ALLOWED_ROUTES = Set.of("shell.home", "shell.session", "audit.search");
+    private static final Set<String> ALLOWED_ROUTES = Set.of(
+            "shell.home", "shell.session", "audit.search", "data-quality.catalogs");
     private static final Duration LIFETIME = Duration.ofMinutes(5);
 
     private final ContinuationRepository repository;

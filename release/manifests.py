@@ -48,6 +48,9 @@ REQUIRED_CONTROLLED_INPUT_IDS_V1 = frozenset(
 REQUIRED_CONTROLLED_INPUT_IDS_V2 = frozenset(
     {*REQUIRED_CONTROLLED_INPUT_IDS_V1, "PublicIntegration"}
 )
+REQUIRED_CONTROLLED_INPUT_IDS_V3 = frozenset(
+    {*REQUIRED_CONTROLLED_INPUT_IDS_V2, "DataContractCatalog", "QualityGate"}
+)
 # Backward-compatible public name: it remains the immutable V1 set.
 REQUIRED_CONTROLLED_INPUT_IDS = REQUIRED_CONTROLLED_INPUT_IDS_V1
 REQUIRED_LOCK_IDS = frozenset({"backend-lock", "frontend-lock", "toolchain-lock"})
@@ -88,6 +91,9 @@ STAGE_ORDER = {
 }
 PIC_TARGET_ID = "PublicIntegrationTargetConformance"
 PIC_TARGET_KIND = "public-integration-target-conformance"
+DCC_TARGET_ID = "DataCatalogTargetConformance"
+DCC_TARGET_KIND = "data-catalog-target-conformance"
+DCC_RUNTIME_ID = "data-catalog-target-conformance"
 PIC_SCENARIO_PATH = (
     PROJECT_ROOT
     / "contracts/public-integration/public-integration-target-scenarios-1.0.0.json"
@@ -96,6 +102,8 @@ PIC_LOCK_PATH = (
     PROJECT_ROOT
     / "contracts/public-integration/public-integration-contract-lock-1.0.0.json"
 )
+DCC_CATALOG_PATH = PROJECT_ROOT / "contracts/data-catalog/dcc-1.0.0.json"
+DCC_QUALITY_GATE_PATH = PROJECT_ROOT / "contracts/data-catalog/qg-1.0.0.json"
 
 
 def _ids(items: Any, code: str) -> tuple[set[str], list[str]]:
@@ -168,7 +176,8 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         issues.append(f"RELEASE_DESCENDANT_REFERENCE_FORBIDDEN: {','.join(forbidden)}")
     manifest_version = manifest.get("version")
     if manifest_version not in {
-        "RELEASE-MANIFEST-1.0.0", "RELEASE-MANIFEST-2.0.0"
+        "RELEASE-MANIFEST-1.0.0", "RELEASE-MANIFEST-2.0.0",
+        "RELEASE-MANIFEST-3.0.0",
     }:
         issues.append("RELEASE_MANIFEST_VERSION_INVALID")
     if not SEMVER.fullmatch(str(manifest.get("releaseVersion", ""))):
@@ -211,7 +220,9 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
 
     controlled_inputs = manifest.get("controlledInputs")
     required_controlled = (
-        REQUIRED_CONTROLLED_INPUT_IDS_V2
+        REQUIRED_CONTROLLED_INPUT_IDS_V3
+        if manifest_version == "RELEASE-MANIFEST-3.0.0"
+        else REQUIRED_CONTROLLED_INPUT_IDS_V2
         if manifest_version == "RELEASE-MANIFEST-2.0.0"
         else REQUIRED_CONTROLLED_INPUT_IDS_V1
     )
@@ -224,13 +235,27 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         for item in controlled_inputs
         if isinstance(item, dict)
     } if isinstance(controlled_inputs, list) else {}
-    if manifest_version == "RELEASE-MANIFEST-2.0.0":
+    if manifest_version in {
+        "RELEASE-MANIFEST-2.0.0", "RELEASE-MANIFEST-3.0.0"
+    }:
         public_integration = controlled_by_id.get("PublicIntegration", {})
         if (
             public_integration.get("version") != "PIC-CONTRACT-LOCK-1.0.0"
             or public_integration.get("binarySha256") != _file_sha256(PIC_LOCK_PATH)
         ):
             issues.append("RELEASE_PUBLIC_INTEGRATION_INPUT_INVALID")
+    if manifest_version == "RELEASE-MANIFEST-3.0.0":
+        expected_data_catalog_inputs = {
+            "DataContractCatalog": ("DCC-1.0.0", DCC_CATALOG_PATH),
+            "QualityGate": ("QG-1.0.0", DCC_QUALITY_GATE_PATH),
+        }
+        for identity, (version, path) in expected_data_catalog_inputs.items():
+            reference = controlled_by_id.get(identity, {})
+            if (
+                reference.get("version") != version
+                or reference.get("binarySha256") != _file_sha256(path)
+            ):
+                issues.append(f"RELEASE_DATA_CATALOG_INPUT_INVALID: {identity}")
 
     locks = manifest.get("locks")
     issues.extend(_exact_ids(locks, REQUIRED_LOCK_IDS, "RELEASE_LOCK"))
@@ -268,6 +293,7 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         issues.append("RELEASE_ARTIFACT_EVIDENCE_ID_COLLISION")
     kinds_by_subject: dict[str, set[str]] = {identity: set() for identity in artifact_ids}
     pic_nodes: list[dict[str, Any]] = []
+    dcc_nodes: list[dict[str, Any]] = []
     for evidence in manifest.get("evidence", []) if isinstance(manifest.get("evidence"), list) else []:
         issues.extend(_reference_issues(evidence, "RELEASE_EVIDENCE_REF"))
         if not isinstance(evidence, dict):
@@ -277,6 +303,9 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
             issues.append(f"RELEASE_EVIDENCE_KIND_INVALID: {evidence.get('id')}")
         if kind == PIC_TARGET_KIND:
             pic_nodes.append(evidence)
+            continue
+        if kind == DCC_TARGET_KIND:
+            dcc_nodes.append(evidence)
             continue
         subject = evidence.get("subjectBinarySha256")
         if subject not in artifact_by_digest:
@@ -295,20 +324,39 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         missing = required - kinds_by_subject.get(artifact_id, set())
         if missing:
             issues.append(f"RELEASE_REQUIRED_EVIDENCE_MISSING: {artifact_id}: {','.join(sorted(missing))}")
-    if manifest_version == "RELEASE-MANIFEST-1.0.0" and pic_nodes:
-        issues.append("RELEASE_V1_PUBLIC_INTEGRATION_FORBIDDEN")
+    if manifest_version == "RELEASE-MANIFEST-1.0.0" and (pic_nodes or dcc_nodes):
+        issues.append("RELEASE_V1_CANDIDATE_EVIDENCE_FORBIDDEN")
     if manifest_version == "RELEASE-MANIFEST-2.0.0":
         if len(pic_nodes) != 1:
             issues.append("RELEASE_PUBLIC_INTEGRATION_TARGET_NODE_REQUIRED")
         else:
             issues.extend(_pic_target_node_issues(pic_nodes[0], manifest))
+        if dcc_nodes:
+            issues.append("RELEASE_V2_DATA_CATALOG_FORBIDDEN")
+    if manifest_version == "RELEASE-MANIFEST-3.0.0":
+        if len(pic_nodes) != 1:
+            issues.append("RELEASE_PUBLIC_INTEGRATION_TARGET_NODE_REQUIRED")
+        else:
+            issues.extend(_pic_target_node_issues(pic_nodes[0], manifest))
+        if len(dcc_nodes) != 1:
+            issues.append("RELEASE_DATA_CATALOG_TARGET_NODE_REQUIRED")
+        else:
+            issues.extend(_dcc_target_node_issues(dcc_nodes[0], manifest))
 
     runtime = manifest.get("runtimeEvidence")
-    issues.extend(_exact_ids(runtime, RUNTIME_IDS, "RELEASE_RUNTIME"))
+    required_runtime = (
+        frozenset({*RUNTIME_IDS, DCC_RUNTIME_ID})
+        if manifest_version == "RELEASE-MANIFEST-3.0.0"
+        else RUNTIME_IDS
+    )
+    issues.extend(_exact_ids(runtime, required_runtime, "RELEASE_RUNTIME"))
     runtime_by_id = {
         item.get("id"): item for item in runtime if isinstance(item, dict)
     } if isinstance(runtime, list) else {}
-    for identity in BLOCKING_RUNTIME_IDS:
+    blocking_runtime_ids = set(BLOCKING_RUNTIME_IDS)
+    if manifest_version == "RELEASE-MANIFEST-3.0.0":
+        blocking_runtime_ids.add(DCC_RUNTIME_ID)
+    for identity in blocking_runtime_ids:
         item = runtime_by_id.get(identity, {})
         if item.get("status") != "passed":
             issues.append(f"RELEASE_RUNTIME_GATE_NOT_PASSED: {identity}")
@@ -330,6 +378,10 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
             ):
                 issues.append(f"RELEASE_RUNTIME_EVIDENCE_SEMANTICS_INVALID: {identity}: {evidence_id}")
             if identity == "supply-chain-evidence" and kind not in COMMON_EVIDENCE_KINDS:
+                issues.append(f"RELEASE_RUNTIME_EVIDENCE_SEMANTICS_INVALID: {identity}: {evidence_id}")
+            if identity == DCC_RUNTIME_ID and (
+                kind != DCC_TARGET_KIND or evidence_id != DCC_TARGET_ID
+            ):
                 issues.append(f"RELEASE_RUNTIME_EVIDENCE_SEMANTICS_INVALID: {identity}: {evidence_id}")
     app = runtime_by_id.get("app-webview", {})
     if app.get("status") != "not-applicable" or app.get("decisionId") != "USER-2026-07-19-SCHOOL-APP-NA" or app.get("runtimeEvidenceClaim") != "none" or "evidenceIds" in app:
@@ -391,7 +443,10 @@ def _index_node(reference: dict[str, Any], stage: str, depends_on: list[str]) ->
         "subjectBinarySha256": reference.get("subjectBinarySha256", reference["binarySha256"]),
         "dependsOn": depends_on,
     }
-    for field in ("subjectCommit", "subjectTree", "scenarioSetSha256"):
+    for field in (
+        "subjectCommit", "subjectTree", "scenarioSetSha256", "catalogSha256",
+        "qualityGateSha256", "sourceCount",
+    ):
         if field in reference:
             node[field] = reference[field]
     return node
@@ -407,10 +462,11 @@ def create_evidence_index(
     artifacts = release_manifest.get("artifacts", [])
     artifact_by_subject = {item["binarySha256"]: item["id"] for item in artifacts}
     evidence = release_manifest.get("evidence", [])
-    candidate = [item for item in evidence if item.get("kind") == PIC_TARGET_KIND]
+    candidate_kinds = {PIC_TARGET_KIND, DCC_TARGET_KIND}
+    candidate = [item for item in evidence if item.get("kind") in candidate_kinds]
     ordinary = [
         item for item in evidence
-        if item.get("kind") not in {"artifact-signature", PIC_TARGET_KIND}
+        if item.get("kind") not in {"artifact-signature", *candidate_kinds}
     ]
     signatures = [item for item in evidence if item.get("kind") == "artifact-signature"]
     nodes = [_index_node(item, "artifact", []) for item in artifacts]
@@ -432,7 +488,9 @@ def create_evidence_index(
     signature_node = _index_node(manifest_signature, "manifest-signature", manifest_signature.get("dependsOn", []))
     index = {
         "version": (
-            "EVIDENCE-INDEX-2.0.0"
+            "EVIDENCE-INDEX-3.0.0"
+            if release_manifest.get("version") == "RELEASE-MANIFEST-3.0.0"
+            else "EVIDENCE-INDEX-2.0.0"
             if release_manifest.get("version") == "RELEASE-MANIFEST-2.0.0"
             else "EVIDENCE-INDEX-1.0.0"
         ),
@@ -458,7 +516,9 @@ def evidence_index_issues(index: Any, release_manifest: Any) -> list[str]:
     issues = release_document_issues(index)
     manifest_digest = canonical_sha256(release_manifest)
     expected_index_version = (
-        "EVIDENCE-INDEX-2.0.0"
+        "EVIDENCE-INDEX-3.0.0"
+        if release_manifest.get("version") == "RELEASE-MANIFEST-3.0.0"
+        else "EVIDENCE-INDEX-2.0.0"
         if release_manifest.get("version") == "RELEASE-MANIFEST-2.0.0"
         else "EVIDENCE-INDEX-1.0.0"
     )
@@ -504,6 +564,10 @@ def evidence_index_issues(index: Any, release_manifest: Any) -> list[str]:
             "kind", "version", "uri", "mediaType", "size", "binarySha256",
             "ociDigest", "subjectCommit", "subjectTree", "scenarioSetSha256",
         ) if node.get("kind") == PIC_TARGET_KIND else (
+            "kind", "version", "uri", "mediaType", "size", "binarySha256",
+            "ociDigest", "subjectCommit", "subjectTree", "catalogSha256",
+            "qualityGateSha256", "sourceCount",
+        ) if node.get("kind") == DCC_TARGET_KIND else (
             "kind", "version", "uri", "mediaType", "size", "binarySha256", "ociDigest"
         )
         if not isinstance(reference, dict) or any(
@@ -514,7 +578,7 @@ def evidence_index_issues(index: Any, release_manifest: Any) -> list[str]:
         if node.get("subjectBinarySha256") != expected_subject:
             issues.append(f"EVIDENCE_INDEX_NODE_SUBJECT_MISMATCH: {identity}")
         expected_stage = (
-            "candidate-evidence" if node.get("kind") == PIC_TARGET_KIND
+            "candidate-evidence" if node.get("kind") in {PIC_TARGET_KIND, DCC_TARGET_KIND}
             else "artifact" if node.get("kind") == "artifact"
             else "artifact-signature" if node.get("kind") == "artifact-signature"
             else "artifact-evidence"
@@ -581,6 +645,9 @@ def _release_manifest_version(value: str) -> str:
         "2": "RELEASE-MANIFEST-2.0.0",
         "2.0.0": "RELEASE-MANIFEST-2.0.0",
         "RELEASE-MANIFEST-2.0.0": "RELEASE-MANIFEST-2.0.0",
+        "3": "RELEASE-MANIFEST-3.0.0",
+        "3.0.0": "RELEASE-MANIFEST-3.0.0",
+        "RELEASE-MANIFEST-3.0.0": "RELEASE-MANIFEST-3.0.0",
     }
     if value not in versions:
         raise ValueError("RELEASE_MANIFEST_VERSION_INVALID")
@@ -613,6 +680,38 @@ def _pic_target_node_issues(
         issues.append("RELEASE_PUBLIC_INTEGRATION_CANDIDATE_BINDING_INVALID")
     if node.get("scenarioSetSha256") != _file_sha256(PIC_SCENARIO_PATH):
         issues.append("RELEASE_PUBLIC_INTEGRATION_SCENARIO_BINDING_INVALID")
+    return issues
+
+
+def _dcc_target_node_issues(
+    node: dict[str, Any], manifest: dict[str, Any]
+) -> list[str]:
+    issues: list[str] = []
+    subject_commit = node.get("subjectCommit")
+    subject_tree = node.get("subjectTree")
+    if (
+        node.get("id") != DCC_TARGET_ID
+        or node.get("kind") != DCC_TARGET_KIND
+        or node.get("version") != "DCC-TARGET-REPORT-1.0.0"
+        or node.get("sourceCount") != 17
+    ):
+        issues.append("RELEASE_DATA_CATALOG_TARGET_IDENTITY_INVALID")
+    if not re.fullmatch(r"[0-9a-f]{40}", str(subject_commit)) or (
+        subject_commit != manifest.get("sourceCommit")
+    ):
+        issues.append("RELEASE_DATA_CATALOG_TARGET_COMMIT_INVALID")
+    if not re.fullmatch(r"[0-9a-f]{40}", str(subject_tree)):
+        issues.append("RELEASE_DATA_CATALOG_TARGET_TREE_INVALID")
+    expected_binding = canonical_sha256({
+        "subjectCommit": subject_commit,
+        "subjectTree": subject_tree,
+    })
+    if node.get("subjectBinarySha256") != expected_binding:
+        issues.append("RELEASE_DATA_CATALOG_CANDIDATE_BINDING_INVALID")
+    if node.get("catalogSha256") != _file_sha256(DCC_CATALOG_PATH):
+        issues.append("RELEASE_DATA_CATALOG_DIGEST_BINDING_INVALID")
+    if node.get("qualityGateSha256") != _file_sha256(DCC_QUALITY_GATE_PATH):
+        issues.append("RELEASE_QUALITY_GATE_DIGEST_BINDING_INVALID")
     return issues
 
 

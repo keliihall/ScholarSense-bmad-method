@@ -23,6 +23,10 @@ final class ArchitectureRules {
     private static final Set<String> LAYERS = Set.of("api", "domain", "application", "adapters");
     private static final Set<String> SHARED_KERNELS = Set.of("id", "time", "error", "trace", "outbox");
     private static final Set<String> INFRASTRUCTURE_PACKAGES = Set.of("runtime");
+    private static final Set<String> AUDIT_API_COMPATIBILITY_ALIASES = Set.of(
+            "cn.edu.suda.scholarsense.auditoperations.api.AuditLedgerIngressPort",
+            "cn.edu.suda.scholarsense.auditoperations.api.AuditProducerBacklogPort",
+            "cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityPort");
     private static final String ROOT = "cn.edu.suda.scholarsense";
     private static final Pattern PACKAGE = Pattern.compile("(?m)^\\s*package\\s+([a-zA-Z0-9_.]+)\\s*;");
     private static final Pattern IMPORT = Pattern.compile("(?m)^\\s*import\\s+(?:static\\s+)?([a-zA-Z0-9_.]+)\\s*;");
@@ -177,6 +181,9 @@ final class ArchitectureRules {
         ProjectImport target = projectImport(imported);
         if (target == null || target.module.equals("shared") || !MODULES.contains(target.module)) {
             return;
+        }
+        if (!module.equals("auditoperations") && AUDIT_API_COMPATIBILITY_ALIASES.contains(imported)) {
+            violations.add("AUDIT_API_ALIAS_IMPORT_FORBIDDEN: " + source + " -> " + imported);
         }
         if (target.module.equals(module)) {
             if (!sameModuleDependencyAllowed(layer, target.layer)) {

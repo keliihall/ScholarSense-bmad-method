@@ -66,9 +66,26 @@ class LocalAuditStorageConformanceTest {
         assertFalse(Files.readString(registry).contains("LocalAuditFact"),
                 "module-local technical facts must not become AD-2 domain fact owners");
         try (var walk = Files.walk(Path.of("src/main/resources/db/migration"))) {
-            assertTrue(walk.filter(path -> path.toString().endsWith(".sql"))
+            List<Path> localAuditMigrations = walk
+                    .filter(path -> path.toString().endsWith(".sql"))
+                    .filter(path -> {
+                        try {
+                            String sql = Files.readString(path).toLowerCase();
+                            return sql.contains("create table ")
+                                    && sql.contains("_local_audit_fact (");
+                        } catch (java.io.IOException error) {
+                            throw new java.io.UncheckedIOException(error);
+                        }
+                    }).toList();
+            for (String owner : List.of("identity-access", "audit-operations", "ingestion-quality")) {
+                assertTrue(localAuditMigrations.stream()
+                        .anyMatch(path -> path.toString().contains(owner)),
+                        () -> "missing local-audit storage for " + owner);
+            }
+            assertTrue(localAuditMigrations.stream()
                     .allMatch(path -> path.toString().contains("identity-access")
-                            || path.toString().contains("audit-operations")));
+                            || path.toString().contains("audit-operations")
+                            || path.toString().contains("ingestion-quality")));
         }
     }
 }

@@ -1,0 +1,88 @@
+{
+  "openapi": "3.1.2",
+  "info": {"title": "ScholarSense Data Source Catalog API", "version": "1.0.0"},
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "servers": [{"url": "/"}],
+  "paths": {
+    "/api/v1/data-source-catalogs": {
+      "get": {
+        "operationId": "listDataSourceCatalogs",
+        "parameters": [
+          {"name": "page", "in": "query", "schema": {"type": "integer", "minimum": 0, "default": 0}},
+          {"name": "size", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}
+        ],
+        "responses": {
+          "200": {"description": "Authorized page", "headers": {"Cache-Control": {"schema": {"const": "no-store"}}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CatalogPage"}}}},
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "503": {"$ref": "#/components/responses/Unavailable"}
+        }
+      }
+    },
+    "/api/v1/data-source-catalogs/{catalogId}": {
+      "parameters": [{"$ref": "#/components/parameters/CatalogId"}],
+      "get": {
+        "operationId": "getDataSourceCatalog",
+        "responses": {
+          "200": {"description": "Authorized catalog detail", "headers": {"Cache-Control": {"schema": {"const": "no-store"}}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CatalogDetail"}}}},
+          "404": {"description": "Absent or unauthorized; identical envelope", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "503": {"$ref": "#/components/responses/Unavailable"}
+        }
+      }
+    },
+    "/api/v1/data-source-catalogs/{catalogId}/validations": {
+      "parameters": [{"$ref": "#/components/parameters/CatalogId"}],
+      "post": {
+        "operationId": "validateDataSourceCatalog",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ValidateRequest"}}}},
+        "responses": {
+          "200": {"description": "Persisted validation result", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Catalog"}}}},
+          "404": {"description": "Absent or unauthorized", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"$ref": "#/components/responses/Conflict"},
+          "422": {"$ref": "#/components/responses/Unprocessable"}
+        }
+      }
+    },
+    "/api/v1/data-source-catalogs/{catalogId}/publications": {
+      "parameters": [{"$ref": "#/components/parameters/CatalogId"}, {"$ref": "#/components/parameters/IdempotencyKey"}],
+      "post": {
+        "operationId": "publishDataSourceCatalog",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PublishRequest"}}}},
+        "responses": {
+          "200": {"description": "Published or exact idempotent replay", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Catalog"}}}},
+          "404": {"description": "Absent or unauthorized", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+          "409": {"$ref": "#/components/responses/Conflict"},
+          "422": {"$ref": "#/components/responses/Unprocessable"},
+          "503": {"$ref": "#/components/responses/Unavailable"}
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "CatalogId": {"name": "catalogId", "in": "path", "required": true, "schema": {"$ref": "#/components/schemas/UuidV7"}},
+      "IdempotencyKey": {"name": "Idempotency-Key", "in": "header", "required": true, "schema": {"type": "string", "minLength": 1, "maxLength": 128}}
+    },
+    "responses": {
+      "BadRequest": {"description": "Invalid request", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Conflict": {"description": "Version or idempotency conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Unprocessable": {"description": "Contract, evidence or state invalid", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Unavailable": {"description": "Authorization/audit dependency unavailable", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+    },
+    "schemas": {
+      "UuidV7": {"type": "string", "format": "uuid", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+      "Sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+      "OffsetInstant": {"type": "string", "format": "date-time", "pattern": "(?:Z|[+-][0-9]{2}:[0-9]{2})$"},
+      "ValidateRequest": {"type": "object", "additionalProperties": false, "required": ["expectedVersion", "requestedAt"], "properties": {"expectedVersion": {"type": "integer", "minimum": 1}, "requestedAt": {"$ref": "#/components/schemas/OffsetInstant"}}},
+      "PublishRequest": {"type": "object", "additionalProperties": false, "required": ["expectedVersion", "catalogReleaseId", "evidenceSetDigest", "requestedAt"], "properties": {"expectedVersion": {"type": "integer", "minimum": 1}, "catalogReleaseId": {"$ref": "#/components/schemas/UuidV7"}, "evidenceSetDigest": {"$ref": "#/components/schemas/Sha256"}, "requestedAt": {"$ref": "#/components/schemas/OffsetInstant"}}},
+      "ValidationFailure": {"type": "object", "additionalProperties": false, "required": ["code", "fieldPath"], "properties": {"code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"}, "fieldPath": {"type": "string"}}},
+      "Catalog": {"type": "object", "additionalProperties": false, "required": ["catalogId", "contractVersion", "status", "aggregateVersion", "contentDigest", "validationFailures", "updatedAt"], "properties": {"catalogId": {"$ref": "#/components/schemas/UuidV7"}, "catalogReleaseId": {"oneOf": [{"$ref": "#/components/schemas/UuidV7"}, {"type": "null"}]}, "contractVersion": {"const": "DCC-1.0.0"}, "status": {"enum": ["DRAFT", "INVALID", "PUBLISHABLE", "PUBLISHED"]}, "aggregateVersion": {"type": "integer", "minimum": 1}, "contentDigest": {"$ref": "#/components/schemas/Sha256"}, "evidenceSetDigest": {"oneOf": [{"$ref": "#/components/schemas/Sha256"}, {"type": "null"}]}, "validationFailures": {"type": "array", "items": {"$ref": "#/components/schemas/ValidationFailure"}}, "updatedAt": {"$ref": "#/components/schemas/OffsetInstant"}, "publishedAt": {"oneOf": [{"$ref": "#/components/schemas/OffsetInstant"}, {"type": "null"}]}, "sources": {"type": "array", "items": {"$ref": "#/components/schemas/SourceContract"}}, "dependencies": {"type": "array", "items": {"$ref": "#/components/schemas/DependencyBinding"}}}},
+      "SourceMetadata": {"type": "object", "additionalProperties": false, "required": ["ownerDepartment", "ownerName", "businessDefinition", "businessKeys", "updateFrequency", "slo", "coverage", "sensitivity", "reconciliation", "backfillWindowDays", "watermarkRequired", "contractTests", "consumerMode"], "properties": {"ownerDepartment": {"type": "string"}, "ownerName": {"type": "string"}, "businessDefinition": {"type": "string"}, "businessKeys": {"type": "array", "items": {"type": "string"}}, "updateFrequency": {"type": "string"}, "slo": {"type": "string"}, "coverage": {"type": "string"}, "sensitivity": {"type": "string"}, "reconciliation": {"type": "string"}, "backfillWindowDays": {"type": "integer", "minimum": 0}, "watermarkRequired": {"type": "boolean"}, "contractTests": {"type": "array", "items": {"type": "string"}}, "consumerMode": {"type": "string"}}},
+      "SourceContract": {"type": "object", "additionalProperties": false, "required": ["sourceId", "purpose", "schemaVersion", "qualityGateVersion", "evidenceUri", "runtimeEvidenceClaim", "metadata"], "properties": {"sourceId": {"type": "string", "pattern": "^SRC-P[01]-[A-Z-]+-[0-9]{3}$"}, "purpose": {"type": "string"}, "schemaVersion": {"type": "string"}, "qualityGateVersion": {"const": "QG-1.0.0"}, "evidenceUri": {"type": "string"}, "runtimeEvidenceClaim": {"enum": ["NONE", "TARGET_VERIFIED"]}, "metadata": {"$ref": "#/components/schemas/SourceMetadata"}}},
+      "DependencyBinding": {"type": "object", "additionalProperties": false, "required": ["sourceId", "dependencyId", "requirement", "operator"], "properties": {"sourceId": {"type": "string"}, "dependencyId": {"type": "string", "pattern": "^DEP-P[01]-[A-Z-]+-[0-9]{3}$"}, "requirement": {"enum": ["REQUIRED", "OPTIONAL"]}, "operator": {"enum": ["ALL_OF", "ANY_OF", "THRESHOLD"]}}},
+      "CatalogDetail": {"allOf": [{"$ref": "#/components/schemas/Catalog"}, {"type": "object", "required": ["sources", "dependencies"], "properties": {"sources": {"type": "array", "items": {"$ref": "#/components/schemas/SourceContract"}}, "dependencies": {"type": "array", "items": {"$ref": "#/components/schemas/DependencyBinding"}}}}]},
+      "CatalogPage": {"type": "object", "additionalProperties": false, "required": ["items", "page", "size", "hasMore"], "properties": {"items": {"type": "array", "items": {"$ref": "#/components/schemas/Catalog"}}, "page": {"type": "integer", "minimum": 0}, "size": {"type": "integer", "minimum": 1, "maximum": 100}, "hasMore": {"type": "boolean"}}},
+      "FieldError": {"type": "object", "additionalProperties": false, "required": ["field", "code"], "properties": {"field": {"type": "string"}, "code": {"type": "string"}}},
+      "Error": {"type": "object", "additionalProperties": false, "required": ["code", "traceId", "fieldErrors"], "properties": {"code": {"type": "string", "pattern": "^INGESTION_QUALITY_[A-Z0-9_]+$"}, "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"}, "currentVersion": {"type": ["integer", "null"], "minimum": 1}, "fieldErrors": {"type": "array", "items": {"$ref": "#/components/schemas/FieldError"}}}}
+    }
+  }
+}

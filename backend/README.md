@@ -10,8 +10,8 @@
 _bmad/scripts/with_pab_toolchain.sh backend/mvnw -f backend/pom.xml clean verify
 ```
 
-真实数据库验收使用精确 PostgreSQL 18.4，并同时验证干净迁移与
-V000001→V000002→V000003→V000004→V000005 升级、搜索分页/索引、并发、回滚、重放、权限和特权篡改路径：
+真实数据库验收使用精确 PostgreSQL 18.4，并从生产 migration 目录自动发现连续的完整清单，
+同时验证干净迁移与保留历史行的升级、搜索分页/索引、并发、回滚、重放、权限和特权篡改路径：
 
 ```bash
 scripts/run_audit_postgresql_tests.sh

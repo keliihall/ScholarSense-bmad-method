@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/data-catalog/quality-gate.schema.json",
+  "title": "QualityGate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["qualityGateVersion", "commonHardGates", "sourceOverrides"],
+  "properties": {
+    "qualityGateVersion": {"const": "QG-1.0.0"},
+    "commonHardGates": {"type": "object"},
+    "sourceOverrides": {"type": "object"}
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "fixtureVersion":"DCC-NEGATIVE-1.0.0",
+  "cases":[
+    {"id":"missing-source","mutation":"remove-source","input":{"sourceId":"SRC-P1-WORK-VISIT-001"},"expectedCode":"DCC_SOURCE_SET_INVALID"},
+    {"id":"extra-source","mutation":"add-source","input":{"sourceId":"SRC-P1-INVENTED-999"},"expectedCode":"DCC_SOURCE_SET_INVALID"},
+    {"id":"duplicate-source","mutation":"duplicate-source","input":{"sourceId":"SRC-P0-STUDENT-001"},"expectedCode":"DCC_SOURCE_ID_DUPLICATE"},
+    {"id":"missing-dependency","mutation":"remove-dependency","input":{"dependencyId":"DEP-P1-ACADEMIC-001"},"expectedCode":"DCC_DEPENDENCY_SET_INVALID"},
+    {"id":"duplicate-dependency","mutation":"duplicate-dependency","input":{"dependencyId":"DEP-P0-CALENDAR-001"},"expectedCode":"DCC_DEPENDENCY_ID_DUPLICATE"},
+    {"id":"runtime-fixture-claim","mutation":"claim-fixture-as-runtime","input":{"sourceId":"SRC-P0-CALENDAR-001","evidenceUri":"fixture://calendar-day"},"expectedCode":"DCC_EVIDENCE_URI_INVALID"},
+    {"id":"timetable-forbidden","mutation":"add-forbidden-schema-field","input":{"schemaRef":"sources/src-p0-timetable-001.schema.json","field":"grade"},"expectedCode":"DCC_FORBIDDEN_FIELD"}
+  ]
+}

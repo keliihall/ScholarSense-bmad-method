@@ -23,6 +23,9 @@ from release_json import canonical_bytes  # noqa: E402
 TARGET_EVIDENCE_FILENAME = (
     "public-integration-target-conformance-evidence-1.0.0.json"
 )
+DATA_CATALOG_TARGET_EVIDENCE_FILENAME = (
+    "data-catalog-target-conformance-evidence-1.0.0.json"
+)
 
 
 def _required(name: str) -> str:
@@ -56,7 +59,7 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("release_version")
     parser.add_argument("output")
-    parser.add_argument("--manifest-version", choices=("1", "2"), default="1")
+    parser.add_argument("--manifest-version", choices=("1", "2", "3"), default="1")
     try:
         args = parser.parse_args(argv[1:])
     except SystemExit as error:
@@ -72,9 +75,13 @@ def main(argv: list[str]) -> int:
             "attestation": _required("ATTESTATION_URI"),
             "web": _required("WEB_URI"),
         }
-        if args.manifest_version == "2":
+        if args.manifest_version in {"2", "3"}:
             uris["public-integration-target"] = _required(
                 "PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI"
+            )
+        if args.manifest_version == "3":
+            uris["data-catalog-target"] = _required(
+                "DATA_CATALOG_TARGET_EVIDENCE_URI"
             )
         oras = _oras()
         with tempfile.TemporaryDirectory(prefix="scholarsense-release-assembly-") as directory:
@@ -99,11 +106,19 @@ def main(argv: list[str]) -> int:
                 manifest_version=args.manifest_version,
                 public_integration_target_evidence_uri=(
                     uris["public-integration-target"]
-                    if args.manifest_version == "2" else None
+                    if args.manifest_version in {"2", "3"} else None
                 ),
                 public_integration_target_evidence_path=(
                     root / "public-integration-target" / TARGET_EVIDENCE_FILENAME
-                    if args.manifest_version == "2" else None
+                    if args.manifest_version in {"2", "3"} else None
+                ),
+                data_catalog_target_evidence_uri=(
+                    uris["data-catalog-target"]
+                    if args.manifest_version == "3" else None
+                ),
+                data_catalog_target_evidence_path=(
+                    root / "data-catalog-target" / DATA_CATALOG_TARGET_EVIDENCE_FILENAME
+                    if args.manifest_version == "3" else None
                 ),
             )
             if os.environ.get("GITHUB_SHA") and payload["buildManifest"].get("sourceCommit") != os.environ["GITHUB_SHA"]:
