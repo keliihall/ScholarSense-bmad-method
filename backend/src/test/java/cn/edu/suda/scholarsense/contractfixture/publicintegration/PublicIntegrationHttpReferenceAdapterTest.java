@@ -21,6 +21,8 @@ import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLSession;
@@ -161,6 +163,7 @@ class PublicIntegrationHttpReferenceAdapterTest {
     void providerAcceptThenLostResponseRetriesWithoutSecondEffect() throws Exception {
         Set<String> appliedEffects = ConcurrentHashMap.newKeySet();
         AtomicInteger sideEffects = new AtomicInteger();
+        CountDownLatch duplicateRequestObserved = new CountDownLatch(1);
         HttpsServer server = material.server(exchange -> {
             exchange.getRequestBody().readAllBytes();
             String effectKey = exchange.getRequestHeaders()
@@ -168,10 +171,16 @@ class PublicIntegrationHttpReferenceAdapterTest {
             if (appliedEffects.add(effectKey)) {
                 sideEffects.incrementAndGet();
                 try {
-                    Thread.sleep(650);
+                    if (!duplicateRequestObserved.await(5, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException(
+                                "PIC_TEST_DUPLICATE_REQUEST_NOT_OBSERVED");
+                    }
                 } catch (InterruptedException interrupted) {
                     Thread.currentThread().interrupt();
+                    throw new IllegalStateException(interrupted);
                 }
+            } else {
+                duplicateRequestObserved.countDown();
             }
             byte[] response = receipt("idem-lost", "pe1.lost");
             exchange.getResponseHeaders().set("Content-Type", "application/json");

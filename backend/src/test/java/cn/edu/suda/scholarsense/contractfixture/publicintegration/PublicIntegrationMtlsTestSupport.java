@@ -106,6 +106,7 @@ final class PublicIntegrationMtlsTestSupport implements AutoCloseable {
                 parameters.setSSLParameters(sslParameters);
             }
         });
+        server.setExecutor(command -> Thread.startVirtualThread(command));
         server.createContext("/", handler);
         server.start();
         return server;
