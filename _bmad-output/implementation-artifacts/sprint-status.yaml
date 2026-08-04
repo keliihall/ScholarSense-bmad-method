@@ -1,5 +1,5 @@
 # generated: 2026-07-17T20:58:14+0800
-# last_updated: 2026-08-04T10:32:41+0800
+# last_updated: 2026-08-04T11:08:38+0800
 # project: ScholarSense-bmad-method
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - 回顾产生的行动项追加到 action_items，sprint-status 会呈现未完成项
 
 generated: 2026-07-17T20:58:14+0800
-last_updated: 2026-08-04T10:32:41+0800
+last_updated: 2026-08-04T11:08:38+0800
 project: ScholarSense-bmad-method
 project_key: NOKEY
 tracking_system: file-system
@@ -63,7 +63,7 @@ development_status:
   1-7-提供角色化首页与组合对象授权: done
   1-8-执行字段级投影与任务期敏感授权: done
   1-9-建立公共任务-消息与回写适配器契约: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   epic-2: backlog
   2-1-管理-p0-p1-数据源目录与最小课表校历切片: backlog
@@ -159,3 +159,29 @@ development_status:
   8-3-安全查询已定义汇总指标: backlog
   8-4-回退智能策略到稳定规则基线: backlog
   epic-8-retrospective: optional
+
+action_items:
+  - epic: 1
+    action: "补齐 Story 1.2 的真实学校门户、IdP、生产 KMS/共享数据库、冻结正式浏览器和独立签名 host/SSO 运行证据，并移除以限定豁免作为完成依据"
+    owner: "平台/IAM 集成负责人"
+    status: open
+  - epic: 1
+    action: "将 Story 1.9 当前候选合入受保护 main，并在合并 SHA 上执行完整洁净发布门禁"
+    owner: "发布工程负责人"
+    status: open
+  - epic: 1
+    action: "收口 auditoperations.api 与 shared 中三组同名审计端口兼容桥，冻结唯一公共入口和移除规则"
+    owner: "架构负责人"
+    status: open
+  - epic: 1
+    action: "由生产 migration 目录派生单一 inventory，消除多个测试和脚本中的迁移数量及 V000009 尾版本硬编码"
+    owner: "后端基础设施负责人"
+    status: open
+  - epic: 1
+    action: "隔离沙箱 scheduler 并让未分类后台线程异常使门禁失败，消除通过测试中的 JDBC/scheduler 异常堆栈"
+    owner: "QA 负责人"
+    status: open
+  - epic: 1
+    action: "同步 deferred-work、旧 in-review course-correction、audit capability 组合语义和后续 Story 的生产证据边界"
+    owner: "技术文档负责人"
+    status: open
