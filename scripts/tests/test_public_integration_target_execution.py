@@ -13,6 +13,23 @@ from scripts import run_public_integration_target_sandbox_tests as target_runner
 
 
 class PublicIntegrationTargetExecutionTests(unittest.TestCase):
+    def test_tls_peer_binding_supports_python_without_verified_chain_api(self):
+        tls_socket = mock.Mock(spec=["getpeercert"])
+        tls_socket.getpeercert.return_value = b"verified-leaf-certificate"
+        with mock.patch.object(
+            target_runner,
+            "_certificate_der_spki_sha256",
+            return_value="a" * 64,
+        ):
+            binding = target_runner._tls_peer_binding(tls_socket)
+
+        self.assertEqual("a" * 64, binding["peerSpkiSha256"])
+        self.assertEqual(
+            target_runner._verified_chain_sha256([b"verified-leaf-certificate"]),
+            binding["peerChainSha256"],
+        )
+        tls_socket.getpeercert.assert_called_once_with(binary_form=True)
+
     def test_real_mtls_target_runs_locked_vector_and_cleans_every_object(self):
         if subprocess.run(
             ["openssl", "version"], capture_output=True, check=False

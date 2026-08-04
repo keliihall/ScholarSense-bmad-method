@@ -131,7 +131,15 @@ def _verified_chain_sha256(chain: list[bytes]) -> str:
 
 
 def _tls_peer_binding(tls_socket: ssl.SSLSocket) -> dict[str, str]:
-    chain = tls_socket.get_verified_chain()
+    verified_chain = getattr(tls_socket, "get_verified_chain", None)
+    if callable(verified_chain):
+        chain = verified_chain()
+    else:
+        # SSLSocket.get_verified_chain() was added in Python 3.13.  On older
+        # supported runners the completed, verifying handshake still exposes
+        # the authenticated leaf certificate through getpeercert().
+        leaf = tls_socket.getpeercert(binary_form=True)
+        chain = [leaf] if isinstance(leaf, bytes) and leaf else []
     if not chain or not all(isinstance(item, bytes) and item for item in chain):
         raise ValueError("PIC_TARGET_VERIFIED_CERTIFICATE_CHAIN_MISSING")
     return {
