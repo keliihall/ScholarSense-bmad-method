@@ -14,7 +14,13 @@ import sys
 
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-from release_json import canonical_bytes, canonical_sha256, load_json  # noqa: E402
+from release_json import (  # noqa: E402
+    canonical_bytes,
+    canonical_sha256,
+    load_json,
+    schema_issues,
+)
+import run_public_integration_sandbox_tests as pic_evidence  # noqa: E402
 
 
 OCI_URI = re.compile(r"^ghcr\.io/[a-z0-9_.-]+/[a-z0-9_./-]+@(?P<digest>sha256:[0-9a-f]{64})$")
@@ -29,7 +35,7 @@ BASELINES = {
     "UXB": ("UXB-1.0.0", DELEGATED_BASELINE),
     "VGB": ("VGB-1.0.0", "contracts/release/visual-baseline-vgb-1.0.0.json"),
 }
-CONTROLLED_INPUTS = {
+CONTROLLED_INPUTS_V1 = {
     "AcademicCareNodeSet": ("ACN-1.0.0", DELEGATED_BASELINE),
     "AuthorizationAudit": ("AUDIT-CONTRACT-LOCK-1.4.0", "contracts/audit/audit-contract-lock-1.4.0.json"),
     "Availability": ("AP-1.0.0", "contracts/performance/availability-policy-ap-1.0.0.json"),
@@ -50,6 +56,15 @@ CONTROLLED_INPUTS = {
     "TransferSla": ("TSP-1.0.0", DELEGATED_BASELINE),
     "WorkVisit": ("WVP-1.0.0", DELEGATED_BASELINE),
 }
+CONTROLLED_INPUTS_V2 = {
+    **CONTROLLED_INPUTS_V1,
+    "PublicIntegration": (
+        "PIC-CONTRACT-LOCK-1.0.0",
+        "contracts/public-integration/public-integration-contract-lock-1.0.0.json",
+    ),
+}
+# Backward-compatible public name: it remains the immutable V1 mapping.
+CONTROLLED_INPUTS = CONTROLLED_INPUTS_V1
 LOCKS = {
     "backend-lock": ("BACKEND-LOCK-1.0.0", "contracts/release/backend-lock-1.0.0.json"),
     "frontend-lock": ("PACKAGE-LOCK-3", "frontend/package-lock.json"),
@@ -143,6 +158,10 @@ def assemble_release_manifest_input(
     web_uri: str,
     web_root: Path,
     frozen_at: str,
+    *,
+    manifest_version: str = "1",
+    public_integration_target_evidence_uri: str | None = None,
+    public_integration_target_evidence_path: Path | None = None,
 ) -> dict[str, Any]:
     source_root = source_root.resolve()
     build_path = artifact_root / "build-manifest.json"
@@ -219,6 +238,88 @@ def assemble_release_manifest_input(
             _reference("frontend-brand-asset-manifest", "BRAND-ASSET-MANIFEST-1.0.0", artifact_uri, source_root / "contracts/release/brand-asset-manifest-1.0.0.json", kind="brand-asset-manifest", subject_sha256=subject_digests["frontend"]),
         ]
     )
+    if manifest_version not in {"1", "2"}:
+        raise ValueError("RELEASE_ASSEMBLY_MANIFEST_VERSION_INVALID")
+    controlled_inputs = (
+        CONTROLLED_INPUTS_V2 if manifest_version == "2" else CONTROLLED_INPUTS_V1
+    )
+    if manifest_version == "2":
+        if (
+            public_integration_target_evidence_uri is None
+            or public_integration_target_evidence_path is None
+        ):
+            raise ValueError("RELEASE_ASSEMBLY_PIC_TARGET_EVIDENCE_REQUIRED")
+        evidence_path = public_integration_target_evidence_path.resolve()
+        if evidence_path == source_root or source_root in evidence_path.parents:
+            raise ValueError("RELEASE_ASSEMBLY_PIC_TARGET_EVIDENCE_MUST_BE_TREE_OUTSIDE")
+        target_evidence = load_json(evidence_path)
+        evidence_schema = load_json(
+            source_root
+            / "contracts/public-integration/public-integration-evidence.schema.json"
+        )
+        canonical_evidence = canonical_bytes(target_evidence)
+        if evidence_path.read_bytes() not in {
+            canonical_evidence,
+            canonical_evidence + b"\n",
+        }:
+            raise ValueError("RELEASE_ASSEMBLY_PIC_TARGET_EVIDENCE_INVALID")
+        if (
+            not isinstance(target_evidence, dict)
+            or schema_issues(target_evidence, evidence_schema)
+            or pic_evidence.validate_evidence(target_evidence)
+            or target_evidence.get("version") != "PIC-EVIDENCE-1.0.0"
+            or target_evidence.get("evidenceClass")
+            != "target-managed-non-production-sandbox"
+            or target_evidence.get("subjectCommit")
+            != build_manifest.get("sourceCommit")
+            or target_evidence.get("subjectTree")
+            != source_inventory.get("gitTreeOid")
+            or target_evidence.get("overallResult") != "pass"
+            or target_evidence.get("failedCount") != 0
+            or target_evidence.get("skippedCount") != 0
+            or target_evidence.get("sandboxCleanupResult") != "pass"
+            or target_evidence.get("orphanCount") != 0
+            or target_evidence.get("approvedRetainedCount") != 0
+        ):
+            raise ValueError("RELEASE_ASSEMBLY_PIC_TARGET_EVIDENCE_INVALID")
+        expected_contract_digest = _sha256(
+            source_root / "contracts/public-integration/pic-1.0.0.json"
+        )
+        expected_profile_digest = _sha256(
+            source_root
+            / "contracts/public-integration/"
+            "public-integration-runtime-profile-1.0.0.json"
+        )
+        if (
+            target_evidence.get("contractDigest") != expected_contract_digest
+            or target_evidence.get("profileDigest") != expected_profile_digest
+        ):
+            raise ValueError("RELEASE_ASSEMBLY_PIC_TARGET_EVIDENCE_INVALID")
+        scenario_digest = _sha256(
+            source_root
+            / "contracts/public-integration/"
+            "public-integration-target-scenarios-1.0.0.json"
+        )
+        if target_evidence.get("scenarioSetDigest") != scenario_digest:
+            raise ValueError("RELEASE_ASSEMBLY_PIC_SCENARIO_DIGEST_MISMATCH")
+        candidate_binding = canonical_sha256({
+            "subjectCommit": target_evidence["subjectCommit"],
+            "subjectTree": target_evidence["subjectTree"],
+        })
+        pic_reference = _reference(
+            "PublicIntegrationTargetConformance",
+            "PIC-EVIDENCE-1.0.0",
+            public_integration_target_evidence_uri,
+            evidence_path,
+            kind="public-integration-target-conformance",
+            subject_sha256=candidate_binding,
+        )
+        pic_reference.update({
+            "subjectCommit": target_evidence["subjectCommit"],
+            "subjectTree": target_evidence["subjectTree"],
+            "scenarioSetSha256": scenario_digest,
+        })
+        evidence.append(pic_reference)
     frontend_kinds = {"formal-web-report", "visual-baseline", "ui-token-manifest", "brand-asset-manifest"}
     supply_chain_kinds = {
         "artifact-signature",
@@ -229,6 +330,7 @@ def assemble_release_manifest_input(
         "vulnerability-scan",
     }
     return {
+        "manifestVersion": manifest_version,
         "releaseVersion": release_version,
         "buildManifest": build_manifest,
         "buildManifestRef": _reference(
@@ -294,7 +396,9 @@ def assemble_release_manifest_input(
                 "runtimeEvidenceClaim": "none",
             },
         ],
-        "controlledInputs": _controlled_references(source_root, artifact_uri, CONTROLLED_INPUTS),
+        "controlledInputs": _controlled_references(
+            source_root, artifact_uri, controlled_inputs
+        ),
         "locks": _controlled_references(source_root, artifact_uri, LOCKS),
         "artifacts": artifacts,
         "evidence": evidence,
@@ -318,7 +422,7 @@ def assemble_evidence_index_input(
     manifest_digest = canonical_sha256(release_manifest)
     manifest_reference = _reference(
         "release-manifest",
-        "RELEASE-MANIFEST-1.0.0",
+        str(release_manifest.get("version")),
         manifest_uri,
         manifest_path,
         binary_sha256=manifest_digest,

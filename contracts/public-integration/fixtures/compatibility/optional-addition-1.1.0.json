@@ -1,0 +1,45 @@
+{
+  "version": "PIC-COMPATIBILITY-FIXTURE-1.1.0",
+  "schemaPath": "contracts/events/public-integration/public-integration-command.schema.json",
+  "schemaTarget": "#/$defs/messagePayload",
+  "instanceObjectPath": ["payload"],
+  "change": "add-optional-field",
+  "field": "providerCapabilityHint",
+  "fieldSchema": {"enum": ["batch-safe", "single-only"]},
+  "producerSchemaVersion": "1.1.0",
+  "consumerSchemaVersion": "1.0.0",
+  "producerInstance": {
+    "contractVersion": "PIC-1.0.0",
+    "channelId": "pic.public-message.v1",
+    "generationKey": "g1.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "providerEffectKey": "pe1.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "operation": "create",
+    "aggregateType": "Candidate",
+    "aggregateId": "candidate-01",
+    "aggregateVersion": 1,
+    "requestDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "traceId": "dddddddddddddddddddddddddddddddd",
+    "payload": {
+      "notificationType": "overdue",
+      "escalationVersion": 1,
+      "providerCapabilityHint": "batch-safe"
+    }
+  },
+  "expectedDownProjectedInstance": {
+    "contractVersion": "PIC-1.0.0",
+    "channelId": "pic.public-message.v1",
+    "generationKey": "g1.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "providerEffectKey": "pe1.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "operation": "create",
+    "aggregateType": "Candidate",
+    "aggregateId": "candidate-01",
+    "aggregateVersion": 1,
+    "requestDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "traceId": "dddddddddddddddddddddddddddddddd",
+    "payload": {
+      "notificationType": "overdue",
+      "escalationVersion": 1
+    }
+  },
+  "expected": "compatible"
+}

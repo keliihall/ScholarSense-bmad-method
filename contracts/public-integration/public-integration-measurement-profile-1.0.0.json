@@ -1,0 +1,13 @@
+{
+  "version": "PIC-MEASUREMENT-1.0.0",
+  "contractVersion": "PIC-1.0.0",
+  "scope": "synthetic-target-managed-non-production-sandbox",
+  "start": "local-transaction-committed-at",
+  "end": "provider-contract-confirmed-at",
+  "budgetMilliseconds": 300000,
+  "segments": ["outboxWait", "claim", "network", "providerAcknowledgement", "confirmCas"],
+  "boundaryMilliseconds": [299999, 300000, 300001],
+  "duplicateCreateRateExpected": 0,
+  "productionEligible": false,
+  "productionRuntimeClaim": "none"
+}

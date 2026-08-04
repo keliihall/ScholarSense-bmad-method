@@ -1,0 +1,27 @@
+{
+  "version": "PIC-COMPATIBILITY-NEGATIVE-1.0.0",
+  "schemaPath": "contracts/events/public-integration/public-integration-command.schema.json",
+  "schemaTarget": "#",
+  "change": "remove-required-field",
+  "field": "generationKey",
+  "consumerSchemaVersion": "1.0.0",
+  "candidateSchemaVersion": "1.1.0",
+  "declaredMajor": 1,
+  "baseInstance": {
+    "contractVersion": "PIC-1.0.0",
+    "channelId": "pic.public-message.v1",
+    "generationKey": "g1.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "providerEffectKey": "pe1.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "operation": "create",
+    "aggregateType": "Candidate",
+    "aggregateId": "candidate-01",
+    "aggregateVersion": 1,
+    "requestDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "traceId": "dddddddddddddddddddddddddddddddd",
+    "payload": {
+      "notificationType": "overdue",
+      "escalationVersion": 1
+    }
+  },
+  "expected": "PIC_BREAKING_CHANGE_REQUIRES_MAJOR"
+}

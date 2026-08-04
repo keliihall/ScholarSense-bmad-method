@@ -1,0 +1,37 @@
+{
+  "version": "PIC-POLICY-1.0.0",
+  "contractVersion": "PIC-1.0.0",
+  "retry": {
+    "version": "PIC-RETRY-1.0.0",
+    "retryable": ["timeout", "connect", "http-429", "http-5xx"],
+    "failClosed": ["http-4xx-contract", "authentication", "authorization", "http-207", "mixed-ack"],
+    "algorithm": "bounded-exponential-jitter",
+    "maximumAttempts": 6,
+    "baseDelaySeconds": 2,
+    "maximumDelaySeconds": 300
+  },
+  "reconciliation": {
+    "version": "PIC-RECONCILIATION-1.0.0",
+    "incrementalEveryMinutes": 15,
+    "fullEveryDays": 1,
+    "checks": ["generation-mapping", "provider-lineage", "external-orphan", "receipt", "status", "route-gap"]
+  },
+  "retention": {
+    "idempotencyResultMinimumDays": 90,
+    "generationMappingMinimumDaysAfterTerminal": 90,
+    "holdTakesPrecedence": true,
+    "expiredRawMaterial": "purged",
+    "terminalTombstone": "retained"
+  },
+  "terminalFence": {
+    "key": ["tenant", "aggregateType", "tokenizedAggregateId", "tokenizedWorkItemKey"],
+    "crossChannel": true,
+    "reopenSupported": false,
+    "terminalPriority": "highest"
+  },
+  "auditActions": ["accepted", "rejected", "retry", "confirmed", "failed", "reconcile", "replay", "gap", "poison"],
+  "observability": {
+    "metricLabels": ["channel", "contractVersion", "outcome", "deliveryStatus"],
+    "forbidden": ["aggregateId", "eventId", "externalId", "nonce", "signature", "errorBody", "studentIdentifier", "freeText", "evidenceBody"]
+  }
+}

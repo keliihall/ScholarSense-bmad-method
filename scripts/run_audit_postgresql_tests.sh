@@ -186,7 +186,7 @@ for database in scholarsense_audit_clean scholarsense_audit_upgrade; do
   fi
 done
 
-POSTGRES_TESTS="IdentityAuditPostgreSqlIT,IdentityAuthorityPostgreSqlIT,ResponsibilityAuthorityPostgreSqlIT,AccessInvalidationPostgreSqlIT,AuditLedgerPostgreSqlIT"
+POSTGRES_TESTS="IdentityAuditPostgreSqlIT,IdentityAuthorityPostgreSqlIT,ResponsibilityAuthorityPostgreSqlIT,AccessInvalidationPostgreSqlIT,AuditLedgerPostgreSqlIT,PublicIntegrationPostgreSqlIT"
 if [[ -n "${IDENTITY_SANDBOX_ENDPOINT:-}" ]]; then
   POSTGRES_TESTS="$POSTGRES_TESTS,IdentityAuthoritySandboxIT#sameTraceRunsThroughWorkerPostgreSqlAndCurrentAuthorizationReadBack"
 fi
@@ -208,4 +208,4 @@ else
     -Dscholarsense.audit.pg.user="$USER_NAME" test
 fi
 
-echo "audit-postgresql: PASS (PostgreSQL 18.4; clean + V000001..V000009 upgrade + authorization successor persistence + identity/responsibility invalidation fencing/atomicity/SLO/privilege and audit projection/concurrency/rollback/replay/tamper probes)"
+echo "audit-postgresql: PASS (PostgreSQL 18.4; clean + V000001..V000009 upgrade + authorization successor persistence + identity/responsibility invalidation fencing/atomicity/SLO/privilege + PIC test-scope queue/current/mapping/fence/retention + audit projection/concurrency/rollback/replay/tamper probes)"

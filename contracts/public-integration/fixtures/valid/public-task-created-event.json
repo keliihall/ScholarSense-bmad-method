@@ -1,0 +1,41 @@
+{
+  "specversion": "1.0",
+  "id": "018f0f9a-7b0d-7abc-8def-0123456789ab",
+  "source": "urn:scholarsense:clue-care",
+  "type": "scholarsense.clue-care.work-item.changed.v1",
+  "subject": "Candidate/candidate-01",
+  "time": "2026-08-03T08:00:00Z",
+  "datacontenttype": "application/cloudevents+json",
+  "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+  "contentEncoding": "identity",
+  "data": {
+    "schemaVersion": "1.0.0",
+    "eventId": "018f0f9a-7b0d-7abc-8def-0123456789ab",
+    "sourceFactId": "018f0f9a-7b0d-7abc-8def-0123456789ac",
+    "sourceFactDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "eventPayloadDigest": "sha256:936a65720fe70f9c5630f6e966d76a335f850e5aa89f7d72b8ab355ee9867a3a",
+    "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+    "producer": "clue-care",
+    "aggregateType": "Candidate",
+    "aggregateId": "candidate-01",
+    "aggregateVersion": 4,
+    "channelId": "pic.public-task.v1",
+    "routeSequence": 1,
+    "contractVersion": "PIC-1.0.0",
+    "correlationId": "correlation-01",
+    "causationId": "causation-01",
+    "occurredAt": "2026-08-03T08:00:00Z",
+    "payload": {
+      "workItemKey": "wk1.YWJjZGVmZ2g",
+      "operation": "create",
+      "itemType": "candidate",
+      "ownerRef": "owner1.YWJjZGVmZ2g",
+      "priority": "urgent",
+      "dueAt": "2026-08-04T08:00:00Z",
+      "progressState": "pending",
+      "taskStatus": "open",
+      "deepLinkRouteId": "care-work-item",
+      "routeState": "item-01"
+    }
+  }
+}

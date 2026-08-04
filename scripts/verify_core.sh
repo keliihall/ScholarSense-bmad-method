@@ -34,6 +34,7 @@ echo "[verify-core] audit and standard-library regression"
   "$TOOLCHAIN" python3 -B scripts/check_access_invalidation_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_authorization_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_field_projection_contracts.py .
+  "$TOOLCHAIN" python3 -B scripts/check_public_integration_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_ledger_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_retention_contracts.py .
@@ -86,6 +87,18 @@ trap cleanup_access_invalidation_evidence EXIT INT TERM
   "$ROOT_DIR/scripts/run_access_invalidation_sandbox_tests.py" \
   --evidence "$ACCESS_INVALIDATION_EVIDENCE_FILE"
 cleanup_access_invalidation_evidence
+trap - EXIT INT TERM
+
+echo "[verify-core] controlled public-integration local conformance evidence"
+PUBLIC_INTEGRATION_EVIDENCE_FILE="$(mktemp "${TMPDIR:-/tmp}/scholarsense-public-integration-evidence-XXXXXX")"
+cleanup_public_integration_evidence() {
+  rm -f -- "$PUBLIC_INTEGRATION_EVIDENCE_FILE"
+}
+trap cleanup_public_integration_evidence EXIT INT TERM
+"$TOOLCHAIN" python3 -B \
+  "$ROOT_DIR/scripts/run_public_integration_sandbox_tests.py" \
+  --evidence "$PUBLIC_INTEGRATION_EVIDENCE_FILE"
+cleanup_public_integration_evidence
 trap - EXIT INT TERM
 
 echo "[verify-core] PostgreSQL 18.4 evidence completed by the sandbox E2E runner"

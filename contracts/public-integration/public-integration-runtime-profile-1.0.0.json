@@ -1,0 +1,53 @@
+{
+  "version": "PIC-RUNTIME-1.0.0",
+  "contractVersion": "PIC-1.0.0",
+  "authorityRef": "AUTH-2026-07-17-001#DEC-011",
+  "boundAt": "2026-07-17T00:00:00Z",
+  "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+  "identities": {
+    "deliveryRecordKey": ["aggregateType", "aggregateId", "channelId", "contractVersion"],
+    "streamGenerationInput": ["kind=event", "source", "sourceFactId"],
+    "intentGenerationInput": ["kind=intent", "deliveryIntentId"],
+    "deliveryIntentInput": ["kind=message-intent", "workItemKeyToken", "notificationType", "escalationVersion"],
+    "providerEffectInput": ["tenant", "providerLineageKey", "operationKind", "generationKey"]
+  },
+  "deliveryStatuses": ["pending", "retrying", "confirmed", "failed"],
+  "provenanceModes": {
+    "aggregate-stream": ["sourceEventId", "sourceFactId", "sourceFactDigest", "eventPayloadDigest", "channelId", "routeSequence", "sourceAggregateVersion"],
+    "intent-command": ["deliveryIntentId", "requestDigest", "sourceAggregateVersion"]
+  },
+  "route": {
+    "watermarkInitial": 0,
+    "sequenceInitial": 1,
+    "maximumSafeInteger": 9007199254740991,
+    "bootstrapModes": ["full-replay-from-sequence-1", "trusted-checkpoint"],
+    "sourceAggregateVersionsMayBeSparse": true
+  },
+  "cutover": {
+    "sameMajorOnly": true,
+    "states": ["active", "draining", "switched", "terminal-aborted"],
+    "preSwitchAbort": true,
+    "rollbackOnlyBeforeClaimOrProviderEffect": true,
+    "crossMajorResult": "correct-course-required"
+  },
+  "deepLink": {
+    "origin": "/scholarsense/",
+    "routeIds": ["care-work-item", "transfer-work-order", "report-job"],
+    "relativeOnly": true,
+    "singleCanonicalPercentEncoding": true,
+    "maxLength": 512,
+    "forbidden": ["absolute-url", "userinfo", "fragment", "crlf", "double-encoding", "token", "student-identifier"]
+  },
+  "environmentBindings": {
+    "targetHandoffFile": "SCHOLARSENSE_PIC_TARGET_HANDOFF_FILE",
+    "targetHandoffSignatureFile": "SCHOLARSENSE_PIC_TARGET_HANDOFF_SIGNATURE_FILE",
+    "targetHandoffTrustRootFile": "SCHOLARSENSE_PIC_TARGET_HANDOFF_TRUST_ROOT_FILE",
+    "targetHandoffExpectedSha256": "SCHOLARSENSE_PIC_TARGET_HANDOFF_EXPECTED_SHA256"
+  },
+  "productionClaims": {
+    "consumerInstalled": false,
+    "consumerWatermarkAdvanced": false,
+    "businessApply": "none",
+    "runtimeEvidenceClaim": "none"
+  }
+}

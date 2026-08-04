@@ -1,0 +1,37 @@
+{
+  "version": "PIC-SEC-1.0.0",
+  "contractVersion": "PIC-1.0.0",
+  "outbound": {
+    "requiredControls": ["mtls", "jwt-cnf", "content-digest"],
+    "contentDigest": "sha-256=:base64(SHA-256(actual-body-bytes)):",
+    "contentEncoding": ["identity"],
+    "redirect": "never",
+    "maxBodyBytes": 65536
+  },
+  "callback": {
+    "requiredControls": ["mtls", "jwt-cnf", "content-digest", "message-signature", "timestamp", "nonce"],
+    "signatureLabel": "sig1",
+    "coveredComponents": ["@method", "@authority", "@path", "@query", "content-digest", "content-type", "x-scholarsense-contract-version", "x-scholarsense-callback-timestamp", "x-scholarsense-callback-nonce"],
+    "signatureParameters": ["created", "expires", "nonce", "keyid", "alg", "tag"],
+    "algorithm": "ed25519",
+    "tag": "scholarsense-pic-callback-v1",
+    "expiresAfterSeconds": 300,
+    "clockSkewSeconds": 300,
+    "nonceRetentionSeconds": 600
+  },
+  "workloadIdentity": {
+    "format": "signed-jwt",
+    "protectedHeader": {"typ": "at+jwt", "alg": "EdDSA", "kidRequired": true},
+    "requiredClaims": ["iss", "sub", "aud", "scope", "iat", "nbf", "exp", "jti", "cnf.x5t#S256"],
+    "maximumTtlSeconds": 300,
+    "maximumLeewaySeconds": 60,
+    "mtlsCertificateBound": true,
+    "rotation": "current-plus-explicit-overlap"
+  },
+  "safeErrors": {
+    "401": ["PIC_IDENTITY_INVALID", "PIC_SIGNATURE_INVALID"],
+    "403": ["PIC_AUDIENCE_DENIED", "PIC_SCOPE_DENIED", "PIC_CERTIFICATE_BINDING_DENIED"],
+    "409": ["PIC_NONCE_REPLAY", "PIC_IDEMPOTENCY_MISMATCH", "PIC_VERSION_CONFLICT"],
+    "422": ["PIC_CONTRACT_INVALID", "PIC_SCHEMA_INVALID", "PIC_DIGEST_INVALID", "PIC_CONTENT_UNSUPPORTED"]
+  }
+}

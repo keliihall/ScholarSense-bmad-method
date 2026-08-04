@@ -1,0 +1,35 @@
+{
+  "version": "PIC-1.0.0",
+  "authorityRef": "AUTH-2026-07-17-001#DEC-011",
+  "status": "approved-for-implementation",
+  "wire": {
+    "openapi": "3.1.2",
+    "cloudEvents": "1.0.2",
+    "jsonSchema": "2020-12",
+    "canonicalJson": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+    "maximumIdentityEncodedBodyBytes": 65536,
+    "batchSupported": false,
+    "partialSuccessSupported": false
+  },
+  "artifacts": {
+    "openapi": "contracts/openapi/public-integration.openapi.json",
+    "eventSchema": "contracts/events/public-integration/public-integration-event.schema.json",
+    "commandSchema": "contracts/events/public-integration/public-integration-command.schema.json",
+    "runtimeProfile": "contracts/public-integration/public-integration-runtime-profile-1.0.0.json",
+    "adapterRegistry": "contracts/public-integration/adapter-registry-1.0.0.json",
+    "securityProfile": "contracts/public-integration/public-integration-security-profile-1.0.0.json",
+    "policy": "contracts/public-integration/public-integration-policy-1.0.0.json",
+    "measurementProfile": "contracts/public-integration/public-integration-measurement-profile-1.0.0.json",
+    "targetScenarios": "contracts/public-integration/public-integration-target-scenarios-1.0.0.json",
+    "evidenceSchema": "contracts/public-integration/public-integration-evidence.schema.json"
+  },
+  "ownership": {
+    "productionDeliveryRecord": "future-producer-domain-owner",
+    "publicTaskApplyOwnerStory": "5.5",
+    "nfr8FullOwnerStory": "2.7c",
+    "migration": "none",
+    "frontend": "none",
+    "runtimeRole": "none",
+    "consumerActivation": "none"
+  }
+}

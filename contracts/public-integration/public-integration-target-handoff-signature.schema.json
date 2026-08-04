@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:scholarsense:public-integration:target-handoff-signature:1.0.0",
+  "title": "Detached PIC handoff signature",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["signatureVersion", "algorithm", "keyId", "canonicalizationProfile", "handoffSha256", "signatureBase64"],
+  "properties": {
+    "signatureVersion": {"const": "PIC-TARGET-HANDOFF-SIGNATURE-1.0.0"},
+    "algorithm": {"const": "Ed25519"},
+    "keyId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "canonicalizationProfile": {"const": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"},
+    "handoffSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "signatureBase64": {"type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$"}
+  }
+}

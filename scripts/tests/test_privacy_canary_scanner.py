@@ -78,6 +78,25 @@ class PrivacyCanaryScannerTest(unittest.TestCase):
         self.assertIn("[S18_ERROR_REFLECTION]", rendered)
         self.assertNotIn(value, rendered)
 
+    def test_public_integration_sensitive_surfaces_are_scanned(self) -> None:
+        expected = {
+            "S19_STUDENT_IDENTIFIER",
+            "S19_EXTERNAL_BODY",
+            "S19_FREE_TEXT",
+            "S19_SECRET",
+            "S19_NONCE",
+            "S19_SIGNATURE",
+        }
+        self.assertTrue(expected <= set(CANARIES))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "synthetic-evidence.json"
+            target.write_bytes(CANARIES["S19_EXTERNAL_BODY"])
+            report = scan_paths([target])
+        self.assertEqual(
+            {"S19_EXTERNAL_BODY"},
+            {finding.canary_id for finding in report.findings},
+        )
+
     def test_invalid_archive_fails_closed_with_a_stable_path_only_error(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "broken.jar"

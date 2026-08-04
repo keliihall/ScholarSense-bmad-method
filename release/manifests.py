@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 from pathlib import Path
@@ -21,7 +22,7 @@ from release_json import canonical_bytes, canonical_sha256, release_document_iss
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 REQUIRED_BASELINE_IDS = frozenset({"AAB", "CISB", "FPB", "PAB", "TEST-ENV", "UXB", "VGB"})
-REQUIRED_CONTROLLED_INPUT_IDS = frozenset(
+REQUIRED_CONTROLLED_INPUT_IDS_V1 = frozenset(
     {
         "AcademicCareNodeSet",
         "AuthorizationAudit",
@@ -44,6 +45,11 @@ REQUIRED_CONTROLLED_INPUT_IDS = frozenset(
         "WorkVisit",
     }
 )
+REQUIRED_CONTROLLED_INPUT_IDS_V2 = frozenset(
+    {*REQUIRED_CONTROLLED_INPUT_IDS_V1, "PublicIntegration"}
+)
+# Backward-compatible public name: it remains the immutable V1 set.
+REQUIRED_CONTROLLED_INPUT_IDS = REQUIRED_CONTROLLED_INPUT_IDS_V1
 REQUIRED_LOCK_IDS = frozenset({"backend-lock", "frontend-lock", "toolchain-lock"})
 COMMON_EVIDENCE_KINDS = frozenset(
     {
@@ -74,7 +80,22 @@ RUNTIME_IDS = frozenset(
 FORBIDDEN_RELEASE_KEYS = frozenset(
     {"evidenceIndex", "evidenceIndexUri", "manifestSignature", "manifestSignatureUri", "promotion", "promotionUri"}
 )
-STAGE_ORDER = {"artifact": 10, "artifact-evidence": 20, "artifact-signature": 30}
+STAGE_ORDER = {
+    "candidate-evidence": 5,
+    "artifact": 10,
+    "artifact-evidence": 20,
+    "artifact-signature": 30,
+}
+PIC_TARGET_ID = "PublicIntegrationTargetConformance"
+PIC_TARGET_KIND = "public-integration-target-conformance"
+PIC_SCENARIO_PATH = (
+    PROJECT_ROOT
+    / "contracts/public-integration/public-integration-target-scenarios-1.0.0.json"
+)
+PIC_LOCK_PATH = (
+    PROJECT_ROOT
+    / "contracts/public-integration/public-integration-contract-lock-1.0.0.json"
+)
 
 
 def _ids(items: Any, code: str) -> tuple[set[str], list[str]]:
@@ -145,7 +166,10 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
     forbidden = sorted(FORBIDDEN_RELEASE_KEYS & set(manifest))
     if forbidden or any(key.startswith("promotion") for key in manifest):
         issues.append(f"RELEASE_DESCENDANT_REFERENCE_FORBIDDEN: {','.join(forbidden)}")
-    if manifest.get("version") != "RELEASE-MANIFEST-1.0.0":
+    manifest_version = manifest.get("version")
+    if manifest_version not in {
+        "RELEASE-MANIFEST-1.0.0", "RELEASE-MANIFEST-2.0.0"
+    }:
         issues.append("RELEASE_MANIFEST_VERSION_INVALID")
     if not SEMVER.fullmatch(str(manifest.get("releaseVersion", ""))):
         issues.append("RELEASE_VERSION_INVALID")
@@ -186,10 +210,27 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
                 issues.append(f"RELEASE_BASELINE_NOT_APPROVED: {baseline.get('id')}")
 
     controlled_inputs = manifest.get("controlledInputs")
-    issues.extend(_exact_ids(controlled_inputs, REQUIRED_CONTROLLED_INPUT_IDS, "RELEASE_CONTROLLED_INPUT"))
+    required_controlled = (
+        REQUIRED_CONTROLLED_INPUT_IDS_V2
+        if manifest_version == "RELEASE-MANIFEST-2.0.0"
+        else REQUIRED_CONTROLLED_INPUT_IDS_V1
+    )
+    issues.extend(_exact_ids(controlled_inputs, required_controlled, "RELEASE_CONTROLLED_INPUT"))
     if isinstance(controlled_inputs, list):
         for controlled_input in controlled_inputs:
             issues.extend(_reference_issues(controlled_input, "RELEASE_CONTROLLED_INPUT_REF"))
+    controlled_by_id = {
+        item.get("id"): item
+        for item in controlled_inputs
+        if isinstance(item, dict)
+    } if isinstance(controlled_inputs, list) else {}
+    if manifest_version == "RELEASE-MANIFEST-2.0.0":
+        public_integration = controlled_by_id.get("PublicIntegration", {})
+        if (
+            public_integration.get("version") != "PIC-CONTRACT-LOCK-1.0.0"
+            or public_integration.get("binarySha256") != _file_sha256(PIC_LOCK_PATH)
+        ):
+            issues.append("RELEASE_PUBLIC_INTEGRATION_INPUT_INVALID")
 
     locks = manifest.get("locks")
     issues.extend(_exact_ids(locks, REQUIRED_LOCK_IDS, "RELEASE_LOCK"))
@@ -226,6 +267,7 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
     if artifact_ids & evidence_ids:
         issues.append("RELEASE_ARTIFACT_EVIDENCE_ID_COLLISION")
     kinds_by_subject: dict[str, set[str]] = {identity: set() for identity in artifact_ids}
+    pic_nodes: list[dict[str, Any]] = []
     for evidence in manifest.get("evidence", []) if isinstance(manifest.get("evidence"), list) else []:
         issues.extend(_reference_issues(evidence, "RELEASE_EVIDENCE_REF"))
         if not isinstance(evidence, dict):
@@ -233,6 +275,9 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         kind = evidence.get("kind")
         if not isinstance(kind, str) or not kind:
             issues.append(f"RELEASE_EVIDENCE_KIND_INVALID: {evidence.get('id')}")
+        if kind == PIC_TARGET_KIND:
+            pic_nodes.append(evidence)
+            continue
         subject = evidence.get("subjectBinarySha256")
         if subject not in artifact_by_digest:
             issues.append(f"RELEASE_EVIDENCE_SUBJECT_UNKNOWN: {evidence.get('id')}")
@@ -250,6 +295,13 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         missing = required - kinds_by_subject.get(artifact_id, set())
         if missing:
             issues.append(f"RELEASE_REQUIRED_EVIDENCE_MISSING: {artifact_id}: {','.join(sorted(missing))}")
+    if manifest_version == "RELEASE-MANIFEST-1.0.0" and pic_nodes:
+        issues.append("RELEASE_V1_PUBLIC_INTEGRATION_FORBIDDEN")
+    if manifest_version == "RELEASE-MANIFEST-2.0.0":
+        if len(pic_nodes) != 1:
+            issues.append("RELEASE_PUBLIC_INTEGRATION_TARGET_NODE_REQUIRED")
+        else:
+            issues.extend(_pic_target_node_issues(pic_nodes[0], manifest))
 
     runtime = manifest.get("runtimeEvidence")
     issues.extend(_exact_ids(runtime, RUNTIME_IDS, "RELEASE_RUNTIME"))
@@ -297,10 +349,13 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
     return sorted(set(issues))
 
 
-def create_release_manifest(payload: dict[str, Any]) -> dict[str, Any]:
+def create_release_manifest(
+    payload: dict[str, Any], *, manifest_version: str = "1"
+) -> dict[str, Any]:
     build_manifest = payload.get("buildManifest")
+    version = _release_manifest_version(manifest_version)
     manifest = {
-        "version": "RELEASE-MANIFEST-1.0.0",
+        "version": version,
         "releaseVersion": payload.get("releaseVersion"),
         "sourceCommit": build_manifest.get("sourceCommit") if isinstance(build_manifest, dict) else None,
         "sourceInventory": payload.get("sourceInventoryRef"),
@@ -323,7 +378,7 @@ def create_release_manifest(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _index_node(reference: dict[str, Any], stage: str, depends_on: list[str]) -> dict[str, Any]:
-    return {
+    node = {
         "id": reference["id"],
         "kind": reference["kind"],
         "stage": stage,
@@ -336,6 +391,10 @@ def _index_node(reference: dict[str, Any], stage: str, depends_on: list[str]) ->
         "subjectBinarySha256": reference.get("subjectBinarySha256", reference["binarySha256"]),
         "dependsOn": depends_on,
     }
+    for field in ("subjectCommit", "subjectTree", "scenarioSetSha256"):
+        if field in reference:
+            node[field] = reference[field]
+    return node
 
 
 def create_evidence_index(
@@ -348,9 +407,14 @@ def create_evidence_index(
     artifacts = release_manifest.get("artifacts", [])
     artifact_by_subject = {item["binarySha256"]: item["id"] for item in artifacts}
     evidence = release_manifest.get("evidence", [])
-    ordinary = [item for item in evidence if item.get("kind") != "artifact-signature"]
+    candidate = [item for item in evidence if item.get("kind") == PIC_TARGET_KIND]
+    ordinary = [
+        item for item in evidence
+        if item.get("kind") not in {"artifact-signature", PIC_TARGET_KIND}
+    ]
     signatures = [item for item in evidence if item.get("kind") == "artifact-signature"]
     nodes = [_index_node(item, "artifact", []) for item in artifacts]
+    nodes.extend(_index_node(item, "candidate-evidence", []) for item in candidate)
     nodes.extend(
         _index_node(item, "artifact-evidence", [artifact_by_subject.get(item["subjectBinarySha256"], "")])
         for item in ordinary
@@ -367,7 +431,11 @@ def create_evidence_index(
         nodes.append(_index_node(item, "artifact-signature", prerequisites))
     signature_node = _index_node(manifest_signature, "manifest-signature", manifest_signature.get("dependsOn", []))
     index = {
-        "version": "EVIDENCE-INDEX-1.0.0",
+        "version": (
+            "EVIDENCE-INDEX-2.0.0"
+            if release_manifest.get("version") == "RELEASE-MANIFEST-2.0.0"
+            else "EVIDENCE-INDEX-1.0.0"
+        ),
         "releaseVersion": release_manifest.get("releaseVersion"),
         "subjectManifestSha256": manifest_digest,
         "releaseManifest": release_manifest_reference,
@@ -389,7 +457,12 @@ def evidence_index_issues(index: Any, release_manifest: Any) -> list[str]:
         return ["EVIDENCE_INDEX_INVALID"]
     issues = release_document_issues(index)
     manifest_digest = canonical_sha256(release_manifest)
-    if index.get("version") != "EVIDENCE-INDEX-1.0.0":
+    expected_index_version = (
+        "EVIDENCE-INDEX-2.0.0"
+        if release_manifest.get("version") == "RELEASE-MANIFEST-2.0.0"
+        else "EVIDENCE-INDEX-1.0.0"
+    )
+    if index.get("version") != expected_index_version:
         issues.append("EVIDENCE_INDEX_VERSION_INVALID")
     if index.get("releaseVersion") != release_manifest.get("releaseVersion"):
         issues.append("EVIDENCE_INDEX_RELEASE_VERSION_MISMATCH")
@@ -427,13 +500,24 @@ def evidence_index_issues(index: Any, release_manifest: Any) -> list[str]:
             continue
         identity = node.get("id")
         reference = expected_references.get(identity)
-        if not isinstance(reference, dict) or any(node.get(field) != reference.get(field) for field in ("kind", "version", "uri", "mediaType", "size", "binarySha256", "ociDigest")):
+        reference_fields = (
+            "kind", "version", "uri", "mediaType", "size", "binarySha256",
+            "ociDigest", "subjectCommit", "subjectTree", "scenarioSetSha256",
+        ) if node.get("kind") == PIC_TARGET_KIND else (
+            "kind", "version", "uri", "mediaType", "size", "binarySha256", "ociDigest"
+        )
+        if not isinstance(reference, dict) or any(
+            node.get(field) != reference.get(field) for field in reference_fields
+        ):
             issues.append(f"EVIDENCE_INDEX_NODE_REFERENCE_MISMATCH: {identity}")
         expected_subject = reference.get("subjectBinarySha256", reference.get("binarySha256")) if isinstance(reference, dict) else None
         if node.get("subjectBinarySha256") != expected_subject:
             issues.append(f"EVIDENCE_INDEX_NODE_SUBJECT_MISMATCH: {identity}")
-        expected_stage = "artifact" if node.get("kind") == "artifact" else (
-            "artifact-signature" if node.get("kind") == "artifact-signature" else "artifact-evidence"
+        expected_stage = (
+            "candidate-evidence" if node.get("kind") == PIC_TARGET_KIND
+            else "artifact" if node.get("kind") == "artifact"
+            else "artifact-signature" if node.get("kind") == "artifact-signature"
+            else "artifact-evidence"
         )
         if node.get("stage") != expected_stage:
             issues.append(f"EVIDENCE_INDEX_STAGE_INVALID: {identity}")
@@ -483,6 +567,53 @@ def evidence_index_issues(index: Any, release_manifest: Any) -> list[str]:
     if bindings.get(str(release_manifest.get("releaseVersion"))) != manifest_digest:
         issues.append("EVIDENCE_INDEX_VERSION_BINDING_MISSING")
     return sorted(set(issues))
+
+
+def _file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _release_manifest_version(value: str) -> str:
+    versions = {
+        "1": "RELEASE-MANIFEST-1.0.0",
+        "1.0.0": "RELEASE-MANIFEST-1.0.0",
+        "RELEASE-MANIFEST-1.0.0": "RELEASE-MANIFEST-1.0.0",
+        "2": "RELEASE-MANIFEST-2.0.0",
+        "2.0.0": "RELEASE-MANIFEST-2.0.0",
+        "RELEASE-MANIFEST-2.0.0": "RELEASE-MANIFEST-2.0.0",
+    }
+    if value not in versions:
+        raise ValueError("RELEASE_MANIFEST_VERSION_INVALID")
+    return versions[value]
+
+
+def _pic_target_node_issues(
+    node: dict[str, Any], manifest: dict[str, Any]
+) -> list[str]:
+    issues: list[str] = []
+    subject_commit = node.get("subjectCommit")
+    subject_tree = node.get("subjectTree")
+    if (
+        node.get("id") != PIC_TARGET_ID
+        or node.get("kind") != PIC_TARGET_KIND
+        or node.get("version") != "PIC-EVIDENCE-1.0.0"
+    ):
+        issues.append("RELEASE_PUBLIC_INTEGRATION_TARGET_IDENTITY_INVALID")
+    if not re.fullmatch(r"[0-9a-f]{40}", str(subject_commit)) or (
+        subject_commit != manifest.get("sourceCommit")
+    ):
+        issues.append("RELEASE_PUBLIC_INTEGRATION_TARGET_COMMIT_INVALID")
+    if not re.fullmatch(r"[0-9a-f]{40}", str(subject_tree)):
+        issues.append("RELEASE_PUBLIC_INTEGRATION_TARGET_TREE_INVALID")
+    expected_binding = canonical_sha256({
+        "subjectCommit": subject_commit,
+        "subjectTree": subject_tree,
+    })
+    if node.get("subjectBinarySha256") != expected_binding:
+        issues.append("RELEASE_PUBLIC_INTEGRATION_CANDIDATE_BINDING_INVALID")
+    if node.get("scenarioSetSha256") != _file_sha256(PIC_SCENARIO_PATH):
+        issues.append("RELEASE_PUBLIC_INTEGRATION_SCENARIO_BINDING_INVALID")
+    return issues
 
 
 def write_frozen_document(path: Path, document: dict[str, Any]) -> None:
