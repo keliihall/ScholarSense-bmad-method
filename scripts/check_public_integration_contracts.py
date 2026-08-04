@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import base64
+import copy
 import hashlib
 import json
 import re
@@ -69,6 +70,12 @@ VALID_EVENT = (
 )
 NEGATIVE_FIXTURES = (
     CONTRACT_ROOT / "fixtures/invalid/negative-fixtures-1.0.0.json"
+)
+OPTIONAL_COMPATIBILITY = (
+    CONTRACT_ROOT / "fixtures/compatibility/optional-addition-1.1.0.json"
+)
+BREAKING_COMPATIBILITY = (
+    CONTRACT_ROOT / "fixtures/compatibility/breaking-without-major.json"
 )
 DELEGATED_SOURCE = Path(
     "_bmad-output/planning-artifacts/"
@@ -275,6 +282,231 @@ def event_issues(
     return sorted(set(issues))
 
 
+def _resolve_json_pointer(document: Any, pointer: str) -> Any:
+    if pointer == "#":
+        return document
+    if not isinstance(pointer, str) or not pointer.startswith("#/"):
+        raise ValueError("PIC_COMPATIBILITY_POINTER_INVALID")
+    current = document
+    for raw in pointer[2:].split("/"):
+        key = raw.replace("~1", "/").replace("~0", "~")
+        if not isinstance(current, dict) or key not in current:
+            raise ValueError("PIC_COMPATIBILITY_POINTER_UNRESOLVED")
+        current = current[key]
+    return current
+
+
+def _semantic_version(value: Any) -> tuple[int, int, int]:
+    matched = re.fullmatch(r"([0-9]+)\.([0-9]+)\.([0-9]+)", str(value))
+    if matched is None:
+        raise ValueError("PIC_COMPATIBILITY_VERSION_INVALID")
+    return tuple(int(part) for part in matched.groups())
+
+
+def execute_compatibility_fixture(
+    document: Any,
+    *,
+    project_root: Path | None = None,
+) -> str:
+    if not isinstance(document, dict):
+        return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+    root = (project_root or Path(__file__).resolve().parents[1]).resolve()
+    if document.get("schemaPath") != COMMAND_SCHEMA.as_posix():
+        return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+    try:
+        base_schema = load_json(root / COMMAND_SCHEMA)
+        candidate_schema = copy.deepcopy(base_schema)
+        target = _resolve_json_pointer(
+            candidate_schema, str(document.get("schemaTarget"))
+        )
+        field = document.get("field")
+        if not isinstance(target, dict) or not isinstance(field, str) or not field:
+            return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+
+        change = document.get("change")
+        if change == "add-optional-field":
+            producer_version = _semantic_version(
+                document.get("producerSchemaVersion")
+            )
+            consumer_version = _semantic_version(
+                document.get("consumerSchemaVersion")
+            )
+            properties = target.get("properties")
+            field_schema = document.get("fieldSchema")
+            if (
+                producer_version[0] != consumer_version[0]
+                or producer_version <= consumer_version
+                or not isinstance(properties, dict)
+                or field in properties
+                or field in target.get("required", [])
+                or not isinstance(field_schema, dict)
+            ):
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+            properties[field] = copy.deepcopy(field_schema)
+            if schema_definition_issues(candidate_schema):
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+
+            producer = copy.deepcopy(document.get("producerInstance"))
+            if not isinstance(producer, dict):
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+            if schema_issues(producer, candidate_schema):
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+            if not schema_issues(producer, base_schema):
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+
+            projected = copy.deepcopy(producer)
+            instance_path = document.get("instanceObjectPath")
+            if not isinstance(instance_path, list) or any(
+                not isinstance(part, str) for part in instance_path
+            ):
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+            projection_target: Any = projected
+            for part in instance_path:
+                if not isinstance(projection_target, dict) or part not in projection_target:
+                    return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+                projection_target = projection_target[part]
+            if not isinstance(projection_target, dict) or field not in projection_target:
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+            projection_target.pop(field)
+            if projected != document.get("expectedDownProjectedInstance"):
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+            if schema_issues(projected, base_schema):
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+            return "compatible"
+
+        if change in {"remove-required-field", "rename-required-field"}:
+            declared_major = document.get("declaredMajor")
+            consumer_version = _semantic_version(
+                document.get("consumerSchemaVersion")
+            )
+            candidate_version = _semantic_version(
+                document.get("candidateSchemaVersion")
+            )
+            required = target.get("required")
+            base_instance = copy.deepcopy(document.get("baseInstance"))
+            if (
+                declared_major != consumer_version[0]
+                or candidate_version[0] != consumer_version[0]
+                or not isinstance(required, list)
+                or field not in required
+                or not isinstance(base_instance, dict)
+                or schema_issues(base_instance, base_schema)
+            ):
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+            target["required"] = [item for item in required if item != field]
+            probe = copy.deepcopy(base_instance)
+            if field not in probe:
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+            probe.pop(field)
+            if not schema_issues(probe, base_schema):
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+            if schema_issues(probe, candidate_schema):
+                return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+            return "PIC_BREAKING_CHANGE_REQUIRES_MAJOR"
+    except (OSError, ValueError):
+        return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+    return "PIC_COMPATIBILITY_FIXTURE_INVALID"
+
+
+def execute_negative_fixture(
+    case: Any,
+    *,
+    valid_event: dict[str, Any],
+    project_root: Path,
+) -> str:
+    if not isinstance(case, dict) or not isinstance(case.get("input"), dict):
+        return "PIC_NEGATIVE_FIXTURE_INPUT_INVALID"
+    value = case["input"]
+    kind = value.get("kind")
+    if kind == "generation-key":
+        try:
+            derive_generation_key(
+                provenance_mode=str(value.get("provenanceMode")),
+                source=value.get("source"),
+                source_fact_id=value.get("sourceFactId"),
+                delivery_intent_id=value.get("deliveryIntentId"),
+            )
+        except ValueError as error:
+            return str(error)
+        return "PIC_NEGATIVE_FIXTURE_UNEXPECTED_PASS"
+    if kind == "source-fact-conflict":
+        return (
+            "SOURCE_FACT_DIGEST_CONFLICT"
+            if value.get("storedDigest") != value.get("incomingDigest")
+            else "PIC_NEGATIVE_FIXTURE_UNEXPECTED_PASS"
+        )
+    if kind == "event-mutation":
+        event = copy.deepcopy(valid_event)
+        mutation = value.get("mutation")
+        expected_by_mutation = {
+            "event-id-mismatch": "EVENT_ID_MISMATCH",
+            "route-sequence-zero": "EVENT_SCHEMA_REJECTED",
+            "route-sequence-overflow": "EVENT_SCHEMA_REJECTED",
+            "aggregate-version-zero": "EVENT_SCHEMA_REJECTED",
+            "payload-65537-bytes": "EVENT_PAYLOAD_TOO_LARGE",
+            "compressed-body": "EVENT_CONTENT_ENCODING_UNSUPPORTED",
+            "unknown-envelope-key": "EVENT_SCHEMA_REJECTED",
+            "deep-link-absolute": "PIC_DEEP_LINK_INVALID",
+            "deep-link-double-encoded": "PIC_DEEP_LINK_INVALID",
+        }
+        if mutation == "event-id-mismatch":
+            event["data"]["eventId"] = "018f0f9a-7b0d-7abc-8def-0123456789ad"
+        elif mutation == "route-sequence-zero":
+            event["data"]["routeSequence"] = 0
+        elif mutation == "route-sequence-overflow":
+            event["data"]["routeSequence"] = MAX_SAFE_INTEGER + 1
+        elif mutation == "aggregate-version-zero":
+            event["data"]["aggregateVersion"] = 0
+        elif mutation == "compressed-body":
+            event["contentEncoding"] = "gzip"
+        elif mutation == "unknown-envelope-key":
+            event["unexpected"] = True
+        elif mutation == "deep-link-absolute":
+            event["data"]["payload"]["routeState"] = "https://evil.invalid/item"
+        elif mutation == "deep-link-double-encoded":
+            event["data"]["payload"]["routeState"] = "%252Fadmin"
+        elif mutation != "payload-65537-bytes":
+            return "PIC_NEGATIVE_FIXTURE_INPUT_INVALID"
+        if mutation == "payload-65537-bytes":
+            body = b"x" * 65_537
+        elif mutation == "route-sequence-overflow":
+            # Preserve the actual wire representation so the schema boundary,
+            # rather than canonical-number normalization, owns this rejection.
+            body = json.dumps(event, separators=(",", ":")).encode("utf-8")
+        else:
+            body = None
+        detected = event_issues(event, project_root=project_root, body_bytes=body)
+        expected = expected_by_mutation.get(str(mutation))
+        return expected if expected in detected else "PIC_NEGATIVE_FIXTURE_UNEXPECTED_PASS"
+    if kind == "compatibility":
+        name = value.get("fixture")
+        if name != "breaking-without-major.json":
+            return "PIC_NEGATIVE_FIXTURE_INPUT_INVALID"
+        return execute_compatibility_fixture(
+            load_json(project_root / BREAKING_COMPATIBILITY),
+            project_root=project_root,
+        )
+    if kind == "tsp-pause":
+        return (
+            "TSP_PAUSE_NOT_APPROVED"
+            if value.get("paused") is True and value.get("approved") is not True
+            else "PIC_NEGATIVE_FIXTURE_UNEXPECTED_PASS"
+        )
+    if kind == "mpp-threshold":
+        count = value.get("count")
+        threshold = 20 if value.get("sensitiveOrCrossDomain") is True else 10
+        if not isinstance(count, int) or isinstance(count, bool):
+            return "PIC_NEGATIVE_FIXTURE_INPUT_INVALID"
+        return "MPP_PUBLISHABLE" if count >= threshold else "MPP_SUPPRESSED"
+    if kind == "mpp-anti-differencing":
+        return (
+            "MPP_DIFFERENCING_BLOCKED"
+            if value.get("overlappingQuery") is True
+            else "PIC_NEGATIVE_FIXTURE_UNEXPECTED_PASS"
+        )
+    return "PIC_NEGATIVE_FIXTURE_INPUT_INVALID"
+
+
 def materialize_audit_record(
     fixture: dict[str, Any], case: dict[str, Any]
 ) -> dict[str, Any]:
@@ -377,6 +609,11 @@ def audit_record_issues(
             issues.append("PIC_AUDIT_SOURCE_FACT_TOKEN_INVALID")
         if not HEX64.fullmatch(str(context.get("sourceFactDigest", ""))):
             issues.append("PIC_AUDIT_SOURCE_FACT_DIGEST_INVALID")
+        if not re.fullmatch(
+            r"epd_v1_k[0-9]+_[0-9a-f]{64}",
+            str(context.get("eventPayloadDigestToken", "")),
+        ):
+            issues.append("PIC_AUDIT_EVENT_PAYLOAD_DIGEST_TOKEN_INVALID")
         route_sequence = context.get("routeSequence")
         if not isinstance(route_sequence, int) or isinstance(
             route_sequence, bool
@@ -388,6 +625,11 @@ def audit_record_issues(
             str(context.get("deliveryIntentIdToken", "")),
         ):
             issues.append("PIC_AUDIT_INTENT_TOKEN_INVALID")
+        if not re.fullmatch(
+            r"rqd_v1_k[0-9]+_[0-9a-f]{64}",
+            str(context.get("requestDigestToken", "")),
+        ):
+            issues.append("PIC_AUDIT_REQUEST_DIGEST_TOKEN_INVALID")
         escalation = context.get("escalationVersion")
         if not isinstance(escalation, int) or isinstance(escalation, bool) or not (
             1 <= escalation <= MAX_SAFE_INTEGER
@@ -507,6 +749,8 @@ def validate(project_root: Path) -> list[str]:
         AUDIT_FIXTURE,
         VALID_EVENT,
         NEGATIVE_FIXTURES,
+        OPTIONAL_COMPATIBILITY,
+        BREAKING_COMPATIBILITY,
         LOCK,
     ]
     for path in required_documents:
@@ -583,6 +827,24 @@ def validate(project_root: Path) -> list[str]:
         ids = {item.get("id") for item in cases if isinstance(item, dict)}
         if ids != EXPECTED_NEGATIVE_CASES:
             issues.append("PIC_NEGATIVE_FIXTURE_COVERAGE_INVALID")
+        if VALID_EVENT in documents:
+            for case in cases:
+                if not isinstance(case, dict):
+                    issues.append("PIC_NEGATIVE_FIXTURE_INPUT_INVALID")
+                    continue
+                actual = execute_negative_fixture(
+                    case,
+                    valid_event=documents[VALID_EVENT],
+                    project_root=root,
+                )
+                if actual != case.get("expectedCode"):
+                    issues.append(
+                        f"PIC_NEGATIVE_FIXTURE_RESULT_MISMATCH:{case.get('id')}"
+                    )
+    for path in (OPTIONAL_COMPATIBILITY, BREAKING_COMPATIBILITY):
+        if path in documents and execute_compatibility_fixture(
+                documents[path], project_root=root) != documents[path].get("expected"):
+            issues.append(f"PIC_COMPATIBILITY_FIXTURE_RESULT_MISMATCH:{path.name}")
     if VALID_EVENT in documents:
         issues.extend(
             event_issues(documents[VALID_EVENT], project_root=root)
@@ -605,6 +867,15 @@ def _openapi_issues(document: Any) -> list[str]:
     }:
         issues.append("PIC_OPENAPI_PATH_SET_INVALID")
     schemas = document.get("components", {}).get("schemas", {})
+    receipt = schemas.get("OperationReceipt", {})
+    if (
+        receipt.get("additionalProperties") is not False
+        or set(receipt.get("required", [])) != {
+            "operationReceiptId", "resultCode", "acceptedAt",
+            "idempotencyScopeToken", "providerEffectKeyToken", "traceId",
+        }
+    ):
+        issues.append("PIC_OPERATION_RECEIPT_INVALID")
     error = schemas.get("ErrorEnvelope", {})
     if error.get("additionalProperties") is not False or set(
         error.get("required", [])

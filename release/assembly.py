@@ -14,7 +14,13 @@ import sys
 
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-from release_json import canonical_bytes, canonical_sha256, load_json  # noqa: E402
+from release_json import (  # noqa: E402
+    canonical_bytes,
+    canonical_sha256,
+    load_json,
+    schema_issues,
+)
+import run_public_integration_sandbox_tests as pic_evidence  # noqa: E402
 
 
 OCI_URI = re.compile(r"^ghcr\.io/[a-z0-9_.-]+/[a-z0-9_./-]+@(?P<digest>sha256:[0-9a-f]{64})$")
@@ -247,22 +253,46 @@ def assemble_release_manifest_input(
         if evidence_path == source_root or source_root in evidence_path.parents:
             raise ValueError("RELEASE_ASSEMBLY_PIC_TARGET_EVIDENCE_MUST_BE_TREE_OUTSIDE")
         target_evidence = load_json(evidence_path)
+        evidence_schema = load_json(
+            source_root
+            / "contracts/public-integration/public-integration-evidence.schema.json"
+        )
+        canonical_evidence = canonical_bytes(target_evidence)
+        if evidence_path.read_bytes() not in {
+            canonical_evidence,
+            canonical_evidence + b"\n",
+        }:
+            raise ValueError("RELEASE_ASSEMBLY_PIC_TARGET_EVIDENCE_INVALID")
         if (
             not isinstance(target_evidence, dict)
+            or schema_issues(target_evidence, evidence_schema)
+            or pic_evidence.validate_evidence(target_evidence)
             or target_evidence.get("version") != "PIC-EVIDENCE-1.0.0"
             or target_evidence.get("evidenceClass")
             != "target-managed-non-production-sandbox"
             or target_evidence.get("subjectCommit")
             != build_manifest.get("sourceCommit")
-            or not re.fullmatch(
-                r"[0-9a-f]{40}", str(target_evidence.get("subjectTree", ""))
-            )
+            or target_evidence.get("subjectTree")
+            != source_inventory.get("gitTreeOid")
             or target_evidence.get("overallResult") != "pass"
             or target_evidence.get("failedCount") != 0
             or target_evidence.get("skippedCount") != 0
             or target_evidence.get("sandboxCleanupResult") != "pass"
             or target_evidence.get("orphanCount") != 0
             or target_evidence.get("approvedRetainedCount") != 0
+        ):
+            raise ValueError("RELEASE_ASSEMBLY_PIC_TARGET_EVIDENCE_INVALID")
+        expected_contract_digest = _sha256(
+            source_root / "contracts/public-integration/pic-1.0.0.json"
+        )
+        expected_profile_digest = _sha256(
+            source_root
+            / "contracts/public-integration/"
+            "public-integration-runtime-profile-1.0.0.json"
+        )
+        if (
+            target_evidence.get("contractDigest") != expected_contract_digest
+            or target_evidence.get("profileDigest") != expected_profile_digest
         ):
             raise ValueError("RELEASE_ASSEMBLY_PIC_TARGET_EVIDENCE_INVALID")
         scenario_digest = _sha256(

@@ -23,8 +23,21 @@ from manifests import (  # noqa: E402
 )
 from assembly import assemble_release_manifest_input  # noqa: E402
 from release_json import canonical_sha256, load_json, schema_issues  # noqa: E402
+from scripts import run_public_integration_sandbox_tests as local_runner  # noqa: E402
 from scripts.tests.test_release_manifests import _reference, _release_input  # noqa: E402
 from scripts.tests import test_release_assembly as release_assembly_test  # noqa: E402
+
+
+def _passing_pic_gate_results():
+    return {
+        gate_id: local_runner.ExecutableGateResult(
+            gate_id=gate_id,
+            command=("synthetic-executable-gate", gate_id),
+            exit_code=0,
+            output=("observed:" + gate_id).encode(),
+        )
+        for gate_id in local_runner.REQUIRED_GATE_IDS
+    }
 
 
 class ReleaseV2ContractTests(unittest.TestCase):
@@ -141,19 +154,14 @@ class ReleaseV2ContractTests(unittest.TestCase):
                 PROJECT_ROOT / "contracts/public-integration/"
                 "public-integration-target-scenarios-1.0.0.json"
             ).read_bytes()).hexdigest()
-            target_path.write_text(json.dumps({
-                "version": "PIC-EVIDENCE-1.0.0",
-                "evidenceClass": "target-managed-non-production-sandbox",
-                "subjectCommit": "f" * 40,
-                "subjectTree": "b" * 40,
-                "scenarioSetDigest": scenario_digest,
-                "overallResult": "pass",
-                "failedCount": 0,
-                "skippedCount": 0,
-                "sandboxCleanupResult": "pass",
-                "orphanCount": 0,
-                "approvedRetainedCount": 0,
-            }, sort_keys=True, separators=(",", ":")) + "\n")
+            source_tree = load_json(
+                artifact / "release-source-inventory.json"
+            )["gitTreeOid"]
+            target_evidence = _valid_target_evidence("f" * 40, source_tree)
+            self.assertEqual(scenario_digest, target_evidence["scenarioSetDigest"])
+            target_path.write_bytes(
+                local_runner.canonical_json_bytes(target_evidence) + b"\n"
+            )
             v2 = assemble_release_manifest_input(
                 *common,
                 manifest_version="2",
@@ -172,6 +180,53 @@ class ReleaseV2ContractTests(unittest.TestCase):
             self.assertEqual([], release_manifest_issues(
                 manifest, v2["buildManifest"]
             ))
+
+            wrong_tree = copy.deepcopy(target_evidence)
+            wrong_tree["subjectTree"] = "b" * 40
+            wrong_tree["evidenceDigest"] = local_runner.calculate_evidence_digest(
+                wrong_tree
+            )
+            target_path.write_bytes(
+                local_runner.canonical_json_bytes(wrong_tree) + b"\n"
+            )
+            with self.assertRaisesRegex(
+                ValueError, "RELEASE_ASSEMBLY_PIC_TARGET_EVIDENCE_INVALID"
+            ):
+                assemble_release_manifest_input(
+                    *common,
+                    manifest_version="2",
+                    public_integration_target_evidence_uri=(
+                        "ghcr.io/keliihall/pic@sha256:" + "5" * 64
+                    ),
+                    public_integration_target_evidence_path=target_path,
+                )
+
+            for mutation in ("schema", "semantic", "self-digest"):
+                with self.subTest(mutation=mutation):
+                    invalid = copy.deepcopy(target_evidence)
+                    if mutation == "schema":
+                        invalid.pop("commandExitCode")
+                    elif mutation == "semantic":
+                        invalid["syntheticExternalObjectsCreated"] += 1
+                        invalid["evidenceDigest"] = (
+                            local_runner.calculate_evidence_digest(invalid)
+                        )
+                    else:
+                        invalid["evidenceDigest"] = "0" * 64
+                    target_path.write_bytes(
+                        local_runner.canonical_json_bytes(invalid) + b"\n"
+                    )
+                    with self.assertRaisesRegex(
+                        ValueError, "RELEASE_ASSEMBLY_PIC_TARGET_EVIDENCE_INVALID"
+                    ):
+                        assemble_release_manifest_input(
+                            *common,
+                            manifest_version="2",
+                            public_integration_target_evidence_uri=(
+                                "ghcr.io/keliihall/pic@sha256:" + "5" * 64
+                            ),
+                            public_integration_target_evidence_path=target_path,
+                        )
 
 
 def _target_conformance(subject_commit: str) -> dict:
@@ -197,6 +252,40 @@ def _target_conformance(subject_commit: str) -> dict:
         "public-integration-target-scenarios-1.0.0.json"
     ).read_bytes()).hexdigest()
     return reference
+
+
+def _valid_target_evidence(subject_commit: str, subject_tree: str) -> dict:
+    evidence = local_runner.build_local_evidence(
+        subject_commit=subject_commit,
+        subject_tree=subject_tree,
+        run_at="2026-08-03T08:00:00Z",
+        command="synthetic-target-test",
+        log_bytes=b"target-log",
+        result=local_runner.run_local_scenarios(
+            gate_results=_passing_pic_gate_results()
+        ),
+    )
+    evidence.update({
+        "evidenceClass": "target-managed-non-production-sandbox",
+        "targetSandboxConnected": True,
+        "handoffId": "019fc688-380d-7391-b3d0-877e0f9b3026",
+        "handoffRevision": 1,
+        "previousRevisionDigest": None,
+        "handoffBindingDigest": "1" * 64,
+        "handoffExpectedDigest": "1" * 64,
+        "handoffIssuedAt": "2026-08-03T07:55:00Z",
+        "handoffNotBefore": "2026-08-03T08:00:00Z",
+        "handoffExpiresAt": "2026-08-04T08:00:00Z",
+        "signerKeyId": "pic-target-authority-01",
+        "trustRootDigest": "2" * 64,
+        "signatureVerified": True,
+        "approvedAuthorityDigest": "3" * 64,
+        "peerCertificateSpkiDigest": "4" * 64,
+        "peerCertificateChainDigest": "5" * 64,
+        "sandboxRunId": "synthetic-sandbox-run",
+    })
+    evidence["evidenceDigest"] = local_runner.calculate_evidence_digest(evidence)
+    return evidence
 
 
 if __name__ == "__main__":

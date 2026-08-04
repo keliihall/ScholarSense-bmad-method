@@ -16,7 +16,7 @@ MAX_SAFE_INTEGER = 9_007_199_254_740_991
 ALLOWED_SCHEMA_KEYWORDS = {
     "$defs", "$id", "$ref", "$schema", "additionalProperties", "const", "description",
     "enum", "format", "items", "maxItems", "maxLength", "maximum", "minItems",
-    "minLength", "minimum", "pattern", "properties", "required", "title", "type",
+    "minLength", "minimum", "oneOf", "pattern", "properties", "required", "title", "type",
     "uniqueItems",
 }
 ALLOWED_TYPES = {"array", "boolean", "integer", "null", "number", "object", "string"}
@@ -172,6 +172,13 @@ def schema_definition_issues(schema: Any) -> list[str]:
                 visit(child, f"{path}.$defs.{name}")
         if "items" in node:
             visit(node["items"], f"{path}.items")
+        alternatives = node.get("oneOf")
+        if alternatives is not None:
+            if not isinstance(alternatives, list) or not alternatives:
+                issues.append(f"SCHEMA_ONE_OF_INVALID: {path}")
+            else:
+                for index, child in enumerate(alternatives):
+                    visit(child, f"{path}.oneOf[{index}]")
         additional = node.get("additionalProperties")
         if isinstance(additional, dict):
             visit(additional, f"{path}.additionalProperties")
@@ -268,6 +275,18 @@ def schema_issues(instance: Any, schema: Any) -> list[str]:
                 issues.append(f"SCHEMA_MINIMUM: {path}")
             if "maximum" in node and value > node["maximum"]:
                 issues.append(f"SCHEMA_MAXIMUM: {path}")
+        alternatives = node.get("oneOf")
+        if isinstance(alternatives, list):
+            matches = 0
+            for alternative in alternatives:
+                before = len(issues)
+                visit(value, alternative, path)
+                if len(issues) == before:
+                    matches += 1
+                else:
+                    del issues[before:]
+            if matches != 1:
+                issues.append(f"SCHEMA_ONE_OF_MISMATCH: {path}")
 
     visit(instance, schema, "$")
     return sorted(set(issues))

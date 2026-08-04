@@ -4,6 +4,7 @@ create table ${schema}.queued_delivery (
   channel_id text not null,
   contract_version text not null,
   generation_key text not null,
+  tokenized_work_item_key text not null,
   operation text not null,
   priority integer not null default 0,
   accepted_at timestamptz not null,

@@ -64,11 +64,12 @@
       "OperationReceipt": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["operationReceiptId", "resultCode", "acceptedAt", "providerEffectKeyToken", "traceId"],
+        "required": ["operationReceiptId", "resultCode", "acceptedAt", "idempotencyScopeToken", "providerEffectKeyToken", "traceId"],
         "properties": {
           "operationReceiptId": {"type": "string", "format": "uuid"},
           "resultCode": {"enum": ["ACCEPTED", "DUPLICATE"]},
           "acceptedAt": {"type": "string", "format": "date-time"},
+          "idempotencyScopeToken": {"type": "string", "minLength": 1, "maxLength": 128},
           "providerEffectKeyToken": {"type": "string"},
           "traceId": {"type": "string"}
         }

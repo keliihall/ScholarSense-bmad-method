@@ -20,6 +20,11 @@ from assembly import assemble_release_manifest_input  # noqa: E402
 from release_json import canonical_bytes  # noqa: E402
 
 
+TARGET_EVIDENCE_FILENAME = (
+    "public-integration-target-conformance-evidence-1.0.0.json"
+)
+
+
 def _required(name: str) -> str:
     value = os.environ.get(name, "")
     if not value:
@@ -67,6 +72,10 @@ def main(argv: list[str]) -> int:
             "attestation": _required("ATTESTATION_URI"),
             "web": _required("WEB_URI"),
         }
+        if args.manifest_version == "2":
+            uris["public-integration-target"] = _required(
+                "PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI"
+            )
         oras = _oras()
         with tempfile.TemporaryDirectory(prefix="scholarsense-release-assembly-") as directory:
             root = Path(directory)
@@ -89,11 +98,11 @@ def main(argv: list[str]) -> int:
                 datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
                 manifest_version=args.manifest_version,
                 public_integration_target_evidence_uri=(
-                    _required("PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI")
+                    uris["public-integration-target"]
                     if args.manifest_version == "2" else None
                 ),
                 public_integration_target_evidence_path=(
-                    Path(_required("PUBLIC_INTEGRATION_TARGET_EVIDENCE_FILE"))
+                    root / "public-integration-target" / TARGET_EVIDENCE_FILENAME
                     if args.manifest_version == "2" else None
                 ),
             )

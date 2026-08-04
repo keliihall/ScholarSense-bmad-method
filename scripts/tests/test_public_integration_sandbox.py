@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest import mock
 
 from scripts import run_public_integration_sandbox_tests as local_runner
 from scripts import run_public_integration_target_sandbox_tests as target_runner
@@ -13,9 +14,75 @@ from scripts import run_public_integration_target_sandbox_tests as target_runner
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def _gate_results(**exit_codes: int):
+    return {
+        gate_id: local_runner.ExecutableGateResult(
+            gate_id=gate_id,
+            command=("synthetic-executable-gate", gate_id),
+            exit_code=exit_codes.get(gate_id, 0),
+            output=("observed:" + gate_id).encode(),
+        )
+        for gate_id in local_runner.REQUIRED_GATE_IDS
+    }
+
+
 class PublicIntegrationLocalSandboxTests(unittest.TestCase):
+    def test_failed_executable_gate_is_not_reported_as_pass(self):
+        result = local_runner.run_local_scenarios(gate_results=_gate_results(
+            **{"reference-adapters": 1}
+        ))
+        self.assertGreater(result.failed_count, 0)
+        self.assertEqual("fail", next(
+            item["status"] for item in result.scenario_results
+            if item["id"] == "create"
+        ))
+        evidence = local_runner.build_local_evidence(
+            subject_commit="a" * 40,
+            subject_tree="b" * 40,
+            run_at="2026-08-03T08:00:00Z",
+            command="synthetic-failed-local-test",
+            log_bytes=b"failed gate",
+            result=result,
+        )
+        self.assertEqual("fail", evidence["overallResult"])
+        self.assertEqual([], local_runner.validate_evidence(evidence))
+
+    def test_skip_executable_gates_cannot_emit_pass_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "evidence.json"
+            with self.assertRaisesRegex(
+                RuntimeError, "PIC_LOCAL_EXECUTABLE_GATES_REQUIRED"
+            ):
+                local_runner.main([
+                    "--evidence", str(output),
+                    "--development-allow-dirty",
+                    "--skip-executable-gates",
+                ])
+            self.assertFalse(output.exists())
+
+    def test_dirty_development_mode_cannot_emit_committed_candidate_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "evidence.json"
+            with self.assertRaisesRegex(
+                RuntimeError, "PIC_LOCAL_EVIDENCE_REQUIRES_TRACKED_CLEAN_CANDIDATE"
+            ):
+                local_runner.main([
+                    "--evidence", str(output),
+                    "--development-allow-dirty",
+                ])
+            self.assertFalse(output.exists())
+
+    def test_subject_overrides_must_match_the_executed_git_candidate(self):
+        with mock.patch.object(
+            local_runner,
+            "_git_value",
+            side_effect=("c" * 40, "d" * 40),
+        ):
+            with self.assertRaisesRegex(ValueError, "PIC_EVIDENCE_SUBJECT_OVERRIDE_MISMATCH"):
+                local_runner.resolve_git_subject("a" * 40, "b" * 40)
+
     def test_local_model_covers_locked_scenarios_and_invariants(self):
-        result = local_runner.run_local_scenarios()
+        result = local_runner.run_local_scenarios(gate_results=_gate_results())
         locked = json.loads(
             (ROOT / "contracts/public-integration/"
              "public-integration-target-scenarios-1.0.0.json").read_text()
@@ -42,7 +109,7 @@ class PublicIntegrationLocalSandboxTests(unittest.TestCase):
         self.assertTrue(result.internal_invariants["sloBoundaryExact"])
 
     def test_local_evidence_is_closed_privacy_safe_and_digest_stable(self):
-        result = local_runner.run_local_scenarios()
+        result = local_runner.run_local_scenarios(gate_results=_gate_results())
         evidence = local_runner.build_local_evidence(
             subject_commit="a" * 40,
             subject_tree="b" * 40,

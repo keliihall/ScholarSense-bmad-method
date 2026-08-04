@@ -18,8 +18,8 @@
   ],
   "recordShape": {
     "commonIntegrationFields": ["channelId", "contractVersion", "provenanceMode", "generationKeyToken", "sourceAggregateVersion", "attemptNo", "result", "errorCode"],
-    "streamFields": ["eventId", "sourceFactIdToken", "routeSequence", "sourceFactDigest"],
-    "intentFields": ["deliveryIntentIdToken", "notificationType", "escalationVersion"]
+    "streamFields": ["eventId", "sourceFactIdToken", "routeSequence", "sourceFactDigest", "eventPayloadDigestToken"],
+    "intentFields": ["deliveryIntentIdToken", "requestDigestToken", "notificationType", "escalationVersion"]
   },
   "observability": {
     "safeErrorCodes": ["NONE", "AUTHORIZATION_DENIED", "TARGET_TRANSIENT", "RETRY_EXHAUSTED", "ROUTE_GAP", "PAYLOAD_POISON"],

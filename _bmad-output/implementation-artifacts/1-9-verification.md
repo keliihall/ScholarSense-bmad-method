@@ -9,6 +9,21 @@
 - Highest gate: `./scripts/verify.sh` PASS from a detached, tracked-clean candidate worktree
 - Reproducible artifact set: `8e30b70b880cfd1cc29a87a0cb016b0de94aa7827ce925f82ed5fa20930eb60a`
 
+## Review-patch verification (2026-08-03)
+
+- Review-patch candidate: `e7818f7827eb5b729bd742f983c83c767cf5095e` (temporary detached verification commit; no branch was moved)
+- Highest gate: `./scripts/verify.sh` PASS from a detached, tracked-clean candidate worktree
+- Backend/JUnit: 484 passed; 0 failed, 0 errors, 0 skipped
+- BMAD script tests: 145 passed
+- Project Python tests: 327 passed
+- PostgreSQL 18.4: PASS
+- PIC local conformance: 10/10 passed; failed/skipped 0
+- Frontend per clean replay: 70 unit passed; 113 Playwright passed, 15 designed skips
+- Release reproducibility: two clean attempts matched; `build-release: PASS`
+- Reproducible artifact set: `8e30b70b880cfd1cc29a87a0cb016b0de94aa7827ce925f82ed5fa20930eb60a`
+
+The target evidence and v2 closed-bundle attestation below remain historical evidence bound to candidate `c6ba4f68b0f24f1145a0e4ec72ab09cf9cbe5e40`. They are not relabeled as evidence for the review-patch candidate, and the review patch adds no production runtime, promotion, or apply claim.
+
 ## Automated gates
 
 | Layer | Result |

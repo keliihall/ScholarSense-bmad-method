@@ -9,6 +9,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,11 +58,92 @@ final class PostgresPublicIntegrationReferenceAdapter {
         this.transactions = Objects.requireNonNull(transactions, "transactions");
     }
 
+    TransactionTemplate transactionTemplateForTest() {
+        return transactions;
+    }
+
+    PublicIntegrationCallbackSecurityVerifier.ReplayStore callbackReplayStore() {
+        return registration -> recordAuthenticatedCallback(
+                registration.workloadSubject(), registration.keyId(),
+                registration.nonceDigest(), registration.contractVersion(),
+                registration.source(), registration.eventId(),
+                registration.payloadDigest(), registration.technicalResult(),
+                registration.firstSeenAt());
+    }
+
+    PublicIntegrationCallbackSecurityVerifier.Decision recordAuthenticatedCallback(
+            String workloadSubject,
+            String keyId,
+            String nonceDigest,
+            String contractVersion,
+            String source,
+            String eventId,
+            String payloadDigest,
+            byte[] technicalResult,
+            Instant now) {
+        requireText(workloadSubject, "workloadSubject");
+        requireText(keyId, "keyId");
+        requireHexDigest(nonceDigest, "nonceDigest");
+        requireText(contractVersion, "contractVersion");
+        requireText(source, "source");
+        requireText(eventId, "eventId");
+        requireHexDigest(payloadDigest, "payloadDigest");
+        Objects.requireNonNull(technicalResult, "technicalResult");
+        Objects.requireNonNull(now, "now");
+        return transactions.execute(status -> {
+            int nonceInserted = jdbc.update("""
+                    insert into %s.callback_nonce (
+                      workload_sub,key_id,nonce_digest,contract_version,
+                      first_seen_at,retain_until)
+                    values (?,?,?,?,?,?)
+                    on conflict do nothing
+                    """.formatted(schema), workloadSubject, keyId, nonceDigest,
+                    contractVersion, timestamp(now), timestamp(now.plusSeconds(600)));
+            if (nonceInserted != 1) {
+                return PublicIntegrationCallbackSecurityVerifier.Decision.REPLAY;
+            }
+            int inboxInserted = jdbc.update("""
+                    insert into %s.callback_inbox (
+                      source,event_id,payload_digest,technical_result,applied_at)
+                    values (?,?,?,?,?)
+                    on conflict do nothing
+                    """.formatted(schema), source, eventId, payloadDigest,
+                    technicalResult, timestamp(now));
+            if (inboxInserted == 1) {
+                return PublicIntegrationCallbackSecurityVerifier.Decision.ACCEPT;
+            }
+            Map<String, Object> existing = jdbc.queryForMap("""
+                    select payload_digest from %s.callback_inbox
+                     where source=? and event_id=?
+                     for update
+                    """.formatted(schema), source, eventId);
+            return MessageDigest.isEqual(
+                    payloadDigest.getBytes(StandardCharsets.UTF_8),
+                    text(existing, "payload_digest").getBytes(StandardCharsets.UTF_8))
+                    ? PublicIntegrationCallbackSecurityVerifier.Decision.ALREADY_APPLIED
+                    : PublicIntegrationCallbackSecurityVerifier.Decision.PAYLOAD_CONFLICT;
+        });
+    }
+
+    byte[] callbackTechnicalResult(String source, String eventId) {
+        requireText(source, "source");
+        requireText(eventId, "eventId");
+        return jdbc.queryForObject("""
+                select technical_result from %s.callback_inbox
+                 where source=? and event_id=?
+                """.formatted(schema), byte[].class, source, eventId);
+    }
+
     boolean admitStream(StreamAdmission admission, boolean failAfterWrites) {
         Objects.requireNonNull(admission, "admission");
         return Boolean.TRUE.equals(transactions.execute(status -> {
+            lockProviderLineage(admission.tokenizedWorkItemKey());
             lockLane(admission.key());
-            applyRoute(admission);
+            rejectAdmissionAfterTerminal(
+                    admission.key(), admission.tokenizedWorkItemKey());
+            if (!applyRoute(admission)) {
+                return false;
+            }
             insertStreamQueue(admission);
             boolean activated = activateIfIdle(
                     admission.key(), admission.generationKey(),
@@ -75,7 +158,10 @@ final class PostgresPublicIntegrationReferenceAdapter {
     boolean admitIntent(IntentAdmission admission, boolean failAfterWrites) {
         Objects.requireNonNull(admission, "admission");
         return Boolean.TRUE.equals(transactions.execute(status -> {
+            lockProviderLineage(admission.tokenizedWorkItemKey());
             lockLane(admission.key());
+            rejectAdmissionAfterTerminal(
+                    admission.key(), admission.tokenizedWorkItemKey());
             insertIntentQueue(admission);
             boolean activated = activateIfIdle(
                     admission.key(), admission.generationKey(),
@@ -88,23 +174,61 @@ final class PostgresPublicIntegrationReferenceAdapter {
     }
 
     Optional<Claim> claim(String workerId, Instant now, Duration lease) {
+        return claimInternal(workerId, now, lease, null);
+    }
+
+    Optional<Claim> claim(
+            String workerId,
+            Instant now,
+            Duration lease,
+            DeliveryRecordKey requiredKey) {
+        Objects.requireNonNull(requiredKey, "requiredKey");
+        return claimInternal(workerId, now, lease, requiredKey);
+    }
+
+    private Optional<Claim> claimInternal(
+            String workerId,
+            Instant now,
+            Duration lease,
+            DeliveryRecordKey requiredKey) {
         requireText(workerId, "workerId");
         Objects.requireNonNull(now, "now");
         if (lease == null || lease.isNegative() || lease.isZero()) {
             throw new IllegalArgumentException("PIC_LEASE_INVALID");
         }
         return transactions.execute(status -> {
+            String laneFilter = requiredKey == null ? "" : """
+                       and outbox.aggregate_type=? and outbox.aggregate_id=?
+                       and outbox.channel_id=? and outbox.contract_version=?
+                    """;
+            List<Object> arguments = new ArrayList<>();
+            arguments.add(timestamp(now));
+            arguments.add(timestamp(now));
+            if (requiredKey != null) {
+                arguments.add(requiredKey.aggregateType());
+                arguments.add(requiredKey.aggregateId());
+                arguments.add(requiredKey.channelId());
+                arguments.add(requiredKey.contractVersion());
+            }
             var rows = jdbc.queryForList("""
-                    select aggregate_type, aggregate_id, channel_id,
-                           contract_version, generation_key, fencing_token
-                      from %s.outbox
-                     where delivered_at is null
-                       and available_at <= ?
-                       and (lease_until is null or lease_until < ?)
-                     order by available_at, generation_key
-                     for update skip locked
+                    select outbox.aggregate_type, outbox.aggregate_id,
+                           outbox.channel_id, outbox.contract_version,
+                           outbox.generation_key, outbox.fencing_token,
+                           queued.tokenized_work_item_key,
+                           queued.source_aggregate_version, queued.operation,
+                           queued.event_payload_digest
+                      from %s.outbox outbox
+                      join %s.queued_delivery queued using (
+                           aggregate_type,aggregate_id,channel_id,
+                           contract_version,generation_key)
+                     where outbox.delivered_at is null
+                       and outbox.available_at <= ?
+                       and (outbox.lease_until is null or outbox.lease_until < ?)
+                    %s
+                     order by outbox.available_at, outbox.generation_key
                      limit 1
-                    """.formatted(schema), timestamp(now), timestamp(now));
+                     for update of outbox skip locked
+                    """.formatted(schema, schema, laneFilter), arguments.toArray());
             if (rows.isEmpty()) {
                 return Optional.empty();
             }
@@ -115,7 +239,48 @@ final class PostgresPublicIntegrationReferenceAdapter {
                     text(row, "channel_id"),
                     text(row, "contract_version"));
             String generationKey = text(row, "generation_key");
+            String tokenizedWorkItemKey = text(row, "tokenized_work_item_key");
+            long sourceAggregateVersion = number(row, "source_aggregate_version");
+            String operation = text(row, "operation");
+            String eventPayloadDigest = nullableText(row, "event_payload_digest");
+            lockProviderLineage(tokenizedWorkItemKey);
             lockLane(key);
+            var claimable = jdbc.queryForList("""
+                    select 1 from %s.outbox
+                     where aggregate_type=? and aggregate_id=?
+                       and channel_id=? and contract_version=?
+                       and generation_key=? and delivered_at is null
+                       and available_at <= ?
+                       and (lease_until is null or lease_until < ?)
+                     for update
+                    """.formatted(schema), key.aggregateType(), key.aggregateId(), key.channelId(),
+                    key.contractVersion(), generationKey,
+                    timestamp(now), timestamp(now));
+            if (claimable.size() != 1) {
+                return Optional.empty();
+            }
+            Claim unfenced = new Claim(
+                    key, generationKey, 0, 0, workerId, now,
+                    tokenizedWorkItemKey, sourceAggregateVersion, operation,
+                    eventPayloadDigest);
+            if (terminalFenceBlocks(unfenced)) {
+                jdbc.update("""
+                        update %s.outbox set delivered_at=?
+                         where aggregate_type=? and aggregate_id=?
+                           and channel_id=? and contract_version=?
+                           and generation_key=? and delivered_at is null
+                        """.formatted(schema), timestamp(now), key.aggregateType(),
+                        key.aggregateId(), key.channelId(), key.contractVersion(),
+                        generationKey);
+                jdbc.update("""
+                        update %s.queued_delivery set disposition='terminal-cancelled'
+                         where aggregate_type=? and aggregate_id=?
+                           and channel_id=? and contract_version=?
+                           and generation_key=?
+                        """.formatted(schema), key.aggregateType(), key.aggregateId(),
+                        key.channelId(), key.contractVersion(), generationKey);
+                return Optional.empty();
+            }
             Long currentFence = jdbc.queryForObject("""
                     select fencing_token from %s.current_delivery
                      where aggregate_type=? and aggregate_id=?
@@ -169,14 +334,20 @@ final class PostgresPublicIntegrationReferenceAdapter {
                     key.channelId(), key.contractVersion(), generationKey,
                     attemptNo, workerId, fence, timestamp(now), timestamp(leaseUntil));
             return Optional.of(new Claim(
-                    key, generationKey, attemptNo, fence, workerId, leaseUntil));
+                    key, generationKey, attemptNo, fence, workerId, leaseUntil,
+                    tokenizedWorkItemKey, sourceAggregateVersion, operation,
+                    eventPayloadDigest));
         });
     }
 
     boolean confirm(Claim claim) {
         Objects.requireNonNull(claim, "claim");
         return Boolean.TRUE.equals(transactions.execute(status -> {
+            lockProviderLineage(claim.tokenizedWorkItemKey());
             lockLane(claim.key());
+            if (terminalFenceBlocks(claim)) {
+                return false;
+            }
             int changed = jdbc.update("""
                     update %s.current_delivery
                        set status='confirmed'
@@ -192,16 +363,44 @@ final class PostgresPublicIntegrationReferenceAdapter {
         }));
     }
 
+    boolean preSendAllowed(Claim claim) {
+        Objects.requireNonNull(claim, "claim");
+        return Boolean.TRUE.equals(transactions.execute(status -> {
+            lockProviderLineage(claim.tokenizedWorkItemKey());
+            lockLane(claim.key());
+            if (terminalFenceBlocks(claim)) {
+                return false;
+            }
+            Integer current = jdbc.queryForObject("""
+                    select count(*) from %s.current_delivery
+                     where aggregate_type=? and aggregate_id=?
+                       and channel_id=? and contract_version=?
+                       and current_generation_key=? and fencing_token=?
+                       and status in ('pending','retrying')
+                    """.formatted(schema), Integer.class,
+                    claim.key().aggregateType(), claim.key().aggregateId(),
+                    claim.key().channelId(), claim.key().contractVersion(),
+                    claim.generationKey(), claim.fencingToken());
+            return current != null && current == 1;
+        }));
+    }
+
     boolean confirmAndPromote(
             Claim claim,
             String externalTaskRef,
             String providerReceiptDigest,
+            Instant confirmedAt,
             boolean failBeforeCommit) {
         Objects.requireNonNull(claim, "claim");
         requireText(externalTaskRef, "externalTaskRef");
         requireDigest(providerReceiptDigest, "providerReceiptDigest");
+        Objects.requireNonNull(confirmedAt, "confirmedAt");
         return Boolean.TRUE.equals(transactions.execute(status -> {
+            lockProviderLineage(claim.tokenizedWorkItemKey());
             lockLane(claim.key());
+            if (terminalFenceBlocks(claim)) {
+                return false;
+            }
             var currentRows = jdbc.queryForList("""
                     select current_delivery_sequence, fencing_token,
                            current_generation_key, status
@@ -239,7 +438,6 @@ final class PostgresPublicIntegrationReferenceAdapter {
                     throw new IllegalStateException("PIC_EXTERNAL_ID_CONFLICT");
                 }
             }
-            Instant confirmedAt = claim.leaseUntil().minusSeconds(1);
             jdbc.update("""
                     update %s.generation_ledger
                        set external_task_ref=?, provider_receipt_digest=?,
@@ -390,26 +588,70 @@ final class PostgresPublicIntegrationReferenceAdapter {
         });
     }
 
-    void retryCurrent(String generationKey, long expectedFence, boolean authorized) {
+    void retryCurrent(
+            DeliveryRecordKey key,
+            String generationKey,
+            long expectedFence,
+            Instant retryAt,
+            boolean authorized,
+            boolean failBeforeCommit) {
+        Objects.requireNonNull(key, "key");
         requireText(generationKey, "generationKey");
+        Objects.requireNonNull(retryAt, "retryAt");
         if (!authorized) {
             throw new IllegalStateException("PIC_REMEDIATION_AUTHORIZATION_REQUIRED");
         }
-        int changed = jdbc.update("""
-                update %s.current_delivery
-                   set status='retrying', fencing_token=fencing_token+1
-                 where current_generation_key=? and fencing_token=?
-                   and status='failed' and recoverable
-                """.formatted(schema), generationKey, expectedFence);
-        if (changed != 1) {
-            throw new IllegalStateException("PIC_RETRY_NOT_ALLOWED");
+        transactions.executeWithoutResult(status -> {
+            String tokenizedWorkItemKey = workItemToken(key, generationKey);
+            lockProviderLineage(tokenizedWorkItemKey);
+            lockLane(key);
+            rejectAdmissionAfterTerminal(key, tokenizedWorkItemKey);
+            int changed = jdbc.update("""
+                    update %s.current_delivery
+                       set status='retrying', fencing_token=fencing_token+1
+                     where aggregate_type=? and aggregate_id=?
+                       and channel_id=? and contract_version=?
+                       and current_generation_key=? and fencing_token=?
+                       and status='failed' and recoverable
+                    """.formatted(schema), key.aggregateType(), key.aggregateId(),
+                    key.channelId(), key.contractVersion(), generationKey,
+                    expectedFence);
+            if (changed != 1) {
+                throw new IllegalStateException("PIC_RETRY_NOT_ALLOWED");
+            }
+            int outboxChanged = jdbc.update("""
+                    update %s.outbox
+                       set available_at=?, claimed_by=null,
+                           lease_until=null, fencing_token=?
+                     where aggregate_type=? and aggregate_id=?
+                       and channel_id=? and contract_version=?
+                       and generation_key=? and delivered_at is null
+                    """.formatted(schema), timestamp(retryAt), expectedFence + 1,
+                    key.aggregateType(), key.aggregateId(), key.channelId(),
+                    key.contractVersion(), generationKey);
+            if (outboxChanged != 1) {
+                throw new IllegalStateException("PIC_RETRY_OUTBOX_NOT_FOUND");
+            }
+            appendTransition(key, generationKey, "failed", "retrying",
+                    expectedFence + 1, "authorized-retry", retryAt);
+            if (failBeforeCommit) {
+                throw new IllegalStateException("PIC_INJECTED_RETRY_ROLLBACK");
+            }
+        });
+    }
+
+    private String workItemToken(DeliveryRecordKey key, String generationKey) {
+        var rows = jdbc.queryForList("""
+                select tokenized_work_item_key from %s.queued_delivery
+                 where aggregate_type=? and aggregate_id=?
+                   and channel_id=? and contract_version=?
+                   and generation_key=?
+                """.formatted(schema), key.aggregateType(), key.aggregateId(),
+                key.channelId(), key.contractVersion(), generationKey);
+        if (rows.size() != 1) {
+            throw new IllegalStateException("PIC_GENERATION_NOT_FOUND");
         }
-        jdbc.update("""
-                update %s.outbox
-                   set available_at=clock_timestamp(), claimed_by=null,
-                       lease_until=null, fencing_token=?
-                 where generation_key=? and delivered_at is null
-                """.formatted(schema), expectedFence + 1, generationKey);
+        return text(rows.getFirst(), "tokenized_work_item_key");
     }
 
     byte[] reserveCommand(
@@ -476,14 +718,32 @@ final class PostgresPublicIntegrationReferenceAdapter {
     }
 
     void bindProviderLineage(
+            DeliveryRecordKey key,
+            String generationKey,
             String tokenizedWorkItemKey,
             String externalTaskRef,
             Instant boundAt) {
+        Objects.requireNonNull(key, "key");
+        requireText(generationKey, "generationKey");
         requireText(tokenizedWorkItemKey, "tokenizedWorkItemKey");
         requireText(externalTaskRef, "externalTaskRef");
         Objects.requireNonNull(boundAt, "boundAt");
         transactions.executeWithoutResult(status -> {
             lockProviderLineage(tokenizedWorkItemKey);
+            lockLane(key);
+            var generationRows = jdbc.queryForList("""
+                    select tokenized_work_item_key
+                      from %s.queued_delivery
+                     where aggregate_type=? and aggregate_id=?
+                       and channel_id=? and contract_version=?
+                       and generation_key=?
+                     for update
+                    """.formatted(schema), key.aggregateType(), key.aggregateId(),
+                    key.channelId(), key.contractVersion(), generationKey);
+            if (generationRows.size() != 1 || !tokenizedWorkItemKey.equals(
+                    text(generationRows.getFirst(), "tokenized_work_item_key"))) {
+                throw new IllegalStateException("PIC_PROVIDER_LINEAGE_GENERATION_MISMATCH");
+            }
             var existing = jdbc.queryForList("""
                     select external_task_ref, terminal_tombstone
                       from %s.provider_lineage_map
@@ -501,33 +761,38 @@ final class PostgresPublicIntegrationReferenceAdapter {
                 if (current != null && !externalTaskRef.equals(current.toString())) {
                     throw new IllegalStateException("PIC_EXTERNAL_ID_CONFLICT");
                 }
-                return;
+            } else {
+                String providerLineageKey = providerLineageKey(tokenizedWorkItemKey);
+                jdbc.update("""
+                        insert into %s.provider_lineage_map (
+                          tenant_token,capability_family,tokenized_work_item_key,
+                          provider_lineage_key,external_task_ref)
+                        values ('synthetic-tenant','public-task',?,?,?)
+                        """.formatted(schema), tokenizedWorkItemKey,
+                        providerLineageKey, externalTaskRef);
             }
-            String providerLineageKey = providerLineageKey(tokenizedWorkItemKey);
-            jdbc.update("""
-                    insert into %s.provider_lineage_map (
-                      tenant_token,capability_family,tokenized_work_item_key,
-                      provider_lineage_key,external_task_ref)
-                    values ('synthetic-tenant','public-task',?,?,?)
-                    """.formatted(schema), tokenizedWorkItemKey,
-                    providerLineageKey, externalTaskRef);
             int ledgerChanged = jdbc.update("""
                     update %s.generation_ledger
                        set external_task_ref=?
-                     where (aggregate_type,aggregate_id,channel_id,contract_version,
-                            generation_key) in (
-                       select aggregate_type,aggregate_id,channel_id,contract_version,
-                              current_generation_key
-                         from %s.current_delivery)
+                     where aggregate_type=? and aggregate_id=?
+                       and channel_id=? and contract_version=?
+                       and generation_key=?
                        and (external_task_ref is null or external_task_ref=?)
-                    """.formatted(schema, schema), externalTaskRef, externalTaskRef);
+                    """.formatted(schema), externalTaskRef,
+                    key.aggregateType(), key.aggregateId(), key.channelId(),
+                    key.contractVersion(), generationKey, externalTaskRef);
             if (ledgerChanged != 1) {
-                throw new IllegalStateException("PIC_CURRENT_GENERATION_NOT_FOUND");
+                throw new IllegalStateException("PIC_GENERATION_NOT_FOUND_OR_CONFLICT");
             }
             jdbc.update("""
                     update %s.current_delivery
                        set current_external_task_ref=?
-                    """.formatted(schema), externalTaskRef);
+                     where aggregate_type=? and aggregate_id=?
+                       and channel_id=? and contract_version=?
+                       and current_generation_key=?
+                    """.formatted(schema), externalTaskRef,
+                    key.aggregateType(), key.aggregateId(), key.channelId(),
+                    key.contractVersion(), generationKey);
         });
     }
 
@@ -633,55 +898,143 @@ final class PostgresPublicIntegrationReferenceAdapter {
                 || "revoke".equals(terminal.operation()))) {
             throw new IllegalArgumentException("PIC_TERMINAL_OPERATION_REQUIRED");
         }
+        if (!tokenizedWorkItemKey.equals(terminal.tokenizedWorkItemKey())) {
+            throw new IllegalArgumentException("PIC_TERMINAL_WORK_ITEM_KEY_MISMATCH");
+        }
         return Boolean.TRUE.equals(transactions.execute(status -> {
             lockProviderLineage(tokenizedWorkItemKey);
             lockLane(terminal.key());
-            applyRoute(terminal);
-            var currentRows = jdbc.queryForList("""
-                    select current_generation_key,current_delivery_sequence,
-                           fencing_token,status
-                      from %s.current_delivery
-                     where aggregate_type=? and aggregate_id=?
-                       and channel_id=? and contract_version=?
+            var priorFences = jdbc.queryForList("""
+                    select applied_terminal_version,event_digest,fence_epoch
+                      from %s.source_terminal_fence
+                     where tenant_token='synthetic-tenant'
+                       and aggregate_type=? and tokenized_aggregate_id=?
+                       and tokenized_work_item_key=?
                      for update
                     """.formatted(schema), terminal.key().aggregateType(),
-                    terminal.key().aggregateId(), terminal.key().channelId(),
-                    terminal.key().contractVersion());
-            if (currentRows.isEmpty()) {
+                    tokenizedDigest(terminal.key().aggregateId()),
+                    tokenizedWorkItemKey);
+            if (!priorFences.isEmpty()) {
+                Map<String, Object> prior = priorFences.getFirst();
+                long appliedVersion = number(prior, "applied_terminal_version");
+                if (terminal.sourceAggregateVersion() < appliedVersion) {
+                    return false;
+                }
+                if (terminal.sourceAggregateVersion() == appliedVersion) {
+                    if (terminal.eventPayloadDigest().equals(
+                            text(prior, "event_digest"))) {
+                        return false;
+                    }
+                    throw new IllegalStateException("PIC_TERMINAL_REPLAY_CONFLICT");
+                }
+            }
+            if (!applyRoute(terminal)) {
+                return false;
+            }
+            var activeRows = jdbc.queryForList("""
+                    select current.current_generation_key,
+                           current.current_delivery_sequence,
+                           current.fencing_token,current.status,
+                           current.channel_id,current.contract_version
+                      from %s.current_delivery current
+                      join %s.queued_delivery queued
+                        on queued.aggregate_type=current.aggregate_type
+                       and queued.aggregate_id=current.aggregate_id
+                       and queued.channel_id=current.channel_id
+                       and queued.contract_version=current.contract_version
+                       and queued.generation_key=current.current_generation_key
+                     where current.aggregate_type=? and current.aggregate_id=?
+                       and queued.tokenized_work_item_key=?
+                     for update of current
+                    """.formatted(schema, schema), terminal.key().aggregateType(),
+                    terminal.key().aggregateId(), tokenizedWorkItemKey);
+            Map<String, Object> current = activeRows.stream()
+                    .filter(row -> terminal.key().channelId().equals(
+                                    text(row, "channel_id"))
+                            && terminal.key().contractVersion().equals(
+                                    text(row, "contract_version")))
+                    .findFirst()
+                    .orElse(null);
+            if (current == null) {
                 throw new IllegalStateException("PIC_TERMINAL_LANE_NOT_FOUND");
             }
-            Map<String, Object> current = currentRows.getFirst();
             long currentSequence = number(current, "current_delivery_sequence");
             long currentFence = number(current, "fencing_token");
-            if (currentSequence == MAX_SAFE_INTEGER || currentFence == Long.MAX_VALUE) {
+            if (currentSequence == MAX_SAFE_INTEGER || activeRows.stream().anyMatch(
+                    row -> number(row, "fencing_token") == Long.MAX_VALUE)) {
                 throw new IllegalStateException("PIC_SEQUENCE_OR_FENCE_EXHAUSTED");
             }
-            String oldGeneration = text(current, "current_generation_key");
             jdbc.update("""
                     update %s.queued_delivery
                        set disposition='terminal-cancelled'
                      where aggregate_type=? and aggregate_id=?
-                       and disposition='waiting'
+                       and tokenized_work_item_key=?
+                       and disposition in ('waiting','activated')
                     """.formatted(schema), terminal.key().aggregateType(),
-                    terminal.key().aggregateId());
+                    terminal.key().aggregateId(), tokenizedWorkItemKey);
             jdbc.update("""
-                    update %s.generation_ledger
+                    update %s.generation_ledger ledger
                        set sealed=true, final_status='terminal-preempted'
-                     where aggregate_type=? and aggregate_id=?
-                       and channel_id=? and contract_version=?
-                       and generation_key=?
-                    """.formatted(schema), terminal.key().aggregateType(),
-                    terminal.key().aggregateId(), terminal.key().channelId(),
-                    terminal.key().contractVersion(), oldGeneration);
-            jdbc.update("""
-                    update %s.outbox set delivered_at=?
-                     where aggregate_type=? and aggregate_id=?
-                       and channel_id=? and contract_version=?
-                       and generation_key=? and delivered_at is null
-                    """.formatted(schema), timestamp(terminal.acceptedAt()),
+                      from %s.current_delivery current
+                      join %s.queued_delivery queued
+                        on queued.aggregate_type=current.aggregate_type
+                       and queued.aggregate_id=current.aggregate_id
+                       and queued.channel_id=current.channel_id
+                       and queued.contract_version=current.contract_version
+                       and queued.generation_key=current.current_generation_key
+                     where ledger.aggregate_type=current.aggregate_type
+                       and ledger.aggregate_id=current.aggregate_id
+                       and ledger.channel_id=current.channel_id
+                       and ledger.contract_version=current.contract_version
+                       and ledger.generation_key=current.current_generation_key
+                       and current.aggregate_type=? and current.aggregate_id=?
+                       and queued.tokenized_work_item_key=?
+                    """.formatted(schema, schema, schema),
                     terminal.key().aggregateType(), terminal.key().aggregateId(),
-                    terminal.key().channelId(), terminal.key().contractVersion(),
-                    oldGeneration);
+                    tokenizedWorkItemKey);
+            jdbc.update("""
+                    update %s.outbox outbox set delivered_at=?
+                      from %s.current_delivery current
+                      join %s.queued_delivery queued
+                        on queued.aggregate_type=current.aggregate_type
+                       and queued.aggregate_id=current.aggregate_id
+                       and queued.channel_id=current.channel_id
+                       and queued.contract_version=current.contract_version
+                       and queued.generation_key=current.current_generation_key
+                     where outbox.aggregate_type=current.aggregate_type
+                       and outbox.aggregate_id=current.aggregate_id
+                       and outbox.channel_id=current.channel_id
+                       and outbox.contract_version=current.contract_version
+                       and outbox.generation_key=current.current_generation_key
+                       and outbox.delivered_at is null
+                       and current.aggregate_type=? and current.aggregate_id=?
+                       and queued.tokenized_work_item_key=?
+                    """.formatted(schema, schema, schema),
+                    timestamp(terminal.acceptedAt()), terminal.key().aggregateType(),
+                    terminal.key().aggregateId(), tokenizedWorkItemKey);
+            jdbc.update("""
+                    update %s.current_delivery current
+                       set fencing_token=current.fencing_token+1,
+                           recoverable=false
+                      from %s.queued_delivery queued
+                     where queued.aggregate_type=current.aggregate_type
+                       and queued.aggregate_id=current.aggregate_id
+                       and queued.channel_id=current.channel_id
+                       and queued.contract_version=current.contract_version
+                       and queued.generation_key=current.current_generation_key
+                       and current.aggregate_type=? and current.aggregate_id=?
+                       and queued.tokenized_work_item_key=?
+                    """.formatted(schema, schema), terminal.key().aggregateType(),
+                    terminal.key().aggregateId(), tokenizedWorkItemKey);
+            for (Map<String, Object> active : activeRows) {
+                var activeKey = new DeliveryRecordKey(
+                        terminal.key().aggregateType(), terminal.key().aggregateId(),
+                        text(active, "channel_id"), text(active, "contract_version"));
+                appendTransition(activeKey, text(active, "current_generation_key"),
+                        text(active, "status"), "terminal-cancelled",
+                        number(active, "fencing_token") + 1,
+                        "cross-channel-terminal-preempt", terminal.acceptedAt());
+            }
             insertStreamQueue(terminal);
             jdbc.update("""
                     update %s.queued_delivery set disposition='activated'
@@ -735,7 +1088,9 @@ final class PostgresPublicIntegrationReferenceAdapter {
                       applied_terminal_version=excluded.applied_terminal_version,
                       event_digest=excluded.event_digest,
                       fence_epoch=%s.source_terminal_fence.fence_epoch+1
-                    """.formatted(schema, schema), terminal.key().aggregateType(),
+                    where %s.source_terminal_fence.applied_terminal_version
+                          < excluded.applied_terminal_version
+                    """.formatted(schema, schema, schema), terminal.key().aggregateType(),
                     tokenizedDigest(terminal.key().aggregateId()),
                     tokenizedWorkItemKey, terminal.sourceAggregateVersion(),
                     terminal.eventPayloadDigest());
@@ -759,6 +1114,20 @@ final class PostgresPublicIntegrationReferenceAdapter {
         }
         Object value = values.getFirst().get("external_task_ref");
         return value == null ? null : value.toString();
+    }
+
+    Instant confirmedAt(DeliveryRecordKey key, String generationKey) {
+        Objects.requireNonNull(key, "key");
+        requireText(generationKey, "generationKey");
+        Timestamp value = jdbc.queryForObject("""
+                select confirmed_at from %s.generation_ledger
+                 where aggregate_type=? and aggregate_id=?
+                   and channel_id=? and contract_version=?
+                   and generation_key=?
+                """.formatted(schema), Timestamp.class,
+                key.aggregateType(), key.aggregateId(), key.channelId(),
+                key.contractVersion(), generationKey);
+        return value == null ? null : value.toInstant();
     }
 
     boolean hasTerminalTombstone(String generationKey) {
@@ -795,7 +1164,17 @@ final class PostgresPublicIntegrationReferenceAdapter {
 
     long appliedTerminalVersion(String tokenizedWorkItemKey) {
         Long value = jdbc.queryForObject("""
-                select applied_terminal_version from %s.source_terminal_fence
+                select applied_terminal_version
+                  from %s.source_terminal_fence
+                 where tenant_token='synthetic-tenant'
+                   and tokenized_work_item_key=?
+                """.formatted(schema), Long.class, tokenizedWorkItemKey);
+        return value == null ? 0 : value;
+    }
+
+    long terminalFenceEpoch(String tokenizedWorkItemKey) {
+        Long value = jdbc.queryForObject("""
+                select fence_epoch from %s.source_terminal_fence
                  where tenant_token='synthetic-tenant'
                    and tokenized_work_item_key=?
                 """.formatted(schema), Long.class, tokenizedWorkItemKey);
@@ -845,7 +1224,7 @@ final class PostgresPublicIntegrationReferenceAdapter {
         return value == null ? 0 : value;
     }
 
-    private void applyRoute(StreamAdmission admission) {
+    private boolean applyRoute(StreamAdmission admission) {
         var rows = jdbc.queryForList("""
                 select current_route_sequence, last_source_aggregate_version,
                        last_event_id, last_event_payload_digest
@@ -872,7 +1251,7 @@ final class PostgresPublicIntegrationReferenceAdapter {
                     admission.key().aggregateId(), admission.key().channelId(),
                     admission.routeSequence(), admission.sourceAggregateVersion(),
                     admission.sourceEventId(), admission.eventPayloadDigest());
-            return;
+            return true;
         }
         Map<String, Object> row = rows.getFirst();
         long currentSequence = number(row, "current_route_sequence");
@@ -881,7 +1260,7 @@ final class PostgresPublicIntegrationReferenceAdapter {
                 && admission.sourceEventId().equals(text(row, "last_event_id"))
                 && admission.eventPayloadDigest().equals(
                         text(row, "last_event_payload_digest"))) {
-            return;
+            return false;
         }
         if (admission.routeSequence() != currentSequence + 1) {
             throw new IllegalStateException("PIC_ROUTE_GAP_OR_CONFLICT");
@@ -902,22 +1281,25 @@ final class PostgresPublicIntegrationReferenceAdapter {
                 admission.sourceAggregateVersion(), admission.sourceEventId(),
                 admission.eventPayloadDigest(), admission.key().aggregateType(),
                 admission.key().aggregateId(), admission.key().channelId());
+        return true;
     }
 
     private void insertStreamQueue(StreamAdmission admission) {
         jdbc.update("""
                 insert into %s.queued_delivery (
                   aggregate_type,aggregate_id,channel_id,contract_version,
-                  generation_key,operation,accepted_at,provenance_mode,
+                  generation_key,tokenized_work_item_key,operation,accepted_at,
+                  provenance_mode,
                   source_event_id,source_fact_id,source_fact_digest,
                   event_payload_digest,route_sequence,
                   source_aggregate_version,disposition)
-                values (?,?,?,?,?,?,?,'aggregate-stream',?,?,?,?,?,?,'waiting')
+                values (?,?,?,?,?,?,?,?,'aggregate-stream',?,?,?,?,?,?,'waiting')
                 on conflict do nothing
                 """.formatted(schema), admission.key().aggregateType(),
                 admission.key().aggregateId(), admission.key().channelId(),
                 admission.key().contractVersion(), admission.generationKey(),
-                admission.operation(), timestamp(admission.acceptedAt()),
+                admission.tokenizedWorkItemKey(), admission.operation(),
+                timestamp(admission.acceptedAt()),
                 admission.sourceEventId(), admission.sourceFactId(),
                 admission.sourceFactDigest(), admission.eventPayloadDigest(),
                 admission.routeSequence(), admission.sourceAggregateVersion());
@@ -927,15 +1309,17 @@ final class PostgresPublicIntegrationReferenceAdapter {
         jdbc.update("""
                 insert into %s.queued_delivery (
                   aggregate_type,aggregate_id,channel_id,contract_version,
-                  generation_key,operation,accepted_at,provenance_mode,
+                  generation_key,tokenized_work_item_key,operation,accepted_at,
+                  provenance_mode,
                   delivery_intent_id,request_digest,source_aggregate_version,
                   disposition)
-                values (?,?,?,?,?,?,?,'intent-command',?,?,?,'waiting')
+                values (?,?,?,?,?,?,?,?,'intent-command',?,?,?,'waiting')
                 on conflict do nothing
                 """.formatted(schema), admission.key().aggregateType(),
                 admission.key().aggregateId(), admission.key().channelId(),
                 admission.key().contractVersion(), admission.generationKey(),
-                admission.operation(), timestamp(admission.acceptedAt()),
+                admission.tokenizedWorkItemKey(), admission.operation(),
+                timestamp(admission.acceptedAt()),
                 admission.deliveryIntentId(), admission.requestDigest(),
                 admission.sourceAggregateVersion());
     }
@@ -1088,6 +1472,50 @@ final class PostgresPublicIntegrationReferenceAdapter {
                 from, to, fence, reason, timestamp(at));
     }
 
+    private void rejectAdmissionAfterTerminal(
+            DeliveryRecordKey key,
+            String tokenizedWorkItemKey) {
+        var rows = jdbc.queryForList("""
+                select applied_terminal_version from %s.source_terminal_fence
+                 where tenant_token='synthetic-tenant'
+                   and aggregate_type=? and tokenized_aggregate_id=?
+                   and tokenized_work_item_key=?
+                 for update
+                """.formatted(schema), key.aggregateType(),
+                tokenizedDigest(key.aggregateId()), tokenizedWorkItemKey);
+        if (!rows.isEmpty()) {
+            throw new IllegalStateException("PIC_SOURCE_TERMINAL_FENCE_REJECTED");
+        }
+    }
+
+    private boolean terminalFenceBlocks(Claim claim) {
+        var rows = jdbc.queryForList("""
+                select applied_terminal_version,event_digest
+                  from %s.source_terminal_fence
+                 where tenant_token='synthetic-tenant'
+                   and aggregate_type=? and tokenized_aggregate_id=?
+                   and tokenized_work_item_key=?
+                 for update
+                """.formatted(schema), claim.key().aggregateType(),
+                tokenizedDigest(claim.key().aggregateId()),
+                claim.tokenizedWorkItemKey());
+        if (rows.isEmpty()) {
+            return false;
+        }
+        Object rawVersion = rows.getFirst().get("applied_terminal_version");
+        long terminalVersion = rawVersion instanceof Number number
+                ? number.longValue() : 0;
+        boolean isTerminal = "close".equals(claim.operation())
+                || "revoke".equals(claim.operation());
+        if (!isTerminal) {
+            return true;
+        }
+        return terminalVersion != claim.sourceAggregateVersion()
+                || !Objects.equals(
+                nullableText(rows.getFirst(), "event_digest"),
+                claim.eventPayloadDigest());
+    }
+
     private void lockLane(DeliveryRecordKey key) {
         jdbc.queryForList(
                 "select pg_advisory_xact_lock(hashtextextended(?,0))",
@@ -1131,6 +1559,11 @@ final class PostgresPublicIntegrationReferenceAdapter {
         return value.toString();
     }
 
+    private static String nullableText(Map<String, Object> row, String key) {
+        Object value = row.get(key);
+        return value == null ? null : value.toString();
+    }
+
     private static long number(Map<String, Object> row, String key) {
         Object value = row.get(key);
         if (!(value instanceof Number number)) {
@@ -1153,6 +1586,13 @@ final class PostgresPublicIntegrationReferenceAdapter {
         return value;
     }
 
+    private static String requireHexDigest(String value, String field) {
+        if (value == null || !value.matches("[0-9a-f]{64}")) {
+            throw new IllegalArgumentException(field + " must be lowercase sha256 hex");
+        }
+        return value;
+    }
+
     record StreamAdmission(
             DeliveryRecordKey key,
             String generationKey,
@@ -1163,7 +1603,8 @@ final class PostgresPublicIntegrationReferenceAdapter {
             String sourceFactDigest,
             String eventPayloadDigest,
             long routeSequence,
-            long sourceAggregateVersion) {
+            long sourceAggregateVersion,
+            String tokenizedWorkItemKey) {
 
         StreamAdmission {
             Objects.requireNonNull(key, "key");
@@ -1174,6 +1615,7 @@ final class PostgresPublicIntegrationReferenceAdapter {
             requireText(sourceFactId, "sourceFactId");
             requireDigest(sourceFactDigest, "sourceFactDigest");
             requireDigest(eventPayloadDigest, "eventPayloadDigest");
+            requireText(tokenizedWorkItemKey, "tokenizedWorkItemKey");
             if (routeSequence < 1 || routeSequence > MAX_SAFE_INTEGER
                     || sourceAggregateVersion < 1
                     || sourceAggregateVersion > MAX_SAFE_INTEGER) {
@@ -1189,7 +1631,8 @@ final class PostgresPublicIntegrationReferenceAdapter {
             Instant acceptedAt,
             String deliveryIntentId,
             String requestDigest,
-            long sourceAggregateVersion) {
+            long sourceAggregateVersion,
+            String tokenizedWorkItemKey) {
 
         IntentAdmission {
             Objects.requireNonNull(key, "key");
@@ -1198,6 +1641,7 @@ final class PostgresPublicIntegrationReferenceAdapter {
             Objects.requireNonNull(acceptedAt, "acceptedAt");
             requireText(deliveryIntentId, "deliveryIntentId");
             requireDigest(requestDigest, "requestDigest");
+            requireText(tokenizedWorkItemKey, "tokenizedWorkItemKey");
             if (sourceAggregateVersion < 1
                     || sourceAggregateVersion > MAX_SAFE_INTEGER) {
                 throw new IllegalArgumentException("PIC_SOURCE_VERSION_INVALID");
@@ -1211,6 +1655,10 @@ final class PostgresPublicIntegrationReferenceAdapter {
             long attemptNo,
             long fencingToken,
             String workerId,
-            Instant leaseUntil) {
+            Instant leaseUntil,
+            String tokenizedWorkItemKey,
+            long sourceAggregateVersion,
+            String operation,
+            String eventPayloadDigest) {
     }
 }

@@ -18,10 +18,13 @@ from check_public_integration_contracts import (  # noqa: E402
     derive_delivery_intent_id,
     derive_generation_key,
     event_issues,
+    execute_compatibility_fixture,
+    execute_negative_fixture,
     materialize_audit_record,
     privacy_surface_issues,
     validate,
 )
+from release_json import load_json, schema_issues  # noqa: E402
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -34,6 +37,138 @@ EVENT_FIXTURE = (
 class PublicIntegrationContractTest(unittest.TestCase):
     def test_contract_package_and_lock_pass(self) -> None:
         self.assertEqual([], validate(PROJECT_ROOT))
+
+    def test_command_payload_accepts_approved_task_message_and_writeback_fields(self):
+        schema = load_json(
+            PROJECT_ROOT
+            / "contracts/events/public-integration/public-integration-command.schema.json"
+        )
+        base = {
+            "contractVersion": "PIC-1.0.0",
+            "channelId": "pic.public-task.v1",
+            "generationKey": "g1." + "a" * 43,
+            "providerEffectKey": "pe1." + "b" * 43,
+            "operation": "create",
+            "aggregateType": "Candidate",
+            "aggregateId": "candidate-01",
+            "aggregateVersion": 1,
+            "requestDigest": "sha256:" + "c" * 64,
+            "traceId": "d" * 32,
+        }
+        cases = (
+            ("pic.public-task.v1", "create", {
+                "workItemKey": "wk1.synthetic", "itemType": "candidate",
+                "ownerRef": "owner1.synthetic", "priority": "urgent",
+                "dueAt": "2026-08-04T08:00:00Z", "progressState": "pending",
+                "taskStatus": "open", "deepLinkRouteId": "care-work-item",
+                "routeState": "item-01",
+            }),
+            ("pic.public-message.v1", "create", {
+                "notificationType": "overdue", "escalationVersion": 1,
+            }),
+            ("pic.status-result-writeback.v1", "writeback", {
+                "localAggregateId": "candidate-01", "localAggregateVersion": 2,
+                "eventId": "019fc688-380d-7391-b3d0-877e0f9b3026",
+                "status": "confirmed", "occurredAt": "2026-08-03T08:00:00Z",
+                "resultCategory": "accepted", "correlationId": "corr-01",
+                "causationId": "cause-01",
+            }),
+        )
+        for channel_id, operation, payload in cases:
+            with self.subTest(channel=channel_id, payload=sorted(payload)):
+                command = {
+                    **base,
+                    "channelId": channel_id,
+                    "operation": operation,
+                    "payload": payload,
+                }
+                self.assertEqual([], schema_issues(command, schema))
+
+        invalid_commands = (
+            {**base, "payload": {}},
+            {
+                **base,
+                "payload": {
+                    **cases[0][2],
+                    "notificationType": "overdue",
+                    "escalationVersion": 1,
+                },
+            },
+            {
+                **base,
+                "channelId": "pic.public-message.v1",
+                "payload": cases[0][2],
+            },
+            {
+                **base,
+                "channelId": "pic.status-result-writeback.v1",
+                "operation": "create",
+                "payload": cases[2][2],
+            },
+            {**base, "payload": {"freeText": "forbidden"}},
+        )
+        for command in invalid_commands:
+            with self.subTest(invalid=command["payload"]):
+                self.assertTrue(schema_issues(command, schema))
+
+    def test_operation_receipt_and_audit_profiles_lock_required_tokens(self):
+        openapi = load_json(
+            PROJECT_ROOT / "contracts/openapi/public-integration.openapi.json"
+        )
+        receipt = openapi["components"]["schemas"]["OperationReceipt"]
+        self.assertIn("idempotencyScopeToken", receipt["required"])
+        self.assertFalse(receipt["additionalProperties"])
+        audit = load_json(
+            CONTRACT_ROOT / "public-integration-audit-profile-1.0.0.json"
+        )
+        self.assertIn("eventPayloadDigestToken", audit["recordShape"]["streamFields"])
+        self.assertIn("requestDigestToken", audit["recordShape"]["intentFields"])
+
+    def test_negative_and_compatibility_fixtures_execute_their_declared_inputs(self):
+        fixture = load_json(
+            CONTRACT_ROOT / "fixtures/invalid/negative-fixtures-1.0.0.json"
+        )
+        valid_event = load_json(EVENT_FIXTURE)
+        for case in fixture["cases"]:
+            with self.subTest(case=case["id"]):
+                self.assertIn("input", case)
+                self.assertEqual(
+                    case["expectedCode"],
+                    execute_negative_fixture(
+                        case, valid_event=valid_event, project_root=PROJECT_ROOT
+                    ),
+                )
+        for name in ("optional-addition-1.1.0.json", "breaking-without-major.json"):
+            document = load_json(CONTRACT_ROOT / "fixtures/compatibility" / name)
+            with self.subTest(compatibility=name):
+                self.assertEqual(document["expected"], execute_compatibility_fixture(document))
+
+        optional = load_json(
+            CONTRACT_ROOT / "fixtures/compatibility/optional-addition-1.1.0.json"
+        )
+        invented = copy.deepcopy(optional)
+        invented["field"] = "totallyInvented"
+        self.assertEqual(
+            "PIC_COMPATIBILITY_FIXTURE_INVALID",
+            execute_compatibility_fixture(invented),
+        )
+        false_projection = copy.deepcopy(optional)
+        false_projection["expectedDownProjectedInstance"]["payload"][
+            "notificationType"
+        ] = "due"
+        self.assertEqual(
+            "PIC_COMPATIBILITY_FIXTURE_INVALID",
+            execute_compatibility_fixture(false_projection),
+        )
+        breaking = load_json(
+            CONTRACT_ROOT / "fixtures/compatibility/breaking-without-major.json"
+        )
+        nonexistent_required = copy.deepcopy(breaking)
+        nonexistent_required["field"] = "notARealRequiredField"
+        self.assertEqual(
+            "PIC_COMPATIBILITY_FIXTURE_INVALID",
+            execute_compatibility_fixture(nonexistent_required),
+        )
 
     def test_registry_freezes_five_capabilities_and_one_mode_per_lane(self) -> None:
         registry = json.loads(

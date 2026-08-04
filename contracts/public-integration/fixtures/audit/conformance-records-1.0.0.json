@@ -42,13 +42,14 @@
     "eventId": "019fc688-380d-7391-b3d0-877e0f9b3027",
     "sourceFactIdToken": "sft_v1_k1_ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
     "routeSequence": 1,
-    "sourceFactDigest": "1111111111111111111111111111111111111111111111111111111111111111"
+    "sourceFactDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+    "eventPayloadDigestToken": "epd_v1_k1_3333333333333333333333333333333333333333333333333333333333333333"
   },
   "records": [
     {"id": "accepted-stream", "path": "accepted", "localAuditFactOverrides": {}, "integrationContextOverrides": {}},
     {"id": "rejected-stream", "path": "rejected", "localAuditFactOverrides": {"action": "public-integration.delivery.rejected", "outcome": "rejected", "reasonCode": "PIC_AUTHORIZATION_REJECTED"}, "integrationContextOverrides": {"result": "rejected", "errorCode": "AUTHORIZATION_DENIED"}},
     {"id": "retry-stream", "path": "retry", "localAuditFactOverrides": {"action": "public-integration.retry.scheduled", "reasonCode": "PIC_RETRY_SCHEDULED"}, "integrationContextOverrides": {"result": "retry", "errorCode": "TARGET_TRANSIENT", "attemptNo": 2}},
-    {"id": "confirmed-intent", "path": "confirmed", "localAuditFactOverrides": {"action": "public-integration.delivery.confirmed", "reasonCode": "PIC_DELIVERY_CONFIRMED"}, "integrationContextOverrides": {"provenanceMode": "intent-command", "result": "confirmed", "deliveryIntentIdToken": "dit_v1_k1_2222222222222222222222222222222222222222222222222222222222222222", "notificationType": "overdue", "escalationVersion": 1}, "removeIntegrationFields": ["eventId", "sourceFactIdToken", "routeSequence", "sourceFactDigest"]},
+    {"id": "confirmed-intent", "path": "confirmed", "localAuditFactOverrides": {"action": "public-integration.delivery.confirmed", "reasonCode": "PIC_DELIVERY_CONFIRMED"}, "integrationContextOverrides": {"provenanceMode": "intent-command", "result": "confirmed", "deliveryIntentIdToken": "dit_v1_k1_2222222222222222222222222222222222222222222222222222222222222222", "requestDigestToken": "rqd_v1_k1_4444444444444444444444444444444444444444444444444444444444444444", "notificationType": "overdue", "escalationVersion": 1}, "removeIntegrationFields": ["eventId", "sourceFactIdToken", "routeSequence", "sourceFactDigest", "eventPayloadDigestToken"]},
     {"id": "failed-stream", "path": "failed", "localAuditFactOverrides": {"action": "public-integration.delivery.failed", "outcome": "rejected", "reasonCode": "PIC_RETRY_EXHAUSTED"}, "integrationContextOverrides": {"result": "failed", "errorCode": "RETRY_EXHAUSTED", "attemptNo": 5}},
     {"id": "reconcile-stream", "path": "reconcile", "localAuditFactOverrides": {"action": "public-integration.reconciliation.completed", "reasonCode": "PIC_RECONCILIATION_COMPLETED"}, "integrationContextOverrides": {"result": "reconciled"}},
     {"id": "replay-stream", "path": "replay", "localAuditFactOverrides": {"action": "public-integration.replay.detected", "reasonCode": "PIC_REPLAY_DETECTED"}, "integrationContextOverrides": {"result": "replayed"}},
@@ -56,8 +57,8 @@
     {"id": "poison-stream", "path": "poison", "localAuditFactOverrides": {"action": "public-integration.payload.quarantined", "outcome": "rejected", "reasonCode": "PIC_PAYLOAD_POISON"}, "integrationContextOverrides": {"result": "poison", "errorCode": "PAYLOAD_POISON"}}
   ],
   "negativeCases": [
-    {"id": "tagged-provenance-both", "path": "accepted", "localAuditFactOverrides": {}, "integrationContextOverrides": {"deliveryIntentIdToken": "dit_v1_k1_2222222222222222222222222222222222222222222222222222222222222222", "notificationType": "overdue", "escalationVersion": 1}, "expectedIssue": "PIC_AUDIT_PROVENANCE_TAG_BOTH"},
-    {"id": "tagged-provenance-none", "path": "accepted", "localAuditFactOverrides": {}, "integrationContextOverrides": {}, "removeIntegrationFields": ["eventId", "sourceFactIdToken", "routeSequence", "sourceFactDigest"], "expectedIssue": "PIC_AUDIT_PROVENANCE_TAG_NONE"},
+    {"id": "tagged-provenance-both", "path": "accepted", "localAuditFactOverrides": {}, "integrationContextOverrides": {"deliveryIntentIdToken": "dit_v1_k1_2222222222222222222222222222222222222222222222222222222222222222", "requestDigestToken": "rqd_v1_k1_4444444444444444444444444444444444444444444444444444444444444444", "notificationType": "overdue", "escalationVersion": 1}, "expectedIssue": "PIC_AUDIT_PROVENANCE_TAG_BOTH"},
+    {"id": "tagged-provenance-none", "path": "accepted", "localAuditFactOverrides": {}, "integrationContextOverrides": {}, "removeIntegrationFields": ["eventId", "sourceFactIdToken", "routeSequence", "sourceFactDigest", "eventPayloadDigestToken"], "expectedIssue": "PIC_AUDIT_PROVENANCE_TAG_NONE"},
     {"id": "tagged-provenance-mismatch", "path": "accepted", "localAuditFactOverrides": {}, "integrationContextOverrides": {"provenanceMode": "intent-command"}, "expectedIssue": "PIC_AUDIT_PROVENANCE_TAG_MISMATCH"}
   ]
 }

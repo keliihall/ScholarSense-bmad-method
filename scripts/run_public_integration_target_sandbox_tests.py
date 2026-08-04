@@ -112,6 +112,34 @@ def certificate_spki_sha256(certificate: str | Path) -> str:
     return hashlib.sha256(spki.stdout).hexdigest()
 
 
+def _certificate_der_spki_sha256(certificate_der: bytes) -> str:
+    with tempfile.TemporaryDirectory(prefix="scholarsense-pic-peer-") as directory:
+        certificate = Path(directory) / "peer.pem"
+        certificate.write_text(
+            ssl.DER_cert_to_PEM_cert(certificate_der), encoding="ascii"
+        )
+        return certificate_spki_sha256(certificate)
+
+
+def _verified_chain_sha256(chain: list[bytes]) -> str:
+    digest = hashlib.sha256()
+    digest.update(b"PIC-TLS-VERIFIED-CHAIN-1.0.0\0")
+    for certificate in chain:
+        digest.update(len(certificate).to_bytes(4, byteorder="big"))
+        digest.update(certificate)
+    return digest.hexdigest()
+
+
+def _tls_peer_binding(tls_socket: ssl.SSLSocket) -> dict[str, str]:
+    chain = tls_socket.get_verified_chain()
+    if not chain or not all(isinstance(item, bytes) and item for item in chain):
+        raise ValueError("PIC_TARGET_VERIFIED_CERTIFICATE_CHAIN_MISSING")
+    return {
+        "peerSpkiSha256": _certificate_der_spki_sha256(chain[0]),
+        "peerChainSha256": _verified_chain_sha256(chain),
+    }
+
+
 def _instant(value: str) -> dt.datetime:
     parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
@@ -281,21 +309,10 @@ def _default_network_probe(
     try:
         with socket.create_connection((host, port), timeout=10) as raw_socket:
             with context.wrap_socket(raw_socket, server_hostname=host) as tls_socket:
-                peer_der = tls_socket.getpeercert(binary_form=True)
+                binding = _tls_peer_binding(tls_socket)
     except (OSError, ssl.SSLError) as failure:
         raise ValueError("PIC_TARGET_MTLS_PROBE_FAILED") from failure
-    if not peer_der:
-        raise ValueError("PIC_TARGET_PEER_CERTIFICATE_MISSING")
-    with tempfile.TemporaryDirectory(prefix="scholarsense-pic-peer-") as directory:
-        certificate = Path(directory) / "peer.pem"
-        certificate.write_text(ssl.DER_cert_to_PEM_cert(peer_der), encoding="ascii")
-        spki_digest = certificate_spki_sha256(certificate)
-    return {
-        "peerSpkiSha256": spki_digest,
-        # Python's public SSL API exposes the verified leaf on every supported
-        # runtime. The one-certificate peer chain is therefore bound exactly.
-        "peerChainSha256": hashlib.sha256(peer_der).hexdigest(),
-    }
+    return binding
 
 
 def preflight_target_handoff(
@@ -621,6 +638,16 @@ def _target_request(
         ).decode("ascii") + ":",
     }
     try:
+        connection.connect()
+        request_binding = _tls_peer_binding(connection.sock)
+        expected_binding = preflight.network_binding
+        if (
+            expected_binding is None
+            or request_binding != expected_binding
+            or preflight.handoff["peerSpkiSha256"]
+            != "sha256:" + request_binding["peerSpkiSha256"]
+        ):
+            raise RuntimeError("PIC_TARGET_REQUEST_PEER_BINDING_MISMATCH")
         connection.request("POST", base_path + path, body=body, headers=headers)
         response = connection.getresponse()
         response_body = response.read(65_537)
@@ -867,12 +894,9 @@ def main(argv: list[str] | None = None) -> int:
         ["git", "status", "--porcelain"], cwd=ROOT, text=True
     ).strip():
         raise RuntimeError("PIC_TARGET_EVIDENCE_REQUIRES_TRACKED_CLEAN_CANDIDATE")
-    subject_commit = args.subject_commit or subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
-    ).strip()
-    subject_tree = args.subject_tree or subprocess.check_output(
-        ["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True
-    ).strip()
+    subject_commit, subject_tree = local_runner.resolve_git_subject(
+        args.subject_commit, args.subject_tree
+    )
     run_at = args.trusted_now
     preflight = preflight_target_handoff(dict(os.environ), now=run_at)
     evidence = run_target_scenarios(

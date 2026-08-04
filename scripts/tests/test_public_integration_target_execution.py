@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import ssl
 import subprocess
 import tempfile
 import unittest
@@ -34,7 +35,11 @@ class PublicIntegrationTargetExecutionTests(unittest.TestCase):
                     material,
                     trusted_now="2026-08-03T08:00:00Z",
                 )
-                with mock.patch.dict(os.environ, handoff_env, clear=False):
+                with mock.patch.dict(os.environ, handoff_env, clear=False), mock.patch.object(
+                    target_runner,
+                    "_tls_peer_binding",
+                    wraps=target_runner._tls_peer_binding,
+                ) as peer_binding:
                     preflight = target_runner.preflight_target_handoff(
                         dict(os.environ), now="2026-08-03T08:00:00Z"
                     )
@@ -61,6 +66,14 @@ class PublicIntegrationTargetExecutionTests(unittest.TestCase):
             )
             self.assertEqual(10, len(evidence["scenarioResults"]))
             self.assertEqual(1, sandbox.transient_failures_served)
+            self.assertEqual(13, peer_binding.call_count)
+            leaf_der = ssl.PEM_cert_to_DER_cert(
+                Path(material["serverCertFile"]).read_text(encoding="ascii")
+            )
+            self.assertNotEqual(
+                hashlib.sha256(leaf_der).hexdigest(),
+                evidence["peerCertificateChainDigest"],
+            )
 
 
 def _run(*command: str) -> None:

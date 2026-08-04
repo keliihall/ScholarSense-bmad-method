@@ -1,6 +1,7 @@
 package cn.edu.suda.scholarsense.contractfixture.publicintegration;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -11,9 +12,18 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /** Test-only outbound reference client; it is never assembled as a production bean. */
 final class PublicIntegrationHttpReferenceAdapter {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final Set<String> RECEIPT_FIELDS = Set.of(
+            "operationReceiptId", "resultCode", "acceptedAt",
+            "idempotencyScopeToken", "providerEffectKeyToken", "traceId");
 
     private final HttpClient http;
     private final Duration requestTimeout;
@@ -71,19 +81,28 @@ final class PublicIntegrationHttpReferenceAdapter {
                 .header("Content-Encoding", "identity")
                 .header("Content-Digest", contentDigest(body))
                 .header("Idempotency-Key", idempotencyKey)
-                .header("X-PIC-Contract-Version", "PIC-1.0.0")
+                .header("X-ScholarSense-Contract-Version", "PIC-1.0.0")
                 .header("X-Provider-Effect-Key", providerEffectKey)
                 .POST(HttpRequest.BodyPublishers.ofByteArray(body))
                 .build();
         try {
-            HttpResponse<byte[]> response = http.send(
-                    request, HttpResponse.BodyHandlers.ofByteArray());
-            byte[] responseBody = response.body();
-            if (responseBody != null && responseBody.length > maxBodyBytes) {
+            HttpResponse<InputStream> response = http.send(
+                    request, HttpResponse.BodyHandlers.ofInputStream());
+            byte[] responseBody;
+            try (InputStream stream = response.body()) {
+                responseBody = stream == null
+                        ? new byte[0] : stream.readNBytes(maxBodyBytes + 1);
+            }
+            if (responseBody.length > maxBodyBytes) {
                 return new Result(Outcome.UNSAFE_RESPONSE, response.statusCode(), new byte[0]);
             }
-            return new Result(classify(response.statusCode()), response.statusCode(),
-                    responseBody == null ? new byte[0] : responseBody.clone());
+            Outcome outcome = classify(response.statusCode());
+            if (outcome == Outcome.CONFIRMED && !validReceipt(
+                    response, responseBody, idempotencyKey, providerEffectKey)) {
+                outcome = Outcome.UNSAFE_RESPONSE;
+            }
+            return new Result(outcome, response.statusCode(),
+                    outcome == Outcome.CONFIRMED ? responseBody : new byte[0]);
         } catch (HttpTimeoutException timeout) {
             return new Result(Outcome.RETRYABLE, 0, new byte[0]);
         } catch (IOException transportFailure) {
@@ -105,8 +124,11 @@ final class PublicIntegrationHttpReferenceAdapter {
     }
 
     private static Outcome classify(int status) {
-        if (status >= 200 && status < 300 && status != 207) {
+        if (status == 202) {
             return Outcome.CONFIRMED;
+        }
+        if (status >= 200 && status < 300 && status != 207) {
+            return Outcome.UNSAFE_RESPONSE;
         }
         return switch (status) {
             case 207 -> Outcome.UNSUPPORTED_ACK;
@@ -118,6 +140,43 @@ final class PublicIntegrationHttpReferenceAdapter {
             case 408, 425, 429, 500, 502, 503, 504 -> Outcome.RETRYABLE;
             default -> Outcome.FAILED;
         };
+    }
+
+    private static boolean validReceipt(
+            HttpResponse<?> response,
+            byte[] body,
+            String expectedIdempotencyScopeToken,
+            String expectedProviderEffectKey) {
+        if (!response.headers().firstValue("Content-Type")
+                .map(value -> value.split(";", 2)[0].trim())
+                .filter("application/json"::equals)
+                .isPresent()) {
+            return false;
+        }
+        try {
+            JsonNode receipt = JSON.readTree(body);
+            if (receipt == null || !receipt.isObject()
+                    || receipt.size() != RECEIPT_FIELDS.size()) {
+                return false;
+            }
+            for (String field : RECEIPT_FIELDS) {
+                if (receipt.get(field) == null || !receipt.get(field).isString()
+                        || receipt.get(field).asText().isBlank()) {
+                    return false;
+                }
+            }
+            UUID.fromString(receipt.get("operationReceiptId").asText());
+            java.time.Instant.parse(receipt.get("acceptedAt").asText());
+            String resultCode = receipt.get("resultCode").asText();
+            return ("ACCEPTED".equals(resultCode) || "DUPLICATE".equals(resultCode))
+                    && expectedIdempotencyScopeToken.equals(
+                    receipt.get("idempotencyScopeToken").asText())
+                    && expectedProviderEffectKey.equals(
+                    receipt.get("providerEffectKeyToken").asText())
+                    && receipt.get("traceId").asText().matches("[0-9a-f]{32}");
+        } catch (IllegalArgumentException | tools.jackson.core.JacksonException invalid) {
+            return false;
+        }
     }
 
     private static String requireText(String value, String field) {
