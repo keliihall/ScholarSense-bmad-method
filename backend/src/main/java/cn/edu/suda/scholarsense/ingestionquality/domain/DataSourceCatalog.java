@@ -1,12 +1,15 @@
 package cn.edu.suda.scholarsense.ingestionquality.domain;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 public final class DataSourceCatalog {
+    /** Largest version that can be represented exactly by every JSON/JavaScript consumer. */
+    public static final long MAX_VERSION = 9_007_199_254_740_991L;
     private final UUID catalogId;
     private final UUID catalogReleaseId;
     private final String contractVersion;
@@ -40,20 +43,26 @@ public final class DataSourceCatalog {
         if (!"DCC-1.0.0".equals(contractVersion)) {
             throw new IllegalArgumentException("INGESTION_QUALITY_CONTRACT_VERSION_INVALID");
         }
-        this.sources = List.copyOf(Objects.requireNonNull(sources));
-        this.dependencies = List.copyOf(Objects.requireNonNull(dependencies));
-        if (this.sources.isEmpty()) throw new IllegalArgumentException("INGESTION_QUALITY_SOURCES_EMPTY");
-        if (new HashSet<>(this.sources.stream().map(SourceContract::sourceId).toList()).size() != this.sources.size()) {
+        List<SourceContract> sourceCopy = List.copyOf(Objects.requireNonNull(sources));
+        List<DependencyBinding> dependencyCopy = List.copyOf(Objects.requireNonNull(dependencies));
+        if (sourceCopy.isEmpty()) throw new IllegalArgumentException("INGESTION_QUALITY_SOURCES_EMPTY");
+        if (new HashSet<>(sourceCopy.stream().map(SourceContract::sourceId).toList()).size() != sourceCopy.size()) {
             throw new IllegalArgumentException("INGESTION_QUALITY_SOURCE_ID_DUPLICATE");
         }
-        if (new HashSet<>(this.dependencies.stream().map(DependencyBinding::dependencyId).toList()).size() != this.dependencies.size()) {
+        if (new HashSet<>(dependencyCopy.stream().map(DependencyBinding::dependencyId).toList()).size() != dependencyCopy.size()) {
             throw new IllegalArgumentException("INGESTION_QUALITY_DEPENDENCY_ID_DUPLICATE");
         }
+        this.sources = sourceCopy.stream()
+                .sorted(Comparator.comparing(SourceContract::sourceId)).toList();
+        this.dependencies = dependencyCopy.stream()
+                .sorted(Comparator.comparing(DependencyBinding::dependencyId)).toList();
         requireDigest(contentDigest, IngestionQualityErrorCode.INGESTION_QUALITY_CONTRACT_INVALID);
         if (evidenceSetDigest != null) {
             requireDigest(evidenceSetDigest, IngestionQualityErrorCode.INGESTION_QUALITY_EVIDENCE_INVALID);
         }
-        if (aggregateVersion < 1) throw new IllegalArgumentException("INGESTION_QUALITY_AGGREGATE_VERSION_INVALID");
+        if (aggregateVersion < 1 || aggregateVersion > MAX_VERSION) {
+            throw new IllegalArgumentException("INGESTION_QUALITY_AGGREGATE_VERSION_INVALID");
+        }
         this.catalogId = catalogId;
         this.catalogReleaseId = catalogReleaseId;
         this.contractVersion = contractVersion;
@@ -112,7 +121,7 @@ public final class DataSourceCatalog {
     }
 
     private long nextVersion() {
-        if (aggregateVersion == Long.MAX_VALUE) {
+        if (aggregateVersion == MAX_VERSION) {
             throw new IngestionQualityException(IngestionQualityErrorCode.INGESTION_QUALITY_VERSION_CONFLICT);
         }
         return aggregateVersion + 1;

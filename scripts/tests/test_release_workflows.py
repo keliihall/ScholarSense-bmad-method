@@ -16,6 +16,62 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 class ReleaseWorkflowContractTest(unittest.TestCase):
+    def test_release_v3_runs_protected_target_jobs_and_verifies_their_immutable_graph(self) -> None:
+        release = (PROJECT_ROOT / ".github/workflows/release.yml").read_text(
+            encoding="utf-8"
+        )
+        rollback = (PROJECT_ROOT / ".github/workflows/rollback.yml").read_text(
+            encoding="utf-8"
+        )
+        verifier = (PROJECT_ROOT / "scripts/verify-release.sh").read_text(
+            encoding="utf-8"
+        )
+        for job, runner, environment in (
+            (
+                "public-integration-target",
+                "scholarsense-public-integration-target",
+                "public-integration-target",
+            ),
+            (
+                "data-catalog-target",
+                "scholarsense-data-catalog-target",
+                "data-catalog-target-stage",
+            ),
+        ):
+            self.assertIn(f"  {job}:\n", release)
+            self.assertIn(runner, release)
+            self.assertIn(f"environment: {environment}", release)
+        self.assertIn("$RUNNER_TEMP/public-integration-target", release)
+        self.assertIn("$RUNNER_TEMP/data-catalog-target", release)
+        self.assertIn(
+            "public-integration-target-conformance-evidence-1.0.0.json", release
+        )
+        self.assertIn(
+            "data-catalog-target-conformance-evidence-1.0.0.json", release
+        )
+        self.assertIn("--manifest-version 3", release)
+        self.assertIn(
+            "application/vnd.scholarsense.release-manifest.v3+json", release
+        )
+        self.assertIn(
+            "application/vnd.scholarsense.evidence-index.v3+json", release
+        )
+        self.assertIn("PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI", release)
+        self.assertIn("DATA_CATALOG_TARGET_EVIDENCE_URI", release)
+        self.assertIn("DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY", release)
+        self.assertIn("DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION", release)
+        self.assertIn("DATA_CATALOG_TARGET_EXPECTED_AUTHORITY", release)
+        self.assertIn("DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT", release)
+        self.assertIn("RELEASE-MANIFEST-3.0.0", verifier)
+        self.assertIn("PublicIntegrationTargetConformance", verifier)
+        self.assertIn("DataCatalogTargetConformance", verifier)
+        self.assertIn(".ociDigest", verifier)
+        for workflow in (release, rollback):
+            self.assertIn("DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY", workflow)
+            self.assertIn("DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION", workflow)
+            self.assertIn("DATA_CATALOG_TARGET_EXPECTED_AUTHORITY", workflow)
+            self.assertIn("DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT", workflow)
+
     def test_pr_ci_and_protected_release_workflows_enforce_the_lifecycle(self) -> None:
         self.assertEqual([], validate_release_workflows(PROJECT_ROOT))
 

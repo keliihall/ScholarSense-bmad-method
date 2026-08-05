@@ -31,7 +31,7 @@ class CurrentSessionServiceTest {
                     }
                     @Override public void save(IdentitySession ignored) {}
                 },
-                (actor, identitySession) -> calls.incrementAndGet() <= 1
+                (actor, identitySession) -> calls.incrementAndGet() <= 2
                         ? AuthorizationDecision.allow(7, AuthorizationFreshness.FRESH)
                         : AuthorizationDecision.deny("IDENTITY_AUTHORITY_NOT_FOUND", 7),
                 AuditTestSupport.factory(),
@@ -50,7 +50,11 @@ class CurrentSessionServiceTest {
                 session.sessionId(), "192.0.2.10", "0123456789abcdef0123456789abcdef");
         assertEquals(1, projection.sessionVersion());
         assertEquals("sp_RWxQcW41M2dSeHVIZ0JpYw", projection.sessionPseudonym());
-        assertEquals(1, commits.get());
+        var internal = service.currentInternal(
+                session.sessionId(), "192.0.2.10", "0223456789abcdef0123456789abcdef");
+        assertEquals("actor-pseudo", internal.actorPseudonym());
+        assertEquals("sp_RWxQcW41M2dSeHVIZ0JpYw", internal.session().sessionPseudonym());
+        assertEquals(2, commits.get());
         assertEquals("identity.session.view", audit.getFirst().fact().action());
         assertEquals("accepted", audit.getFirst().fact().outcome());
         IdentityAccessException error = assertThrows(
@@ -58,8 +62,8 @@ class CurrentSessionServiceTest {
                 () -> service.current(
                         session.sessionId(), "192.0.2.10", "1123456789abcdef0123456789abcdef"));
         assertEquals("IDENTITY_SESSION_REQUIRED", error.code());
-        assertEquals(2, calls.get());
-        assertEquals(2, commits.get(), "denial fact commits before the stable error is raised");
+        assertEquals(3, calls.get());
+        assertEquals(3, commits.get(), "denial fact commits before the stable error is raised");
         assertEquals("rejected", audit.getLast().fact().outcome());
         assertEquals("IDENTITY_SESSION_REQUIRED", audit.getLast().fact().reasonCode());
     }

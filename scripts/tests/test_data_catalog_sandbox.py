@@ -8,11 +8,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from release_json import load_json  # noqa: E402
 from run_data_catalog_sandbox_tests import (  # noqa: E402
     calendar_records,
     execute,
     project_calendar,
     validate_calendar,
+    validate_reconcile_sequence,
     validate_timetable,
 )
 
@@ -42,6 +44,10 @@ class DataCatalogSandboxTest(unittest.TestCase):
         unknown = copy.deepcopy(records)
         unknown[0]["dayType"] = "invented"
         self.assertIn("DCC_CALENDAR_DAY_TYPE_INVALID", validate_calendar(unknown, anchor))
+        shifted = copy.deepcopy(records)
+        shifted[0]["dayStartsAt"] = "2026-05-05T17:00:00Z"
+        shifted[0]["dayEndsAt"] = "2026-05-06T17:00:00Z"
+        self.assertIn("DCC_CALENDAR_INTERVAL_INVALID", validate_calendar(shifted, anchor))
         correction = dict(records[90], sourceVersion=2, supersedesVersion=1, dayType="emergency-closure")
         projected, errors = project_calendar(records + [correction])
         self.assertEqual([], errors)
@@ -57,6 +63,68 @@ class DataCatalogSandboxTest(unittest.TestCase):
         self.assertEqual([], validate_timetable(dict(record, sourceVersion=2, supersedesVersion=1,
                 activityState="rescheduled", campusCode="CAMPUS-02")))
         self.assertIn("DCC_SOURCE_VERSION_REGRESSION", validate_timetable(dict(record, sourceVersion=0)))
+
+    def test_correction_revocation_out_of_order_and_watermark_are_executed(self) -> None:
+        samples = load_json(
+            PROJECT_ROOT
+            / "contracts/data-catalog/fixtures/valid/minimal-slice-records-1.0.0.json"
+        )["records"]
+        campus = samples["SRC-P0-CAMPUS-ACCESS-001"]
+        corrected = dict(
+            campus,
+            eventId="event.synthetic.campus.002",
+            eventState="corrected",
+            correctsEventId=campus["eventId"],
+            occurredAt="2026-08-04T00:59:00Z",
+            receivedAt="2026-08-04T01:00:03Z",
+            sourceVersion=2,
+            watermark="wm.synthetic.campus.002",
+        )
+        revoked = dict(
+            corrected,
+            eventId="event.synthetic.campus.003",
+            eventState="revoked",
+            correctsEventId=corrected["eventId"],
+            sourceVersion=3,
+            watermark="wm.synthetic.campus.003",
+        )
+        self.assertEqual(
+            [],
+            validate_reconcile_sequence(
+                "SRC-P0-CAMPUS-ACCESS-001", [campus, corrected, revoked]
+            ),
+        )
+        regressed_watermark = dict(corrected, watermark="wm.synthetic.campus.000")
+        self.assertIn(
+            "DCC_WATERMARK_REGRESSION",
+            validate_reconcile_sequence(
+                "SRC-P0-CAMPUS-ACCESS-001", [campus, regressed_watermark]
+            ),
+        )
+        self.assertIn(
+            "DCC_CORRECTION_CHAIN_INVALID",
+            validate_reconcile_sequence(
+                "SRC-P0-CAMPUS-ACCESS-001",
+                [campus, dict(corrected, correctsEventId=None)],
+            ),
+        )
+
+        leave = samples["SRC-P0-LEAVE-001"]
+        leave_revoked = dict(
+            leave,
+            approvalState="revoked",
+            sourceVersion=2,
+            supersedesVersion=1,
+        )
+        self.assertEqual(
+            [], validate_reconcile_sequence("SRC-P0-LEAVE-001", [leave, leave_revoked])
+        )
+        self.assertIn(
+            "DCC_CORRECTION_CHAIN_INVALID",
+            validate_reconcile_sequence(
+                "SRC-P0-LEAVE-001", [leave, dict(leave_revoked, supersedesVersion=None)]
+            ),
+        )
 
 
 if __name__ == "__main__":

@@ -28,6 +28,9 @@ public record PostgreSqlConnectionProfile(
             throw new IllegalArgumentException("INGESTION_QUALITY_DATABASE_IDENTITY_MISMATCH");
         }
         Map<String, String> query = query(jdbcUrl);
+        if (query.containsKey("user") || query.containsKey("password")) {
+            throw invalid();
+        }
         if ("prod".equals(environment)
                 && (!"verify-full".equals(query.get("sslmode"))
                         || !"require".equals(query.get("channelbinding")))) {

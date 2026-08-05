@@ -2,14 +2,23 @@
 export {
   DataSourceCatalogClient,
   DataSourceCatalogMemoryState,
+  DataSourceCatalogPublicationMemory,
+  DataCatalogResponseFailure,
+  FROZEN_DATA_DEPENDENCIES,
+  FROZEN_DATA_SOURCE_IDS,
   clearDataCatalogIdentityBoundary,
   dataCatalogQueryOptions,
   hasUsableDataCatalogAuthorization,
+  retainPublicationProof,
+  sameDataCatalogIdentityGeneration,
 } from './internal/data-source-catalog';
 export type {
+  CatalogPublicationCommand,
   CatalogDetail,
   CatalogPage,
   CatalogSummary,
+  DataCatalogClearReason,
+  DataCatalogIdentityGeneration,
   SourceContractView,
 } from './internal/data-source-catalog';
 

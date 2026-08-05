@@ -22,15 +22,17 @@ public final class CompositeCatalogAuthorizationAdapter implements CatalogAuthor
 
     @Override
     public CatalogAuthorizationDecision authorize(
-            String actorRef, String action, DataSourceCatalog catalog, String traceId) {
+            String actorRef, String sourceAction, String dependencyAction,
+            DataSourceCatalog catalog, String traceId) {
         CatalogAuthorizationDecision result = CatalogAuthorizationDecision.ALLOW;
         for (var source : catalog.sources()) {
             result = combine(result, decision(
-                    actorRef, "SOURCE", action, source.sourceId(), catalog.aggregateVersion(), traceId));
+                    actorRef, "SOURCE", sourceAction, source.sourceId(),
+                    catalog.aggregateVersion(), traceId));
         }
         for (var dependency : catalog.dependencies()) {
             result = combine(result, decision(
-                    actorRef, "DEPENDENCY", action, dependency.dependencyId(),
+                    actorRef, "DEPENDENCY", dependencyAction, dependency.dependencyId(),
                     catalog.aggregateVersion(), traceId));
         }
         return result;
@@ -42,7 +44,16 @@ public final class CompositeCatalogAuthorizationAdapter implements CatalogAuthor
         var request = new CompositeAuthorizationRequest(
                 actorRef, objectClass, action, digest(objectId), version,
                 Optional.empty(), Optional.empty(), traceId);
-        CompositeAuthorizationOutcome outcome = authorization.authorize(request).outcome();
+        CompositeAuthorizationOutcome outcome;
+        try {
+            outcome = Objects.requireNonNull(
+                    Objects.requireNonNull(
+                            authorization.authorize(request), "authorization decision")
+                            .outcome(),
+                    "authorization outcome");
+        } catch (RuntimeException unavailable) {
+            return CatalogAuthorizationDecision.DEPENDENCY_UNAVAILABLE;
+        }
         return switch (outcome) {
             case ALLOW -> CatalogAuthorizationDecision.ALLOW;
             case DENY -> CatalogAuthorizationDecision.DENY;

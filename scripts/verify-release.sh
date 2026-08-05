@@ -15,6 +15,14 @@ for uri in "$ARTIFACT_URI" "$SBOM_URI" "$ATTESTATION_URI" "$WEB_URI" "$MANIFEST_
   python3 -B "$ROOT_DIR/release/verifier.py" oci-uri "$uri"
 done
 
+require_input() {
+  local name="$1"
+  if [[ -z "${!name:-}" ]]; then
+    echo "VERIFIER_INPUT_MISSING: $name" >&2
+    exit 2
+  fi
+}
+
 WORK_DIR="$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/scholarsense-verifier-XXXXXX")"
 cleanup() {
   rm -rf -- "$WORK_DIR"
@@ -45,6 +53,7 @@ INDEX="$WORK_DIR/index/release-out/evidence-index.json"
 ARTIFACT_IDENTITY="https://github.com/keliihall/ScholarSense-bmad-method/.github/workflows/artifact-signing.yml@refs/heads/main"
 MANIFEST_IDENTITY="https://github.com/keliihall/ScholarSense-bmad-method/.github/workflows/manifest-signing.yml@refs/heads/main"
 ARTIFACT_SIGNER_WORKFLOW="keliihall/ScholarSense-bmad-method/.github/workflows/artifact-signing.yml"
+MANIFEST_VERSION="$(jq -er '.version' "$MANIFEST")"
 SOURCE_COMMIT="$(jq -er '.sourceCommit | select(test("^[0-9a-f]{40}$"))' "$MANIFEST")"
 SOURCE_ARCHIVE_SHA256="$(jq -er '.sourceArchive.binarySha256 | select(test("^[0-9a-f]{64}$"))' "$MANIFEST")"
 test "$(jq -er '.sourceArchive.uri' "$MANIFEST")" = "oci://$ARTIFACT_URI"
@@ -87,10 +96,99 @@ python3 -B "$ROOT_DIR/scripts/check_release_manifests.py" release "$MANIFEST" "$
 python3 -B "$ROOT_DIR/scripts/check_release_manifests.py" index "$INDEX" "$MANIFEST"
 python3 -B "$ROOT_DIR/release/verifier.py" extract-source \
   "$BUILD/release-source.tar.gz" "$WORK_DIR/source" "$SOURCE_ARCHIVE_SHA256"
-python3 -B "$ROOT_DIR/release/verifier.py" pulled-material \
-  "$WORK_DIR/source" "$BUILD" "$SBOM" "$ATTESTATION" "$WORK_DIR/web" \
-  "$MANIFEST" "$SIGNATURE" "$INDEX" \
+
+target_uri() {
+  local evidence_id="$1"
+  local count uri raw digest
+  count="$(jq -er --arg id "$evidence_id" '[.evidence[] | select(.id == $id)] | length' "$MANIFEST")"
+  if [[ "$count" != "1" ]]; then
+    echo "VERIFIER_TARGET_NODE_CARDINALITY_INVALID: $evidence_id" >&2
+    exit 1
+  fi
+  uri="$(jq -er --arg id "$evidence_id" '.evidence[] | select(.id == $id) | .uri' "$MANIFEST")"
+  digest="$(jq -er --arg id "$evidence_id" '.evidence[] | select(.id == $id) | .ociDigest' "$MANIFEST")"
+  if [[ "$uri" != oci://* ]]; then
+    echo "VERIFIER_TARGET_URI_INVALID: $evidence_id" >&2
+    exit 1
+  fi
+  raw="${uri#oci://}"
+  python3 -B "$ROOT_DIR/release/verifier.py" oci-uri "$raw" >/dev/null
+  if [[ "$digest" != "${raw##*@}" ]]; then
+    echo "VERIFIER_TARGET_OCI_DIGEST_MISMATCH: $evidence_id" >&2
+    exit 1
+  fi
+  printf '%s\n' "$raw"
+}
+
+target_count="$(jq -er '[.evidence[] | select(.id == "PublicIntegrationTargetConformance" or .id == "DataCatalogTargetConformance")] | length' "$MANIFEST")"
+pulled_material_arguments=(
+  "$WORK_DIR/source" "$BUILD" "$SBOM" "$ATTESTATION" "$WORK_DIR/web"
+  "$MANIFEST" "$SIGNATURE" "$INDEX"
   "$ARTIFACT_URI" "$SBOM_URI" "$ATTESTATION_URI" "$WEB_URI" "$MANIFEST_URI" "$SIGNATURE_URI"
+)
+case "$MANIFEST_VERSION" in
+  RELEASE-MANIFEST-1.0.0)
+    if [[ "$target_count" != "0" ]]; then
+      echo "VERIFIER_V1_TARGET_NODE_FORBIDDEN" >&2
+      exit 1
+    fi
+    ;;
+  RELEASE-MANIFEST-2.0.0)
+    if [[ "$target_count" != "1" ]]; then
+      echo "VERIFIER_V2_TARGET_GRAPH_INVALID" >&2
+      exit 1
+    fi
+    PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI="$(target_uri PublicIntegrationTargetConformance)"
+    mkdir "$WORK_DIR/public-integration-target"
+    "$WORK_DIR/tools/oras" pull "$PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI" \
+      --output "$WORK_DIR/public-integration-target"
+    test -f "$WORK_DIR/public-integration-target/public-integration-target-conformance-evidence-1.0.0.json"
+    pulled_material_arguments+=(
+      "$WORK_DIR/public-integration-target" "$PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI"
+    )
+    ;;
+  RELEASE-MANIFEST-3.0.0)
+    if [[ "$target_count" != "2" ]]; then
+      echo "VERIFIER_V3_TARGET_GRAPH_INVALID" >&2
+      exit 1
+    fi
+    for name in \
+      DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY \
+      DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION \
+      DATA_CATALOG_TARGET_EXPECTED_AUTHORITY \
+      DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT; do
+      require_input "$name"
+    done
+    if [[ ! "$DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION" =~ ^[1-9][0-9]*$ ]]; then
+      echo "VERIFIER_DCC_TARGET_REVISION_FLOOR_INVALID" >&2
+      exit 2
+    fi
+    PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI="$(target_uri PublicIntegrationTargetConformance)"
+    DATA_CATALOG_TARGET_EVIDENCE_URI="$(target_uri DataCatalogTargetConformance)"
+    mkdir "$WORK_DIR/public-integration-target" "$WORK_DIR/data-catalog-target"
+    "$WORK_DIR/tools/oras" pull "$PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI" \
+      --output "$WORK_DIR/public-integration-target"
+    "$WORK_DIR/tools/oras" pull "$DATA_CATALOG_TARGET_EVIDENCE_URI" \
+      --output "$WORK_DIR/data-catalog-target"
+    test -f "$WORK_DIR/public-integration-target/public-integration-target-conformance-evidence-1.0.0.json"
+    test -f "$WORK_DIR/data-catalog-target/data-catalog-target-conformance-evidence-1.0.0.json"
+    pulled_material_arguments+=(
+      "$WORK_DIR/public-integration-target" "$PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI"
+      "$WORK_DIR/data-catalog-target" "$DATA_CATALOG_TARGET_EVIDENCE_URI"
+      "$DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY"
+      "$DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION"
+      "$DATA_CATALOG_TARGET_EXPECTED_AUTHORITY"
+      "$DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT"
+    )
+    ;;
+  *)
+    echo "VERIFIER_RELEASE_MANIFEST_VERSION_INVALID: $MANIFEST_VERSION" >&2
+    exit 1
+    ;;
+esac
+
+python3 -B "$ROOT_DIR/release/verifier.py" pulled-material \
+  "${pulled_material_arguments[@]}"
 
 printf 'VERIFIED_MANIFEST_SHA256=%s\n' "$(sha256sum "$MANIFEST" | cut -d' ' -f1)"
 printf 'VERIFIED_EVIDENCE_INDEX_SHA256=%s\n' "$(sha256sum "$INDEX" | cut -d' ' -f1)"

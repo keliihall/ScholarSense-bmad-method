@@ -83,6 +83,23 @@ def main(argv: list[str]) -> int:
             uris["data-catalog-target"] = _required(
                 "DATA_CATALOG_TARGET_EVIDENCE_URI"
             )
+            data_catalog_target_signing_key = Path(
+                _required("DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY")
+            )
+            data_catalog_target_minimum_revision = int(
+                _required("DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION")
+            )
+            data_catalog_target_expected_authority = _required(
+                "DATA_CATALOG_TARGET_EXPECTED_AUTHORITY"
+            )
+            data_catalog_target_expected_environment = _required(
+                "DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT"
+            )
+        else:
+            data_catalog_target_signing_key = None
+            data_catalog_target_minimum_revision = None
+            data_catalog_target_expected_authority = None
+            data_catalog_target_expected_environment = None
         oras = _oras()
         with tempfile.TemporaryDirectory(prefix="scholarsense-release-assembly-") as directory:
             root = Path(directory)
@@ -118,6 +135,22 @@ def main(argv: list[str]) -> int:
                 ),
                 data_catalog_target_evidence_path=(
                     root / "data-catalog-target" / DATA_CATALOG_TARGET_EVIDENCE_FILENAME
+                    if args.manifest_version == "3" else None
+                ),
+                data_catalog_target_trusted_signing_key_path=(
+                    data_catalog_target_signing_key
+                    if args.manifest_version == "3" else None
+                ),
+                data_catalog_target_minimum_handoff_revision=(
+                    data_catalog_target_minimum_revision
+                    if args.manifest_version == "3" else None
+                ),
+                data_catalog_target_expected_authority=(
+                    data_catalog_target_expected_authority
+                    if args.manifest_version == "3" else None
+                ),
+                data_catalog_target_expected_environment=(
+                    data_catalog_target_expected_environment
                     if args.manifest_version == "3" else None
                 ),
             )

@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import ipaddress
+import os
 import sys
 import tempfile
 import unittest
@@ -13,7 +14,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "release"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-from assembly import assemble_release_manifest_input  # noqa: E402
+from assembly import (  # noqa: E402
+    _load_dcc_target_signing_key,
+    assemble_release_manifest_input,
+)
 from manifests import (  # noqa: E402
     REQUIRED_CONTROLLED_INPUT_IDS_V3,
     create_evidence_index,
@@ -26,6 +30,7 @@ from run_data_catalog_target_tests import (  # noqa: E402
     TargetPreflight,
     evidence_digest,
     execute_target,
+    sign_target_observation,
     validate_report,
 )
 from scripts.tests.test_release_manifests import _reference, _release_input  # noqa: E402
@@ -33,6 +38,9 @@ from scripts.tests import test_release_assembly as release_assembly_test  # noqa
 from scripts.tests.test_release_v2 import _target_conformance, _valid_target_evidence  # noqa: E402
 from scripts import run_public_integration_sandbox_tests as pic_runner  # noqa: E402
 from check_data_catalog_contracts import canonical_digest  # noqa: E402
+
+
+DCC_TARGET_KEY = b"release-v3-dcc-target-authority-test-key"
 
 
 def _raw_sha(path: Path) -> str:
@@ -55,6 +63,10 @@ def _dcc_reference(subject_commit: str, subject_tree: str) -> dict:
         "catalogSha256": _raw_sha(PROJECT_ROOT / "contracts/data-catalog/dcc-1.0.0.json"),
         "qualityGateSha256": _raw_sha(PROJECT_ROOT / "contracts/data-catalog/qg-1.0.0.json"),
         "sourceCount": 17,
+        "handoffRevision": 7,
+        "handoffDigest": "sha256:" + "f" * 64,
+        "authority": "approved-campus-source",
+        "environment": "stage",
     })
     return reference
 
@@ -99,6 +111,7 @@ def _target_report(commit: str, tree: str) -> dict:
         "environment": "stage",
         "candidateCommit": commit,
         "candidateTree": tree,
+        "revision": 7,
         "signature": "hmac-sha256:" + "a" * 64,
         "sourceEndpoints": endpoints,
     }
@@ -108,16 +121,32 @@ def _target_report(commit: str, tree: str) -> dict:
         canonical_digest(catalog),
         canonical_digest(quality),
         {item["sourceId"]: item["schemaVersion"] for item in catalog["sources"]},
+        {item["sourceId"]: tuple(item["contractTests"]) for item in catalog["sources"]},
+        DCC_TARGET_KEY,
     )
 
     def connector(endpoint: str, _ip: str, _token: str | None) -> dict:
         source_id = endpoint.rsplit("/", 1)[1]
-        return {
+        descriptor = next(item for item in catalog["sources"] if item["sourceId"] == source_id)
+        response = {
             "sourceId": source_id,
             "inputDigest": "sha256:" + "e" * 64,
-            "scenarios": [{"id": "provider-consumer-contract", "result": "pass"}],
+            "scenarios": [
+                {
+                    "id": scenario_id,
+                    "result": "pass",
+                    "observationDigest": "sha256:" + hashlib.sha256(
+                        f"{source_id}:{scenario_id}".encode("ascii")
+                    ).hexdigest(),
+                }
+                for scenario_id in descriptor["contractTests"]
+            ],
             "cleanupResult": "pass",
         }
+        response["authorityAttestation"] = sign_target_observation(
+            response, DCC_TARGET_KEY
+        )
+        return response
 
     return execute_target(
         preflight,
@@ -127,6 +156,42 @@ def _target_report(commit: str, tree: str) -> dict:
 
 
 class ReleaseV3ContractTests(unittest.TestCase):
+    def test_release_assembly_rejects_unprotected_or_source_tree_signing_keys(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            source = root / "source"
+            source.mkdir()
+            protected = root / "protected.key"
+            protected.write_bytes(DCC_TARGET_KEY)
+            protected.chmod(0o600)
+            self.assertEqual(
+                DCC_TARGET_KEY,
+                _load_dcc_target_signing_key(protected, source),
+            )
+
+            exposed = root / "exposed.key"
+            exposed.write_bytes(DCC_TARGET_KEY)
+            exposed.chmod(0o644)
+            short = root / "short.key"
+            short.write_bytes(b"x" * 31)
+            short.chmod(0o600)
+            oversized = root / "oversized.key"
+            oversized.write_bytes(b"x" * 4097)
+            oversized.chmod(0o600)
+            in_tree = source / "in-tree.key"
+            in_tree.write_bytes(DCC_TARGET_KEY)
+            in_tree.chmod(0o600)
+            symlink = root / "linked.key"
+            os.symlink(protected, symlink)
+
+            for candidate in (
+                Path("relative.key"), exposed, short, oversized, in_tree, symlink,
+            ):
+                with self.subTest(candidate=candidate.name), self.assertRaisesRegex(
+                    ValueError, "RELEASE_ASSEMBLY_DCC_TARGET_SIGNING_KEY_INVALID"
+                ):
+                    _load_dcc_target_signing_key(candidate, source)
+
     def test_v1_v2_schema_and_fixture_bytes_remain_immutable(self) -> None:
         expected = {
             "release-manifest.schema.json": "9ee461f8772441366396cb181dd358d3df848aa834837ba19ff76d484a5b1f6e",
@@ -192,9 +257,16 @@ class ReleaseV3ContractTests(unittest.TestCase):
         )["sourceCount"] = 16
         self.assertTrue(release_manifest_issues(fixture_rebind, build))
 
+        missing_handoff_binding = copy.deepcopy(manifest)
+        next(
+            item for item in missing_handoff_binding["evidence"]
+            if item["id"] == "DataCatalogTargetConformance"
+        ).pop("handoffDigest")
+        self.assertTrue(release_manifest_issues(missing_handoff_binding, build))
+
     def test_v3_assembly_requires_external_17_of_17_candidate_bound_report(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             artifact, sbom, attestation, web = (
                 release_assembly_test.ReleaseAssemblyTest()._roots(root)
             )
@@ -203,12 +275,20 @@ class ReleaseV3ContractTests(unittest.TestCase):
             tree = inventory["gitTreeOid"]
             pic_path = root / "target/pic.json"
             dcc_path = root / "target/dcc.json"
+            dcc_key_path = root / "target/dcc-authority.key"
             pic_path.parent.mkdir()
+            dcc_key_path.write_bytes(DCC_TARGET_KEY)
+            dcc_key_path.chmod(0o600)
             pic_path.write_bytes(
                 pic_runner.canonical_json_bytes(_valid_target_evidence(commit, tree)) + b"\n"
             )
             report = _target_report(commit, tree)
-            self.assertEqual([], validate_report(report, PROJECT_ROOT))
+            self.assertEqual(
+                [],
+                validate_report(
+                    report, PROJECT_ROOT, trusted_signing_key=DCC_TARGET_KEY
+                ),
+            )
             dcc_path.write_bytes(canonical_bytes(report) + b"\n")
             payload = assemble_release_manifest_input(
                 PROJECT_ROOT,
@@ -231,11 +311,75 @@ class ReleaseV3ContractTests(unittest.TestCase):
                     "ghcr.io/keliihall/dcc@sha256:" + "6" * 64
                 ),
                 data_catalog_target_evidence_path=dcc_path,
+                data_catalog_target_trusted_signing_key_path=dcc_key_path,
+                data_catalog_target_minimum_handoff_revision=7,
+                data_catalog_target_expected_authority="approved-campus-source",
+                data_catalog_target_expected_environment="stage",
             )
             manifest = create_release_manifest(payload, manifest_version="3")
             self.assertEqual([], release_manifest_issues(
                 manifest, payload["buildManifest"],
             ))
+
+            with self.assertRaisesRegex(
+                ValueError, "RELEASE_ASSEMBLY_DCC_TARGET_EVIDENCE_INVALID"
+            ):
+                assemble_release_manifest_input(
+                    PROJECT_ROOT,
+                    "2.1.0",
+                    "ghcr.io/keliihall/a@sha256:" + "1" * 64,
+                    artifact,
+                    "ghcr.io/keliihall/b@sha256:" + "2" * 64,
+                    sbom,
+                    "ghcr.io/keliihall/c@sha256:" + "3" * 64,
+                    attestation,
+                    "ghcr.io/keliihall/d@sha256:" + "4" * 64,
+                    web,
+                    "2026-08-04T12:00:00Z",
+                    manifest_version="3",
+                    public_integration_target_evidence_uri=(
+                        "ghcr.io/keliihall/pic@sha256:" + "5" * 64
+                    ),
+                    public_integration_target_evidence_path=pic_path,
+                    data_catalog_target_evidence_uri=(
+                        "ghcr.io/keliihall/dcc@sha256:" + "6" * 64
+                    ),
+                    data_catalog_target_evidence_path=dcc_path,
+                    data_catalog_target_trusted_signing_key_path=dcc_key_path,
+                    data_catalog_target_minimum_handoff_revision=7,
+                    data_catalog_target_expected_authority="other-campus-source",
+                    data_catalog_target_expected_environment="stage",
+                )
+
+            with self.assertRaisesRegex(
+                ValueError, "RELEASE_ASSEMBLY_DCC_TARGET_EVIDENCE_INVALID"
+            ):
+                assemble_release_manifest_input(
+                    PROJECT_ROOT,
+                    "2.1.0",
+                    "ghcr.io/keliihall/a@sha256:" + "1" * 64,
+                    artifact,
+                    "ghcr.io/keliihall/b@sha256:" + "2" * 64,
+                    sbom,
+                    "ghcr.io/keliihall/c@sha256:" + "3" * 64,
+                    attestation,
+                    "ghcr.io/keliihall/d@sha256:" + "4" * 64,
+                    web,
+                    "2026-08-04T12:00:00Z",
+                    manifest_version="3",
+                    public_integration_target_evidence_uri=(
+                        "ghcr.io/keliihall/pic@sha256:" + "5" * 64
+                    ),
+                    public_integration_target_evidence_path=pic_path,
+                    data_catalog_target_evidence_uri=(
+                        "ghcr.io/keliihall/dcc@sha256:" + "6" * 64
+                    ),
+                    data_catalog_target_evidence_path=dcc_path,
+                    data_catalog_target_trusted_signing_key_path=dcc_key_path,
+                    data_catalog_target_minimum_handoff_revision=8,
+                    data_catalog_target_expected_authority="approved-campus-source",
+                    data_catalog_target_expected_environment="stage",
+                )
 
             failed = copy.deepcopy(report)
             failed["sources"][0]["result"] = "fail"
@@ -266,6 +410,88 @@ class ReleaseV3ContractTests(unittest.TestCase):
                         "ghcr.io/keliihall/dcc@sha256:" + "6" * 64
                     ),
                     data_catalog_target_evidence_path=dcc_path,
+                    data_catalog_target_trusted_signing_key_path=dcc_key_path,
+                    data_catalog_target_minimum_handoff_revision=7,
+                    data_catalog_target_expected_authority="approved-campus-source",
+                    data_catalog_target_expected_environment="stage",
+                )
+
+            wrong_schema = _target_report(commit, tree)
+            wrong_schema["sources"][0]["schemaVersion"] = "ATTACKER-1.0.0"
+            wrong_schema["sources"][0]["evidenceDigest"] = evidence_digest(
+                wrong_schema["sources"][0]
+            )
+            wrong_schema["evidenceDigest"] = evidence_digest(wrong_schema)
+            dcc_path.write_bytes(canonical_bytes(wrong_schema) + b"\n")
+            with self.assertRaisesRegex(
+                ValueError, "RELEASE_ASSEMBLY_DCC_TARGET_EVIDENCE_INVALID"
+            ):
+                assemble_release_manifest_input(
+                    PROJECT_ROOT,
+                    "2.1.0",
+                    "ghcr.io/keliihall/a@sha256:" + "1" * 64,
+                    artifact,
+                    "ghcr.io/keliihall/b@sha256:" + "2" * 64,
+                    sbom,
+                    "ghcr.io/keliihall/c@sha256:" + "3" * 64,
+                    attestation,
+                    "ghcr.io/keliihall/d@sha256:" + "4" * 64,
+                    web,
+                    "2026-08-04T12:00:00Z",
+                    manifest_version="3",
+                    public_integration_target_evidence_uri=(
+                        "ghcr.io/keliihall/pic@sha256:" + "5" * 64
+                    ),
+                    public_integration_target_evidence_path=pic_path,
+                    data_catalog_target_evidence_uri=(
+                        "ghcr.io/keliihall/dcc@sha256:" + "6" * 64
+                    ),
+                    data_catalog_target_evidence_path=dcc_path,
+                    data_catalog_target_trusted_signing_key_path=dcc_key_path,
+                    data_catalog_target_minimum_handoff_revision=7,
+                    data_catalog_target_expected_authority="approved-campus-source",
+                    data_catalog_target_expected_environment="stage",
+                )
+
+            tampered_attestation = _target_report(commit, tree)
+            tampered_attestation["sources"][0]["signatureDigest"] = (
+                "sha256:" + "0" * 64
+            )
+            tampered_attestation["sources"][0]["evidenceDigest"] = evidence_digest(
+                tampered_attestation["sources"][0]
+            )
+            tampered_attestation["evidenceDigest"] = evidence_digest(
+                tampered_attestation
+            )
+            dcc_path.write_bytes(canonical_bytes(tampered_attestation) + b"\n")
+            with self.assertRaisesRegex(
+                ValueError, "RELEASE_ASSEMBLY_DCC_TARGET_EVIDENCE_INVALID"
+            ):
+                assemble_release_manifest_input(
+                    PROJECT_ROOT,
+                    "2.1.0",
+                    "ghcr.io/keliihall/a@sha256:" + "1" * 64,
+                    artifact,
+                    "ghcr.io/keliihall/b@sha256:" + "2" * 64,
+                    sbom,
+                    "ghcr.io/keliihall/c@sha256:" + "3" * 64,
+                    attestation,
+                    "ghcr.io/keliihall/d@sha256:" + "4" * 64,
+                    web,
+                    "2026-08-04T12:00:00Z",
+                    manifest_version="3",
+                    public_integration_target_evidence_uri=(
+                        "ghcr.io/keliihall/pic@sha256:" + "5" * 64
+                    ),
+                    public_integration_target_evidence_path=pic_path,
+                    data_catalog_target_evidence_uri=(
+                        "ghcr.io/keliihall/dcc@sha256:" + "6" * 64
+                    ),
+                    data_catalog_target_evidence_path=dcc_path,
+                    data_catalog_target_trusted_signing_key_path=dcc_key_path,
+                    data_catalog_target_minimum_handoff_revision=7,
+                    data_catalog_target_expected_authority="approved-campus-source",
+                    data_catalog_target_expected_environment="stage",
                 )
 
 

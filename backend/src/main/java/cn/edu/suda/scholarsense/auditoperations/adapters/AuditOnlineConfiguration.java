@@ -16,6 +16,7 @@ import cn.edu.suda.scholarsense.identityaccess.api.FieldProjectionPort;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationEvidenceAvailability;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationObjectEvidence;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationObjectEvidenceQueryPort;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationObjectEvidenceProvider;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationScopeAnchor;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationScopeEvidence;
 import cn.edu.suda.scholarsense.identityaccess.api.SensitiveProjectionAuditPort;
@@ -27,7 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -66,8 +66,6 @@ public class AuditOnlineConfiguration {
                 jdbc, new TransactionTemplate(manager), json, tokens, time);
     }
 
-    @Bean
-    @ConditionalOnMissingBean(AuthorizationObjectEvidenceQueryPort.class)
     AuthorizationObjectEvidenceQueryPort auditSearchObjectEvidence() {
         return query -> {
             boolean business = "AGGREGATE_REPORT".equals(query.objectClass())
@@ -95,6 +93,13 @@ public class AuditOnlineConfiguration {
                     query.expectedObjectVersion(),
                     Optional.empty());
         };
+    }
+
+    @Bean
+    AuthorizationObjectEvidenceProvider auditSearchObjectEvidenceProvider() {
+        return AuthorizationObjectEvidenceProvider.forObjectClasses(
+                Set.of("AGGREGATE_REPORT", "TELEMETRY"),
+                auditSearchObjectEvidence());
     }
 
     @Bean

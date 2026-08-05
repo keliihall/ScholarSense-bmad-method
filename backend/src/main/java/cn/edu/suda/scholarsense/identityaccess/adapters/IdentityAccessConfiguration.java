@@ -12,11 +12,14 @@ import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcResponsibil
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcResponsibilitySyncRepository;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.ResponsibilityScopeQueryAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CurrentEvidenceCompositeAuthorizationAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CompositeAuthorizationObjectEvidenceQueryPort;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CompositeAuditSearchAuthorizationAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CompositeAuthorizationRecheckAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CurrentFieldProjectionService;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CurrentAuthorizedShellQueryAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.HttpRemoteIdentityProviderClient;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.InternalSessionIdentityAdapter;
+import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.InternalAuditTokenizationAdapter;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.KmsEnvelopeClient;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.KmsEnvelopeDecryptClient;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.KmsEnvelopeDecryptionAdapter;
@@ -67,11 +70,14 @@ import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapability;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityProvider;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityState;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationObjectEvidenceQueryPort;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationObjectEvidenceProvider;
 import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationPort;
 import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationRecheckPort;
 import cn.edu.suda.scholarsense.identityaccess.api.FieldProjectionPort;
 import cn.edu.suda.scholarsense.identityaccess.api.SensitiveProjectionAuditPort;
 import cn.edu.suda.scholarsense.identityaccess.api.IdentityFreshness;
+import cn.edu.suda.scholarsense.identityaccess.api.InternalSessionIdentityPort;
+import cn.edu.suda.scholarsense.identityaccess.api.AuditTokenizationPort;
 import cn.edu.suda.scholarsense.identityaccess.api.ResponsibilityScopeQueryPort;
 import cn.edu.suda.scholarsense.identityaccess.domain.RoleFieldPolicyCatalog;
 import cn.edu.suda.scholarsense.identityaccess.domain.FieldProjectionCatalog;
@@ -109,14 +115,6 @@ public class IdentityAccessConfiguration {
     @ConditionalOnMissingBean(TimeSynchronizationStatusProvider.class)
     TimeSynchronizationStatusProvider unavailableTimeSynchronizationStatusProvider() {
         return Optional::empty;
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(IdentityAuditTokenPort.class)
-    IdentityAuditTokenPort unavailableIdentityAuditTokenPort() {
-        return (domain, value) -> {
-            throw new IllegalStateException("AUDIT_TOKENIZATION_BINDING_UNAVAILABLE");
-        };
     }
 
     @Bean
@@ -269,10 +267,15 @@ public class IdentityAccessConfiguration {
                 invalidationFence);
     }
 
+    AuthorizationObjectEvidenceQueryPort unavailableAuthorizationObjectEvidence() {
+        return new CompositeAuthorizationObjectEvidenceQueryPort(List.of());
+    }
+
     @Bean
     @ConditionalOnMissingBean(AuthorizationObjectEvidenceQueryPort.class)
-    AuthorizationObjectEvidenceQueryPort unavailableAuthorizationObjectEvidence() {
-        return AuthorizationObjectEvidenceQueryPort.notInstalled();
+    AuthorizationObjectEvidenceQueryPort authorizationObjectEvidence(
+            List<AuthorizationObjectEvidenceProvider> providers) {
+        return new CompositeAuthorizationObjectEvidenceQueryPort(providers);
     }
 
     @Bean
@@ -440,6 +443,18 @@ public class IdentityAccessConfiguration {
             HighRiskOperationGuard auditAvailability) {
         return new CurrentSessionService(
                 store, authorization, auditFacts, audit, transactions, clock, auditAvailability);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(InternalSessionIdentityPort.class)
+    InternalSessionIdentityPort internalSessionIdentityPort(CurrentSessionService currentSessions) {
+        return new InternalSessionIdentityAdapter(currentSessions);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(AuditTokenizationPort.class)
+    AuditTokenizationPort auditTokenizationPort(IdentityAuditTokenPort tokens) {
+        return new InternalAuditTokenizationAdapter(tokens);
     }
 
     @Bean

@@ -26,6 +26,8 @@ IDENTITY_AUTHORITY_PROFILE_RESOURCE = "identity-authority-profile-1-0-0"
 RESPONSIBILITY_AUTHORITY_PROFILE_RESOURCE = (
     "responsibility-authority-profile-2-0-0"
 )
+INGESTION_QUALITY_RUNTIME_PROFILE = "ingestion-quality-runtime-1.0.0.json"
+MAXIMUM_HANDOFF_REVISION = 9007199254740991
 IDENTITY_SYNC_DATABASE_BINDINGS = {
     "SCHOLARSENSE_IDENTITY_SYNC_ACCESS_INVALIDATION_CONSUMER_JDBC_URL",
     "SCHOLARSENSE_IDENTITY_SYNC_ACCESS_INVALIDATION_CONSUMER_USERNAME",
@@ -33,6 +35,26 @@ IDENTITY_SYNC_DATABASE_BINDINGS = {
     "SCHOLARSENSE_IDENTITY_SYNC_RESPONSIBILITY_V2_CUTOVER_JDBC_URL",
     "SCHOLARSENSE_IDENTITY_SYNC_RESPONSIBILITY_V2_CUTOVER_USERNAME",
     "SCHOLARSENSE_IDENTITY_SYNC_RESPONSIBILITY_V2_CUTOVER_PASSWORD",
+}
+IDENTITY_AUDIT_TOKEN_BINDINGS = {
+    "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_PATH",
+    "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_VERSION",
+}
+INGESTION_QUALITY_WEB_BINDINGS = {
+    "SPRING_DATASOURCE_URL",
+    "SPRING_DATASOURCE_USERNAME",
+    "SPRING_DATASOURCE_PASSWORD",
+    "SCHOLARSENSE_INGESTION_QUALITY_OWNER_BINDINGS_PATH",
+    "SCHOLARSENSE_INGESTION_QUALITY_OWNER_BINDINGS_DIGEST",
+    "SCHOLARSENSE_INGESTION_QUALITY_CONTRACT_ROOT",
+    "SCHOLARSENSE_INGESTION_QUALITY_TARGET_REPORT_PATH",
+    "SCHOLARSENSE_INGESTION_QUALITY_TARGET_REPORT_URI",
+    "SCHOLARSENSE_INGESTION_QUALITY_TARGET_AUTHORITY",
+    "SCHOLARSENSE_INGESTION_QUALITY_TARGET_ENVIRONMENT",
+    "SCHOLARSENSE_INGESTION_QUALITY_TARGET_SIGNING_KEY_PATH",
+    "SCHOLARSENSE_INGESTION_QUALITY_MINIMUM_HANDOFF_REVISION",
+    "DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION",
+    *IDENTITY_AUDIT_TOKEN_BINDINGS,
 }
 RUNTIME_KEYS = {
     "SCHOLARSENSE_ENV",
@@ -395,6 +417,23 @@ def _check_roles(root: Path, roles, violations: list[str]) -> None:
     if set(definitions) != {"web-api", "worker", "identity-sync-worker"}:
         violations.append("ROLE_SET_INVALID")
         return
+    for role in ("web-api", "worker"):
+        if definitions[role].get("capabilityProfiles") != [
+            INGESTION_QUALITY_RUNTIME_PROFILE
+        ]:
+            violations.append(
+                f"INGESTION_QUALITY_CAPABILITY_PROFILE_INVALID: {role}"
+            )
+    if "capabilityProfiles" in definitions["identity-sync-worker"]:
+        violations.append(
+            "INGESTION_QUALITY_CAPABILITY_PROFILE_INVALID: identity-sync-worker"
+        )
+    ingestion_quality = _json(
+        root / f"deploy/base/{INGESTION_QUALITY_RUNTIME_PROFILE}",
+        "INGESTION_QUALITY_RUNTIME_PROFILE",
+        violations,
+    )
+    _check_ingestion_quality_runtime_profile(ingestion_quality, violations)
     artifacts = {value.get("artifact") for value in definitions.values()}
     if len(artifacts) != 1:
         violations.append("ROLE_ARTIFACT_NOT_SHARED")
@@ -435,7 +474,11 @@ def _check_roles(root: Path, roles, violations: list[str]) -> None:
         },
     }
     expected_role_required = {
-        "web-api": set(),
+        "web-api": {
+            *IDENTITY_AUDIT_TOKEN_BINDINGS,
+            "SCHOLARSENSE_INGESTION_QUALITY_MINIMUM_HANDOFF_REVISION",
+            "DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION",
+        },
         "worker": {
             *AUDIT_REFERENCE_RESOURCES,
         },
@@ -457,9 +500,133 @@ def _check_roles(root: Path, roles, violations: list[str]) -> None:
         "dev", "test", "stage"
     ]:
         violations.append("IDENTITY_SYNC_PRODUCTION_DISABLED_INVALID")
-    for role in ("web-api", "worker"):
-        if "allowedEnvironments" in definitions[role]:
-            violations.append(f"ROLE_ALLOWED_ENVIRONMENT_INVALID: {role}")
+    if definitions["web-api"].get("allowedEnvironments") != [
+        "test", "stage", "prod"
+    ]:
+        violations.append("WEB_API_DEV_DISABLED_INVALID")
+    if "allowedEnvironments" in definitions["worker"]:
+        violations.append("ROLE_ALLOWED_ENVIRONMENT_INVALID: worker")
+
+
+def _check_ingestion_quality_runtime_profile(profile, violations: list[str]) -> None:
+    if not isinstance(profile, dict):
+        return
+    roles = profile.get("sameArtifactRoles")
+    if not isinstance(roles, dict) or set(roles) != {"web-api", "worker"}:
+        violations.append("INGESTION_QUALITY_ROLE_BINDINGS_INVALID")
+    else:
+        web = roles.get("web-api", {})
+        worker = roles.get("worker", {})
+        if web.get("capabilities") != [
+            "catalog-api", "source-dependency-owner-evidence"
+        ] or web.get("allowedEnvironments") != ["test", "stage", "prod"] \
+                or set(web.get("requiredEnvironment", [])) != \
+                INGESTION_QUALITY_WEB_BINDINGS:
+            violations.append("INGESTION_QUALITY_WEB_BINDINGS_INVALID")
+        if worker.get("capabilities") != ["ingestion-quality-audit-relay"] \
+                or set(worker.get("requiredEnvironment", [])) != {
+                    "SPRING_DATASOURCE_URL",
+                    "SPRING_DATASOURCE_USERNAME",
+                    "SPRING_DATASOURCE_PASSWORD",
+                }:
+            violations.append("INGESTION_QUALITY_WORKER_BINDINGS_INVALID")
+    if profile.get("identityAuditTokenization") != {
+        "keyPathEnvironment": "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_PATH",
+        "keyVersionEnvironment": "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_VERSION",
+        "location": "absolute-protected-regular-non-symlink-mounted-file",
+        "minimumBytes": 32,
+        "maximumBytes": 64,
+        "algorithm": "hmac-sha256",
+        "keyVersionPattern": "^k[0-9]+$",
+        "failureMode": "startup-fail-closed",
+        "committedMaterialAllowed": False,
+    }:
+        violations.append("IDENTITY_AUDIT_TOKEN_BINDING_INVALID")
+    if profile.get("targetHandoffAntiRollback") != {
+        "minimumRevisionEnvironment":
+            "SCHOLARSENSE_INGESTION_QUALITY_MINIMUM_HANDOFF_REVISION",
+        "releaseMinimumRevisionEnvironment":
+            "DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION",
+        "ownership": "deployment",
+        "type": "integer",
+        "minimum": 1,
+        "maximum": MAXIMUM_HANDOFF_REVISION,
+        "inputConstraints": {
+            "SCHOLARSENSE_INGESTION_QUALITY_MINIMUM_HANDOFF_REVISION": {
+                "minimum": 1,
+                "maximum": MAXIMUM_HANDOFF_REVISION,
+            },
+            "DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION": {
+                "minimum": 1,
+                "maximum": MAXIMUM_HANDOFF_REVISION,
+            },
+        },
+        "updateInvariant": "monotonic-non-decreasing",
+        "crossSurfaceInvariant": "release-and-runtime-use-same-floor",
+        "belowFloor": "startup-fail-closed",
+    }:
+        violations.append("INGESTION_QUALITY_HANDOFF_ANTI_ROLLBACK_INVALID")
+    gate = profile.get("databaseStartupGate")
+    if not isinstance(gate, dict):
+        violations.append("INGESTION_QUALITY_DATABASE_GATE_INVALID")
+        return
+    if gate.get("productionJdbcParameters") != {
+        "sslmode": "verify-full",
+        "channelBinding": "require",
+    } or gate.get("failureMode") != "startup-fail-closed":
+        violations.append("INGESTION_QUALITY_DATABASE_TRANSPORT_GATE_INVALID")
+    if gate.get("serverVersionQuery") != \
+            "select current_setting('server_version_num')" \
+            or gate.get("requiredServerVersionNum") != "180004":
+        violations.append("INGESTION_QUALITY_DATABASE_SERVER_VERSION_GATE_INVALID")
+    if gate.get("identityQuery") != "select current_user, session_user" \
+            or gate.get("sessionIdentityInvariant") \
+            != "session_user=current_user=SPRING_DATASOURCE_USERNAME" \
+            or gate.get("expectedIdentitySource") != "SPRING_DATASOURCE_USERNAME":
+        violations.append("INGESTION_QUALITY_DATABASE_SESSION_IDENTITY_GATE_INVALID")
+    if gate.get("loginRoleAttributes") != {
+        "LOGIN": True,
+        "INHERIT": True,
+        "SUPERUSER": False,
+        "CREATEROLE": False,
+        "CREATEDB": False,
+        "REPLICATION": False,
+        "BYPASSRLS": False,
+    } or gate.get("groupRoleAttributes") != {
+        "LOGIN": False,
+        "SUPERUSER": False,
+        "CREATEROLE": False,
+        "CREATEDB": False,
+        "REPLICATION": False,
+        "BYPASSRLS": False,
+    }:
+        violations.append("INGESTION_QUALITY_DATABASE_PRINCIPAL_RESTRICTION_INVALID")
+    if gate.get("roleActivation") != "inherited-membership" \
+            or gate.get("setRoleAllowed") is not False \
+            or gate.get("membershipGrantOptions") != {
+                "inherit": True,
+                "set": False,
+            }:
+        violations.append("INGESTION_QUALITY_DATABASE_SET_ROLE_BOUNDARY_INVALID")
+    if gate.get("distinctWorkloadLogins") != ["web-api", "worker"] \
+            or gate.get("workloadRoleBindings") != {
+                "web-api": {
+                    "requiredGroupRole": "scholarsense_ingestion_quality_online",
+                    "forbiddenGroupRoles": [
+                        "scholarsense_ingestion_quality_relay"
+                    ],
+                },
+                "worker": {
+                    "requiredGroupRole": "scholarsense_ingestion_quality_relay",
+                    "forbiddenGroupRoles": [
+                        "scholarsense_ingestion_quality_online"
+                    ],
+                },
+            }:
+        violations.append("INGESTION_QUALITY_DATABASE_ROLE_BINDING_INVALID")
+    if gate.get("effectivePrivilegeVerification") \
+            != "exact-table-and-column-matrix":
+        violations.append("INGESTION_QUALITY_DATABASE_PRIVILEGE_GATE_INVALID")
 
 
 def _maven_artifact(pom_path: Path) -> str | None:

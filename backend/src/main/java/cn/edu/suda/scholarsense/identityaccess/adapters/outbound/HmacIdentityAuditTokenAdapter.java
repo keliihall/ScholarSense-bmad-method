@@ -5,14 +5,19 @@ import cn.edu.suda.scholarsense.identityaccess.application.AuditTokenDomain;
 import cn.edu.suda.scholarsense.identityaccess.application.AuditTokenizationMetadata;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditTokenPort;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.text.Normalizer;
+import java.util.Arrays;
 import java.util.HexFormat;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.Objects;
 
 /** Key material is supplied by the deployment KMS boundary and is never returned or logged. */
 public final class HmacIdentityAuditTokenAdapter implements IdentityAuditTokenPort {
+    private static final int MINIMUM_KEY_BYTES = 32;
+    private static final int MAXIMUM_KEY_BYTES = 64;
     private final SecretKey key;
     private final String keyVersion;
 
@@ -22,6 +27,23 @@ public final class HmacIdentityAuditTokenAdapter implements IdentityAuditTokenPo
             throw new IllegalArgumentException("AUDIT_TOKEN_KEY_VERSION_INVALID");
         }
         this.keyVersion = keyVersion;
+    }
+
+    /** Loads a deployment-mounted key through the same protected-file boundary as identity sync. */
+    public static HmacIdentityAuditTokenAdapter fromMountedKey(
+            Path keyPath, String keyVersion) {
+        byte[] key = ProtectedIdentitySecurityMaterial.read(
+                keyPath,
+                MINIMUM_KEY_BYTES,
+                MAXIMUM_KEY_BYTES,
+                "IDENTITY_AUDIT_TOKEN_KEY_INVALID",
+                "IDENTITY_AUDIT_TOKEN_KEY_UNAVAILABLE");
+        try {
+            return new HmacIdentityAuditTokenAdapter(
+                    new SecretKeySpec(key, "HmacSHA256"), keyVersion);
+        } finally {
+            Arrays.fill(key, (byte) 0);
+        }
     }
 
     @Override

@@ -94,6 +94,7 @@ PIC_TARGET_KIND = "public-integration-target-conformance"
 DCC_TARGET_ID = "DataCatalogTargetConformance"
 DCC_TARGET_KIND = "data-catalog-target-conformance"
 DCC_RUNTIME_ID = "data-catalog-target-conformance"
+MAX_HANDOFF_REVISION = (1 << 53) - 1
 PIC_SCENARIO_PATH = (
     PROJECT_ROOT
     / "contracts/public-integration/public-integration-target-scenarios-1.0.0.json"
@@ -445,7 +446,8 @@ def _index_node(reference: dict[str, Any], stage: str, depends_on: list[str]) ->
     }
     for field in (
         "subjectCommit", "subjectTree", "scenarioSetSha256", "catalogSha256",
-        "qualityGateSha256", "sourceCount",
+        "qualityGateSha256", "sourceCount", "handoffRevision", "handoffDigest",
+        "authority", "environment",
     ):
         if field in reference:
             node[field] = reference[field]
@@ -566,7 +568,8 @@ def evidence_index_issues(index: Any, release_manifest: Any) -> list[str]:
         ) if node.get("kind") == PIC_TARGET_KIND else (
             "kind", "version", "uri", "mediaType", "size", "binarySha256",
             "ociDigest", "subjectCommit", "subjectTree", "catalogSha256",
-            "qualityGateSha256", "sourceCount",
+            "qualityGateSha256", "sourceCount", "handoffRevision", "handoffDigest",
+            "authority", "environment",
         ) if node.get("kind") == DCC_TARGET_KIND else (
             "kind", "version", "uri", "mediaType", "size", "binarySha256", "ociDigest"
         )
@@ -694,6 +697,13 @@ def _dcc_target_node_issues(
         or node.get("kind") != DCC_TARGET_KIND
         or node.get("version") != "DCC-TARGET-REPORT-1.0.0"
         or node.get("sourceCount") != 17
+        or not isinstance(node.get("handoffRevision"), int)
+        or isinstance(node.get("handoffRevision"), bool)
+        or node.get("handoffRevision") < 1
+        or node.get("handoffRevision") > MAX_HANDOFF_REVISION
+        or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(node.get("handoffDigest")))
+        or not re.fullmatch(r"[a-z][a-z0-9.-]{2,127}", str(node.get("authority")))
+        or node.get("environment") not in {"test", "stage", "prod"}
     ):
         issues.append("RELEASE_DATA_CATALOG_TARGET_IDENTITY_INVALID")
     if not re.fullmatch(r"[0-9a-f]{40}", str(subject_commit)) or (

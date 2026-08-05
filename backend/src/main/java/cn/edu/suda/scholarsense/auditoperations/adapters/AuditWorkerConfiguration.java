@@ -16,7 +16,7 @@ import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityPort;
 import cn.edu.suda.scholarsense.auditoperations.api.AuditAvailabilityQuery;
 import cn.edu.suda.scholarsense.auditoperations.api.AuditLedgerIngress;
 import cn.edu.suda.scholarsense.auditoperations.api.AuditLedgerIngressPort;
-import cn.edu.suda.scholarsense.auditoperations.api.AuditProducerBacklogPort;
+import cn.edu.suda.scholarsense.shared.outbox.AuditProducerBacklogPort;
 import cn.edu.suda.scholarsense.auditoperations.application.AlertOutboxPort;
 import cn.edu.suda.scholarsense.auditoperations.application.AuditAlertRelayProcessor;
 import cn.edu.suda.scholarsense.auditoperations.application.AuditAlertTransport;

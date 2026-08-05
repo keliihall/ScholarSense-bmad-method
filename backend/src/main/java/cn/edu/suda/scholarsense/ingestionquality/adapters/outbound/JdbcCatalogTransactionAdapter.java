@@ -3,6 +3,7 @@ package cn.edu.suda.scholarsense.ingestionquality.adapters.outbound;
 import cn.edu.suda.scholarsense.ingestionquality.application.CatalogTransactionPort;
 import java.util.Objects;
 import java.util.function.Supplier;
+import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 public final class JdbcCatalogTransactionAdapter implements CatalogTransactionPort {
@@ -14,6 +15,10 @@ public final class JdbcCatalogTransactionAdapter implements CatalogTransactionPo
 
     @Override
     public Object execute(Supplier<?> work) {
-        return transactions.execute(status -> work.get());
+        try {
+            return transactions.execute(status -> work.get());
+        } catch (DataAccessException failure) {
+            throw CatalogJdbcFailures.translate(failure);
+        }
     }
 }

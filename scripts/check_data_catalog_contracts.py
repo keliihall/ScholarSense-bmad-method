@@ -21,12 +21,12 @@ CONTRACT_ROOT = Path("contracts/data-catalog")
 CATALOG = CONTRACT_ROOT / "dcc-1.0.0.json"
 REGISTRY = CONTRACT_ROOT / "dependency-registry-1.0.0.json"
 QUALITY_GATE = CONTRACT_ROOT / "qg-1.0.0.json"
-LOCK = CONTRACT_ROOT / "data-catalog-contract-lock-1.0.0.json"
+LOCK = CONTRACT_ROOT / "data-catalog-contract-lock-1.0.1.json"
 SOURCE_SCHEMA = CONTRACT_ROOT / "source-contract.schema.json"
 CATALOG_SCHEMA = CONTRACT_ROOT / "data-source-catalog.schema.json"
 REGISTRY_SCHEMA = CONTRACT_ROOT / "dependency-registry.schema.json"
 QUALITY_SCHEMA = CONTRACT_ROOT / "quality-gate.schema.json"
-LOCK_SCHEMA = CONTRACT_ROOT / "data-catalog-contract-lock.schema.json"
+LOCK_SCHEMA = CONTRACT_ROOT / "data-catalog-contract-lock-1.0.1.schema.json"
 EVIDENCE_SCHEMA = CONTRACT_ROOT / "data-catalog-runtime-evidence.schema.json"
 HANDOFF_SCHEMA = CONTRACT_ROOT / "data-catalog-target-handoff.schema.json"
 TARGET_REPORT_SCHEMA = CONTRACT_ROOT / "data-catalog-target-report.schema.json"
@@ -38,7 +38,24 @@ FORBIDDEN_FIELDS = {
     "diagnosis", "consultationbody", "freetext", "url", "domain", "content",
     "studentname", "studentnumber", "phone", "email",
 }
-IMMUTABLE_EVIDENCE_SCHEMES = ("sha256://", "oci://", "s3-version://", "evidence+sha256://")
+CONTENT_ADDRESSED_EVIDENCE = re.compile(
+    r"^(?:sha256|evidence\+sha256)://(?P<digest>[0-9a-f]{64})"
+    r"(?:#source=(?P<source>SRC-P[01]-[A-Z-]+-[0-9]{3}))?$"
+)
+OCI_EVIDENCE = re.compile(
+    r"^oci://ghcr\.io/[a-z0-9_.-]+/[a-z0-9_./-]+"
+    r"@sha256:[0-9a-f]{64}$"
+)
+S3_VERSION_EVIDENCE = re.compile(
+    r"^s3-version://[a-z0-9][a-z0-9.-]{1,62}/[^?#]+"
+    r"\?versionId=[A-Za-z0-9._~-]{8,}$"
+)
+SEMANTIC_VERSION = re.compile(
+    r"^(?P<name>[A-Z][A-Z0-9-]*)-"
+    r"(?P<major>0|[1-9][0-9]*)\."
+    r"(?P<minor>0|[1-9][0-9]*)\."
+    r"(?P<patch>0|[1-9][0-9]*)$"
+)
 
 
 def _derive_sources(root: Path) -> set[str]:
@@ -67,6 +84,16 @@ def canonical_digest(value: Any) -> str:
 
 def _duplicates(values: list[str]) -> bool:
     return len(values) != len(set(values))
+
+
+def _immutable_evidence_uri(value: Any, source_id: str) -> bool:
+    if not isinstance(value, str):
+        return False
+    addressed = CONTENT_ADDRESSED_EVIDENCE.fullmatch(value)
+    if addressed is not None:
+        bound_source = addressed.group("source")
+        return bound_source is None or bound_source == source_id
+    return OCI_EVIDENCE.fullmatch(value) is not None or S3_VERSION_EVIDENCE.fullmatch(value) is not None
 
 
 def _forbidden_keys(value: Any) -> set[str]:
@@ -117,22 +144,27 @@ def _catalog_issues(
     mapped = set(expected_dependencies)
     descriptor_schema = load_json(root / SOURCE_SCHEMA)
     for descriptor in sources:
-        if not isinstance(descriptor, dict) or schema_issues(descriptor, descriptor_schema):
+        if not isinstance(descriptor, dict):
             issues.append("DCC_SOURCE_DESCRIPTOR_INVALID")
             continue
-        source_id = descriptor["sourceId"]
+        source_id = descriptor.get("sourceId")
+        evidence_uri = descriptor.get("evidenceUri")
+        claim = descriptor.get("runtimeEvidenceClaim")
+        if (
+            claim == "none"
+            and evidence_uri != f"evidence://pending/{source_id}"
+        ) or (
+            claim == "target-verified"
+            and not _immutable_evidence_uri(evidence_uri, source_id)
+        ):
+            issues.append("DCC_EVIDENCE_URI_INVALID")
+        if schema_issues(descriptor, descriptor_schema):
+            issues.append("DCC_SOURCE_DESCRIPTOR_INVALID")
+            continue
         if source_id in mapped and descriptor.get("consumerMode") != "rule-dependency":
             issues.append("DCC_DEPENDENCY_PURPOSE_INVALID")
         if source_id not in mapped and descriptor.get("consumerMode") != "purpose-isolated":
             issues.append("DCC_PURPOSE_ISOLATION_INVALID")
-        evidence_uri = descriptor.get("evidenceUri", "")
-        claim = descriptor.get("runtimeEvidenceClaim")
-        if claim == "none":
-            if not evidence_uri.startswith("evidence://pending/"):
-                issues.append("DCC_EVIDENCE_URI_INVALID")
-        elif claim == "target-verified":
-            if not evidence_uri.startswith(IMMUTABLE_EVIDENCE_SCHEMES):
-                issues.append("DCC_EVIDENCE_URI_INVALID")
         schema_ref = descriptor.get("schemaRef", "")
         schema_path = root / CONTRACT_ROOT / schema_ref
         if schema_overrides and schema_ref in schema_overrides:
@@ -206,21 +238,70 @@ def _reference_issues(root: Path, entry_paths: list[Path]) -> list[str]:
 
 
 def execute_compatibility_fixture(document: dict[str, Any]) -> str:
-    if document.get("fixtureVersion") != "DCC-COMPAT-1.0.0":
+    if document.get("fixtureVersion") != "DCC-COMPAT-1.1.0":
         return "DCC_COMPATIBILITY_FIXTURE_INVALID"
-    change = document.get("change", {})
     from_version = str(document.get("fromVersion", ""))
     to_version = str(document.get("toVersion", ""))
-    try:
-        from_major = int(from_version.rsplit("-", 1)[1].split(".")[0])
-        to_major = int(to_version.rsplit("-", 1)[1].split(".")[0])
-    except (IndexError, ValueError):
+    from_match = SEMANTIC_VERSION.fullmatch(from_version)
+    to_match = SEMANTIC_VERSION.fullmatch(to_version)
+    if from_match is None or to_match is None or from_match.group("name") != to_match.group("name"):
         return "DCC_COMPATIBILITY_FIXTURE_INVALID"
-    if change.get("kind") == "add-optional" and change.get("field") and to_major == from_major:
-        return "DCC_COMPATIBLE"
-    if change.get("kind") in {"add-required", "remove", "narrow", "change-meaning"}:
-        return "DCC_BREAKING_CHANGE_REQUIRES_MAJOR" if to_major == from_major else "DCC_COMPATIBLE"
-    return "DCC_COMPATIBILITY_FIXTURE_INVALID"
+    from_semver = tuple(int(from_match.group(field)) for field in ("major", "minor", "patch"))
+    to_semver = tuple(int(to_match.group(field)) for field in ("major", "minor", "patch"))
+    if to_semver <= from_semver:
+        return "DCC_VERSION_REGRESSION"
+    before = document.get("beforeSchema")
+    after = document.get("afterSchema")
+    if (
+        not isinstance(before, dict)
+        or not isinstance(after, dict)
+        or schema_definition_issues(before)
+        or schema_definition_issues(after)
+    ):
+        return "DCC_COMPATIBILITY_FIXTURE_INVALID"
+    before_properties = before.get("properties")
+    after_properties = after.get("properties")
+    before_required = before.get("required", [])
+    after_required = after.get("required", [])
+    if (
+        not isinstance(before_properties, dict)
+        or not isinstance(after_properties, dict)
+        or not isinstance(before_required, list)
+        or not isinstance(after_required, list)
+        or any(not isinstance(item, str) for item in before_required + after_required)
+    ):
+        return "DCC_COMPATIBILITY_FIXTURE_INVALID"
+
+    before_fields = set(before_properties)
+    after_fields = set(after_properties)
+    added_fields = after_fields - before_fields
+    breaking = bool(
+        before_fields - after_fields
+        or set(after_required) - set(before_required)
+        or any(
+            before_properties[field] != after_properties[field]
+            for field in before_fields & after_fields
+        )
+    )
+    before_shell = {
+        key: value
+        for key, value in before.items()
+        if key not in {"properties", "required", "$id", "title"}
+    }
+    after_shell = {
+        key: value
+        for key, value in after.items()
+        if key not in {"properties", "required", "$id", "title"}
+    }
+    if before_shell != after_shell:
+        breaking = True
+    if any(field in set(after_required) for field in added_fields):
+        breaking = True
+    return (
+        "DCC_BREAKING_CHANGE_REQUIRES_MAJOR"
+        if breaking and to_semver[0] == from_semver[0]
+        else "DCC_COMPATIBLE"
+    )
 
 
 def execute_negative_fixture(case: dict[str, Any], project_root: Path) -> str:
@@ -317,7 +398,12 @@ def validate(project_root: Path) -> list[str]:
     for case in negative.get("cases", []):
         if execute_negative_fixture(case, root) != case.get("expectedCode"):
             issues.append("DCC_NEGATIVE_FIXTURE_MISMATCH")
-    for name in ("optional-addition-1.1.0.json", "breaking-without-major.json"):
+    for name in (
+        "optional-addition-actual-1.1.0.json",
+        "breaking-actual-without-major.json",
+        "same-version-mutation-actual.json",
+        "version-regression-actual.json",
+    ):
         fixture = load_json(root / CONTRACT_ROOT / "fixtures/compatibility" / name)
         if execute_compatibility_fixture(fixture) != fixture.get("expectedCode"):
             issues.append("DCC_COMPATIBILITY_FIXTURE_MISMATCH")

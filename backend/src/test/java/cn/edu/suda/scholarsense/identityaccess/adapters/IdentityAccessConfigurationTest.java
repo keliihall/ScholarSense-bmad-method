@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import cn.edu.suda.scholarsense.identityaccess.application.AuditTokenDomain;
 import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationOutcome;
 import cn.edu.suda.scholarsense.identityaccess.application.AccessInvalidationFenceQueryPort;
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.CurrentEvidenceCompositeAuthorizationAdapter;
@@ -92,8 +91,6 @@ class IdentityAccessConfigurationTest {
 
         assertEquals(100, configuration.identityTrustedClockConstraints().maximumSkewMs());
         assertTrue(configuration.unavailableTimeSynchronizationStatusProvider().current().isEmpty());
-        assertThrows(IllegalStateException.class, () -> configuration
-                .unavailableIdentityAuditTokenPort().tokenize(AuditTokenDomain.ACTOR, "actor"));
         var authorization = configuration.auditSearchAuthorizationPort(
                 new cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcIdentityAccessStore(
                         mock(JdbcTemplate.class)),

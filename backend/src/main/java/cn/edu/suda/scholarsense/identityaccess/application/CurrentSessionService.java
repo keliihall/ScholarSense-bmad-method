@@ -44,6 +44,12 @@ public final class CurrentSessionService {
     }
 
     public CurrentSessionProjection current(String internalSessionId, String sourceIp, String traceId) {
+        return currentInternal(internalSessionId, sourceIp, traceId).session();
+    }
+
+    /** Same audited active-session read, with the actor exposed only to trusted server adapters. */
+    public InternalSessionProjection currentInternal(
+            String internalSessionId, String sourceIp, String traceId) {
         auditAvailability.requireAvailable(traceId);
         ReadOutcome outcome = transaction.execute(
                 () -> currentInTransaction(internalSessionId, sourceIp, traceId));
@@ -104,7 +110,8 @@ public final class CurrentSessionService {
                 "AUTHORIZATION_ALLOWED",
                 sourceIp,
                 traceId)));
-        return ReadOutcome.success(projection);
+        return ReadOutcome.success(new InternalSessionProjection(
+                projection, session.actorPseudonym()));
     }
 
     private static IdentityAccessException required() {
@@ -152,9 +159,9 @@ public final class CurrentSessionService {
     }
 
     private record ReadOutcome(
-            CurrentSessionProjection projection,
+            InternalSessionProjection projection,
             IdentityAccessException failure) {
-        static ReadOutcome success(CurrentSessionProjection projection) {
+        static ReadOutcome success(InternalSessionProjection projection) {
             return new ReadOutcome(projection, null);
         }
 

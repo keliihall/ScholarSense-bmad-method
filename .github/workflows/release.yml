@@ -281,9 +281,152 @@ jobs:
           while IFS= read -r file; do cmp "$file" "$RUNNER_TEMP/formal-web-readback/${file#./}"; done < <(find . -type f -print | sort)
           printf 'web-uri=%s\n' "$uri" >> "$GITHUB_OUTPUT"
 
+  public-integration-target:
+    needs: build-cas
+    runs-on: [self-hosted, Linux, X64, scholarsense-public-integration-target]
+    environment: public-integration-target
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      evidence-uri: ${{ steps.target.outputs.evidence-uri }}
+    steps:
+      - name: Checkout the exact clean candidate on the deployment-labelled runner
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          clean: true
+      - name: Execute, publish, and digest-read back PIC target evidence
+        id: target
+        env:
+          ORAS_PASSWORD: ${{ github.token }}
+          SCHOLARSENSE_PIC_TARGET_HANDOFF_FILE: ${{ secrets.SCHOLARSENSE_PIC_TARGET_HANDOFF_FILE }}
+          SCHOLARSENSE_PIC_TARGET_HANDOFF_SIGNATURE_FILE: ${{ secrets.SCHOLARSENSE_PIC_TARGET_HANDOFF_SIGNATURE_FILE }}
+          SCHOLARSENSE_PIC_TARGET_HANDOFF_TRUST_ROOT_FILE: ${{ secrets.SCHOLARSENSE_PIC_TARGET_HANDOFF_TRUST_ROOT_FILE }}
+          SCHOLARSENSE_PIC_TARGET_HANDOFF_EXPECTED_SHA256: ${{ vars.SCHOLARSENSE_PIC_TARGET_HANDOFF_EXPECTED_SHA256 }}
+          SCHOLARSENSE_PIC_TARGET_CREDENTIAL_BUNDLE_FILE: ${{ secrets.SCHOLARSENSE_PIC_TARGET_CREDENTIAL_BUNDLE_FILE }}
+        run: |
+          required=(
+            SCHOLARSENSE_PIC_TARGET_HANDOFF_FILE
+            SCHOLARSENSE_PIC_TARGET_HANDOFF_SIGNATURE_FILE
+            SCHOLARSENSE_PIC_TARGET_HANDOFF_TRUST_ROOT_FILE
+            SCHOLARSENSE_PIC_TARGET_HANDOFF_EXPECTED_SHA256
+            SCHOLARSENSE_PIC_TARGET_CREDENTIAL_BUNDLE_FILE
+          )
+          for name in "${required[@]}"; do test -n "${!name:-}"; done
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          candidate_tree="$(git rev-parse 'HEAD^{tree}')"
+          evidence_root="$RUNNER_TEMP/public-integration-target"
+          evidence_name="public-integration-target-conformance-evidence-1.0.0.json"
+          test ! -e "$evidence_root"
+          mkdir "$evidence_root"
+          python3 -B scripts/run_public_integration_target_sandbox_tests.py \
+            --evidence "$evidence_root/$evidence_name" \
+            --subject-commit "$GITHUB_SHA" \
+            --subject-tree "$candidate_tree"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse 'HEAD^{tree}')" = "$candidate_tree"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          tools="$RUNNER_TEMP/public-integration-target-tools"
+          config="$RUNNER_TEMP/public-integration-target-oras-config.json"
+          ./scripts/install-release-tools.sh "$tools" oci
+          "$tools/oras" --registry-config "$config" login ghcr.io \
+            --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
+          target="${EVIDENCE_REPOSITORY}:pic-target-${RELEASE_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          digest="$(cd "$evidence_root" && "$tools/oras" --registry-config "$config" push \
+            "$target" "$evidence_name:application/vnd.scholarsense.pic-target-evidence.v1+json" \
+            --format go-template='{{.digest}}')"
+          uri="${EVIDENCE_REPOSITORY}@${digest}"
+          readback="$RUNNER_TEMP/public-integration-target-readback"
+          test ! -e "$readback"
+          mkdir "$readback"
+          "$tools/oras" --registry-config "$config" pull "$uri" --output "$readback"
+          cmp "$evidence_root/$evidence_name" "$readback/$evidence_name"
+          printf 'evidence-uri=%s\n' "$uri" >> "$GITHUB_OUTPUT"
+
+  data-catalog-target:
+    needs: build-cas
+    runs-on: [self-hosted, Linux, X64, scholarsense-data-catalog-target]
+    environment: data-catalog-target-stage
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      evidence-uri: ${{ steps.target.outputs.evidence-uri }}
+    steps:
+      - name: Checkout the exact clean candidate on the deployment-labelled runner
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          clean: true
+      - name: Execute, publish, and digest-read back DCC target evidence
+        id: target
+        env:
+          ORAS_PASSWORD: ${{ github.token }}
+          DATA_CATALOG_TARGET_HANDOFF_BASE64: ${{ secrets.DATA_CATALOG_TARGET_HANDOFF_BASE64 }}
+          DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64: ${{ secrets.DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64 }}
+          DATA_CATALOG_TARGET_EXPECTED_AUTHORITY: ${{ vars.DATA_CATALOG_TARGET_EXPECTED_AUTHORITY }}
+          DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT: stage
+          DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION: ${{ vars.DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION }}
+          DATA_CATALOG_TARGET_TOKEN: ${{ secrets.DATA_CATALOG_TARGET_TOKEN }}
+        run: |
+          required=(
+            DATA_CATALOG_TARGET_HANDOFF_BASE64
+            DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64
+            DATA_CATALOG_TARGET_EXPECTED_AUTHORITY
+            DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT
+            DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION
+          )
+          for name in "${required[@]}"; do test -n "${!name:-}"; done
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          evidence_root="$RUNNER_TEMP/data-catalog-target"
+          evidence_name="data-catalog-target-conformance-evidence-1.0.0.json"
+          handoff="$RUNNER_TEMP/data-catalog-target-handoff.json"
+          trusted_key="$RUNNER_TEMP/data-catalog-target-trusted-signing.key"
+          test ! -e "$evidence_root"
+          test ! -e "$handoff"
+          test ! -e "$trusted_key"
+          mkdir "$evidence_root"
+          umask 077
+          trap 'rm -f -- "$handoff" "$trusted_key"' EXIT INT TERM
+          printf '%s' "$DATA_CATALOG_TARGET_HANDOFF_BASE64" | base64 --decode > "$handoff"
+          printf '%s' "$DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64" | base64 --decode > "$trusted_key"
+          chmod 600 "$handoff" "$trusted_key"
+          python3 -B scripts/run_data_catalog_target_tests.py \
+            --handoff "$handoff" \
+            --trusted-signing-key "$trusted_key" \
+            --authority "$DATA_CATALOG_TARGET_EXPECTED_AUTHORITY" \
+            --environment "$DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT" \
+            --minimum-revision "$DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION" \
+            --report "$evidence_root/$evidence_name" \
+            --project-root "$GITHUB_WORKSPACE"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+          tools="$RUNNER_TEMP/data-catalog-target-tools"
+          config="$RUNNER_TEMP/data-catalog-target-oras-config.json"
+          ./scripts/install-release-tools.sh "$tools" oci
+          "$tools/oras" --registry-config "$config" login ghcr.io \
+            --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
+          target="${EVIDENCE_REPOSITORY}:dcc-target-${RELEASE_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          digest="$(cd "$evidence_root" && "$tools/oras" --registry-config "$config" push \
+            "$target" "$evidence_name:application/vnd.scholarsense.dcc-target-evidence.v1+json" \
+            --format go-template='{{.digest}}')"
+          uri="${EVIDENCE_REPOSITORY}@${digest}"
+          readback="$RUNNER_TEMP/data-catalog-target-readback"
+          test ! -e "$readback"
+          mkdir "$readback"
+          "$tools/oras" --registry-config "$config" pull "$uri" --output "$readback"
+          cmp "$evidence_root/$evidence_name" "$readback/$evidence_name"
+          printf 'evidence-uri=%s\n' "$uri" >> "$GITHUB_OUTPUT"
+
   release-manifest:
-    needs: [build-cas, sbom-scan, artifact-signing, formal-web]
+    needs: [build-cas, sbom-scan, artifact-signing, formal-web, public-integration-target, data-catalog-target]
     runs-on: ubuntu-24.04
+    environment: data-catalog-target-stage
     permissions:
       contents: write
       packages: write
@@ -306,15 +449,29 @@ jobs:
           SBOM_URI: ${{ needs.sbom-scan.outputs.sbom-uri }}
           ATTESTATION_URI: ${{ needs.artifact-signing.outputs.attestation_uri }}
           WEB_URI: ${{ needs.formal-web.outputs.web-uri }}
+          PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI: ${{ needs.public-integration-target.outputs.evidence-uri }}
+          DATA_CATALOG_TARGET_EVIDENCE_URI: ${{ needs.data-catalog-target.outputs.evidence-uri }}
+          DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64: ${{ secrets.DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64 }}
+          DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION: ${{ vars.DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION }}
+          DATA_CATALOG_TARGET_EXPECTED_AUTHORITY: ${{ vars.DATA_CATALOG_TARGET_EXPECTED_AUTHORITY }}
+          DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT: stage
         run: |
+          trusted_key="$RUNNER_TEMP/release-manifest-dcc-target-trusted-signing.key"
+          test ! -e "$trusted_key"
+          umask 077
+          trap 'rm -f -- "$trusted_key"' EXIT INT TERM
+          printf '%s' "$DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64" | base64 --decode > "$trusted_key"
+          chmod 600 "$trusted_key"
+          export DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY="$trusted_key"
           "$RUNNER_TEMP/release-tools/oras" login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
-          python3 scripts/assemble-release-manifest-input.py "$RELEASE_VERSION" release-out/release-input.json
+          python3 scripts/assemble-release-manifest-input.py \
+            "$RELEASE_VERSION" release-out/release-input.json --manifest-version 3
           python3 release/generate_manifests.py release release-out/release-input.json release-out/release-manifest.json
       - name: Publish the frozen unsigned ReleaseManifest
         id: publish
         run: |
           target="${MANIFEST_REPOSITORY}:${RELEASE_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/release-manifest.json:application/vnd.scholarsense.release-manifest.v1+json --format go-template='{{.digest}}')"
+          digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/release-manifest.json:application/vnd.scholarsense.release-manifest.v3+json --format go-template='{{.digest}}')"
           printf 'manifest-uri=%s@%s\n' "$MANIFEST_REPOSITORY" "$digest" >> "$GITHUB_OUTPUT"
           printf 'manifest-sha256=%s\n' "$(sha256sum release-out/release-manifest.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - name: Bind releaseVersion globally to exactly one manifest digest
@@ -366,13 +523,14 @@ jobs:
         id: publish
         run: |
           target="${MANIFEST_REPOSITORY}:evidence-index-${RELEASE_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/evidence-index.json:application/vnd.scholarsense.evidence-index.v1+json --format go-template='{{.digest}}')"
+          digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/evidence-index.json:application/vnd.scholarsense.evidence-index.v3+json --format go-template='{{.digest}}')"
           printf 'index-uri=%s@%s\n' "$MANIFEST_REPOSITORY" "$digest" >> "$GITHUB_OUTPUT"
           printf 'index-sha256=%s\n' "$(sha256sum release-out/evidence-index.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
   independent-verifier:
     needs: [build-cas, sbom-scan, artifact-signing, formal-web, release-manifest, manifest-signing, evidence-index]
     runs-on: ubuntu-24.04
+    environment: data-catalog-target-stage
     permissions:
       contents: read
       packages: read
@@ -394,7 +552,19 @@ jobs:
           MANIFEST_URI: ${{ needs.release-manifest.outputs.manifest-uri }}
           SIGNATURE_URI: ${{ needs.manifest-signing.outputs.signature_uri }}
           INDEX_URI: ${{ needs.evidence-index.outputs.index-uri }}
-        run: ./scripts/verify-release.sh
+          DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64: ${{ secrets.DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64 }}
+          DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION: ${{ vars.DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION }}
+          DATA_CATALOG_TARGET_EXPECTED_AUTHORITY: ${{ vars.DATA_CATALOG_TARGET_EXPECTED_AUTHORITY }}
+          DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT: stage
+        run: |
+          trusted_key="$RUNNER_TEMP/independent-verifier-dcc-target-trusted-signing.key"
+          test ! -e "$trusted_key"
+          umask 077
+          trap 'rm -f -- "$trusted_key"' EXIT INT TERM
+          printf '%s' "$DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64" | base64 --decode > "$trusted_key"
+          chmod 600 "$trusted_key"
+          export DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY="$trusted_key"
+          ./scripts/verify-release.sh
 
   promotion:
     needs: [build-cas, sbom-scan, artifact-signing, formal-web, release-manifest, manifest-signing, evidence-index, independent-verifier]
@@ -423,7 +593,18 @@ jobs:
           SIGNATURE_URI: ${{ needs.manifest-signing.outputs.signature_uri }}
           INDEX_URI: ${{ needs.evidence-index.outputs.index-uri }}
           EVIDENCE_INDEX_SHA256: ${{ needs.evidence-index.outputs.index-sha256 }}
+          DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64: ${{ secrets.DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64 }}
+          DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION: ${{ vars.DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION }}
+          DATA_CATALOG_TARGET_EXPECTED_AUTHORITY: ${{ vars.DATA_CATALOG_TARGET_EXPECTED_AUTHORITY }}
+          DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT: stage
         run: |
+          trusted_key="$RUNNER_TEMP/promotion-dcc-target-trusted-signing.key"
+          test ! -e "$trusted_key"
+          umask 077
+          trap 'rm -f -- "$trusted_key"' EXIT INT TERM
+          printf '%s' "$DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64" | base64 --decode > "$trusted_key"
+          chmod 600 "$trusted_key"
+          export DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY="$trusted_key"
           output="$RUNNER_TEMP/promotion-record.json"
           if [[ -n "$ROLLBACK_VERSION" || -n "$ROLLBACK_ENVIRONMENT" ]]; then
             ./scripts/promote-release.sh \

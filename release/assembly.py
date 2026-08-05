@@ -22,9 +22,11 @@ from release_json import (  # noqa: E402
 )
 import run_public_integration_sandbox_tests as pic_evidence  # noqa: E402
 import run_data_catalog_target_tests as dcc_evidence  # noqa: E402
+from protected_key import load_protected_key  # noqa: E402
 
 
 OCI_URI = re.compile(r"^ghcr\.io/[a-z0-9_.-]+/[a-z0-9_./-]+@(?P<digest>sha256:[0-9a-f]{64})$")
+MAX_HANDOFF_REVISION = (1 << 53) - 1
 
 DELEGATED_BASELINE = "_bmad-output/planning-artifacts/delegated-decision-baseline-2026-07-17.md"
 BASELINES = {
@@ -109,6 +111,14 @@ def _media_type(path: Path) -> str:
     return "application/octet-stream"
 
 
+def _load_dcc_target_signing_key(path: Path, source_root: Path) -> bytes:
+    return load_protected_key(
+        path,
+        error_code="RELEASE_ASSEMBLY_DCC_TARGET_SIGNING_KEY_INVALID",
+        forbidden_root=source_root,
+    )
+
+
 def _reference(
     identity: str,
     version: str,
@@ -174,6 +184,10 @@ def assemble_release_manifest_input(
     public_integration_target_evidence_path: Path | None = None,
     data_catalog_target_evidence_uri: str | None = None,
     data_catalog_target_evidence_path: Path | None = None,
+    data_catalog_target_trusted_signing_key_path: Path | None = None,
+    data_catalog_target_minimum_handoff_revision: int | None = None,
+    data_catalog_target_expected_authority: str | None = None,
+    data_catalog_target_expected_environment: str | None = None,
 ) -> dict[str, Any]:
     source_root = source_root.resolve()
     build_path = artifact_root / "build-manifest.json"
@@ -338,16 +352,29 @@ def assemble_release_manifest_input(
         if (
             data_catalog_target_evidence_uri is None
             or data_catalog_target_evidence_path is None
+            or data_catalog_target_trusted_signing_key_path is None
+            or data_catalog_target_minimum_handoff_revision is None
+            or data_catalog_target_expected_authority is None
+            or data_catalog_target_expected_environment is None
         ):
             raise ValueError("RELEASE_ASSEMBLY_DCC_TARGET_EVIDENCE_REQUIRED")
         dcc_evidence_path = data_catalog_target_evidence_path.resolve()
         if dcc_evidence_path == source_root or source_root in dcc_evidence_path.parents:
             raise ValueError("RELEASE_ASSEMBLY_DCC_TARGET_EVIDENCE_MUST_BE_TREE_OUTSIDE")
+        dcc_signing_key = _load_dcc_target_signing_key(
+            data_catalog_target_trusted_signing_key_path,
+            source_root,
+        )
         target_report = load_json(dcc_evidence_path)
         canonical_report = canonical_bytes(target_report)
         if dcc_evidence_path.read_bytes() not in {
             canonical_report, canonical_report + b"\n",
-        } or dcc_evidence.validate_report(target_report, source_root):
+        } or dcc_evidence.validate_report(
+            target_report,
+            source_root,
+            trusted_signing_key=dcc_signing_key,
+            minimum_handoff_revision=data_catalog_target_minimum_handoff_revision,
+        ):
             raise ValueError("RELEASE_ASSEMBLY_DCC_TARGET_EVIDENCE_INVALID")
         if (
             target_report.get("candidateCommit") != build_manifest.get("sourceCommit")
@@ -355,6 +382,21 @@ def assemble_release_manifest_input(
             or target_report.get("sourceCount") != 17
             or target_report.get("result") != "pass"
             or target_report.get("runtimeEvidenceClaim") != "target-verified"
+            or target_report.get("authority")
+            != data_catalog_target_expected_authority
+            or target_report.get("environment")
+            != data_catalog_target_expected_environment
+            or re.fullmatch(
+                r"[a-z][a-z0-9.-]{2,127}",
+                data_catalog_target_expected_authority,
+            ) is None
+            or data_catalog_target_expected_environment not in {"test", "stage", "prod"}
+            or isinstance(data_catalog_target_minimum_handoff_revision, bool)
+            or not isinstance(data_catalog_target_minimum_handoff_revision, int)
+            or data_catalog_target_minimum_handoff_revision < 1
+            or data_catalog_target_minimum_handoff_revision > MAX_HANDOFF_REVISION
+            or target_report.get("handoffRevision", 0)
+            < data_catalog_target_minimum_handoff_revision
         ):
             raise ValueError("RELEASE_ASSEMBLY_DCC_TARGET_EVIDENCE_INVALID")
         candidate_binding = canonical_sha256({
@@ -379,6 +421,10 @@ def assemble_release_manifest_input(
                 source_root / "contracts/data-catalog/qg-1.0.0.json"
             ),
             "sourceCount": 17,
+            "handoffRevision": target_report["handoffRevision"],
+            "handoffDigest": target_report["handoffDigest"],
+            "authority": target_report["authority"],
+            "environment": target_report["environment"],
         })
         evidence.append(dcc_reference)
     frontend_kinds = {"formal-web-report", "visual-baseline", "ui-token-manifest", "brand-asset-manifest"}

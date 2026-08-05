@@ -50,6 +50,10 @@
         "catalogSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "qualityGateSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "sourceCount": {"const": 17},
+        "handoffRevision": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "handoffDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "authority": {"type": "string", "pattern": "^[a-z][a-z0-9.-]{2,127}$"},
+        "environment": {"enum": ["test", "stage", "prod"]},
         "dependsOn": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
       }
     },

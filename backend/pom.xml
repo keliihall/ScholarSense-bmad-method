@@ -22,6 +22,8 @@
     <maven.compiler.release>25</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.outputTimestamp>2026-07-19T00:00:00Z</project.build.outputTimestamp>
+    <catalog.build.commit>0000000000000000000000000000000000000000</catalog.build.commit>
+    <catalog.build.tree>0000000000000000000000000000000000000000</catalog.build.tree>
   </properties>
 
   <dependencies>
@@ -68,6 +70,22 @@
 
   <build>
     <finalName>scholarsense-backend</finalName>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <excludes>
+          <exclude>ingestion-quality-runtime/catalog-build-subject.properties</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>ingestion-quality-runtime/catalog-build-subject.properties</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>

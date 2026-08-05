@@ -24,7 +24,7 @@
     "reconciliation": {"type": "object"},
     "backfill": {"type": "object"},
     "contractTests": {"type": "array", "minItems": 1, "items": {"type": "string"}},
-    "evidenceUri": {"type": "string", "minLength": 8},
+    "evidenceUri": {"type": "string", "pattern": "^(?:evidence://pending/SRC-P[01]-[A-Z-]+-[0-9]{3}|(?:sha256|evidence\\+sha256)://[0-9a-f]{64}(?:#source=SRC-P[01]-[A-Z-]+-[0-9]{3})?|oci://ghcr\\.io/[a-z0-9_.-]+/[a-z0-9_./-]+@sha256:[0-9a-f]{64}|s3-version://[a-z0-9][a-z0-9.-]{1,62}/[^?#]+\\?versionId=[A-Za-z0-9._~-]{8,})$"},
     "runtimeEvidenceClaim": {"enum": ["none", "target-verified"]},
     "consumerMode": {"enum": ["rule-dependency", "purpose-isolated"]},
     "status": {"enum": ["approved-contract", "retired"]}

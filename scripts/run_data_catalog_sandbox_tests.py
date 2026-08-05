@@ -30,6 +30,13 @@ SLICE_SOURCES = {
     "SRC-P0-DEVICE-001": "src-p0-device-001.schema.json",
 }
 FORBIDDEN_TIMETABLE = {"grade", "ranking", "thesis", "fullAcademicRecord"}
+EVENT_SOURCES = {"SRC-P0-CAMPUS-ACCESS-001", "SRC-P0-DORM-ACCESS-001"}
+INTERVAL_SOURCES = {
+    "SRC-P0-ACCOMMODATION-001",
+    "SRC-P0-LEAVE-001",
+    "SRC-P1-OFFCAMPUS-001",
+    "SRC-P0-DEVICE-001",
+}
 
 
 def _parse(value: str) -> datetime:
@@ -69,8 +76,20 @@ def validate_calendar(records: list[dict[str, Any]], anchor: date) -> list[str]:
     allowed = {"workday", "weekend", "statutory-holiday", "makeup-workday", "school-holiday", "emergency-closure"}
     if any(item.get("dayType") not in allowed for item in records):
         errors.append("DCC_CALENDAR_DAY_TYPE_INVALID")
+    timezone_shanghai = ZoneInfo("Asia/Shanghai")
     for item in records:
-        if _parse(item["dayEndsAt"]) - _parse(item["dayStartsAt"]) != timedelta(days=1):
+        local_date = date.fromisoformat(str(item["localDate"]))
+        expected_start = datetime.combine(
+            local_date, time.min, timezone_shanghai
+        ).astimezone(timezone.utc)
+        expected_end = datetime.combine(
+            local_date + timedelta(days=1), time.min, timezone_shanghai
+        ).astimezone(timezone.utc)
+        if (
+            item.get("businessTimezone") != "Asia/Shanghai"
+            or _parse(item["dayStartsAt"]) != expected_start
+            or _parse(item["dayEndsAt"]) != expected_end
+        ):
             errors.append("DCC_CALENDAR_INTERVAL_INVALID")
             break
     return sorted(set(errors))
@@ -118,9 +137,116 @@ def _semantic_record_issues(source_id: str, record: dict[str, Any]) -> list[str]
         if _parse(record["occurredAt"]) > _parse(record["receivedAt"]):
             errors.append("DCC_EVENT_TIME_ORDER_INVALID")
         state = record.get("eventState", "effective")
-        if (state == "corrected") != bool(record.get("correctsEventId")):
+        if (state in {"corrected", "revoked"}) != bool(record.get("correctsEventId")):
             errors.append("DCC_CORRECTION_CHAIN_INVALID")
     return errors
+
+
+def validate_reconcile_sequence(
+    source_id: str, sequence: list[dict[str, Any]]
+) -> list[str]:
+    """Execute correction/revocation/order/watermark invariants over record history."""
+    if not sequence:
+        return ["DCC_RECONCILE_SEQUENCE_EMPTY"]
+    errors: list[str] = []
+    versions = [item.get("sourceVersion") for item in sequence]
+    if (
+        any(not isinstance(value, int) or value < 1 for value in versions)
+        or versions[0] != 1
+        or any(current <= prior for prior, current in zip(versions, versions[1:]))
+    ):
+        errors.append("DCC_SOURCE_VERSION_REGRESSION")
+    if source_id in EVENT_SOURCES:
+        event_ids = [item.get("eventId") for item in sequence]
+        if len(event_ids) != len(set(event_ids)):
+            errors.append("DCC_DUPLICATE_BUSINESS_KEY")
+        watermarks = [item.get("watermark") for item in sequence]
+        if (
+            any(not isinstance(value, str) or not value for value in watermarks)
+            or any(current <= prior for prior, current in zip(watermarks, watermarks[1:]))
+        ):
+            errors.append("DCC_WATERMARK_REGRESSION")
+        received = [_parse(str(item["receivedAt"])) for item in sequence]
+        if any(current < prior for prior, current in zip(received, received[1:])):
+            errors.append("DCC_RECEIPT_ORDER_INVALID")
+        for prior, current in zip(sequence, sequence[1:]):
+            if (
+                current.get("eventState") not in {"corrected", "revoked"}
+                or current.get("correctsEventId") != prior.get("eventId")
+            ):
+                errors.append("DCC_CORRECTION_CHAIN_INVALID")
+    elif source_id in INTERVAL_SOURCES:
+        for prior, current in zip(sequence, sequence[1:]):
+            if current.get("supersedesVersion") != prior.get("sourceVersion"):
+                errors.append("DCC_CORRECTION_CHAIN_INVALID")
+    else:
+        errors.append("DCC_RECONCILE_SOURCE_UNSUPPORTED")
+    for record in sequence:
+        errors.extend(_semantic_record_issues(source_id, record))
+    return sorted(set(errors))
+
+
+def _utc_value(value: datetime) -> str:
+    return value.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace(
+        "+00:00", "Z"
+    )
+
+
+def _exercise_reconcile_sequence(
+    source_id: str, record: dict[str, Any]
+) -> list[str]:
+    issues: list[str] = []
+    if source_id in EVENT_SOURCES:
+        corrected = dict(
+            record,
+            eventId=str(record["eventId"]) + ".correction",
+            eventState="corrected",
+            correctsEventId=record["eventId"],
+            occurredAt=_utc_value(_parse(record["occurredAt"]) - timedelta(seconds=1)),
+            receivedAt=_utc_value(_parse(record["receivedAt"]) + timedelta(seconds=1)),
+            sourceVersion=2,
+            watermark=str(record["watermark"]) + ".002",
+        )
+        revoked = dict(
+            corrected,
+            eventId=str(record["eventId"]) + ".revocation",
+            eventState="revoked",
+            correctsEventId=corrected["eventId"],
+            receivedAt=_utc_value(_parse(corrected["receivedAt"]) + timedelta(seconds=1)),
+            sourceVersion=3,
+            watermark=str(record["watermark"]) + ".003",
+        )
+        if validate_reconcile_sequence(source_id, [record, corrected, revoked]):
+            issues.append("DCC_RECONCILE_SEQUENCE_INVALID")
+        if "DCC_CORRECTION_CHAIN_INVALID" not in validate_reconcile_sequence(
+            source_id, [record, dict(corrected, correctsEventId=None)]
+        ):
+            issues.append("DCC_CORRECTION_NEGATIVE_NOT_REJECTED")
+        if "DCC_WATERMARK_REGRESSION" not in validate_reconcile_sequence(
+            source_id, [record, dict(corrected, watermark="wm.000")]
+        ):
+            issues.append("DCC_WATERMARK_NEGATIVE_NOT_REJECTED")
+        if "DCC_SOURCE_VERSION_REGRESSION" not in validate_reconcile_sequence(
+            source_id, [record, dict(corrected, sourceVersion=1)]
+        ):
+            issues.append("DCC_VERSION_NEGATIVE_NOT_REJECTED")
+    else:
+        corrected = dict(record, sourceVersion=2, supersedesVersion=1)
+        if source_id in {"SRC-P0-LEAVE-001", "SRC-P1-OFFCAMPUS-001"}:
+            corrected["approvalState"] = "revoked"
+        elif source_id == "SRC-P0-DEVICE-001":
+            corrected["state"] = "maintenance"
+        if validate_reconcile_sequence(source_id, [record, corrected]):
+            issues.append("DCC_RECONCILE_SEQUENCE_INVALID")
+        if "DCC_CORRECTION_CHAIN_INVALID" not in validate_reconcile_sequence(
+            source_id, [record, dict(corrected, supersedesVersion=None)]
+        ):
+            issues.append("DCC_CORRECTION_NEGATIVE_NOT_REJECTED")
+        if "DCC_SOURCE_VERSION_REGRESSION" not in validate_reconcile_sequence(
+            source_id, [record, dict(corrected, sourceVersion=1)]
+        ):
+            issues.append("DCC_VERSION_NEGATIVE_NOT_REJECTED")
+    return sorted(set(issues))
 
 
 def execute(project_root: Path) -> tuple[list[str], dict[str, Any]]:
@@ -184,8 +310,13 @@ def execute(project_root: Path) -> tuple[list[str], dict[str, Any]]:
         schema = load_json(contract / "sources" / SLICE_SOURCES[source_id])
         record_errors = schema_issues(record, schema) + _semantic_record_issues(source_id, record)
         scenarios[source_id].append({"id": "minimal-record-and-reconcile", "result": "pass" if not record_errors else "fail"})
-        scenarios[source_id].append({"id": "correction-revocation-out-of-order-watermark", "result": "pass"})
+        sequence_errors = _exercise_reconcile_sequence(source_id, record)
+        scenarios[source_id].append({
+            "id": "correction-revocation-out-of-order-watermark",
+            "result": "pass" if not sequence_errors else "fail",
+        })
         issues.extend("DCC_MINIMAL_SLICE_INVALID" for _ in record_errors)
+        issues.extend(sequence_errors)
 
     for source_id in sorted(EXPECTED_SOURCES):
         if any(item["result"] != "pass" for item in scenarios[source_id]):

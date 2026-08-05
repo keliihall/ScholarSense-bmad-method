@@ -14,7 +14,18 @@ echo "[verify-core] verify the complete Maven resolution lock before lifecycle e
 "$TOOLCHAIN" python3 -B "$ROOT_DIR/scripts/check_backend_lock.py" "$ROOT_DIR"
 
 echo "[verify-core] clean backend build and contract tests"
-"$TOOLCHAIN" "$ROOT_DIR/backend/mvnw" -f "$ROOT_DIR/backend/pom.xml" clean verify
+CATALOG_BUILD_COMMIT="$(git -C "$ROOT_DIR" rev-parse HEAD)"
+CATALOG_BUILD_TREE="$(git -C "$ROOT_DIR" rev-parse 'HEAD^{tree}')"
+"$TOOLCHAIN" "$ROOT_DIR/backend/mvnw" -f "$ROOT_DIR/backend/pom.xml" \
+  -Dcatalog.build.commit="$CATALOG_BUILD_COMMIT" \
+  -Dcatalog.build.tree="$CATALOG_BUILD_TREE" clean verify
+
+echo "[verify-core] packaged data-catalog build subject is bound to this revision"
+"$TOOLCHAIN" python3 -B -c \
+  'import pathlib,sys,zipfile; expected=f"candidateCommit={sys.argv[3]}\ncandidateTree={sys.argv[4]}\n"; classes=pathlib.Path(sys.argv[1]).read_text(); jar=zipfile.ZipFile(sys.argv[2]).read("BOOT-INF/classes/ingestion-quality-runtime/catalog-build-subject.properties").decode(); assert classes == expected and jar == expected, "catalog build subject packaging mismatch"' \
+  "$ROOT_DIR/backend/target/classes/ingestion-quality-runtime/catalog-build-subject.properties" \
+  "$ROOT_DIR/backend/target/scholarsense-backend.jar" \
+  "$CATALOG_BUILD_COMMIT" "$CATALOG_BUILD_TREE"
 
 echo "[verify-core] production backend plaintext-canary scan"
 "$TOOLCHAIN" python3 -B "$ROOT_DIR/scripts/scan_privacy_canaries.py" \

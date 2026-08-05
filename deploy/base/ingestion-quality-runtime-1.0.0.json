@@ -1,0 +1,134 @@
+{
+  "version": "INGESTION-QUALITY-RUNTIME-1.0.0",
+  "status": "deployment-input-required",
+  "sameArtifactRoles": {
+    "web-api": {
+      "capabilities": ["catalog-api", "source-dependency-owner-evidence"],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "requiredEnvironment": [
+        "SPRING_DATASOURCE_URL",
+        "SPRING_DATASOURCE_USERNAME",
+        "SPRING_DATASOURCE_PASSWORD",
+        "SCHOLARSENSE_INGESTION_QUALITY_OWNER_BINDINGS_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_OWNER_BINDINGS_DIGEST",
+        "SCHOLARSENSE_INGESTION_QUALITY_CONTRACT_ROOT",
+        "SCHOLARSENSE_INGESTION_QUALITY_TARGET_REPORT_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_TARGET_REPORT_URI",
+        "SCHOLARSENSE_INGESTION_QUALITY_TARGET_AUTHORITY",
+        "SCHOLARSENSE_INGESTION_QUALITY_TARGET_ENVIRONMENT",
+        "SCHOLARSENSE_INGESTION_QUALITY_TARGET_SIGNING_KEY_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_MINIMUM_HANDOFF_REVISION",
+        "DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION",
+        "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_PATH",
+        "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_VERSION"
+      ]
+    },
+    "worker": {
+      "capabilities": ["ingestion-quality-audit-relay"],
+      "requiredEnvironment": [
+        "SPRING_DATASOURCE_URL",
+        "SPRING_DATASOURCE_USERNAME",
+        "SPRING_DATASOURCE_PASSWORD"
+      ]
+    }
+  },
+  "databaseStartupGate": {
+    "productionJdbcParameters": {
+      "sslmode": "verify-full",
+      "channelBinding": "require"
+    },
+    "serverVersionQuery": "select current_setting('server_version_num')",
+    "requiredServerVersionNum": "180004",
+    "identityQuery": "select current_user, session_user",
+    "sessionIdentityInvariant": "session_user=current_user=SPRING_DATASOURCE_USERNAME",
+    "expectedIdentitySource": "SPRING_DATASOURCE_USERNAME",
+    "loginRoleAttributes": {
+      "LOGIN": true,
+      "INHERIT": true,
+      "SUPERUSER": false,
+      "CREATEROLE": false,
+      "CREATEDB": false,
+      "REPLICATION": false,
+      "BYPASSRLS": false
+    },
+    "groupRoleAttributes": {
+      "LOGIN": false,
+      "SUPERUSER": false,
+      "CREATEROLE": false,
+      "CREATEDB": false,
+      "REPLICATION": false,
+      "BYPASSRLS": false
+    },
+    "roleActivation": "inherited-membership",
+    "setRoleAllowed": false,
+    "membershipGrantOptions": {"inherit": true, "set": false},
+    "distinctWorkloadLogins": ["web-api", "worker"],
+    "workloadRoleBindings": {
+      "web-api": {
+        "requiredGroupRole": "scholarsense_ingestion_quality_online",
+        "forbiddenGroupRoles": ["scholarsense_ingestion_quality_relay"]
+      },
+      "worker": {
+        "requiredGroupRole": "scholarsense_ingestion_quality_relay",
+        "forbiddenGroupRoles": ["scholarsense_ingestion_quality_online"]
+      }
+    },
+    "effectivePrivilegeVerification": "exact-table-and-column-matrix",
+    "failureMode": "startup-fail-closed"
+  },
+  "ownerBindings": {
+    "version": "INGESTION-QUALITY-OWNER-BINDINGS-1.0.0",
+    "schema": "ingestion-quality-owner-bindings.schema.json",
+    "location": "absolute-regular-non-symlink-mounted-file",
+    "digest": "sha256-lowercase",
+    "objectClasses": ["SOURCE", "DEPENDENCY"],
+    "bindingAnchors": ["ownerAccountIds", "ownerOrganizationIds"],
+    "missingDuplicateOrUnknown": "authorization-dependency-unavailable"
+  },
+  "targetAuthoritySigningKey": {
+    "environment": "SCHOLARSENSE_INGESTION_QUALITY_TARGET_SIGNING_KEY_PATH",
+    "location": "absolute-protected-regular-non-symlink-mounted-file",
+    "minimumBytes": 32,
+    "algorithm": "hmac-sha256",
+    "signedValue": "exact-source-observation",
+    "failureMode": "startup-fail-closed",
+    "committedMaterialAllowed": false
+  },
+  "identityAuditTokenization": {
+    "keyPathEnvironment": "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_PATH",
+    "keyVersionEnvironment": "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_VERSION",
+    "location": "absolute-protected-regular-non-symlink-mounted-file",
+    "minimumBytes": 32,
+    "maximumBytes": 64,
+    "algorithm": "hmac-sha256",
+    "keyVersionPattern": "^k[0-9]+$",
+    "failureMode": "startup-fail-closed",
+    "committedMaterialAllowed": false
+  },
+  "targetHandoffAntiRollback": {
+    "minimumRevisionEnvironment": "SCHOLARSENSE_INGESTION_QUALITY_MINIMUM_HANDOFF_REVISION",
+    "releaseMinimumRevisionEnvironment": "DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION",
+    "ownership": "deployment",
+    "type": "integer",
+    "minimum": 1,
+    "maximum": 9007199254740991,
+    "inputConstraints": {
+      "SCHOLARSENSE_INGESTION_QUALITY_MINIMUM_HANDOFF_REVISION": {
+        "minimum": 1,
+        "maximum": 9007199254740991
+      },
+      "DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION": {
+        "minimum": 1,
+        "maximum": 9007199254740991
+      }
+    },
+    "updateInvariant": "monotonic-non-decreasing",
+    "crossSurfaceInvariant": "release-and-runtime-use-same-floor",
+    "belowFloor": "startup-fail-closed"
+  },
+  "secrets": {
+    "committedCredentialsAllowed": false,
+    "committedSigningKeysAllowed": false,
+    "jdbcCredentialsInUrlAllowed": false
+  }
+}

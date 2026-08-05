@@ -1,0 +1,26 @@
+{
+  "fixtureVersion": "DCC-COMPAT-1.1.0",
+  "fromVersion": "TIMETABLE-SLICE-1.0.0",
+  "toVersion": "TIMETABLE-SLICE-1.1.0",
+  "change": {"kind": "add-optional", "field": "activityCategory"},
+  "beforeSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["activityStartsAt", "activityEndsAt"],
+    "properties": {
+      "activityStartsAt": {"type": "string", "format": "date-time"},
+      "activityEndsAt": {"type": "string", "format": "date-time"}
+    }
+  },
+  "afterSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["activityStartsAt", "activityEndsAt"],
+    "properties": {
+      "activityStartsAt": {"type": "string", "format": "date-time"},
+      "activityEndsAt": {"type": "string", "format": "date-time"},
+      "activityCategory": {"type": "string"}
+    }
+  },
+  "expectedCode": "DCC_COMPATIBLE"
+}

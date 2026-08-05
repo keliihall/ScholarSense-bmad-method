@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/data-catalog/data-catalog-contract-lock-1.0.1.schema.json",
+  "title": "DataCatalogContractLockPatch",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lockVersion", "catalogVersion", "qualityGateVersion", "files"],
+  "properties": {
+    "lockVersion": {"const": "DCC-LOCK-1.0.1"},
+    "catalogVersion": {"const": "DCC-1.0.0"},
+    "qualityGateVersion": {"const": "QG-1.0.0"},
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "canonicalDigest"],
+        "properties": {
+          "path": {"type": "string"},
+          "canonicalDigest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

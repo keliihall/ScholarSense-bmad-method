@@ -46,6 +46,22 @@ class DataSourceCatalogTest {
                 RELEASE_ID, "fixture://mutable", NOW));
     }
 
+    @Test
+    void aggregateVersionUsesTheCrossLanguageSafeIntegerBoundary() {
+        DataSourceCatalog atMaximum = DataSourceCatalog.restore(
+                CATALOG_ID, null, "DCC-1.0.0", draft().sources(), draft().dependencies(),
+                "sha256:" + "a".repeat(64), null, CatalogStatus.DRAFT,
+                DataSourceCatalog.MAX_VERSION, List.of(), NOW, NOW, null);
+
+        assertEquals(DataSourceCatalog.MAX_VERSION, atMaximum.aggregateVersion());
+        assertThrows(IngestionQualityException.class,
+                () -> atMaximum.validated(List.of(), NOW.plusSeconds(1)));
+        assertThrows(IllegalArgumentException.class, () -> DataSourceCatalog.restore(
+                CATALOG_ID, null, "DCC-1.0.0", draft().sources(), draft().dependencies(),
+                "sha256:" + "a".repeat(64), null, CatalogStatus.DRAFT,
+                DataSourceCatalog.MAX_VERSION + 1, List.of(), NOW, NOW, null));
+    }
+
     private DataSourceCatalog draft() {
         return DataSourceCatalog.draft(
                 CATALOG_ID,

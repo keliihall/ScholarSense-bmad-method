@@ -33,6 +33,18 @@ HEX64 = re.compile(r"^[0-9a-f]{64}$")
 COMMIT_OID = re.compile(r"^[0-9a-f]{40}$")
 REPOSITORY = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 SIGNER_WORKFLOW = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/\.github/workflows/[A-Za-z0-9_.-]+\.ya?ml$")
+RELEASE_MANIFEST_VERSIONS = {
+    "RELEASE-MANIFEST-1.0.0": "1",
+    "RELEASE-MANIFEST-2.0.0": "2",
+    "RELEASE-MANIFEST-3.0.0": "3",
+}
+PIC_TARGET_EVIDENCE_FILENAME = (
+    "public-integration-target-conformance-evidence-1.0.0.json"
+)
+DCC_TARGET_EVIDENCE_FILENAME = (
+    "data-catalog-target-conformance-evidence-1.0.0.json"
+)
+MAX_HANDOFF_REVISION = (1 << 53) - 1
 
 
 def immutable_oci_uri_issues(uri: Any) -> list[str]:
@@ -165,17 +177,115 @@ def pulled_release_material_issues(
     signature_path: Path,
     index_path: Path,
     uris: dict[str, str],
+    *,
+    public_integration_target_root: Path | None = None,
+    data_catalog_target_root: Path | None = None,
+    data_catalog_target_trusted_signing_key_path: Path | None = None,
+    data_catalog_target_minimum_handoff_revision: int | None = None,
+    data_catalog_target_expected_authority: str | None = None,
+    data_catalog_target_expected_environment: str | None = None,
 ) -> list[str]:
     try:
         from assembly import assemble_evidence_index_input, assemble_release_manifest_input
         from manifests import create_evidence_index, create_release_manifest
 
-        if set(uris) != {"artifact", "sbom", "attestation", "web", "manifest", "signature"}:
-            return ["VERIFIER_RELEASE_MATERIAL_URI_SET_INVALID"]
         manifest = load_json(manifest_path)
         index = load_json(index_path)
         if not isinstance(manifest, dict) or not isinstance(index, dict):
             return ["VERIFIER_RELEASE_MATERIAL_DOCUMENT_INVALID"]
+        manifest_version = RELEASE_MANIFEST_VERSIONS.get(manifest.get("version"))
+        if manifest_version is None:
+            return ["VERIFIER_RELEASE_MANIFEST_VERSION_INVALID"]
+        expected_uris = {
+            "artifact", "sbom", "attestation", "web", "manifest", "signature"
+        }
+        if manifest_version in {"2", "3"}:
+            expected_uris.add("public-integration-target")
+        if manifest_version == "3":
+            expected_uris.add("data-catalog-target")
+        if set(uris) != expected_uris:
+            return ["VERIFIER_RELEASE_MATERIAL_URI_SET_INVALID"]
+
+        target_arguments: dict[str, Any] = {"manifest_version": manifest_version}
+        if manifest_version == "1":
+            if any(
+                value is not None
+                for value in (
+                    public_integration_target_root,
+                    data_catalog_target_root,
+                    data_catalog_target_trusted_signing_key_path,
+                    data_catalog_target_minimum_handoff_revision,
+                    data_catalog_target_expected_authority,
+                    data_catalog_target_expected_environment,
+                )
+            ):
+                return ["VERIFIER_RELEASE_MATERIAL_TARGET_SET_INVALID"]
+        elif manifest_version == "2":
+            if (
+                public_integration_target_root is None
+                or data_catalog_target_root is not None
+                or data_catalog_target_trusted_signing_key_path is not None
+                or data_catalog_target_minimum_handoff_revision is not None
+                or data_catalog_target_expected_authority is not None
+                or data_catalog_target_expected_environment is not None
+            ):
+                return ["VERIFIER_RELEASE_MATERIAL_TARGET_SET_INVALID"]
+            target_arguments.update(
+                {
+                    "public_integration_target_evidence_uri": uris[
+                        "public-integration-target"
+                    ],
+                    "public_integration_target_evidence_path": (
+                        public_integration_target_root / PIC_TARGET_EVIDENCE_FILENAME
+                    ),
+                }
+            )
+        else:
+            if (
+                public_integration_target_root is None
+                or data_catalog_target_root is None
+                or data_catalog_target_trusted_signing_key_path is None
+                or isinstance(data_catalog_target_minimum_handoff_revision, bool)
+                or not isinstance(
+                    data_catalog_target_minimum_handoff_revision, int
+                )
+                or not 1
+                <= data_catalog_target_minimum_handoff_revision
+                <= MAX_HANDOFF_REVISION
+                or not isinstance(data_catalog_target_expected_authority, str)
+                or not data_catalog_target_expected_authority
+                or data_catalog_target_expected_environment
+                not in {"test", "stage", "prod"}
+            ):
+                return ["VERIFIER_RELEASE_MATERIAL_TARGET_SET_INVALID"]
+            target_arguments.update(
+                {
+                    "public_integration_target_evidence_uri": uris[
+                        "public-integration-target"
+                    ],
+                    "public_integration_target_evidence_path": (
+                        public_integration_target_root / PIC_TARGET_EVIDENCE_FILENAME
+                    ),
+                    "data_catalog_target_evidence_uri": uris[
+                        "data-catalog-target"
+                    ],
+                    "data_catalog_target_evidence_path": (
+                        data_catalog_target_root / DCC_TARGET_EVIDENCE_FILENAME
+                    ),
+                    "data_catalog_target_trusted_signing_key_path": (
+                        data_catalog_target_trusted_signing_key_path
+                    ),
+                    "data_catalog_target_minimum_handoff_revision": (
+                        data_catalog_target_minimum_handoff_revision
+                    ),
+                    "data_catalog_target_expected_authority": (
+                        data_catalog_target_expected_authority
+                    ),
+                    "data_catalog_target_expected_environment": (
+                        data_catalog_target_expected_environment
+                    ),
+                }
+            )
         payload = assemble_release_manifest_input(
             source_root,
             str(manifest.get("releaseVersion", "")),
@@ -188,8 +298,11 @@ def pulled_release_material_issues(
             uris["web"],
             web_root,
             str(manifest.get("frozenAt", "")),
+            **target_arguments,
         )
-        expected_manifest = create_release_manifest(payload)
+        expected_manifest = create_release_manifest(
+            payload, manifest_version=manifest_version
+        )
         if manifest_path.read_bytes() != canonical_bytes(expected_manifest):
             return ["VERIFIER_RELEASE_MANIFEST_MATERIAL_MISMATCH"]
         index_input = assemble_evidence_index_input(
@@ -306,15 +419,44 @@ def main(argv: list[str]) -> int:
             issues = cryptographically_verify_github_attestations(
                 Path(argv[2]), argv[3], argv[4], argv[5], argv[6], set(argv[7:])
             )
-        elif len(argv) == 16 and argv[1] == "pulled-material":
-            issues = pulled_release_material_issues(
-                Path(argv[2]), Path(argv[3]), Path(argv[4]), Path(argv[5]), Path(argv[6]),
-                Path(argv[7]), Path(argv[8]), Path(argv[9]),
-                {
-                    "artifact": argv[10], "sbom": argv[11], "attestation": argv[12],
-                    "web": argv[13], "manifest": argv[14], "signature": argv[15],
-                },
-            )
+        elif len(argv) in {16, 18, 24} and argv[1] == "pulled-material":
+            uris = {
+                "artifact": argv[10], "sbom": argv[11], "attestation": argv[12],
+                "web": argv[13], "manifest": argv[14], "signature": argv[15],
+            }
+            target_arguments: dict[str, Any] = {}
+            if len(argv) >= 18:
+                target_arguments["public_integration_target_root"] = Path(argv[16])
+                uris["public-integration-target"] = argv[17]
+            if len(argv) == 24:
+                if not re.fullmatch(r"[1-9][0-9]*", argv[21]):
+                    issues = ["VERIFIER_RELEASE_MATERIAL_TARGET_SET_INVALID"]
+                else:
+                    target_arguments.update(
+                        {
+                            "data_catalog_target_root": Path(argv[18]),
+                            "data_catalog_target_trusted_signing_key_path": Path(
+                                argv[20]
+                            ),
+                            "data_catalog_target_minimum_handoff_revision": int(
+                                argv[21]
+                            ),
+                            "data_catalog_target_expected_authority": argv[22],
+                            "data_catalog_target_expected_environment": argv[23],
+                        }
+                    )
+                    uris["data-catalog-target"] = argv[19]
+                    issues = pulled_release_material_issues(
+                        Path(argv[2]), Path(argv[3]), Path(argv[4]), Path(argv[5]),
+                        Path(argv[6]), Path(argv[7]), Path(argv[8]), Path(argv[9]),
+                        uris, **target_arguments,
+                    )
+            else:
+                issues = pulled_release_material_issues(
+                    Path(argv[2]), Path(argv[3]), Path(argv[4]), Path(argv[5]),
+                    Path(argv[6]), Path(argv[7]), Path(argv[8]), Path(argv[9]),
+                    uris, **target_arguments,
+                )
         elif len(argv) == 5 and argv[1] == "extract-source":
             extract_source_archive(Path(argv[2]), Path(argv[3]), argv[4])
             issues = []
