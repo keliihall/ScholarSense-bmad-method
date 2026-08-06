@@ -11,6 +11,16 @@ MINIMUM_KEY_BYTES = 32
 MAXIMUM_KEY_BYTES = 4 * 1024
 
 
+def _protected_directory(metadata: os.stat_result) -> bool:
+    permissions = stat.S_IMODE(metadata.st_mode)
+    if not permissions & (stat.S_IWGRP | stat.S_IWOTH):
+        return True
+    return bool(permissions & stat.S_ISVTX) and metadata.st_uid in {
+        0,
+        os.geteuid(),
+    }
+
+
 def _open_without_link_traversal(path: Path, error_code: str) -> int:
     if os.name != "posix" or not hasattr(os, "O_NOFOLLOW"):
         raise ValueError(error_code)
@@ -37,7 +47,7 @@ def _open_without_link_traversal(path: Path, error_code: str) -> int:
             metadata = os.fstat(directory)
             if (
                 not stat.S_ISDIR(metadata.st_mode)
-                or stat.S_IMODE(metadata.st_mode) & (stat.S_IWGRP | stat.S_IWOTH)
+                or not _protected_directory(metadata)
             ):
                 raise ValueError(error_code)
         return os.open(

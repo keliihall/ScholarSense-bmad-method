@@ -61,7 +61,9 @@ class DataCatalogTargetTest(unittest.TestCase):
                 trusted_signing_key=KEY)
 
     def test_target_runner_rejects_unprotected_or_source_tree_signing_keys(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
+        # Linux CI places tempfile roots below root-owned sticky /tmp. That
+        # ancestor is safe while a writable non-sticky ancestor is not.
+        with tempfile.TemporaryDirectory(dir="/tmp") as directory:
             root = Path(directory).resolve()
             source = root / "source"
             source.mkdir()
@@ -72,6 +74,20 @@ class DataCatalogTargetTest(unittest.TestCase):
                 KEY,
                 target_runner.load_protected_key(
                     protected,
+                    error_code="DCC_TARGET_SIGNING_KEY_INVALID",
+                    forbidden_root=source,
+                ),
+            )
+            sticky_parent = root / "sticky"
+            sticky_parent.mkdir()
+            sticky_parent.chmod(0o1777)
+            sticky_protected = sticky_parent / "protected.key"
+            sticky_protected.write_bytes(KEY)
+            sticky_protected.chmod(0o600)
+            self.assertEqual(
+                KEY,
+                target_runner.load_protected_key(
+                    sticky_protected,
                     error_code="DCC_TARGET_SIGNING_KEY_INVALID",
                     forbidden_root=source,
                 ),
@@ -94,10 +110,16 @@ class DataCatalogTargetTest(unittest.TestCase):
             linked_parent = root / "linked-parent"
             os.symlink(root, linked_parent)
             ancestor_symlink = linked_parent / protected.name
+            writable_parent = root / "writable-parent"
+            writable_parent.mkdir()
+            writable_parent.chmod(0o777)
+            writable_ancestor = writable_parent / "protected.key"
+            writable_ancestor.write_bytes(KEY)
+            writable_ancestor.chmod(0o600)
 
             for candidate in (
                 Path("relative.key"), exposed, short, oversized, in_tree, symlink,
-                ancestor_symlink,
+                ancestor_symlink, writable_ancestor,
             ):
                 with self.subTest(candidate=candidate.name), self.assertRaisesRegex(
                     ValueError, "DCC_TARGET_SIGNING_KEY_INVALID"
