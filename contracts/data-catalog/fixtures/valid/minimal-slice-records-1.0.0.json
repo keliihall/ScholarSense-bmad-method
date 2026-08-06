@@ -1,0 +1,11 @@
+{
+  "fixtureVersion": "DCC-MINIMAL-SLICE-RECORDS-1.0.0",
+  "records": {
+    "SRC-P0-ACCOMMODATION-001": {"studentRef":"subj.synthetic.001","accommodationType":"on-campus","campusCode":"CAMPUS-01","buildingCode":"BUILDING-01","effectiveFrom":"2026-08-01T00:00:00Z","effectiveTo":null,"sourceVersion":1,"sourceUpdatedAt":"2026-08-04T00:00:00Z","supersedesVersion":null},
+    "SRC-P0-LEAVE-001": {"filingId":"filing.synthetic.001","studentRef":"subj.synthetic.001","filingType":"internship","approvalState":"approved","effectiveFrom":"2026-08-01T00:00:00Z","effectiveTo":"2026-08-10T00:00:00Z","sourceVersion":1,"sourceUpdatedAt":"2026-08-04T00:00:00Z","supersedesVersion":null},
+    "SRC-P1-OFFCAMPUS-001": {"filingId":"offcampus.synthetic.001","studentRef":"subj.synthetic.001","stateType":"approved-residence","approvalState":"approved","campusCode":"CAMPUS-01","effectiveFrom":"2026-08-01T00:00:00Z","effectiveTo":"2026-08-10T00:00:00Z","p0AccommodationDisambiguation":"reviewed-distinct","sourceVersion":1,"supersedesVersion":null},
+    "SRC-P0-CAMPUS-ACCESS-001": {"eventId":"event.synthetic.campus.001","subjectRef":"subj.synthetic.001","gateCode":"GATE-01","deviceId":"DEVICE-01","direction":"out","occurredAt":"2026-08-04T01:00:00Z","receivedAt":"2026-08-04T01:00:02Z","eventState":"effective","correctsEventId":null,"sourceVersion":1,"watermark":"wm.synthetic.campus.001"},
+    "SRC-P0-DORM-ACCESS-001": {"eventId":"event.synthetic.dorm.001","subjectRef":"subj.synthetic.001","buildingCode":"BUILDING-01","deviceId":"DEVICE-02","direction":"in","occurredAt":"2026-08-04T02:00:00Z","receivedAt":"2026-08-04T02:00:02Z","eventState":"effective","correctsEventId":null,"sourceVersion":1,"watermark":"wm.synthetic.dorm.001"},
+    "SRC-P0-DEVICE-001": {"deviceId":"DEVICE-01","locationCode":"GATE-01","appliesToSourceId":"SRC-P0-CAMPUS-ACCESS-001","state":"online","effectiveFrom":"2026-08-01T00:00:00Z","effectiveTo":null,"heartbeatAt":"2026-08-04T02:00:00Z","sourceVersion":1,"supersedesVersion":null}
+  }
+}

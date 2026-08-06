@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/data-catalog/data-catalog-runtime-evidence.schema.json",
+  "title": "DataCatalogRuntimeEvidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sourceId", "contractVersion", "schemaVersion", "qualityGateVersion",
+    "environment", "authority", "candidateCommit", "candidateTree",
+    "handoffRevision", "handoffDigest", "inputDigest", "scenarios", "result",
+    "occurredAt", "signatureDigest", "evidenceDigest", "cleanupResult",
+    "runtimeEvidenceClaim"
+  ],
+  "properties": {
+    "sourceId": {"type": "string", "pattern": "^SRC-P[01]-[A-Z-]+-[0-9]{3}$"},
+    "contractVersion": {"const": "DCC-1.0.0"},
+    "schemaVersion": {"type": "string", "pattern": "^[A-Z][A-Z0-9-]*-[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "qualityGateVersion": {"const": "QG-1.0.0"},
+    "environment": {"enum": ["test", "stage", "prod"]},
+    "authority": {"type": "string", "pattern": "^[a-z][a-z0-9.-]{2,127}$"},
+    "candidateCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "candidateTree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "handoffRevision": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "handoffDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "inputDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/scenario"}
+    },
+    "result": {"enum": ["pass", "fail", "skip", "unsupported"]},
+    "occurredAt": {"type": "string", "format": "date-time"},
+    "signatureDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "evidenceDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "cleanupResult": {"const": "pass"},
+    "runtimeEvidenceClaim": {"enum": ["target-verified", "none"]}
+  },
+  "$defs": {
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "result", "observationDigest"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,127}$"},
+        "result": {"enum": ["pass", "fail", "skip", "unsupported"]},
+        "observationDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

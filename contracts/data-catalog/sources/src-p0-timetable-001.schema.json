@@ -1,0 +1,16 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://scholarsense.suda.edu.cn/contracts/data-catalog/sources/src-p0-timetable-001.schema.json",
+  "title":"Minimal effective timetable activity",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["studentRef","termId","teachingClassId","activityStartsAt","activityEndsAt","campusCode","locationCode","enrollmentState","activityState","effectiveAt","sourceUpdatedAt","sourceVersion","watermark"],
+  "properties":{
+    "studentRef":{"type":"string"},"termId":{"type":"string"},"teachingClassId":{"type":"string"},
+    "activityStartsAt":{"type":"string","format":"date-time"},"activityEndsAt":{"type":"string","format":"date-time"},
+    "campusCode":{"type":"string"},"locationCode":{"type":"string"},
+    "enrollmentState":{"enum":["effective","withdrawn"]},"activityState":{"enum":["scheduled","rescheduled","cancelled"]},
+    "effectiveAt":{"type":"string","format":"date-time"},"sourceUpdatedAt":{"type":"string","format":"date-time"},
+    "sourceVersion":{"type":"integer","minimum":1},"watermark":{"type":"string"},"supersedesVersion":{"type":["integer","null"],"minimum":1}
+  }
+}

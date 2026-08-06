@@ -1,5 +1,7 @@
 # Blind Hunter Review Prompt
 
+> **Archived 2026-08-04:** 此文件只有历史提示词，未产生评审结果；对应规格已被当前 FR1–FR62 PRD/Epics 取代，不得解读为开放或已通过的 review。
+
 Invoke the `bmad-review-adversarial-general` skill on the planning-document change described below. Review without relying on prior conversation.
 
 ## Specification

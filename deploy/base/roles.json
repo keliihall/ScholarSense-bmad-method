@@ -12,7 +12,18 @@
   "roles": {
     "web-api": {
       "artifact": "backend/target/scholarsense-backend.jar",
-      "requiredEnvironment": [],
+      "capabilityProfiles": ["ingestion-quality-runtime-1.0.0.json"],
+      "allowedEnvironments": [
+        "test",
+        "stage",
+        "prod"
+      ],
+      "requiredEnvironment": [
+        "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_PATH",
+        "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_VERSION",
+        "SCHOLARSENSE_INGESTION_QUALITY_MINIMUM_HANDOFF_REVISION",
+        "DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION"
+      ],
       "environment": {
         "SCHOLARSENSE_ROLE": "web-api",
         "SCHOLARSENSE_IDENTITY_ENABLED": "true",
@@ -28,6 +39,7 @@
     },
     "worker": {
       "artifact": "backend/target/scholarsense-backend.jar",
+      "capabilityProfiles": ["ingestion-quality-runtime-1.0.0.json"],
       "requiredEnvironment": [
         "SCHOLARSENSE_AUDIT_INGESTION_POLICY_REF",
         "SCHOLARSENSE_AUDIT_HASH_PROFILE_REF",

@@ -13,10 +13,14 @@ Future migrations must:
 - never reference another module's schema/table directly or create a cross-module foreign key;
 - obtain a new global sequence number; sequence reuse is rejected even across owner directories.
 
+The production inventory is derived from every `V*.sql` file under this directory. The ownership
+suite and `scripts/run_audit_postgresql_tests.sh` both require one continuous global sequence,
+discover successors automatically, and never maintain a second total-count or tail-version list.
+Historical migration-specific digest and behavior assertions remain explicit.
+
 The contract is enforced by the JDK suite and by `scripts/run_audit_postgresql_tests.sh` against
-PostgreSQL 18.4. V000003/V000004/V000005/V000006/V000007 are tested on both a clean
-V000001→V000002→V000003→V000004→V000005→V000006→V000007 path and an upgrade containing a preserved legacy
-audit row. V000005 proves search projection backfill/watermark, cross-node atomic one-time CSRF
+PostgreSQL 18.4. The complete discovered inventory is tested on both a clean path and an upgrade
+containing a preserved legacy audit row. V000005 proves search projection backfill/watermark, cross-node atomic one-time CSRF
 proof consumption, stable indexed pagination, retention evidence tables, least-privilege
 read/executor roles, and the continued absence of ledger update/delete/truncate privileges.
 V000006 proves authoritative-identity inbox encryption metadata, exact-once projection/checkpoint/
@@ -29,3 +33,6 @@ facts, rebuildable current scope, exception history/current projection, an indep
 daily reconciliation job/lease/run model, and post-commit SLO evidence/compensation. The sync worker
 has no delete privilege; the current reader (and inherited online role) can only select the minimal
 current scope, college exception projection, and reconciliation result.
+V000008 adds access-invalidation lineage, delivery and real local-consumer fencing. V000009 adds
+the authorization audit-context successor without rewriting historical rows. These statements are
+design/test denominators only; they are not new runtime evidence.

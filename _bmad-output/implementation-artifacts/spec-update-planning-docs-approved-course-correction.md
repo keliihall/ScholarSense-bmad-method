@@ -2,7 +2,7 @@
 title: '按批准提案更新规划文档'
 type: 'chore'
 created: '2026-07-16'
-status: 'in-review'
+status: 'archived-superseded'
 review_loop_iteration: 0
 baseline_commit: 'NO_VCS'
 context:
@@ -63,3 +63,7 @@ context:
 **Commands:**
 - `rg` 扫描权威规划文档中的旧 Story 编号、缺失附录 D、笼统门禁与“无开放问题”残留。
 - 提取 `epics.md` 的 FR 与 Story 标题，验证 FR1–FR58 连续覆盖、编号无重复且顺序符合批准提案。
+
+## Archive Note
+
+本实施规格及两份仅含提示词、未产生评审结论的 companion 于 2026-08-04 归档。它只覆盖当时的 FR1–FR58，不再代表已扩展到 FR1–FR62 的当前 PRD/Epics 审查状态；历史批准意图保持冻结且未被改写。

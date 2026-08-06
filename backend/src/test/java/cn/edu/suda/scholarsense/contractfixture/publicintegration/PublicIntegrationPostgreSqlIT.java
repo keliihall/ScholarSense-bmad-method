@@ -68,7 +68,7 @@ class PublicIntegrationPostgreSqlIT {
     }
 
     @Test
-    void schemaIsTemporaryAndProductionInventoryRemainsV000001ThroughV000009() {
+    void schemaIsTemporaryAndDoesNotPolluteProductionOwners() {
         assertEquals("180004", jdbc.queryForObject(
                 "select current_setting('server_version_num')", String.class));
         assertEquals(15, jdbc.queryForObject("""
@@ -81,19 +81,6 @@ class PublicIntegrationPostgreSqlIT {
                    and (table_name like '%public_integration%'
                      or table_name like '%delivery_record%')
                 """, Integer.class));
-        try (var migrations = java.nio.file.Files.walk(
-                java.nio.file.Path.of("src/main/resources/db/migration"))) {
-            var names = migrations
-                    .filter(path -> path.getFileName().toString().matches("V[0-9]{6}__.*\\.sql"))
-                    .map(path -> path.getFileName().toString())
-                    .sorted()
-                    .toList();
-            assertEquals(9, names.size());
-            assertTrue(names.getFirst().startsWith("V000001__"));
-            assertTrue(names.getLast().startsWith("V000009__"));
-        } catch (IOException error) {
-            throw new UncheckedIOException(error);
-        }
     }
 
     @Test

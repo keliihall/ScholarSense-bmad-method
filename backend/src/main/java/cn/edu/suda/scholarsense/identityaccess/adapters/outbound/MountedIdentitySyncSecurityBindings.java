@@ -14,15 +14,14 @@ import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityV2Cutov
 import cn.edu.suda.scholarsense.identityaccess.application.WorkloadIdentityAuthenticationPort;
 import cn.edu.suda.scholarsense.runtime.IdentityAuthorityRuntimeProfile;
 import cn.edu.suda.scholarsense.runtime.ResponsibilityAuthorityRuntimeProfile;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermission;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -52,6 +51,7 @@ public final class MountedIdentitySyncSecurityBindings
                 ResponsibilityV2CutoverCommandSignaturePort {
     private static final String SCHEMA = "IDENTITY-SYNC-SECURITY-BINDING-1.0.0";
     private static final int GCM_NONCE_BYTES = 12;
+    private static final int MAXIMUM_MANIFEST_BYTES = 64 * 1024;
     private static final byte[] CUTOVER_COMMAND_DOMAIN =
             "RESPONSIBILITY-V2-CUTOVER-COMMAND-MAC-1.0.0"
                     .getBytes(StandardCharsets.US_ASCII);
@@ -421,29 +421,29 @@ public final class MountedIdentitySyncSecurityBindings
     }
 
     private byte[] readSecret(String name, int minimum, int maximum) {
-        Path file = directory.resolve(name);
-        requireProtectedRegularFile(file);
-        try {
-            byte[] value = Files.readAllBytes(file);
-            if (value.length < minimum || value.length > maximum) {
-                Arrays.fill(value, (byte) 0);
-                throw invalid();
-            }
-            return value;
-        } catch (IOException unavailable) {
-            throw new IllegalStateException(
-                    "IDENTITY_SYNC_SECURITY_BINDING_UNAVAILABLE", unavailable);
-        }
+        return ProtectedIdentitySecurityMaterial.read(
+                directory.resolve(name),
+                minimum,
+                maximum,
+                "IDENTITY_SYNC_SECURITY_BINDING_INVALID",
+                "IDENTITY_SYNC_SECURITY_BINDING_UNAVAILABLE");
     }
 
     private static Properties loadManifest(Path file) {
-        requireProtectedRegularFile(file);
+        byte[] manifest = ProtectedIdentitySecurityMaterial.read(
+                file,
+                1,
+                MAXIMUM_MANIFEST_BYTES,
+                "IDENTITY_SYNC_SECURITY_BINDING_INVALID",
+                "IDENTITY_SYNC_SECURITY_BINDING_UNAVAILABLE");
         Properties values = new Properties();
-        try (InputStream stream = Files.newInputStream(file)) {
+        try (ByteArrayInputStream stream = new ByteArrayInputStream(manifest)) {
             values.load(stream);
-        } catch (IOException unavailable) {
+        } catch (IOException impossible) {
             throw new IllegalStateException(
-                    "IDENTITY_SYNC_SECURITY_BINDING_UNAVAILABLE", unavailable);
+                    "IDENTITY_SYNC_SECURITY_BINDING_UNAVAILABLE", impossible);
+        } finally {
+            Arrays.fill(manifest, (byte) 0);
         }
         if (!values.stringPropertyNames().equals(MANIFEST_KEYS)) {
             throw invalid();
@@ -459,30 +459,6 @@ public final class MountedIdentitySyncSecurityBindings
             throw invalid();
         }
         return directory.normalize();
-    }
-
-    private static void requireProtectedRegularFile(Path file) {
-        if (!Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)
-                || Files.isSymbolicLink(file)) {
-            throw invalid();
-        }
-        try {
-            Set<PosixFilePermission> permissions =
-                    Files.getPosixFilePermissions(file, LinkOption.NOFOLLOW_LINKS);
-            if (permissions.contains(PosixFilePermission.GROUP_READ)
-                    || permissions.contains(PosixFilePermission.GROUP_WRITE)
-                    || permissions.contains(PosixFilePermission.GROUP_EXECUTE)
-                    || permissions.contains(PosixFilePermission.OTHERS_READ)
-                    || permissions.contains(PosixFilePermission.OTHERS_WRITE)
-                    || permissions.contains(PosixFilePermission.OTHERS_EXECUTE)) {
-                throw invalid();
-            }
-        } catch (UnsupportedOperationException ignoredNonPosixFileSystem) {
-            // File identity and no-follow checks still apply on non-POSIX hosts.
-        } catch (IOException unavailable) {
-            throw new IllegalStateException(
-                    "IDENTITY_SYNC_SECURITY_BINDING_UNAVAILABLE", unavailable);
-        }
     }
 
     private static byte[] unsignedPayload(byte[] payload) {

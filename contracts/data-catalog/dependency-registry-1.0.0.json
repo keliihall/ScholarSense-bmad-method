@@ -1,0 +1,17 @@
+{
+  "registryVersion": "DCC-DEPENDENCY-1.0.0",
+  "catalogVersion": "DCC-1.0.0",
+  "bindings": [
+    {"sourceId": "SRC-P0-CAMPUS-ACCESS-001", "dependencyId": "DEP-P0-CAMPUS-ACCESS-001", "requirement": "required", "operator": "all-of"},
+    {"sourceId": "SRC-P0-DORM-ACCESS-001", "dependencyId": "DEP-P0-DORM-ACCESS-001", "requirement": "required", "operator": "all-of"},
+    {"sourceId": "SRC-P0-ACCOMMODATION-001", "dependencyId": "DEP-P0-ACCOMMODATION-001", "requirement": "required", "operator": "all-of"},
+    {"sourceId": "SRC-P0-LEAVE-001", "dependencyId": "DEP-P0-LEAVE-001", "requirement": "required", "operator": "all-of"},
+    {"sourceId": "SRC-P0-CALENDAR-001", "dependencyId": "DEP-P0-CALENDAR-001", "requirement": "required", "operator": "all-of"},
+    {"sourceId": "SRC-P0-CARD-001", "dependencyId": "DEP-P0-CONSUMPTION-001", "requirement": "required", "operator": "all-of"},
+    {"sourceId": "SRC-P0-TIMETABLE-001", "dependencyId": "DEP-P0-TIMETABLE-001", "requirement": "required", "operator": "all-of"},
+    {"sourceId": "SRC-P0-DEVICE-001", "dependencyId": "DEP-P0-DEVICE-001", "requirement": "required", "operator": "all-of"},
+    {"sourceId": "SRC-P1-OFFCAMPUS-001", "dependencyId": "DEP-P1-OFFCAMPUS-001", "requirement": "required", "operator": "all-of"},
+    {"sourceId": "SRC-P1-NETWORK-001", "dependencyId": "DEP-P1-NETWORK-001", "requirement": "required", "operator": "all-of"},
+    {"sourceId": "SRC-P1-ACADEMIC-001", "dependencyId": "DEP-P1-ACADEMIC-001", "requirement": "required", "operator": "all-of"}
+  ]
+}

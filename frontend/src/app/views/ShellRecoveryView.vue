@@ -13,6 +13,7 @@ const client = new IdentitySessionClient();
 const reason = computed(() => typeof route.query.reason === 'string' ? route.query.reason : 'session-expired');
 const targetRouteId = computed<ReauthenticationTarget>(() =>
   route.query.targetRouteId === 'shell.session' || route.query.targetRouteId === 'audit.search'
+    || route.query.targetRouteId === 'data-quality.catalogs'
     ? route.query.targetRouteId : 'shell.home');
 const copy = computed(() => ({
   'session-expired': ['会话已失效', '当前身份无法确认。', '重新认证'],

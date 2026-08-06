@@ -8,7 +8,8 @@
 | Maven Wrapper 3.3.4 | `maven-wrapper-plugin:3.3.4` | Story 1.1b 工程决策；Apache-2.0，用于可重复启动 Maven |
 | Actuator | Spring Boot 4.1.0 BOM | 只提供 health/liveness/readiness 种子，不代表生产观测验收 |
 | Spring MVC + Tomcat | Spring Boot 4.1.0 BOM | `web-api` 的最小健康探针载体；不包含业务 API |
+| pgJDBC 42.7.12 | 显式生产 runtime 依赖 | PostgreSQL 18.4 的 JDBC 连接驱动；版本本身不构成服务端运行证据，生产 TLS profile 另行强制 channel binding 与连接身份校验 |
 | Spring Boot Test | test scope，Spring Boot 4.1.0 BOM | JUnit 与 Spring 集成 smoke；不进入生产制品运行时 |
 
 Maven 发行包 SHA-256 固定在 `.mvn/wrapper/maven-wrapper.properties`。依赖树由 Spring Boot
-4.1.0 的受控 BOM/parent 解析；本 Story 未引入 Spring Modulith、ArchUnit、Flyway、数据库驱动或业务库。
+4.1.0 的受控 BOM/parent 解析；项目未引入 Spring Modulith、ArchUnit、Flyway 或额外业务库。

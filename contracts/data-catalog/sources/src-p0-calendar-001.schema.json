@@ -1,0 +1,19 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"https://scholarsense.suda.edu.cn/contracts/data-catalog/sources/src-p0-calendar-001.schema.json",
+  "title":"BC-1.0.0 business calendar day",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["businessCalendarVersion","businessTimezone","localDate","dayType","dayStartsAt","dayEndsAt","effectiveAt","sourceVersion"],
+  "properties":{
+    "businessCalendarVersion":{"const":"BC-1.0.0"},
+    "businessTimezone":{"const":"Asia/Shanghai"},
+    "localDate":{"type":"string","pattern":"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "dayType":{"enum":["workday","weekend","statutory-holiday","makeup-workday","school-holiday","emergency-closure"]},
+    "dayStartsAt":{"type":"string","format":"date-time"},
+    "dayEndsAt":{"type":"string","format":"date-time"},
+    "effectiveAt":{"type":"string","format":"date-time"},
+    "sourceVersion":{"type":"integer","minimum":1},
+    "supersedesVersion":{"type":["integer","null"],"minimum":1}
+  }
+}

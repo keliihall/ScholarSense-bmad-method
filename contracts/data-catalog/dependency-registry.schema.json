@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/data-catalog/dependency-registry.schema.json",
+  "title": "DataSourceDependencyRegistry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["registryVersion", "catalogVersion", "bindings"],
+  "properties": {
+    "registryVersion": {"const": "DCC-DEPENDENCY-1.0.0"},
+    "catalogVersion": {"const": "DCC-1.0.0"},
+    "bindings": {"type": "array", "minItems": 11, "maxItems": 11, "items": {"type": "object", "additionalProperties": false, "required": ["sourceId", "dependencyId", "requirement", "operator"], "properties": {"sourceId": {"type": "string"}, "dependencyId": {"type": "string"}, "requirement": {"const": "required"}, "operator": {"const": "all-of"}}}}
+  }
+}

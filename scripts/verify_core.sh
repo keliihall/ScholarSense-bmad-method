@@ -14,7 +14,18 @@ echo "[verify-core] verify the complete Maven resolution lock before lifecycle e
 "$TOOLCHAIN" python3 -B "$ROOT_DIR/scripts/check_backend_lock.py" "$ROOT_DIR"
 
 echo "[verify-core] clean backend build and contract tests"
-"$TOOLCHAIN" "$ROOT_DIR/backend/mvnw" -f "$ROOT_DIR/backend/pom.xml" clean verify
+CATALOG_BUILD_COMMIT="$(git -C "$ROOT_DIR" rev-parse HEAD)"
+CATALOG_BUILD_TREE="$(git -C "$ROOT_DIR" rev-parse 'HEAD^{tree}')"
+"$TOOLCHAIN" "$ROOT_DIR/backend/mvnw" -f "$ROOT_DIR/backend/pom.xml" \
+  -Dcatalog.build.commit="$CATALOG_BUILD_COMMIT" \
+  -Dcatalog.build.tree="$CATALOG_BUILD_TREE" clean verify
+
+echo "[verify-core] packaged data-catalog build subject is bound to this revision"
+"$TOOLCHAIN" python3 -B -c \
+  'import pathlib,sys,zipfile; expected=f"candidateCommit={sys.argv[3]}\ncandidateTree={sys.argv[4]}\n"; classes=pathlib.Path(sys.argv[1]).read_text(); jar=zipfile.ZipFile(sys.argv[2]).read("BOOT-INF/classes/ingestion-quality-runtime/catalog-build-subject.properties").decode(); assert classes == expected and jar == expected, "catalog build subject packaging mismatch"' \
+  "$ROOT_DIR/backend/target/classes/ingestion-quality-runtime/catalog-build-subject.properties" \
+  "$ROOT_DIR/backend/target/scholarsense-backend.jar" \
+  "$CATALOG_BUILD_COMMIT" "$CATALOG_BUILD_TREE"
 
 echo "[verify-core] production backend plaintext-canary scan"
 "$TOOLCHAIN" python3 -B "$ROOT_DIR/scripts/scan_privacy_canaries.py" \
@@ -35,6 +46,7 @@ echo "[verify-core] audit and standard-library regression"
   "$TOOLCHAIN" python3 -B scripts/check_authorization_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_field_projection_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_public_integration_contracts.py .
+  "$TOOLCHAIN" python3 -B scripts/check_data_catalog_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_ledger_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_retention_contracts.py .
@@ -99,6 +111,18 @@ trap cleanup_public_integration_evidence EXIT INT TERM
   "$ROOT_DIR/scripts/run_public_integration_sandbox_tests.py" \
   --evidence "$PUBLIC_INTEGRATION_EVIDENCE_FILE"
 cleanup_public_integration_evidence
+trap - EXIT INT TERM
+
+echo "[verify-core] controlled data-catalog fixture conformance evidence"
+DATA_CATALOG_SANDBOX_EVIDENCE_FILE="$(mktemp "${TMPDIR:-/tmp}/scholarsense-data-catalog-evidence-XXXXXX")"
+cleanup_data_catalog_sandbox_evidence() {
+  rm -f -- "$DATA_CATALOG_SANDBOX_EVIDENCE_FILE"
+}
+trap cleanup_data_catalog_sandbox_evidence EXIT INT TERM
+"$TOOLCHAIN" python3 -B \
+  "$ROOT_DIR/scripts/run_data_catalog_sandbox_tests.py" "$ROOT_DIR" \
+  --report "$DATA_CATALOG_SANDBOX_EVIDENCE_FILE"
+cleanup_data_catalog_sandbox_evidence
 trap - EXIT INT TERM
 
 echo "[verify-core] PostgreSQL 18.4 evidence completed by the sandbox E2E runner"

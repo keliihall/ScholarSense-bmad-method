@@ -1,0 +1,26 @@
+{
+  "fixtureVersion": "DCC-COMPAT-1.1.0",
+  "fromVersion": "TIMETABLE-SLICE-1.0.0",
+  "toVersion": "TIMETABLE-SLICE-1.1.0",
+  "change": {"kind": "add-required", "field": "courseName"},
+  "beforeSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["activityStartsAt", "activityEndsAt"],
+    "properties": {
+      "activityStartsAt": {"type": "string", "format": "date-time"},
+      "activityEndsAt": {"type": "string", "format": "date-time"}
+    }
+  },
+  "afterSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["activityStartsAt", "activityEndsAt", "courseName"],
+    "properties": {
+      "activityStartsAt": {"type": "string", "format": "date-time"},
+      "activityEndsAt": {"type": "string", "format": "date-time"},
+      "courseName": {"type": "string"}
+    }
+  },
+  "expectedCode": "DCC_BREAKING_CHANGE_REQUIRES_MAJOR"
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/data-catalog/data-source-catalog.schema.json",
+  "title": "DataSourceCatalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "qualityGateVersion", "effectiveAt", "accountableOwner", "sources"],
+  "properties": {
+    "contractVersion": {"const": "DCC-1.0.0"},
+    "qualityGateVersion": {"const": "QG-1.0.0"},
+    "effectiveAt": {"type": "string", "format": "date-time"},
+    "accountableOwner": {"type": "string", "minLength": 2},
+    "schemaEvolution": {"enum": ["backward-compatible-optional-only"]},
+    "sources": {"type": "array", "minItems": 17, "maxItems": 17, "items": {"type": "object"}}
+  }
+}

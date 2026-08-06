@@ -85,6 +85,25 @@ main { display: grid; gap: 16px; }
 .session-facts div { display: grid; grid-template-columns: minmax(7rem, 10rem) 1fr; gap: 8px; }
 .session-facts dt { font-weight: 700; }
 .session-facts dd { margin: 0; overflow-wrap: anywhere; }
+
+.data-catalog { display: grid; gap: 1rem; min-width: 0; }
+.catalog-filter, .publish-form { display: flex; align-items: end; flex-wrap: wrap; gap: .75rem; }
+.catalog-filter label, .publish-form label { display: grid; gap: .35rem; min-width: min(100%, 20rem); }
+.catalog-state, .catalog-errors, .catalog-command-error { border-inline-start: .3rem solid var(--color-border-strong, #365b7d); padding: .75rem 1rem; background: var(--color-surface-subtle, #f3f6f8); }
+.catalog-version-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+.catalog-version-list button { display: grid; gap: .2rem; text-align: start; min-width: 13rem; }
+.catalog-version-list button[aria-current="page"] { outline: .2rem solid currentColor; outline-offset: .15rem; }
+.catalog-summary dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: .5rem 1rem; }
+.catalog-summary dl div { min-width: 0; }
+.catalog-summary dt { font-weight: 700; }
+.catalog-summary dd { margin: .2rem 0 0; overflow-wrap: anywhere; }
+.catalog-table-wrap { overflow: auto; max-width: 100%; border: 1px solid var(--color-border, #9aa8b3); }
+.catalog-table-wrap:focus { outline: .2rem solid currentColor; outline-offset: .1rem; }
+.catalog-table-wrap table { border-collapse: collapse; min-width: 88rem; }
+.catalog-table-wrap th, .catalog-table-wrap td { padding: .65rem; border: 1px solid var(--color-border, #9aa8b3); vertical-align: top; text-align: start; }
+.digest { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .875em; }
+.catalog-actions { display: grid; gap: .75rem; }
+@media (max-width: 48rem) { .catalog-version-list button { width: 100%; } }
 .el-button a { color: inherit; text-decoration: none; }
 .baseline-chart { width: 100%; height: 280px; }
 table { width: 100%; border-collapse: collapse; }

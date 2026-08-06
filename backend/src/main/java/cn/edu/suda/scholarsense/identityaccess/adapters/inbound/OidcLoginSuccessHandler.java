@@ -70,6 +70,7 @@ public final class OidcLoginSuccessHandler implements AuthenticationSuccessHandl
                 target = switch (resolved.routeId()) {
                     case "shell.session" -> "/scholarsense/session";
                     case "audit.search" -> "/scholarsense/audit/search";
+                    case "data-quality.catalogs" -> "/scholarsense/data-quality/catalogs";
                     default -> "/scholarsense/";
                 };
             }

@@ -115,10 +115,31 @@ class ContractSeedTest(unittest.TestCase):
             "SCHOLARSENSE_IDENTITY_SYNC_RESPONSIBILITY_V2_CUTOVER_USERNAME",
             "SCHOLARSENSE_IDENTITY_SYNC_RESPONSIBILITY_V2_CUTOVER_PASSWORD",
         }
+        web_token_keys = {
+            "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_PATH",
+            "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_VERSION",
+        }
+        web_required = {
+            *web_token_keys,
+            "SCHOLARSENSE_INGESTION_QUALITY_MINIMUM_HANDOFF_REVISION",
+            "DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION",
+        }
 
-        self.assertTrue((audit_keys | sync_keys).isdisjoint(roles["requiredEnvironment"]))
-        self.assertEqual([], roles["roles"]["web-api"]["requiredEnvironment"])
+        self.assertTrue(
+            (audit_keys | sync_keys | web_required).isdisjoint(
+                roles["requiredEnvironment"]
+            )
+        )
+        self.assertEqual(
+            web_required,
+            set(roles["roles"]["web-api"]["requiredEnvironment"]),
+        )
+        self.assertEqual(
+            ["test", "stage", "prod"],
+            roles["roles"]["web-api"]["allowedEnvironments"],
+        )
         self.assertEqual(audit_keys, set(roles["roles"]["worker"]["requiredEnvironment"]))
+        self.assertNotIn("allowedEnvironments", roles["roles"]["worker"])
         self.assertFalse(
             roles["roles"]["worker"]["environment"]["SCHOLARSENSE_IDENTITY_SYNC_ENABLED"]
             == "true"
@@ -130,6 +151,186 @@ class ContractSeedTest(unittest.TestCase):
         self.assertEqual("false", sync["environment"]["SCHOLARSENSE_AUDIT_LEDGER_ENABLED"])
         self.assertEqual(["dev", "test", "stage"], sync["allowedEnvironments"])
         self.assertFalse(sync["businessHttp"])
+
+    def test_web_audit_token_key_mount_is_declared_and_fail_closed(self) -> None:
+        profile = json.loads((
+            PROJECT_ROOT
+            / "deploy/base/ingestion-quality-runtime-1.0.0.json"
+        ).read_text(encoding="utf-8"))
+        tokenization = profile["identityAuditTokenization"]
+
+        self.assertEqual(
+            {
+                "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_PATH",
+                "SCHOLARSENSE_IDENTITY_AUDIT_TOKEN_KEY_VERSION",
+            },
+            {
+                tokenization["keyPathEnvironment"],
+                tokenization["keyVersionEnvironment"],
+            },
+        )
+        self.assertEqual(
+            "absolute-protected-regular-non-symlink-mounted-file",
+            tokenization["location"],
+        )
+        self.assertEqual("startup-fail-closed", tokenization["failureMode"])
+        self.assertFalse(tokenization["committedMaterialAllowed"])
+        self.assertEqual(
+            ["test", "stage", "prod"],
+            profile["sameArtifactRoles"]["web-api"]["allowedEnvironments"],
+        )
+
+        with self.fixture() as root:
+            path = root / "deploy/base/ingestion-quality-runtime-1.0.0.json"
+            mutated = json.loads(path.read_text(encoding="utf-8"))
+            mutated["identityAuditTokenization"]["failureMode"] = "fallback"
+            path.write_text(json.dumps(mutated), encoding="utf-8")
+            self.assert_reason(root, "IDENTITY_AUDIT_TOKEN_BINDING_INVALID")
+
+        with self.fixture() as root:
+            path = root / "deploy/base/ingestion-quality-runtime-1.0.0.json"
+            mutated = json.loads(path.read_text(encoding="utf-8"))
+            mutated["sameArtifactRoles"]["web-api"]["allowedEnvironments"] = [
+                "dev", "test", "stage", "prod"
+            ]
+            path.write_text(json.dumps(mutated), encoding="utf-8")
+            self.assert_reason(root, "INGESTION_QUALITY_WEB_BINDINGS_INVALID")
+
+        with self.fixture() as root:
+            path = root / "deploy/base/roles.json"
+            mutated = json.loads(path.read_text(encoding="utf-8"))
+            mutated["roles"]["web-api"]["allowedEnvironments"].insert(0, "dev")
+            path.write_text(json.dumps(mutated), encoding="utf-8")
+            self.assert_reason(root, "WEB_API_DEV_DISABLED_INVALID")
+
+    def test_release_and_runtime_share_the_deployment_owned_handoff_floor(self) -> None:
+        profile = json.loads((
+            PROJECT_ROOT
+            / "deploy/base/ingestion-quality-runtime-1.0.0.json"
+        ).read_text(encoding="utf-8"))
+        floor = profile["targetHandoffAntiRollback"]
+        maximum = 9007199254740991
+
+        self.assertEqual(1, floor["minimum"])
+        self.assertEqual(maximum, floor["maximum"])
+        self.assertEqual(
+            {
+                "SCHOLARSENSE_INGESTION_QUALITY_MINIMUM_HANDOFF_REVISION",
+                "DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION",
+            },
+            set(floor["inputConstraints"]),
+        )
+        for constraint in floor["inputConstraints"].values():
+            self.assertEqual({"minimum": 1, "maximum": maximum}, constraint)
+        self.assertEqual("deployment", floor["ownership"])
+        self.assertEqual("monotonic-non-decreasing", floor["updateInvariant"])
+        self.assertEqual(
+            "release-and-runtime-use-same-floor",
+            floor["crossSurfaceInvariant"],
+        )
+        self.assertEqual("startup-fail-closed", floor["belowFloor"])
+
+        with self.fixture() as root:
+            path = root / "deploy/base/ingestion-quality-runtime-1.0.0.json"
+            mutated = json.loads(path.read_text(encoding="utf-8"))
+            mutated["targetHandoffAntiRollback"]["crossSurfaceInvariant"] = \
+                "independent-floors"
+            path.write_text(json.dumps(mutated), encoding="utf-8")
+            self.assert_reason(
+                root, "INGESTION_QUALITY_HANDOFF_ANTI_ROLLBACK_INVALID"
+            )
+
+        for environment_name in floor["inputConstraints"]:
+            for field, invalid in (
+                ("minimum", 0),
+                ("maximum", maximum + 1),
+            ):
+                with self.subTest(environment=environment_name, field=field), \
+                        self.fixture() as root:
+                    path = root / "deploy/base/ingestion-quality-runtime-1.0.0.json"
+                    mutated = json.loads(path.read_text(encoding="utf-8"))
+                    mutated["targetHandoffAntiRollback"]["inputConstraints"][
+                        environment_name
+                    ][field] = invalid
+                    path.write_text(json.dumps(mutated), encoding="utf-8")
+                    self.assert_reason(
+                        root,
+                        "INGESTION_QUALITY_HANDOFF_ANTI_ROLLBACK_INVALID",
+                    )
+
+    def test_ingestion_quality_database_logins_are_distinct_exclusive_members(self) -> None:
+        profile = json.loads((
+            PROJECT_ROOT
+            / "deploy/base/ingestion-quality-runtime-1.0.0.json"
+        ).read_text(encoding="utf-8"))
+        gate = profile["databaseStartupGate"]
+
+        self.assertEqual("180004", gate["requiredServerVersionNum"])
+        self.assertEqual(
+            "select current_setting('server_version_num')",
+            gate["serverVersionQuery"],
+        )
+        self.assertEqual(
+            "session_user=current_user=SPRING_DATASOURCE_USERNAME",
+            gate["sessionIdentityInvariant"],
+        )
+        self.assertEqual("inherited-membership", gate["roleActivation"])
+        self.assertFalse(gate["setRoleAllowed"])
+        self.assertEqual(
+            {"inherit": True, "set": False},
+            gate["membershipGrantOptions"],
+        )
+        self.assertEqual(["web-api", "worker"], gate["distinctWorkloadLogins"])
+        self.assertEqual(
+            {
+                "web-api": {
+                    "requiredGroupRole": "scholarsense_ingestion_quality_online",
+                    "forbiddenGroupRoles": [
+                        "scholarsense_ingestion_quality_relay"
+                    ],
+                },
+                "worker": {
+                    "requiredGroupRole": "scholarsense_ingestion_quality_relay",
+                    "forbiddenGroupRoles": [
+                        "scholarsense_ingestion_quality_online"
+                    ],
+                },
+            },
+            gate["workloadRoleBindings"],
+        )
+        self.assertEqual(
+            "exact-table-and-column-matrix",
+            gate["effectivePrivilegeVerification"],
+        )
+
+    def test_ingestion_quality_database_role_downgrades_are_rejected(self) -> None:
+        mutations = {
+            "INGESTION_QUALITY_DATABASE_SERVER_VERSION_GATE_INVALID": (
+                "requiredServerVersionNum", "180003"
+            ),
+            "INGESTION_QUALITY_DATABASE_SET_ROLE_BOUNDARY_INVALID": (
+                "setRoleAllowed", True
+            ),
+            "INGESTION_QUALITY_DATABASE_PRIVILEGE_GATE_INVALID": (
+                "effectivePrivilegeVerification", "table-only"
+            ),
+        }
+        for reason, (key, value) in mutations.items():
+            with self.subTest(reason=reason), self.fixture() as root:
+                path = root / "deploy/base/ingestion-quality-runtime-1.0.0.json"
+                profile = json.loads(path.read_text(encoding="utf-8"))
+                profile["databaseStartupGate"][key] = value
+                path.write_text(json.dumps(profile), encoding="utf-8")
+                self.assert_reason(root, reason)
+
+        with self.fixture() as root:
+            path = root / "deploy/base/ingestion-quality-runtime-1.0.0.json"
+            profile = json.loads(path.read_text(encoding="utf-8"))
+            profile["databaseStartupGate"]["membershipGrantOptions"]["set"] = True
+            path.write_text(json.dumps(profile), encoding="utf-8")
+            self.assert_reason(
+                root, "INGESTION_QUALITY_DATABASE_SET_ROLE_BOUNDARY_INVALID"
+            )
 
     def test_role_artifact_matches_maven_output_name(self) -> None:
         roles = json.loads((PROJECT_ROOT / "deploy/base/roles.json").read_text(encoding="utf-8"))

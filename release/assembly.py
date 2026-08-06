@@ -21,9 +21,12 @@ from release_json import (  # noqa: E402
     schema_issues,
 )
 import run_public_integration_sandbox_tests as pic_evidence  # noqa: E402
+import run_data_catalog_target_tests as dcc_evidence  # noqa: E402
+from protected_key import load_protected_key  # noqa: E402
 
 
 OCI_URI = re.compile(r"^ghcr\.io/[a-z0-9_.-]+/[a-z0-9_./-]+@(?P<digest>sha256:[0-9a-f]{64})$")
+MAX_HANDOFF_REVISION = (1 << 53) - 1
 
 DELEGATED_BASELINE = "_bmad-output/planning-artifacts/delegated-decision-baseline-2026-07-17.md"
 BASELINES = {
@@ -63,6 +66,15 @@ CONTROLLED_INPUTS_V2 = {
         "contracts/public-integration/public-integration-contract-lock-1.0.0.json",
     ),
 }
+CONTROLLED_INPUTS_V3 = {
+    **CONTROLLED_INPUTS_V2,
+    "DataContractCatalog": (
+        "DCC-1.0.0", "contracts/data-catalog/dcc-1.0.0.json",
+    ),
+    "QualityGate": (
+        "QG-1.0.0", "contracts/data-catalog/qg-1.0.0.json",
+    ),
+}
 # Backward-compatible public name: it remains the immutable V1 mapping.
 CONTROLLED_INPUTS = CONTROLLED_INPUTS_V1
 LOCKS = {
@@ -97,6 +109,14 @@ def _media_type(path: Path) -> str:
     if path.name.endswith(".tar.gz"):
         return "application/gzip"
     return "application/octet-stream"
+
+
+def _load_dcc_target_signing_key(path: Path, source_root: Path) -> bytes:
+    return load_protected_key(
+        path,
+        error_code="RELEASE_ASSEMBLY_DCC_TARGET_SIGNING_KEY_INVALID",
+        forbidden_root=source_root,
+    )
 
 
 def _reference(
@@ -162,6 +182,12 @@ def assemble_release_manifest_input(
     manifest_version: str = "1",
     public_integration_target_evidence_uri: str | None = None,
     public_integration_target_evidence_path: Path | None = None,
+    data_catalog_target_evidence_uri: str | None = None,
+    data_catalog_target_evidence_path: Path | None = None,
+    data_catalog_target_trusted_signing_key_path: Path | None = None,
+    data_catalog_target_minimum_handoff_revision: int | None = None,
+    data_catalog_target_expected_authority: str | None = None,
+    data_catalog_target_expected_environment: str | None = None,
 ) -> dict[str, Any]:
     source_root = source_root.resolve()
     build_path = artifact_root / "build-manifest.json"
@@ -238,12 +264,14 @@ def assemble_release_manifest_input(
             _reference("frontend-brand-asset-manifest", "BRAND-ASSET-MANIFEST-1.0.0", artifact_uri, source_root / "contracts/release/brand-asset-manifest-1.0.0.json", kind="brand-asset-manifest", subject_sha256=subject_digests["frontend"]),
         ]
     )
-    if manifest_version not in {"1", "2"}:
+    if manifest_version not in {"1", "2", "3"}:
         raise ValueError("RELEASE_ASSEMBLY_MANIFEST_VERSION_INVALID")
     controlled_inputs = (
-        CONTROLLED_INPUTS_V2 if manifest_version == "2" else CONTROLLED_INPUTS_V1
+        CONTROLLED_INPUTS_V3 if manifest_version == "3"
+        else CONTROLLED_INPUTS_V2 if manifest_version == "2"
+        else CONTROLLED_INPUTS_V1
     )
-    if manifest_version == "2":
+    if manifest_version in {"2", "3"}:
         if (
             public_integration_target_evidence_uri is None
             or public_integration_target_evidence_path is None
@@ -320,6 +348,85 @@ def assemble_release_manifest_input(
             "scenarioSetSha256": scenario_digest,
         })
         evidence.append(pic_reference)
+    if manifest_version == "3":
+        if (
+            data_catalog_target_evidence_uri is None
+            or data_catalog_target_evidence_path is None
+            or data_catalog_target_trusted_signing_key_path is None
+            or data_catalog_target_minimum_handoff_revision is None
+            or data_catalog_target_expected_authority is None
+            or data_catalog_target_expected_environment is None
+        ):
+            raise ValueError("RELEASE_ASSEMBLY_DCC_TARGET_EVIDENCE_REQUIRED")
+        dcc_evidence_path = data_catalog_target_evidence_path.resolve()
+        if dcc_evidence_path == source_root or source_root in dcc_evidence_path.parents:
+            raise ValueError("RELEASE_ASSEMBLY_DCC_TARGET_EVIDENCE_MUST_BE_TREE_OUTSIDE")
+        dcc_signing_key = _load_dcc_target_signing_key(
+            data_catalog_target_trusted_signing_key_path,
+            source_root,
+        )
+        target_report = load_json(dcc_evidence_path)
+        canonical_report = canonical_bytes(target_report)
+        if dcc_evidence_path.read_bytes() not in {
+            canonical_report, canonical_report + b"\n",
+        } or dcc_evidence.validate_report(
+            target_report,
+            source_root,
+            trusted_signing_key=dcc_signing_key,
+            minimum_handoff_revision=data_catalog_target_minimum_handoff_revision,
+        ):
+            raise ValueError("RELEASE_ASSEMBLY_DCC_TARGET_EVIDENCE_INVALID")
+        if (
+            target_report.get("candidateCommit") != build_manifest.get("sourceCommit")
+            or target_report.get("candidateTree") != source_inventory.get("gitTreeOid")
+            or target_report.get("sourceCount") != 17
+            or target_report.get("result") != "pass"
+            or target_report.get("runtimeEvidenceClaim") != "target-verified"
+            or target_report.get("authority")
+            != data_catalog_target_expected_authority
+            or target_report.get("environment")
+            != data_catalog_target_expected_environment
+            or re.fullmatch(
+                r"[a-z][a-z0-9.-]{2,127}",
+                data_catalog_target_expected_authority,
+            ) is None
+            or data_catalog_target_expected_environment not in {"test", "stage", "prod"}
+            or isinstance(data_catalog_target_minimum_handoff_revision, bool)
+            or not isinstance(data_catalog_target_minimum_handoff_revision, int)
+            or data_catalog_target_minimum_handoff_revision < 1
+            or data_catalog_target_minimum_handoff_revision > MAX_HANDOFF_REVISION
+            or target_report.get("handoffRevision", 0)
+            < data_catalog_target_minimum_handoff_revision
+        ):
+            raise ValueError("RELEASE_ASSEMBLY_DCC_TARGET_EVIDENCE_INVALID")
+        candidate_binding = canonical_sha256({
+            "subjectCommit": target_report["candidateCommit"],
+            "subjectTree": target_report["candidateTree"],
+        })
+        dcc_reference = _reference(
+            "DataCatalogTargetConformance",
+            "DCC-TARGET-REPORT-1.0.0",
+            data_catalog_target_evidence_uri,
+            dcc_evidence_path,
+            kind="data-catalog-target-conformance",
+            subject_sha256=candidate_binding,
+        )
+        dcc_reference.update({
+            "subjectCommit": target_report["candidateCommit"],
+            "subjectTree": target_report["candidateTree"],
+            "catalogSha256": _sha256(
+                source_root / "contracts/data-catalog/dcc-1.0.0.json"
+            ),
+            "qualityGateSha256": _sha256(
+                source_root / "contracts/data-catalog/qg-1.0.0.json"
+            ),
+            "sourceCount": 17,
+            "handoffRevision": target_report["handoffRevision"],
+            "handoffDigest": target_report["handoffDigest"],
+            "authority": target_report["authority"],
+            "environment": target_report["environment"],
+        })
+        evidence.append(dcc_reference)
     frontend_kinds = {"formal-web-report", "visual-baseline", "ui-token-manifest", "brand-asset-manifest"}
     supply_chain_kinds = {
         "artifact-signature",
@@ -329,6 +436,54 @@ def assemble_release_manifest_input(
         "sbom-spdx",
         "vulnerability-scan",
     }
+    runtime_evidence = [
+        {
+            "id": "supply-chain-evidence",
+            "status": "passed",
+            "evidenceIds": [item["id"] for item in evidence if item["kind"] in supply_chain_kinds],
+        },
+        {
+            "id": "formal-web-evidence",
+            "status": "passed",
+            "evidenceIds": [item["id"] for item in evidence if item["kind"] in frontend_kinds],
+        },
+        {
+            "id": "app-webview",
+            "status": "not-applicable",
+            "decisionId": "USER-2026-07-19-SCHOOL-APP-NA",
+            "runtimeEvidenceClaim": "none",
+        },
+        {
+            "id": "future-app-device",
+            "status": "pending-story-execution",
+            "ownerStory": "7.1/7.x",
+            "runtimeEvidenceClaim": "none",
+        },
+        {
+            "id": "export-job-download",
+            "status": "pending-story-execution",
+            "ownerStory": "3.14a-3.14c",
+            "runtimeEvidenceClaim": "none",
+        },
+        {
+            "id": "transfer-task",
+            "status": "pending-story-execution",
+            "ownerStory": "3.4-3.10/5.x",
+            "runtimeEvidenceClaim": "none",
+        },
+        {
+            "id": "mobile-projection",
+            "status": "pending-story-execution",
+            "ownerStory": "7.x",
+            "runtimeEvidenceClaim": "none",
+        },
+    ]
+    if manifest_version == "3":
+        runtime_evidence.append({
+            "id": "data-catalog-target-conformance",
+            "status": "passed",
+            "evidenceIds": ["DataCatalogTargetConformance"],
+        })
     return {
         "manifestVersion": manifest_version,
         "releaseVersion": release_version,
@@ -354,48 +509,7 @@ def assemble_release_manifest_input(
             media_type="application/vnd.scholarsense.release-source.v1+gzip",
         ),
         "baselineApprovals": _controlled_references(source_root, artifact_uri, BASELINES, approved=True),
-        "runtimeEvidence": [
-            {
-                "id": "supply-chain-evidence",
-                "status": "passed",
-                "evidenceIds": [item["id"] for item in evidence if item["kind"] in supply_chain_kinds],
-            },
-            {
-                "id": "formal-web-evidence",
-                "status": "passed",
-                "evidenceIds": [item["id"] for item in evidence if item["kind"] in frontend_kinds],
-            },
-            {
-                "id": "app-webview",
-                "status": "not-applicable",
-                "decisionId": "USER-2026-07-19-SCHOOL-APP-NA",
-                "runtimeEvidenceClaim": "none",
-            },
-            {
-                "id": "future-app-device",
-                "status": "pending-story-execution",
-                "ownerStory": "7.1/7.x",
-                "runtimeEvidenceClaim": "none",
-            },
-            {
-                "id": "export-job-download",
-                "status": "pending-story-execution",
-                "ownerStory": "3.14a-3.14c",
-                "runtimeEvidenceClaim": "none",
-            },
-            {
-                "id": "transfer-task",
-                "status": "pending-story-execution",
-                "ownerStory": "3.4-3.10/5.x",
-                "runtimeEvidenceClaim": "none",
-            },
-            {
-                "id": "mobile-projection",
-                "status": "pending-story-execution",
-                "ownerStory": "7.x",
-                "runtimeEvidenceClaim": "none",
-            },
-        ],
+        "runtimeEvidence": runtime_evidence,
         "controlledInputs": _controlled_references(
             source_root, artifact_uri, controlled_inputs
         ),

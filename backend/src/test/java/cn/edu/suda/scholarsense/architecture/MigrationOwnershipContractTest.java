@@ -21,9 +21,10 @@ class MigrationOwnershipContractTest {
         assertTrue(result.violations().isEmpty(), () -> String.join("\n", result.violations()));
         assertEquals(expectedFacts(), result.ownership().entrySet().stream()
                 .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().factOwners())));
-        try (var walk = Files.walk(MIGRATIONS)) {
-            assertEquals(9, walk.filter(path -> path.toString().endsWith(".sql")).count(),
-                    "Stories 1.2 through 1.8 own exactly nine forward migrations");
+        assertFalse(result.migrations().isEmpty(), "production migration inventory must be discoverable");
+        for (int index = 0; index < result.migrations().size(); index++) {
+            assertEquals(index + 1, result.migrations().get(index).version(),
+                    "production migrations must use one continuous global sequence");
         }
         Path firstMigration = MIGRATIONS.resolve(
                 "identity-access/V000001__identity-access__session_boundary.sql");
@@ -367,6 +368,124 @@ class MigrationOwnershipContractTest {
     }
 
     @Test
+    void story21MigrationCreatesIngestionQualityCatalogOwnershipAndAtomicAuditTables()
+            throws Exception {
+        String migration = Files.readString(MIGRATIONS.resolve(
+                "ingestion-quality/V000010__ingestion-quality__data_source_catalog_v1.sql"));
+        String lower = migration.toLowerCase();
+        for (String table : Set.of(
+                "iq_data_source_catalog", "iq_source_contract", "iq_dependency_binding",
+                "iq_source_id_reservation", "iq_dependency_id_reservation",
+                "iq_catalog_validation_attempt", "iq_catalog_evidence",
+                "iq_catalog_current", "iq_catalog_idempotency",
+                "iq_local_audit_fact", "iq_local_audit_outbox")) {
+            assertTrue(lower.contains("ingestion_quality." + table), table);
+        }
+        assertTrue(lower.contains("aggregate_version bigint"));
+        assertTrue(lower.contains("retention_schedule_version varchar(64) not null default 'rs-1.0.0'"));
+        assertTrue(lower.contains("create role scholarsense_ingestion_quality_online nologin"));
+        assertTrue(lower.contains("create role scholarsense_ingestion_quality_relay nologin"));
+        assertFalse(lower.contains("identity_access."));
+        assertFalse(lower.contains("audit_operations."));
+        assertFalse(lower.contains("grant update on ingestion_quality.iq_source_id_reservation"));
+        assertFalse(lower.contains("grant delete on ingestion_quality.iq_data_source_catalog"));
+    }
+
+    @Test
+    void story21PublicationSuccessorAddsPointerCasAndCompleteEvidenceWithoutCrossOwnerAccess()
+            throws Exception {
+        String migration = Files.readString(MIGRATIONS.resolve(
+                "ingestion-quality/V000011__ingestion-quality__catalog_publication_cas_v1.sql"));
+        String lower = migration.toLowerCase();
+        assertTrue(lower.contains("pointer_version bigint"));
+        assertTrue(lower.contains("runtime_evidence_claim = 'target-verified'"));
+        assertTrue(lower.contains("jsonb_array_length(scenarios) > 0"));
+        assertTrue(lower.contains("alter column response drop not null"));
+        assertTrue(lower.contains("alter role scholarsense_ingestion_quality_online\n"
+                + "    nologin nosuperuser nocreatedb nocreaterole noreplication nobypassrls"));
+        assertTrue(lower.contains("alter role scholarsense_ingestion_quality_relay\n"
+                + "    nologin nosuperuser nocreatedb nocreaterole noreplication nobypassrls"));
+        assertTrue(lower.contains("revoke update on ingestion_quality.iq_local_audit_outbox\n"
+                + "    from scholarsense_ingestion_quality_relay"));
+        assertTrue(lower.contains("grant update (\n"
+                + "    status, attempts, available_at, claimed_until, delivered_at, last_error_code)\n"
+                + "    on ingestion_quality.iq_local_audit_outbox\n"
+                + "    to scholarsense_ingestion_quality_relay"));
+        assertTrue(lower.contains("revoke update on ingestion_quality.iq_data_source_catalog,\n"
+                + "    ingestion_quality.iq_catalog_current\n"
+                + "    from scholarsense_ingestion_quality_online"));
+        assertFalse(lower.contains("grant update (\n"
+                + "    catalog_release_id, status, aggregate_version, evidence_set_digest"));
+        assertFalse(lower.contains("grant update (catalog_id, aggregate_version, "
+                + "pointer_version, switched_at)"));
+        assertTrue(lower.contains("if old.status = 'published'"));
+        assertTrue(lower.contains("if new.status <> 'draft'"));
+        assertTrue(lower.contains("to_jsonb(new) - 'legal_hold'"));
+        assertTrue(lower.contains("to_jsonb(old) - 'legal_hold'"));
+        assertTrue(lower.contains("ingestion_quality_published_catalog_immutable"));
+        assertTrue(lower.contains("ingestion_quality_initial_catalog_state_invalid"));
+        assertTrue(lower.contains("iq_data_source_catalog_initial_published_rejected"));
+        assertTrue(lower.contains("iq_source_contract_published_insert_rejected"));
+        assertTrue(lower.contains("iq_dependency_binding_published_insert_rejected"));
+        assertTrue(lower.contains("iq_catalog_evidence_published_insert_rejected"));
+        assertTrue(lower.contains("for update"));
+        assertTrue(lower.contains("iq_catalog_current_integrity"));
+        assertTrue(lower.contains("catalog.status = 'published'"));
+        assertTrue(lower.contains("catalog.aggregate_version = new.aggregate_version"));
+        assertTrue(lower.contains("catalog.published_at = new.switched_at"));
+        assertTrue(lower.contains("new.pointer_version <> old.pointer_version + 1"));
+        assertTrue(lower.contains("ingestion_quality_published_catalog_incomplete"));
+        assertTrue(lower.contains("old.status <> 'publishable'"));
+        assertTrue(lower.contains("new.aggregate_version <> old.aggregate_version + 1"));
+        assertTrue(lower.contains(
+                "validation_attempt.aggregate_version = old.aggregate_version"));
+        assertTrue(lower.contains("validation_attempt.result = 'publishable'"));
+        assertTrue(lower.contains("validation_attempt.errors = '[]'::jsonb"));
+        assertTrue(lower.contains("from ingestion_quality.iq_source_contract source_contract"));
+        assertTrue(lower.contains("from ingestion_quality.iq_dependency_binding binding"));
+        assertTrue(lower.contains("from ingestion_quality.iq_catalog_evidence evidence"));
+        assertTrue(lower.contains("revoke all on function ingestion_quality.iq_guard_catalog_child_insert()\n"
+                + "    from public"));
+        assertTrue(lower.contains("revoke all on function ingestion_quality.iq_require_valid_current_catalog()\n"
+                + "    from public"));
+        assertTrue(lower.contains("or new.catalog_id = old.catalog_id"));
+        assertTrue(lower.contains("or new.switched_at <= old.switched_at"));
+        assertTrue(lower.contains("revoke insert on ingestion_quality.iq_source_id_reservation"));
+        assertTrue(lower.contains("ingestion_quality.iq_dependency_id_reservation"));
+        assertTrue(lower.contains("ingestion_quality.iq_source_contract"));
+        assertTrue(lower.contains("ingestion_quality.iq_dependency_binding"));
+        assertTrue(lower.contains("create function ingestion_quality.iq_add_catalog_source("));
+        assertTrue(lower.contains("create function ingestion_quality.iq_add_catalog_dependency("));
+        assertTrue(lower.contains("security definer"));
+        assertTrue(lower.contains("grant execute on function ingestion_quality.iq_add_catalog_source("));
+        assertTrue(lower.contains("grant execute on function ingestion_quality.iq_add_catalog_dependency("));
+        assertTrue(lower.contains("create function ingestion_quality.iq_record_catalog_validation("));
+        assertTrue(lower.contains("create function ingestion_quality.iq_publish_catalog("));
+        assertTrue(lower.contains(
+                "grant execute on function ingestion_quality.iq_record_catalog_validation("));
+        assertTrue(lower.contains("grant execute on function ingestion_quality.iq_publish_catalog("));
+        assertTrue(lower.contains("revoke insert on ingestion_quality.iq_catalog_validation_attempt"));
+        assertTrue(lower.contains("ingestion_quality.iq_catalog_current"));
+        assertTrue(lower.contains("aggregate_version between 1 and 9007199254740991"));
+        assertTrue(lower.contains("pointer_version between 1 and 9007199254740991"));
+        assertTrue(lower.contains("security definer"));
+        assertTrue(lower.contains("iq_cleanup_expired(trusted_cutoff timestamptz)"));
+        assertTrue(lower.contains("revoke all on function ingestion_quality.iq_cleanup_expired(timestamptz)\n"
+                + "    from public"));
+        assertTrue(lower.contains("grant execute on function ingestion_quality.iq_cleanup_expired(timestamptz)\n"
+                + "    to scholarsense_ingestion_quality_relay"));
+        assertTrue(lower.contains("revoke select on ingestion_quality.iq_local_audit_fact\n"
+                + "    from scholarsense_ingestion_quality_online"));
+        assertTrue(lower.contains("alter column first_catalog_id drop not null"));
+        assertTrue(lower.contains("retention_schedule_version = 'rs-1.0.0'"));
+        assertTrue(lower.contains("interval '3 years'"));
+        assertTrue(lower.contains("interval '90 days'"));
+        assertFalse(lower.contains("identity_access."));
+        assertFalse(lower.contains("audit_operations."));
+        assertFalse(lower.contains("foreign key"));
+    }
+
+    @Test
     void invalidMigrationFixturesAreRejectedForEveryRequiredReason() throws Exception {
         assertRejected("duplicate-version", "MIGRATION_VERSION_DUPLICATE");
         assertRejected("unknown-owner", "UNKNOWN_OWNER");
@@ -421,7 +540,9 @@ class MigrationOwnershipContractTest {
         return Map.of(
                 "identity-access", Set.of("IdentityPolicy", "Grant", "DelegationGrant"),
                 "subject-registry", Set.of("StudentRef", "SubjectMapping"),
-                "ingestion-quality", Set.of("DataBatch", "NormalizedFact", "QualitySnapshot"),
+                "ingestion-quality", Set.of(
+                        "DataBatch", "NormalizedFact", "QualitySnapshot",
+                        "DataSourceCatalog", "SourceContract", "DependencyBinding"),
                 "rule-governance", Set.of("RuleDefinition", "RuleVersion", "Tag", "GovernanceApproval", "QueuePolicyVersion"),
                 "signal-evaluation", Set.of("RuleEvaluation"),
                 "clue-care", Set.of("CandidateAdmissionDecision", "Candidate", "Clue", "EvidenceSnapshot", "CareAction", "Observation", "TaskLink", "ExplanationFeedback"),

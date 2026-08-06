@@ -15,9 +15,13 @@ from release_json import load_json, schema_issues  # noqa: E402
 
 
 def _schema_issues(name: str, document: dict) -> list[str]:
-    suffix = "-2" if document.get("version") in {
-        "RELEASE-MANIFEST-2.0.0", "EVIDENCE-INDEX-2.0.0"
-    } else ""
+    suffix = (
+        "-3" if document.get("version") in {
+            "RELEASE-MANIFEST-3.0.0", "EVIDENCE-INDEX-3.0.0"
+        } else "-2" if document.get("version") in {
+            "RELEASE-MANIFEST-2.0.0", "EVIDENCE-INDEX-2.0.0"
+        } else ""
+    )
     schema = load_json(
         PROJECT_ROOT / f"contracts/release/{name}{suffix}.schema.json"
     )

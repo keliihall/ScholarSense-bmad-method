@@ -34,6 +34,9 @@ final class MigrationRules {
                     + "(?:if\\s+not\\s+exists\\s+)?(?:" + IDENTIFIER + "\\s+)?on|"
                     + "\\btruncate(?:\\s+table)?|\\bcomment\\s+on\\s+table|\\breindex\\s+table)"
                     + "\\s+(?:(" + IDENTIFIER + ")\\s*\\.\\s*)?(" + IDENTIFIER + ")");
+    private static final Pattern TRIGGER_TABLE_REFERENCE = Pattern.compile(
+            "(?is)\\bcreate\\s+(?:constraint\\s+)?trigger\\s+" + IDENTIFIER
+                    + "\\b.*?\\bon\\s+(?:(" + IDENTIFIER + ")\\s*\\.\\s*)?(" + IDENTIFIER + ")");
     private static final Pattern PRIVILEGE_STATEMENT = Pattern.compile(
             "(?is)^\\s*(grant|revoke)\\s+.+?\\s+on\\s+(.+?)\\s+(to|from)\\s+(.+?)\\s*$");
     private static final Pattern EXACT_IDENTIFIER = Pattern.compile(
@@ -44,6 +47,11 @@ final class MigrationRules {
             "(?is)^all\\s+tables\\s+in\\s+schema\\s+(.+)$");
     private static final Pattern SCHEMA_OBJECTS = Pattern.compile(
             "(?is)^schema\\s+(.+)$");
+    private static final Pattern FUNCTION_OBJECTS = Pattern.compile(
+            "(?is)^function\\s+(.+)$");
+    private static final Pattern EXACT_FUNCTION = Pattern.compile(
+            "(?is)^\\s*(?:(" + IDENTIFIER + ")\\s*\\.\\s*)?(" + IDENTIFIER
+                    + ")\\s*\\([^()]*\\)\\s*$");
     private static final Pattern TABLE_OBJECTS = Pattern.compile(
             "(?is)^(?:table\\s+)?(.+)$");
     private static final Set<String> SQL_KEYWORDS = Set.of(
@@ -57,7 +65,7 @@ final class MigrationRules {
         Map<String, Ownership> ownership = readRegistry(registry, violations);
         if (!Files.isDirectory(migrationRoot)) {
             violations.add("MIGRATION_ROOT_MISSING: " + migrationRoot);
-            return new Result(ownership, violations.stream().distinct().sorted().toList());
+            return new Result(ownership, List.of(), violations.stream().distinct().sorted().toList());
         }
         for (String module : ownership.keySet()) {
             if (!Files.isDirectory(migrationRoot.resolve(module))) {
@@ -71,7 +79,11 @@ final class MigrationRules {
                 inspectMigration(sql, migrationRoot, ownership, versions, violations);
             }
         }
-        return new Result(ownership, violations.stream().distinct().sorted().toList());
+        List<Migration> migrations = versions.entrySet().stream()
+                .map(entry -> new Migration(Integer.parseInt(entry.getKey()), entry.getValue()))
+                .sorted(java.util.Comparator.comparingInt(Migration::version))
+                .toList();
+        return new Result(ownership, migrations, violations.stream().distinct().sorted().toList());
     }
 
     private static Map<String, Ownership> readRegistry(Path registry, List<String> violations) throws IOException {
@@ -160,6 +172,9 @@ final class MigrationRules {
                 continue;
             }
             String tableName = identifier(table.group(2));
+            if (SQL_KEYWORDS.contains(tableName)) {
+                continue;
+            }
             if (!tableName.startsWith(expected.tablePrefix())) {
                 violations.add("TABLE_PREFIX_MISMATCH: " + relative + " -> " + tableName);
             }
@@ -171,6 +186,18 @@ final class MigrationRules {
             String tableName = identifier(additionalTable.group(2));
             if (!schema.equals(expected.schema())) {
                 violations.add("CROSS_SCHEMA_REFERENCE: " + relative + " -> " + additionalTable.group());
+            }
+            if (!tableName.startsWith(expected.tablePrefix())) {
+                violations.add("TABLE_PREFIX_MISMATCH: " + relative + " -> " + tableName);
+            }
+        }
+        Matcher triggerTable = TRIGGER_TABLE_REFERENCE.matcher(parsedContent);
+        while (triggerTable.find()) {
+            String schema = triggerTable.group(1) == null
+                    ? expected.schema() : identifier(triggerTable.group(1));
+            String tableName = identifier(triggerTable.group(2));
+            if (!schema.equals(expected.schema())) {
+                violations.add("CROSS_SCHEMA_REFERENCE: " + relative + " -> " + triggerTable.group());
             }
             if (!tableName.startsWith(expected.tablePrefix())) {
                 violations.add("TABLE_PREFIX_MISMATCH: " + relative + " -> " + tableName);
@@ -203,10 +230,13 @@ final class MigrationRules {
             String objectClause = privilege.group(2).strip();
             Matcher allTables = ALL_TABLES_IN_SCHEMA.matcher(objectClause);
             Matcher schemas = SCHEMA_OBJECTS.matcher(objectClause);
+            Matcher functions = FUNCTION_OBJECTS.matcher(objectClause);
             if (allTables.matches()) {
                 inspectSchemaObjects(allTables.group(1), expected, relative, violations);
             } else if (schemas.matches()) {
                 inspectSchemaObjects(schemas.group(1), expected, relative, violations);
+            } else if (functions.matches()) {
+                inspectFunctionObjects(functions.group(1), expected, relative, violations);
             } else {
                 Matcher tables = TABLE_OBJECTS.matcher(objectClause);
                 if (!tables.matches()) {
@@ -258,6 +288,27 @@ final class MigrationRules {
         }
     }
 
+    private static void inspectFunctionObjects(
+            String rawObjects,
+            Ownership expected,
+            Path relative,
+            List<String> violations) {
+        Matcher candidate = EXACT_FUNCTION.matcher(rawObjects);
+        if (!candidate.matches()) {
+            violations.add("PRIVILEGE_OBJECT_UNPARSEABLE: " + relative
+                    + " -> " + rawObjects.strip());
+            return;
+        }
+        String schema = candidate.group(1) == null
+                ? expected.schema() : identifier(candidate.group(1));
+        String function = identifier(candidate.group(2));
+        if (!schema.equals(expected.schema())
+                || !function.startsWith(expected.tablePrefix())) {
+            violations.add("PRIVILEGE_OBJECT_CROSS_OWNER: " + relative + " -> "
+                    + schema + "." + function);
+        }
+    }
+
     private static void inspectGrantees(
             String operation,
             String rawGrantees,
@@ -285,7 +336,13 @@ final class MigrationRules {
 
     private static void inspectQualifiedIdentifiers(
             String content, Ownership expected, Path relative, List<String> violations) {
+        boolean triggerBody = false;
+        int triggerBodyDelimiters = 0;
         for (String statement : sqlCodeOnly(content).split(";")) {
+            if (!triggerBody && statement.toLowerCase(Locale.ROOT).contains("returns trigger")) {
+                triggerBody = true;
+                triggerBodyDelimiters = 0;
+            }
             List<ScopedAlias> aliases = new ArrayList<>();
             Matcher alias = TABLE_ALIAS.matcher(statement);
             while (alias.find()) {
@@ -303,13 +360,34 @@ final class MigrationRules {
                 if (visibleAlias) {
                     continue;
                 }
+                if (triggerBody && (schema.equals("old") || schema.equals("new"))) {
+                    continue;
+                }
                 if (!schema.equals(expected.schema())
                         && !schema.equals("pg_catalog")
                         && !schema.equals("information_schema")) {
                     violations.add("CROSS_SCHEMA_REFERENCE: " + relative + " -> " + qualified.group());
                 }
             }
+            if (triggerBody) {
+                triggerBodyDelimiters += dollarDelimiterCount(statement);
+                if (triggerBodyDelimiters >= 2) {
+                    triggerBody = false;
+                    triggerBodyDelimiters = 0;
+                }
+            }
         }
+    }
+
+    private static int dollarDelimiterCount(String content) {
+        int count = 0;
+        for (int index = 0; index + 1 < content.length(); index++) {
+            if (content.charAt(index) == '$' && content.charAt(index + 1) == '$') {
+                count++;
+                index++;
+            }
+        }
+        return count;
     }
 
     private static boolean isScopePrefix(List<Integer> aliasScope, List<Integer> referenceScope) {
@@ -394,5 +472,7 @@ final class MigrationRules {
 
     private record ScopedAlias(String name, List<Integer> scope) {}
 
-    record Result(Map<String, Ownership> ownership, List<String> violations) {}
+    record Migration(int version, Path path) {}
+
+    record Result(Map<String, Ownership> ownership, List<Migration> migrations, List<String> violations) {}
 }

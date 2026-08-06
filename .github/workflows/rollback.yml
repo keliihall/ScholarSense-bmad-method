@@ -45,7 +45,18 @@ jobs:
         env:
           ORAS_PASSWORD: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
+          DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64: ${{ secrets.DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64 }}
+          DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION: ${{ vars.DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION }}
+          DATA_CATALOG_TARGET_EXPECTED_AUTHORITY: ${{ vars.DATA_CATALOG_TARGET_EXPECTED_AUTHORITY }}
+          DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT: stage
         run: |
+          trusted_key="$RUNNER_TEMP/rollback-dcc-target-trusted-signing.key"
+          test ! -e "$trusted_key"
+          umask 077
+          trap 'rm -f -- "$trusted_key"' EXIT INT TERM
+          printf '%s' "$DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY_BASE64" | base64 --decode > "$trusted_key"
+          chmod 600 "$trusted_key"
+          export DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY="$trusted_key"
           ./scripts/rollback-release.sh \
             "$HISTORICAL_RELEASE_VERSION" \
             "$HISTORICAL_ENVIRONMENT" \
