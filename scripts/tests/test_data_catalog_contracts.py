@@ -341,6 +341,14 @@ class DataCatalogContractTest(unittest.TestCase):
             _openapi_schema_issues(openapi, "CatalogDetail", wrong_verified_source)
         )
 
+        unbound_verified_source = _java_catalog_json("PUBLISHED", detail=True)
+        unbound_verified_source["sources"][0]["evidenceUri"] = (
+            "evidence+sha256://" + "f" * 64
+        )
+        self.assertTrue(
+            _openapi_schema_issues(openapi, "CatalogDetail", unbound_verified_source)
+        )
+
     def test_openapi_numeric_versions_share_the_javascript_safe_integer_ceiling(self) -> None:
         openapi = json.loads(OPENAPI.read_text(encoding="utf-8"))
         maximum = 9_007_199_254_740_991
@@ -419,6 +427,18 @@ class DataCatalogContractTest(unittest.TestCase):
         invented = copy.deepcopy(fixture["cases"][0])
         invented["mutation"] = "invented"
         self.assertEqual("DCC_FIXTURE_INVALID", execute_negative_fixture(invented, PROJECT_ROOT))
+
+        unbound_content_address = {
+            "mutation": "claim-fixture-as-runtime",
+            "input": {
+                "sourceId": "SRC-P0-CALENDAR-001",
+                "evidenceUri": "evidence+sha256://" + "f" * 64,
+            },
+        }
+        self.assertEqual(
+            "DCC_EVIDENCE_URI_INVALID",
+            execute_negative_fixture(unbound_content_address, PROJECT_ROOT),
+        )
 
     def test_compatibility_allows_optional_only_and_rejects_breaking_same_major(self) -> None:
         for name in (

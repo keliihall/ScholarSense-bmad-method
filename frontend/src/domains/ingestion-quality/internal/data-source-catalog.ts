@@ -366,8 +366,8 @@ function validEvidenceUri(
 ): boolean {
   if (claim === 'NONE') return uri === `evidence://pending/${sourceId}`;
   if (claim !== 'TARGET_VERIFIED') return false;
-  const addressed = /^(?:sha256|evidence\+sha256):\/\/([0-9a-f]{64})(?:#source=(SRC-P[01]-[A-Z-]+-[0-9]{3}))?$/.exec(uri);
-  if (addressed !== null) return addressed[2] === undefined || addressed[2] === sourceId;
+  const addressed = /^(?:sha256|evidence\+sha256):\/\/([0-9a-f]{64})#source=(SRC-P[01]-[A-Z-]+-[0-9]{3})$/.exec(uri);
+  if (addressed !== null) return addressed[2] === sourceId;
   return /^oci:\/\/ghcr\.io\/[a-z0-9_.-]+\/[a-z0-9_./-]+@sha256:[0-9a-f]{64}$/.test(uri)
     || /^s3-version:\/\/[a-z0-9][a-z0-9.-]{1,62}\/[^?#]+\?versionId=[A-Za-z0-9._~-]{8,}$/.test(uri);
 }

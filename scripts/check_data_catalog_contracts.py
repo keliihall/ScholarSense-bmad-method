@@ -40,7 +40,7 @@ FORBIDDEN_FIELDS = {
 }
 CONTENT_ADDRESSED_EVIDENCE = re.compile(
     r"^(?:sha256|evidence\+sha256)://(?P<digest>[0-9a-f]{64})"
-    r"(?:#source=(?P<source>SRC-P[01]-[A-Z-]+-[0-9]{3}))?$"
+    r"#source=(?P<source>SRC-P[01]-[A-Z-]+-[0-9]{3})$"
 )
 OCI_EVIDENCE = re.compile(
     r"^oci://ghcr\.io/[a-z0-9_.-]+/[a-z0-9_./-]+"
@@ -91,8 +91,7 @@ def _immutable_evidence_uri(value: Any, source_id: str) -> bool:
         return False
     addressed = CONTENT_ADDRESSED_EVIDENCE.fullmatch(value)
     if addressed is not None:
-        bound_source = addressed.group("source")
-        return bound_source is None or bound_source == source_id
+        return addressed.group("source") == source_id
     return OCI_EVIDENCE.fullmatch(value) is not None or S3_VERSION_EVIDENCE.fullmatch(value) is not None
 
 

@@ -127,6 +127,13 @@ describe('data source catalog frontend boundary', () => {
     await expect(new DataSourceCatalogClient(
       vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(wrongSource)),
     ).detail(catalogId)).rejects.toThrow('INGESTION_QUALITY_RESPONSE_INVALID');
+
+    const unboundSource = structuredClone(detail) as any;
+    unboundSource.sources[0].runtimeEvidenceClaim = 'TARGET_VERIFIED';
+    unboundSource.sources[0].evidenceUri = `evidence+sha256://${'a'.repeat(64)}`;
+    await expect(new DataSourceCatalogClient(
+      vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(unboundSource)),
+    ).detail(catalogId)).rejects.toThrow('INGESTION_QUALITY_RESPONSE_INVALID');
   });
 
   it('rejects sparse hasMore pages and contradictory published state fields', async () => {
