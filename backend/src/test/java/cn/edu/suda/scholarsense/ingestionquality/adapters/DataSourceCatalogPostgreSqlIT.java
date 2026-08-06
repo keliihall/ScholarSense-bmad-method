@@ -714,11 +714,32 @@ class DataSourceCatalogPostgreSqlIT {
         publishDirect(CATALOG_ID, RELEASE_ID, NOW, 1);
         JdbcTemplate onlineJdbc = new JdbcTemplate(workloadDataSource(ONLINE_LOGIN));
         Instant draftCreatedAt = NOW.plusSeconds(10);
+        UUID initiallyPublishableId = UUID.fromString(
+                "019fc6b8-9400-7000-8000-000000000148");
+        UUID initiallyInvalidId = UUID.fromString(
+                "019fc6b8-9400-7000-8000-000000000149");
         UUID initiallyPublishedId = UUID.fromString(
                 "019fc6b8-9400-7000-8000-000000000141");
         UUID incompleteId = UUID.fromString(
                 "019fc6b8-9400-7000-8000-000000000142");
 
+        assertThrows(DataAccessException.class, () -> onlineJdbc.update("""
+                insert into ingestion_quality.iq_data_source_catalog
+                  (catalog_id,catalog_release_id,contract_version,status,aggregate_version,
+                   content_digest,evidence_set_digest,validation_errors,created_at,updated_at,
+                   published_at,expires_at)
+                values (?,null,'DCC-1.0.0','publishable',2,?,null,'[]'::jsonb,?,?,null,null)
+                """, initiallyPublishableId, "sha256:" + "1".repeat(64),
+                Timestamp.from(draftCreatedAt), Timestamp.from(draftCreatedAt)));
+        assertThrows(DataAccessException.class, () -> onlineJdbc.update("""
+                insert into ingestion_quality.iq_data_source_catalog
+                  (catalog_id,catalog_release_id,contract_version,status,aggregate_version,
+                   content_digest,evidence_set_digest,validation_errors,created_at,updated_at,
+                   published_at,expires_at)
+                values (?,null,'DCC-1.0.0','invalid',2,?,null,
+                        '["fabricated"]'::jsonb,?,?,null,null)
+                """, initiallyInvalidId, "sha256:" + "1".repeat(64),
+                Timestamp.from(draftCreatedAt), Timestamp.from(draftCreatedAt)));
         assertThrows(DataAccessException.class, () -> onlineJdbc.update("""
                 insert into ingestion_quality.iq_data_source_catalog
                   (catalog_id,catalog_release_id,contract_version,status,aggregate_version,

@@ -235,10 +235,10 @@ language plpgsql
 set search_path = pg_catalog
 as $$
 begin
-    if new.status = 'published' then
+    if new.status <> 'draft' then
         raise exception using
             errcode = 'check_violation',
-            message = 'INGESTION_QUALITY_INITIAL_PUBLISHED_CATALOG_REJECTED';
+            message = 'INGESTION_QUALITY_INITIAL_CATALOG_STATE_INVALID';
     end if;
     return new;
 end

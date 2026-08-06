@@ -419,10 +419,11 @@ class MigrationOwnershipContractTest {
         assertFalse(lower.contains("grant update (catalog_id, aggregate_version, "
                 + "pointer_version, switched_at)"));
         assertTrue(lower.contains("if old.status = 'published'"));
+        assertTrue(lower.contains("if new.status <> 'draft'"));
         assertTrue(lower.contains("to_jsonb(new) - 'legal_hold'"));
         assertTrue(lower.contains("to_jsonb(old) - 'legal_hold'"));
         assertTrue(lower.contains("ingestion_quality_published_catalog_immutable"));
-        assertTrue(lower.contains("ingestion_quality_initial_published_catalog_rejected"));
+        assertTrue(lower.contains("ingestion_quality_initial_catalog_state_invalid"));
         assertTrue(lower.contains("iq_data_source_catalog_initial_published_rejected"));
         assertTrue(lower.contains("iq_source_contract_published_insert_rejected"));
         assertTrue(lower.contains("iq_dependency_binding_published_insert_rejected"));
