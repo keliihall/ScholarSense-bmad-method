@@ -48,6 +48,11 @@ class PostgreSqlDataSourceStartupGateTest {
                         && sql.contains("iq_add_catalog_dependency")
                         && sql.contains("iq_record_catalog_validation")
                         && sql.contains("iq_publish_catalog")
+                        && sql.contains("iq_mapping_recompute_request")
+                        && sql.contains("iq_record_mapping_recompute_plan")
+                        && sql.contains("iq_fail_mapping_recompute_job")
+                        && sql.contains("iq_requeue_mapping_recompute_job")
+                        && sql.contains("iq_cancel_mapping_recompute_job")
                         && !sql.contains("iq_cleanup_expired")));
         verify(relay.statement()).executeQuery(argThat(sql ->
                 sql.contains("expected_table") && sql.contains("'MAINTAIN'")

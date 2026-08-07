@@ -1,0 +1,147 @@
+{
+  "openapi": "3.1.2",
+  "info": {"title": "ScholarSense Subject Registry API", "version": "1.0.0"},
+  "servers": [{"url": "/api/v1"}],
+  "paths": {
+    "/subject-mapping-exceptions": {
+      "get": {
+        "operationId": "listSubjectMappingExceptions",
+        "parameters": [
+          {"name": "page", "in": "query", "schema": {"type": "integer", "minimum": 0, "default": 0}},
+          {"name": "size", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20}},
+          {"name": "status", "in": "query", "schema": {"type": "string", "enum": ["open", "repairing", "resolved", "dismissed"]}}
+        ],
+        "responses": {
+          "200": {"description": "Authorized page", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ExceptionPage"}}}},
+          "403": {"$ref": "#/components/responses/NondisclosureError"},
+          "503": {"$ref": "#/components/responses/DependencyError"}
+        }
+      }
+    },
+    "/subject-mapping-exceptions/{exceptionId}": {
+      "get": {
+        "operationId": "getSubjectMappingException",
+        "parameters": [{"$ref": "#/components/parameters/ExceptionId"}],
+        "responses": {
+          "200": {"description": "Authorized detail", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SubjectMappingException"}}}},
+          "404": {"$ref": "#/components/responses/NondisclosureError"},
+          "503": {"$ref": "#/components/responses/DependencyError"}
+        }
+      }
+    },
+    "/subject-mapping-exceptions/{exceptionId}/repair": {
+      "post": {
+        "operationId": "repairSubjectMappingException",
+        "parameters": [
+          {"$ref": "#/components/parameters/ExceptionId"},
+          {"name": "Idempotency-Key", "in": "header", "required": true, "schema": {"type": "string", "minLength": 16, "maxLength": 128}}
+        ],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RepairCommand"}}}},
+        "responses": {
+          "202": {"description": "Repair accepted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RepairResult"}}}},
+          "409": {"description": "Version or idempotency conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ConflictError"}}}},
+          "404": {"$ref": "#/components/responses/NondisclosureError"},
+          "503": {"$ref": "#/components/responses/DependencyError"}
+        }
+      }
+    },
+    "/subject-recompute-jobs/{jobId}": {
+      "get": {
+        "operationId": "getSubjectRecomputeJob",
+        "parameters": [{"name": "jobId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}],
+        "responses": {
+          "200": {"description": "Authorized job state", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RecomputeJob"}}}},
+          "404": {"$ref": "#/components/responses/NondisclosureError"},
+          "503": {"$ref": "#/components/responses/DependencyError"}
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "ExceptionId": {"name": "exceptionId", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}
+    },
+    "responses": {
+      "NondisclosureError": {"description": "Not found or unauthorized", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}},
+      "DependencyError": {"description": "Required trusted dependency unavailable", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorEnvelope"}}}}
+    },
+    "schemas": {
+      "SubjectMappingException": {
+        "type": "object", "additionalProperties": false,
+        "required": ["exceptionId", "status", "subjectOfficialRef", "exceptionCode", "sourceSystem", "sourceOwner", "detectedAt"],
+        "properties": {
+          "exceptionId": {"type": "string", "format": "uuid"},
+          "status": {"enum": ["open", "repairing", "resolved", "dismissed"]},
+          "subjectOfficialRef": {"type": ["string", "null"]},
+          "exceptionCode": {"type": "string"},
+          "sourceSystem": {"type": "string"},
+          "sourceOwner": {"type": "string"},
+          "detectedAt": {"type": "string", "format": "date-time"}
+        }
+      },
+      "ExceptionPage": {
+        "type": "object", "additionalProperties": false,
+        "required": ["items", "page", "size", "hasMore"],
+        "properties": {
+          "items": {"type": "array", "items": {"$ref": "#/components/schemas/SubjectMappingException"}},
+          "page": {"type": "integer", "minimum": 0},
+          "size": {"type": "integer", "minimum": 1, "maximum": 100},
+          "hasMore": {"type": "boolean"}
+        }
+      },
+      "RepairCommand": {
+        "type": "object", "additionalProperties": false,
+        "required": ["expectedAggregateVersion", "reasonCode", "sourceWatermark", "relationType", "sourceStudentRef", "targetStudentRefs"],
+        "properties": {
+          "expectedAggregateVersion": {"type": "integer", "minimum": 1},
+          "reasonCode": {"enum": ["AUTHORITY_CORRECTION", "IDENTIFIER_REISSUED", "SUBJECT_MERGED", "SUBJECT_SPLIT", "MAPPING_REVOKED"]},
+          "sourceWatermark": {"type": "string", "minLength": 1, "maxLength": 128},
+          "relationType": {"enum": ["alias", "merged-into", "split-into"]},
+          "sourceStudentRef": {"type": "string", "format": "uuid"},
+          "targetStudentRefs": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"type": "string", "format": "uuid"}}
+        }
+      },
+      "RepairResult": {
+        "type": "object", "additionalProperties": false,
+        "required": ["exceptionId", "status", "aggregateVersion", "correctionId", "jobIds", "traceId"],
+        "properties": {
+          "exceptionId": {"type": "string", "format": "uuid"},
+          "status": {"const": "resolved"},
+          "aggregateVersion": {"type": "integer", "minimum": 2},
+          "correctionId": {"type": "string", "format": "uuid"},
+          "jobIds": {"type": "array", "uniqueItems": true, "items": {"type": "string", "format": "uuid"}},
+          "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
+        }
+      },
+      "RecomputeJob": {
+        "type": "object", "additionalProperties": false,
+        "required": ["jobId", "status", "attemptNo", "queuedAt", "completedAt", "resultCode", "traceId"],
+        "properties": {
+          "jobId": {"type": "string", "format": "uuid"},
+          "status": {"enum": ["queued", "running", "succeeded", "failed", "cancelled"]},
+          "attemptNo": {"type": "integer", "minimum": 0},
+          "queuedAt": {"type": "string", "format": "date-time"},
+          "completedAt": {"type": ["string", "null"], "format": "date-time"},
+          "resultCode": {"type": ["string", "null"]},
+          "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
+        }
+      },
+      "ErrorEnvelope": {
+        "type": "object", "additionalProperties": false,
+        "required": ["code", "message", "traceId", "fieldErrors"],
+        "properties": {
+          "code": {"type": "string"},
+          "message": {"type": "string"},
+          "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+          "fieldErrors": {"type": "array", "items": {"type": "object"}}
+        }
+      },
+      "ConflictError": {
+        "allOf": [
+          {"$ref": "#/components/schemas/ErrorEnvelope"},
+          {"type": "object", "required": ["currentAggregateVersion"], "properties": {"currentAggregateVersion": {"type": "integer", "minimum": 1}}}
+        ]
+      }
+    }
+  }
+}

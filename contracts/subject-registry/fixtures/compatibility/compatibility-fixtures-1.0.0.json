@@ -1,0 +1,8 @@
+{
+  "fixtureVersion": "SUBJECT-COMPATIBILITY-FIXTURES-1.0.0",
+  "cases": [
+    {"caseId": "optional-addition", "fromVersion": "1.0.0", "toVersion": "1.1.0", "change": "add-optional-field", "expected": "COMPATIBLE"},
+    {"caseId": "required-addition", "fromVersion": "1.0.0", "toVersion": "1.1.0", "change": "add-required-field", "expected": "BREAKING_CHANGE_REQUIRES_MAJOR"},
+    {"caseId": "field-removal", "fromVersion": "1.0.0", "toVersion": "1.1.0", "change": "remove-field", "expected": "BREAKING_CHANGE_REQUIRES_MAJOR"}
+  ]
+}

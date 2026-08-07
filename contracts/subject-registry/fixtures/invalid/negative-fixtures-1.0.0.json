@@ -1,0 +1,11 @@
+{
+  "fixtureVersion": "SUBJECT-NEGATIVE-FIXTURES-1.0.0",
+  "cases": [
+    {"caseId": "unapproved-policy", "mutation": "approval-draft", "expectedCode": "SUBJECT_REGISTRY_POLICY_NOT_APPROVED"},
+    {"caseId": "unknown-policy", "mutation": "policy-version-unknown", "expectedCode": "SUBJECT_REGISTRY_POLICY_VERSION_UNKNOWN"},
+    {"caseId": "duplicate-adapter", "mutation": "duplicate-source-adapter", "expectedCode": "SUBJECT_REGISTRY_ADAPTER_SET_INVALID"},
+    {"caseId": "fuzzy-enabled", "mutation": "enable-fuzzy", "expectedCode": "SUBJECT_REGISTRY_FUZZY_MATCH_FORBIDDEN"},
+    {"caseId": "quality-recovery-contamination", "mutation": "add-quality-recovery-default", "expectedCode": "SUBJECT_REGISTRY_QRP_POLICY_CONTAMINATION"},
+    {"caseId": "forbidden-event-field", "mutation": "add-sensitive-event-field", "expectedCode": "SUBJECT_REGISTRY_WIRE_FIELD_FORBIDDEN"}
+  ]
+}

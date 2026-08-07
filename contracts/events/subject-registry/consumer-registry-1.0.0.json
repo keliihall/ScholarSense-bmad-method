@@ -1,0 +1,11 @@
+{
+  "$schema": "consumer-registry.schema.json",
+  "registryVersion": "SUBJECT-CONSUMERS-1.0.0",
+  "eventType": "cn.edu.suda.scholarsense.subject-mapping.changed.v1",
+  "completionRule": "all-active-watermarks-at-event-and-reconciliation-passed",
+  "consumers": [
+    {"consumerId": "ingestion-quality-subject-window", "ownerModule": "ingestion-quality", "lifecycle": "active", "appliesFromAggregateVersion": 1, "runtimeEvidenceClaim": "none", "ownerStory": "2.2"},
+    {"consumerId": "signal-evaluation-supersede", "ownerModule": "signal-evaluation", "lifecycle": "planned", "appliesFromAggregateVersion": 1, "runtimeEvidenceClaim": "none", "ownerStory": "3.4"},
+    {"consumerId": "clue-care-correction-review", "ownerModule": "clue-care", "lifecycle": "planned", "appliesFromAggregateVersion": 1, "runtimeEvidenceClaim": "none", "ownerStory": "3.5"}
+  ]
+}

@@ -75,6 +75,17 @@ CONTROLLED_INPUTS_V3 = {
         "QG-1.0.0", "contracts/data-catalog/qg-1.0.0.json",
     ),
 }
+CONTROLLED_INPUTS_V4 = {
+    **CONTROLLED_INPUTS_V3,
+    "SubjectRegistry": (
+        "SUBJECT-REGISTRY-LOCK-1.0.0",
+        "contracts/subject-registry/subject-registry-contract-lock-1.0.0.json",
+    ),
+    "SubjectRegistryRuntime": (
+        "SUBJECT-REGISTRY-RUNTIME-1.0.0",
+        "deploy/base/subject-registry-runtime-1.0.0.json",
+    ),
+}
 # Backward-compatible public name: it remains the immutable V1 mapping.
 CONTROLLED_INPUTS = CONTROLLED_INPUTS_V1
 LOCKS = {
@@ -264,14 +275,15 @@ def assemble_release_manifest_input(
             _reference("frontend-brand-asset-manifest", "BRAND-ASSET-MANIFEST-1.0.0", artifact_uri, source_root / "contracts/release/brand-asset-manifest-1.0.0.json", kind="brand-asset-manifest", subject_sha256=subject_digests["frontend"]),
         ]
     )
-    if manifest_version not in {"1", "2", "3"}:
+    if manifest_version not in {"1", "2", "3", "4"}:
         raise ValueError("RELEASE_ASSEMBLY_MANIFEST_VERSION_INVALID")
     controlled_inputs = (
-        CONTROLLED_INPUTS_V3 if manifest_version == "3"
+        CONTROLLED_INPUTS_V4 if manifest_version == "4"
+        else CONTROLLED_INPUTS_V3 if manifest_version == "3"
         else CONTROLLED_INPUTS_V2 if manifest_version == "2"
         else CONTROLLED_INPUTS_V1
     )
-    if manifest_version in {"2", "3"}:
+    if manifest_version in {"2", "3", "4"}:
         if (
             public_integration_target_evidence_uri is None
             or public_integration_target_evidence_path is None
@@ -348,7 +360,7 @@ def assemble_release_manifest_input(
             "scenarioSetSha256": scenario_digest,
         })
         evidence.append(pic_reference)
-    if manifest_version == "3":
+    if manifest_version in {"3", "4"}:
         if (
             data_catalog_target_evidence_uri is None
             or data_catalog_target_evidence_path is None
@@ -478,11 +490,18 @@ def assemble_release_manifest_input(
             "runtimeEvidenceClaim": "none",
         },
     ]
-    if manifest_version == "3":
+    if manifest_version in {"3", "4"}:
         runtime_evidence.append({
             "id": "data-catalog-target-conformance",
             "status": "passed",
             "evidenceIds": ["DataCatalogTargetConformance"],
+        })
+    if manifest_version == "4":
+        runtime_evidence.append({
+            "id": "subject-registry-production-kms",
+            "status": "deployment-input-required",
+            "ownerStory": "2.2",
+            "runtimeEvidenceClaim": "none",
         })
     return {
         "manifestVersion": manifest_version,

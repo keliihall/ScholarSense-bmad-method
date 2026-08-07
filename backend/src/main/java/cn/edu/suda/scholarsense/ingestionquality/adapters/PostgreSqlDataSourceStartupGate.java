@@ -84,7 +84,12 @@ public final class PostgreSqlDataSourceStartupGate {
                     entry("iq_catalog_current", "SELECT"),
                     entry("iq_catalog_idempotency", "SELECT"),
                     entry("iq_local_audit_outbox", "SELECT"),
-                    entry("iq_local_audit_outbox", "INSERT")),
+                    entry("iq_local_audit_outbox", "INSERT"),
+                    entry("iq_historical_window", "SELECT"),
+                    entry("iq_subject_mapping_consumer_cursor", "SELECT"),
+                    entry("iq_mapping_recompute_request", "SELECT"),
+                    entry("iq_mapping_recompute_job", "SELECT"),
+                    entry("iq_mapping_recompute_result", "SELECT")),
             List.of(
                     columnEntry("iq_data_source_catalog", "catalog_id", "INSERT"),
                     columnEntry("iq_data_source_catalog", "catalog_release_id", "INSERT"),
@@ -128,18 +133,51 @@ public final class PostgreSqlDataSourceStartupGate {
                     "iq_record_catalog_validation(uuid, bigint, character varying, bigint, "
                             + "jsonb, timestamp with time zone, uuid, character varying)",
                     "iq_publish_catalog(uuid, bigint, bigint, uuid, character varying, "
-                            + "timestamp with time zone, bigint, jsonb)"));
+                            + "timestamp with time zone, bigint, jsonb)",
+                    "iq_record_historical_window(character varying, uuid, "
+                            + "timestamp with time zone, timestamp with time zone, "
+                            + "character varying, jsonb, jsonb, bigint, jsonb, "
+                            + "character varying, character varying, character varying, "
+                            + "uuid, character, timestamp with time zone, timestamp with time zone)",
+                    "iq_accept_subject_mapping_event(character varying, character varying, "
+                            + "uuid, uuid, bigint, timestamp with time zone, uuid, "
+                            + "character varying, uuid[], character varying, character varying, "
+                            + "boolean, timestamp with time zone)",
+                    "iq_reconcile_subject_mapping_consumer(character varying, uuid, bigint, "
+                            + "timestamp with time zone)",
+                    "iq_enqueue_mapping_recompute(uuid, uuid, character varying, uuid, "
+                            + "character varying, character varying, character varying, "
+                            + "character varying, character, "
+                            + "timestamp with time zone, timestamp with time zone, character)",
+                    "iq_record_mapping_recompute_plan(uuid, uuid, character varying, integer, "
+                            + "integer, timestamp with time zone, character)",
+                    "iq_claim_mapping_recompute_job(uuid, character varying, "
+                            + "timestamp with time zone, timestamp with time zone)",
+                    "iq_checkpoint_mapping_recompute_job(uuid, bigint, bigint, "
+                            + "timestamp with time zone)",
+                    "iq_complete_mapping_recompute_job(uuid, bigint, timestamp with time zone, uuid)",
+                    "iq_fail_mapping_recompute_job(uuid, bigint, timestamp with time zone, "
+                            + "character varying)",
+                    "iq_requeue_mapping_recompute_job(uuid, bigint, timestamp with time zone)",
+                    "iq_cancel_mapping_recompute_job(uuid, bigint, timestamp with time zone)"));
     private static final String RELAY_PRIVILEGE_QUERY = privilegeQuery(
             List.of(
                     entry("iq_local_audit_fact", "SELECT"),
-                    entry("iq_local_audit_outbox", "SELECT")),
+                    entry("iq_local_audit_outbox", "SELECT"),
+                    entry("iq_mapping_recompute_outbox", "SELECT")),
             List.of(
                     columnEntry("iq_local_audit_outbox", "status", "UPDATE"),
                     columnEntry("iq_local_audit_outbox", "attempts", "UPDATE"),
                     columnEntry("iq_local_audit_outbox", "available_at", "UPDATE"),
                     columnEntry("iq_local_audit_outbox", "claimed_until", "UPDATE"),
                     columnEntry("iq_local_audit_outbox", "delivered_at", "UPDATE"),
-                    columnEntry("iq_local_audit_outbox", "last_error_code", "UPDATE")),
+                    columnEntry("iq_local_audit_outbox", "last_error_code", "UPDATE"),
+                    columnEntry("iq_mapping_recompute_outbox", "status", "UPDATE"),
+                    columnEntry("iq_mapping_recompute_outbox", "attempts", "UPDATE"),
+                    columnEntry("iq_mapping_recompute_outbox", "available_at", "UPDATE"),
+                    columnEntry("iq_mapping_recompute_outbox", "claimed_until", "UPDATE"),
+                    columnEntry("iq_mapping_recompute_outbox", "delivered_at", "UPDATE"),
+                    columnEntry("iq_mapping_recompute_outbox", "last_error_code", "UPDATE")),
             List.of("iq_cleanup_expired(timestamp with time zone)"));
 
     private PostgreSqlDataSourceStartupGate() {}

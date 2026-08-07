@@ -1,0 +1,10 @@
+{
+  "fixtureVersion": "SUBJECT-MAPPING-FIXTURES-1.0.0",
+  "cases": [
+    {"caseId": "authoritative-unique", "sourceId": "SRC-P0-STUDENT-001", "candidateCount": 1, "authorityProof": true, "identifierPreviouslyIssued": false, "continuityProof": true, "expected": "ISSUE_STUDENT_REF"},
+    {"caseId": "no-match", "sourceId": "SRC-P0-CARD-001", "candidateCount": 0, "authorityProof": false, "identifierPreviouslyIssued": false, "continuityProof": false, "expected": "ISOLATE_NO_MATCH"},
+    {"caseId": "ambiguous", "sourceId": "SRC-P0-DORM-ACCESS-001", "candidateCount": 2, "authorityProof": false, "identifierPreviouslyIssued": false, "continuityProof": false, "expected": "ISOLATE_AMBIGUOUS"},
+    {"caseId": "identifier-reissued", "sourceId": "SRC-P0-CARD-001", "candidateCount": 1, "authorityProof": false, "identifierPreviouslyIssued": true, "continuityProof": false, "expected": "ISOLATE_REISSUE_UNPROVEN"},
+    {"caseId": "non-authority-unique", "sourceId": "SRC-P1-NETWORK-001", "candidateCount": 1, "authorityProof": false, "identifierPreviouslyIssued": false, "continuityProof": true, "expected": "RESOLVE_EXISTING_ONLY"}
+  ]
+}

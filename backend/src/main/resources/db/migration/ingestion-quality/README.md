@@ -24,6 +24,19 @@ its CAS revision increases by one and `switched_at` must move forward.
 Aggregate and pointer versions are bounded to the cross-language exact-integer range
 `1..9007199254740991`.
 
+`V000013__ingestion-quality__subject_window_recompute_v1.sql` adds the owner-local,
+rebuildable historical-window projection and the durable subject-mapping correction
+consumer. Historical windows use UTC half-open ranges, retain the explicit business
+timezone and version/watermark lineage, and reject overlap with a GiST exclusion
+constraint. The correction inbox enforces `source + event_id` idempotency and monotonic
+aggregate watermarks, while gap/poison quarantine and reconciliation remain explicit.
+Recompute jobs use the approved seven-field identity, leases with monotonic fencing
+tokens, append-only results, and an outbox; completion rechecks `latest_actionable_at`
+before it can publish an actionable result. The online role has no raw write privilege
+on these tables and can mutate them only through fixed-search-path security-definer
+functions. The relay role can only read and advance delivery metadata on the recompute
+outbox.
+
 RS-1.0.0 retains catalog, evidence, and local-audit facts for exactly three UTC calendar years and
 idempotency claims for exactly 90 days. Expiry, schedule, owner, and legal-hold fields are protected
 from workload mutation. A trusted-cutoff `SECURITY DEFINER` cleanup function is executable only by

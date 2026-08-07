@@ -104,6 +104,29 @@ main { display: grid; gap: 16px; }
 .digest { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .875em; }
 .catalog-actions { display: grid; gap: .75rem; }
 @media (max-width: 48rem) { .catalog-version-list button { width: 100%; } }
+.subject-registry { display: grid; gap: 1rem; min-width: 0; }
+.subject-registry > h2 { margin-bottom: 0; }
+.subject-filter { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; padding: 1rem; border: 1px solid #c9c1bc; border-radius: .5rem; background: #fff; }
+.subject-filter label,
+.subject-repair-form label { display: grid; gap: .35rem; font-weight: 700; }
+.subject-filter input,
+.subject-filter select,
+.subject-repair-form input,
+.subject-repair-form select,
+.subject-repair-form textarea { width: 100%; min-width: 0; min-height: 40px; padding: .5rem; border: 1px solid #716762; border-radius: .25rem; color: inherit; background: #fff; }
+.subject-state,
+.subject-error,
+.subject-success { padding: 1rem; border-inline-start: .35rem solid var(--ss-web-primary); background: #fff; }
+.subject-table-wrap { max-width: 100%; overflow: auto; border: 1px solid #716762; }
+.subject-table-wrap:focus { outline: .2rem solid currentColor; outline-offset: .1rem; }
+.subject-table-wrap table { min-width: 72rem; }
+.subject-pagination { display: flex; justify-content: center; align-items: center; gap: .75rem; }
+.subject-detail { display: grid; gap: 1rem; padding: 1rem; border: 1px solid #c9c1bc; border-radius: .5rem; background: #fff; }
+.subject-detail dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .75rem 1rem; }
+.subject-detail dt { font-weight: 700; }
+.subject-detail dd { margin: .2rem 0 0; overflow-wrap: anywhere; }
+.subject-repair-form { display: grid; gap: .75rem; max-width: 46rem; }
+.technical-id { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .el-button a { color: inherit; text-decoration: none; }
 .baseline-chart { width: 100%; height: 280px; }
 table { width: 100%; border-collapse: collapse; }

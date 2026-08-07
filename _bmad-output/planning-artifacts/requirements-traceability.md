@@ -106,7 +106,7 @@ Story 1.8 runtime companion（2026-08-03）：Story 1.8 的原 v3 隔离候选�
 | FR-10 | §6.3 | 标识异常 | AD-4/25 | 2.2 / AC-2.2-HAPPY | 2.1 | G-03 | full / ready |
 | FR-11 | §6.3 | data-quality-panel | AD-5/11/16/22 | 2.3 / AC-2.3-HAPPY | 2.1 | G-03 | full / ready |
 | FR-12 | §6.3 | 熔断/恢复 | AD-5/6/13/23/25 | 3.2 / AC-3.2-HAPPY | 2.4,2.5a,2.5b,2.5c | G-03/G-06/DEC-004 | full / ready |
-| FR-13 | §6.3 | 数据批次/重算 | AD-4/5/13/25 | 2.2 / AC-2.2-HAPPY | 2.3 | G-03 | full / ready |
+| FR-13 | §6.3 | 数据批次/重算 | AD-4/5/13/25 | 2.2 / AC-2.2-HAPPY（FR-13 runtime staged：本 Story 关闭数据侧窗口/重算与 consumer conformance；3.4/3.5/3.14c 负责真实 owner apply） | 2.3 | G-03；`SUBJECT-DEFERRED-CONSUMERS-1.0.0`，未激活 owner `runtimeEvidenceClaim=none` | planning full / runtime staged |
 | FR-14 | §6.4 | rule-lifecycle-panel | AD-3/6/13 | 3.1a / AC-3.1a-HAPPY | 3.1b | G-06 | full / ready |
 | FR-15 | §6.4 | 三类规则状态 | AD-3/6/23 | 3.1c / AC-3.1c-* | 3.1a,3.1b | G-06/DEC-004 | full / ready |
 | FR-16 | §6.4 | evidence-chain | AD-4/6 | 3.3a / AC-3.3a-HAPPY | 2.2 | G-06 | full / ready |

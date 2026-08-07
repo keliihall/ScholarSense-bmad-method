@@ -1,0 +1,36 @@
+{
+  "$schema": "subject-repair-projection-policy.schema.json",
+  "policyVersion": "SUBJECT-REPAIR-PROJECTION-1.0.0",
+  "successorOf": ["RFP-1.0.0", "FIELD-PROJECTION-1.0.0"],
+  "approval": {
+    "status": "approved",
+    "approvedBy": "Hei",
+    "approvedAt": "2026-08-06T15:39:00+08:00",
+    "decisionAuthority": "user-authorized-product-owner",
+    "evidenceRef": "story://2.2/authorized-decision-2026-08-06"
+  },
+  "purpose": "SUBJECT_MAPPING_EXCEPTION_REPAIR",
+  "roles": {
+    "R6": {"requiresOwnedSource": true, "actions": ["data-quality.read", "data-quality.repair", "data-quality.reconcile"]},
+    "R7": {"requiresOwnedSource": false, "actions": ["platform.read"], "technicalOnly": true},
+    "others": {"result": "deny-nondisclosing"}
+  },
+  "objects": [
+    {
+      "objectClass": "SubjectMappingException",
+      "r6ClearFields": ["exceptionId", "status", "subjectOfficialRef", "exceptionCode", "sourceSystem", "sourceOwner", "detectedAt"],
+      "r7ClearFields": ["status", "exceptionCode", "traceId"]
+    },
+    {
+      "objectClass": "MappingImpact",
+      "r6ClearFields": ["impactId", "status", "affectedWindowCount", "affectedRuleCount", "sourceSystem", "calculatedAt"],
+      "r7ClearFields": ["status", "traceId"]
+    },
+    {
+      "objectClass": "RecomputeJob",
+      "r6ClearFields": ["jobId", "status", "attemptNo", "queuedAt", "completedAt", "resultCode", "traceId"],
+      "r7ClearFields": ["jobId", "status", "attemptNo", "resultCode", "traceId"]
+    }
+  ],
+  "globalHiddenFields": ["sourceNativeIdentifier", "protectedIdentifierToken", "ciphertext", "keyValue", "evidenceBody", "candidateStudentRefs", "ruleImpactDetails"]
+}

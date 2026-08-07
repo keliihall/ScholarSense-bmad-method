@@ -1,0 +1,11 @@
+{
+  "fixtureVersion": "SUBJECT-ORDERING-FIXTURES-1.0.0",
+  "cases": [
+    {"caseId": "initial-apply", "currentVersion": 0, "eventVersion": 1, "eventSeen": false, "mode": "normal", "expected": "APPLY"},
+    {"caseId": "duplicate", "currentVersion": 1, "eventVersion": 1, "eventSeen": true, "mode": "normal", "expected": "DUPLICATE"},
+    {"caseId": "old-version", "currentVersion": 2, "eventVersion": 1, "eventSeen": false, "mode": "normal", "expected": "OLD_VERSION"},
+    {"caseId": "gap", "currentVersion": 1, "eventVersion": 3, "eventSeen": false, "mode": "normal", "expected": "GAP_PAUSED"},
+    {"caseId": "backfill", "currentVersion": 1, "eventVersion": 2, "eventSeen": false, "mode": "backfill", "expected": "BACKFILL_APPLY"},
+    {"caseId": "completion", "eventVersion": 4, "activeConsumerWatermarks": [4], "reconciliationPassed": true, "mode": "completion", "expected": "COMPLETED"}
+  ]
+}

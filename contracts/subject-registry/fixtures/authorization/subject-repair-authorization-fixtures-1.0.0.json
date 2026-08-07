@@ -1,0 +1,51 @@
+{
+  "fixtureVersion": "SUBJECT-REPAIR-AUTHORIZATION-FIXTURES-1.0.0",
+  "policyVersion": "SUBJECT-REPAIR-PROJECTION-1.0.0",
+  "cases": [
+    {
+      "caseId": "r6-owned-repair-purpose",
+      "role": "R6",
+      "ownedSource": true,
+      "action": "data-quality.repair",
+      "purpose": "SUBJECT_MAPPING_EXCEPTION_REPAIR",
+      "objectExists": true,
+      "expected": "ALLOW_SEVEN_FIELDS"
+    },
+    {
+      "caseId": "r6-unowned-repair",
+      "role": "R6",
+      "ownedSource": false,
+      "action": "data-quality.repair",
+      "purpose": "SUBJECT_MAPPING_EXCEPTION_REPAIR",
+      "objectExists": true,
+      "expected": "DENY_NONDISCLOSING"
+    },
+    {
+      "caseId": "r6-purpose-mismatch",
+      "role": "R6",
+      "ownedSource": true,
+      "action": "data-quality.repair",
+      "purpose": "GENERAL_DATA_QUALITY",
+      "objectExists": true,
+      "expected": "DENY_NONDISCLOSING"
+    },
+    {
+      "caseId": "r7-technical-read",
+      "role": "R7",
+      "ownedSource": false,
+      "action": "platform.read",
+      "purpose": "TECHNICAL_OPERATIONS",
+      "objectExists": true,
+      "expected": "ALLOW_TECHNICAL_ONLY"
+    },
+    {
+      "caseId": "missing-object-oracle",
+      "role": "R6",
+      "ownedSource": false,
+      "action": "data-quality.read",
+      "purpose": "SUBJECT_MAPPING_EXCEPTION_REPAIR",
+      "objectExists": false,
+      "expected": "DENY_NONDISCLOSING"
+    }
+  ]
+}

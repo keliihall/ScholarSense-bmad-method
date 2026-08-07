@@ -81,9 +81,23 @@
     "schema": "ingestion-quality-owner-bindings.schema.json",
     "location": "absolute-regular-non-symlink-mounted-file",
     "digest": "sha256-lowercase",
-    "objectClasses": ["SOURCE", "DEPENDENCY"],
+    "objectClasses": ["SOURCE", "DEPENDENCY", "SUBJECT_MAPPING_EXCEPTION", "JOB"],
     "bindingAnchors": ["ownerAccountIds", "ownerOrganizationIds"],
-    "missingDuplicateOrUnknown": "authorization-dependency-unavailable"
+    "missingDuplicateOrUnknown": "authorization-dependency-unavailable",
+    "derivedObjectBindings": {
+      "SUBJECT_MAPPING_EXCEPTION": {
+        "bindingLookupClass": "SOURCE",
+        "bindingKey": "exception-source-id",
+        "authorizationTokenDigest": "sha256(sourceId)",
+        "scopeAnchors": ["owned-source"]
+      },
+      "JOB": {
+        "bindingLookupClass": "SOURCE",
+        "bindingKey": "persisted-owner-source-id",
+        "authorizationTokenDigest": "sha256(ownerSourceId)",
+        "scopeAnchors": ["owned-source", "technical-object"]
+      }
+    }
   },
   "targetAuthoritySigningKey": {
     "environment": "SCHOLARSENSE_INGESTION_QUALITY_TARGET_SIGNING_KEY_PATH",

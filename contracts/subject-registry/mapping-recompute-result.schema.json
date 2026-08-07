@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/subject-registry/mapping-recompute-result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["jobId", "status", "resultCode", "historyCorrected", "businessPublicationCreated", "completedAt", "traceId"],
+  "properties": {
+    "jobId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "status": {"const": "succeeded"},
+    "resultCode": {"enum": ["RECOMPUTED", "EXPIRED_HISTORY_ONLY", "NO_ACTIONABLE_WINDOW"]},
+    "historyCorrected": {"const": true},
+    "businessPublicationCreated": {"type": "boolean"},
+    "completedAt": {"type": "string", "format": "date-time"},
+    "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"}
+  }
+}

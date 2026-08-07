@@ -1,0 +1,63 @@
+{
+  "$schema": "subject-mapping-policy.schema.json",
+  "policyVersion": "SMP-1.0.0",
+  "contractVersion": "SUBJECT-REGISTRY-1.0.0",
+  "canonicalSubjectId": "StudentRef",
+  "subjectRefSemantics": "wire-alias-of-StudentRef",
+  "approval": {
+    "status": "approved",
+    "approvedBy": "Hei",
+    "approvedAt": "2026-08-06T15:39:00+08:00",
+    "decisionAuthority": "user-authorized-product-owner",
+    "evidenceRef": "story://2.2/authorized-decision-2026-08-06"
+  },
+  "resolutionOutcomes": ["no-match", "unique", "ambiguous"],
+  "matchingRules": {
+    "mode": "exact-active-authority-crosswalk",
+    "fuzzyMatchingAllowed": false,
+    "crossSourceFallbackAllowed": false,
+    "zeroCandidates": "isolate-no-match",
+    "oneCandidate": "resolve-unique",
+    "multipleCandidates": "isolate-ambiguous"
+  },
+  "studentRefIssuance": {
+    "authoritySourceId": "SRC-P0-STUDENT-001",
+    "authorityIdentifierType": "student-number",
+    "requiredProof": "one-active-approved-student-record",
+    "identifierReuseRule": "new-proof-required-never-infer-continuity",
+    "studentRefReuse": "forbidden",
+    "reservationDeletion": "forbidden"
+  },
+  "temporalRules": {
+    "interval": "[effectiveFrom,effectiveTo)",
+    "storageTimezone": "UTC",
+    "businessTimezone": "Asia/Shanghai",
+    "overlapForSameSourceTypeToken": "forbidden-by-database",
+    "adjacentIntervals": "allowed",
+    "mappingVersion": "strictly-increasing-per-mapping-aggregate",
+    "oldFacts": "immutable"
+  },
+  "linkRules": {
+    "relationTypes": ["alias", "merged-into", "split-into"],
+    "targetCardinality": "0..n",
+    "splitResolution": "manual-selection-required",
+    "commands": ["merge", "split", "correct", "revoke"],
+    "eventRequiredFields": ["supersedesId", "reason", "effectiveAt", "lineageId"]
+  },
+  "protection": {
+    "normalizationPrefix": ["unicode-nfkc", "trim-unicode-whitespace", "reject-control-characters"],
+    "encryption": "aes-256-gcm-envelope-v1",
+    "searchToken": "hmac-sha-256-environment-key-version-v1",
+    "keyBinding": ["environment", "keyRef", "keyVersion"],
+    "runtimeEvidenceClaim": "none",
+    "plaintextDestinations": []
+  },
+  "sourceAdapters": [
+    {"sourceId": "SRC-P0-STUDENT-001", "ownerRole": "学籍主数据 owner", "identifierType": "student-number", "sourceNativeField": "studentNumber", "authoritativeStudentKeyField": "authoritativeStudentNumber", "normalizationProfile": "uppercase-preserve-leading-zero-v1", "matchMode": "exact-active-crosswalk", "mayIssueStudentRef": true, "inputContract": "SUBJECT-IDENTIFIER-ADAPTER-1.0.0"},
+    {"sourceId": "SRC-P0-CARD-001", "ownerRole": "一卡通数据 owner", "identifierType": "card-number", "sourceNativeField": "cardNumber", "authoritativeStudentKeyField": "authoritativeStudentNumber", "normalizationProfile": "uppercase-preserve-leading-zero-v1", "matchMode": "exact-active-crosswalk", "mayIssueStudentRef": false, "inputContract": "SUBJECT-IDENTIFIER-ADAPTER-1.0.0"},
+    {"sourceId": "SRC-P1-NETWORK-001", "ownerRole": "网络数据 owner", "identifierType": "campus-network-account", "sourceNativeField": "networkAccount", "authoritativeStudentKeyField": "authoritativeStudentNumber", "normalizationProfile": "lowercase-preserve-leading-zero-v1", "matchMode": "exact-active-crosswalk", "mayIssueStudentRef": false, "inputContract": "SUBJECT-IDENTIFIER-ADAPTER-1.0.0"},
+    {"sourceId": "SRC-P0-ACCOMMODATION-001", "ownerRole": "宿管数据 owner + 学工住宿备案 owner", "identifierType": "accommodation-student-number", "sourceNativeField": "studentNumber", "authoritativeStudentKeyField": "authoritativeStudentNumber", "normalizationProfile": "uppercase-preserve-leading-zero-v1", "matchMode": "exact-active-crosswalk", "mayIssueStudentRef": false, "inputContract": "SUBJECT-IDENTIFIER-ADAPTER-1.0.0"},
+    {"sourceId": "SRC-P0-CAMPUS-ACCESS-001", "ownerRole": "保卫校门数据 owner", "identifierType": "campus-access-credential", "sourceNativeField": "credentialNumber", "authoritativeStudentKeyField": "authoritativeStudentNumber", "normalizationProfile": "uppercase-preserve-leading-zero-v1", "matchMode": "exact-active-crosswalk", "mayIssueStudentRef": false, "inputContract": "SUBJECT-IDENTIFIER-ADAPTER-1.0.0"},
+    {"sourceId": "SRC-P0-DORM-ACCESS-001", "ownerRole": "宿舍门禁数据 owner", "identifierType": "dorm-access-credential", "sourceNativeField": "credentialNumber", "authoritativeStudentKeyField": "authoritativeStudentNumber", "normalizationProfile": "uppercase-preserve-leading-zero-v1", "matchMode": "exact-active-crosswalk", "mayIssueStudentRef": false, "inputContract": "SUBJECT-IDENTIFIER-ADAPTER-1.0.0"}
+  ]
+}

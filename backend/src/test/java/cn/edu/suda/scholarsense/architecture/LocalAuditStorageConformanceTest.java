@@ -77,7 +77,8 @@ class LocalAuditStorageConformanceTest {
                             throw new java.io.UncheckedIOException(error);
                         }
                     }).toList();
-            for (String owner : List.of("identity-access", "audit-operations", "ingestion-quality")) {
+            for (String owner : List.of(
+                    "identity-access", "audit-operations", "ingestion-quality", "subject-registry")) {
                 assertTrue(localAuditMigrations.stream()
                         .anyMatch(path -> path.toString().contains(owner)),
                         () -> "missing local-audit storage for " + owner);
@@ -85,7 +86,8 @@ class LocalAuditStorageConformanceTest {
             assertTrue(localAuditMigrations.stream()
                     .allMatch(path -> path.toString().contains("identity-access")
                             || path.toString().contains("audit-operations")
-                            || path.toString().contains("ingestion-quality")));
+                            || path.toString().contains("ingestion-quality")
+                            || path.toString().contains("subject-registry")));
         }
     }
 }

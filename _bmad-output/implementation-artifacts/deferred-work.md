@@ -31,3 +31,12 @@
 - Story 1.9 已合入 `main@9ab3369`；其历史 `runtimeClaim=none` 合同证据不构成真实业务 consumer apply 或目标环境提升声明。
 - Story 2.1 的本地 DCC/QG fixture、checker 和 sandbox 只证明合同实现；逐源 `published` 资格必须另有获准目标运行、不可变 URI、候选 subject/digest 与清理结果。
 - Story 6.6 继续拥有全域保留、legal hold、备份水位和跨域销毁回执最终验收；Epic 1 `done` 不表示生产 WORM 或全域销毁已经完成。
+
+## Story 2.2 FR-13 分阶段关闭（2026-08-06）
+
+### DEFER-4：主体更正下游生产 consumer 激活
+
+- **受控合同**：`SUBJECT-DEFERRED-CONSUMERS-1.0.0` 与 `SUBJECT-CONSUMERS-1.0.0`。
+- **本 Story 关闭范围**：主体映射、历史窗口、映射更正重算请求、ingestion-quality 作业编排与 owner conformance；本地 fixture 只证明 contract conformance。
+- **后续 owner**：Story 3.4 的 `signal-evaluation` 必须追加 successor evaluation；Story 3.5 的 `clue-care` 必须追加证据更正/人工复核并沿用 Candidate lineage 去重；Story 3.14c 负责更正水位上的导出失效。
+- **证据边界**：上述 owner consumer 在各自 Story 激活并绑定真实候选前均保持 `runtimeEvidenceClaim=none`；不得用本 Story fixture 冒充生产 apply、水位收敛或 FR-13 runtime full。

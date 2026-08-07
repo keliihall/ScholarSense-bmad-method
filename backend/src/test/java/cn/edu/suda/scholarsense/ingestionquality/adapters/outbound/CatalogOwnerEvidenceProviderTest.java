@@ -59,6 +59,35 @@ class CatalogOwnerEvidenceProviderTest {
     }
 
     @Test
+    void projectsControlledSourceOwnershipForMappingExceptionsAndRecomputeJobs() throws Exception {
+        byte[] document = document().getBytes(StandardCharsets.UTF_8);
+        Path path = temporaryDirectory.resolve("owner-bindings.json");
+        Files.write(path, document);
+        CatalogOwnerEvidenceProvider provider = CatalogOwnerEvidenceProvider.load(
+                path, "sha256:" + sha256(document), new ObjectMapper());
+
+        var exception = provider.resolve(query(
+                "SUBJECT_MAPPING_EXCEPTION", "SRC-P0-CALENDAR-001",
+                "data-quality.read", 3));
+        var ownerJob = provider.resolve(query(
+                "JOB", "SRC-P0-CALENDAR-001", "data-quality.read", 4));
+        var technicalJob = provider.resolve(query(
+                "JOB", "SRC-P0-CALENDAR-001", "platform.read", 4));
+
+        assertEquals(AuthorizationEvidenceAvailability.AVAILABLE, exception.availability());
+        assertEquals("SUBJECT_MAPPING_EXCEPTION_REPAIR", exception.purpose());
+        assertEquals(Set.of(
+                "exceptionId", "status", "subjectOfficialRef", "exceptionCode",
+                "sourceSystem", "sourceOwner", "detectedAt"), exception.fieldAllowlist());
+        assertTrue(exception.scopeEvidence().stream().anyMatch(scope ->
+                scope.anchor() == AuthorizationScopeAnchor.OWNED_SOURCE));
+        assertTrue(ownerJob.scopeEvidence().stream().anyMatch(scope ->
+                scope.anchor() == AuthorizationScopeAnchor.OWNED_SOURCE));
+        assertTrue(technicalJob.scopeEvidence().stream().anyMatch(scope ->
+                scope.anchor() == AuthorizationScopeAnchor.TECHNICAL_OBJECT));
+    }
+
+    @Test
     void unknownOwnedObjectFailsClosedAndProfileDigestMismatchStopsStartup() throws Exception {
         byte[] document = document().getBytes(StandardCharsets.UTF_8);
         Path path = temporaryDirectory.resolve("owner-bindings.json");
