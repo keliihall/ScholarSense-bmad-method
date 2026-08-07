@@ -25,7 +25,7 @@
     "contracts/subject-registry/subject-mapping-exception.schema.json": "sha256:4f04f5ca3388e68b151a254559ef78026fcc38964c65528ecb221caa2b4e0742",
     "contracts/subject-registry/subject-mapping-policy-1.0.0.json": "sha256:313d4242abebf2a066ed0a368235eb9405e38466a7f80a65c365f642ea6aec79",
     "contracts/subject-registry/subject-mapping-policy.schema.json": "sha256:282a89426fefd229cb1095c8e0bbaa718972e17e97334ba71923e88d3f74c59e",
-    "contracts/subject-registry/subject-recomputation-policy-1.0.0.json": "sha256:6c26180ea848287a65ba7aced8f61eecd895f1bd4c094b537f1bdef0f688e622",
+    "contracts/subject-registry/subject-recomputation-policy-1.0.0.json": "sha256:8207e0ec7c9c48184383e1ad518d955343d7049d35d8761d5d095bc960edb067",
     "contracts/subject-registry/subject-recomputation-policy.schema.json": "sha256:d312a0039ad0aaf6819438e8cb2d74cb4a415750e84b85d8cdd565cae848dc83",
     "contracts/subject-registry/subject-registry-contract-lock.schema.json": "sha256:1cf8bc27e60de7a01e3700093b6f96280492ac3c39e898c8ca23319504c775a3",
     "contracts/subject-registry/subject-repair-projection-policy-1.0.0.json": "sha256:6e2988d67a08cafaa5d8c0e45552096cdb417819a62464e61af515cf36923be2",

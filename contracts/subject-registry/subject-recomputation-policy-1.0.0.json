@@ -32,7 +32,7 @@
     "attemptRule": "increment-on-each-running-transition"
   },
   "fencing": {
-    "token": "monotonic-int64",
+    "fencingToken": "monotonic-int64",
     "requiredAt": ["lease-acquire", "checkpoint", "business-write", "result-publication"],
     "staleWorker": "reject"
   },

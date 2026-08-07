@@ -71,6 +71,7 @@ APPROVED_PERSISTENCE_ASSERTIONS = {
     "frontend/tests/baseline/identity-shell.spec.ts",
     "frontend/tests/baseline/audit-search.spec.ts",
     "frontend/tests/baseline/data-source-catalog.spec.ts",
+    "frontend/tests/baseline/subject-registry.spec.ts",
 }
 APPROVED_MIGRATION_PREFIX = "backend/src/main/resources/db/migration/"
 NPMRC_FORBIDDEN = re.compile(
