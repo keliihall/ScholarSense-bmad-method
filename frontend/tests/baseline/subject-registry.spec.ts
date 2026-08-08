@@ -50,9 +50,7 @@ async function install(
   }));
   await page.route(/\/api\/v1\/identity-sessions\/csrf$/, (route) => route.fulfill({
     status: 200, contentType: 'application/json',
-    body: JSON.stringify(Object.fromEntries([
-      ['headerName', 'X-CSRF-TOKEN'], ['token', 'abcdefghijklmnopqrstuvwxyzABCDEF'],
-    ])),
+    body: JSON.stringify({ headerName: 'X-CSRF-TOKEN', token: 'abcdefghijklmnopqrstuvwxyzABCDEF' }),
   }));
   await page.route(/\/api\/v1\/authorized-shell$/, (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify(shell),
