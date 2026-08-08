@@ -14,7 +14,8 @@ import java.util.Set;
 
 public final class ContinuationService {
     private static final Set<String> ALLOWED_ROUTES = Set.of(
-            "shell.home", "shell.session", "audit.search", "data-quality.catalogs");
+            "shell.home", "shell.session", "audit.search", "data-quality.catalogs",
+            "data-quality.subject-mapping-exceptions", "subject-registry.recompute-jobs");
     private static final Duration LIFETIME = Duration.ofMinutes(5);
 
     private final ContinuationRepository repository;

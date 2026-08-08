@@ -51,6 +51,9 @@ REQUIRED_CONTROLLED_INPUT_IDS_V2 = frozenset(
 REQUIRED_CONTROLLED_INPUT_IDS_V3 = frozenset(
     {*REQUIRED_CONTROLLED_INPUT_IDS_V2, "DataContractCatalog", "QualityGate"}
 )
+REQUIRED_CONTROLLED_INPUT_IDS_V4 = frozenset(
+    {*REQUIRED_CONTROLLED_INPUT_IDS_V3, "SubjectRegistry", "SubjectRegistryRuntime"}
+)
 # Backward-compatible public name: it remains the immutable V1 set.
 REQUIRED_CONTROLLED_INPUT_IDS = REQUIRED_CONTROLLED_INPUT_IDS_V1
 REQUIRED_LOCK_IDS = frozenset({"backend-lock", "frontend-lock", "toolchain-lock"})
@@ -94,6 +97,7 @@ PIC_TARGET_KIND = "public-integration-target-conformance"
 DCC_TARGET_ID = "DataCatalogTargetConformance"
 DCC_TARGET_KIND = "data-catalog-target-conformance"
 DCC_RUNTIME_ID = "data-catalog-target-conformance"
+SUBJECT_REGISTRY_RUNTIME_ID = "subject-registry-production-kms"
 MAX_HANDOFF_REVISION = (1 << 53) - 1
 PIC_SCENARIO_PATH = (
     PROJECT_ROOT
@@ -105,6 +109,13 @@ PIC_LOCK_PATH = (
 )
 DCC_CATALOG_PATH = PROJECT_ROOT / "contracts/data-catalog/dcc-1.0.0.json"
 DCC_QUALITY_GATE_PATH = PROJECT_ROOT / "contracts/data-catalog/qg-1.0.0.json"
+SUBJECT_REGISTRY_LOCK_PATH = (
+    PROJECT_ROOT
+    / "contracts/subject-registry/subject-registry-contract-lock-1.0.0.json"
+)
+SUBJECT_REGISTRY_RUNTIME_PATH = (
+    PROJECT_ROOT / "deploy/base/subject-registry-runtime-1.0.0.json"
+)
 
 
 def _ids(items: Any, code: str) -> tuple[set[str], list[str]]:
@@ -178,7 +189,7 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
     manifest_version = manifest.get("version")
     if manifest_version not in {
         "RELEASE-MANIFEST-1.0.0", "RELEASE-MANIFEST-2.0.0",
-        "RELEASE-MANIFEST-3.0.0",
+        "RELEASE-MANIFEST-3.0.0", "RELEASE-MANIFEST-4.0.0",
     }:
         issues.append("RELEASE_MANIFEST_VERSION_INVALID")
     if not SEMVER.fullmatch(str(manifest.get("releaseVersion", ""))):
@@ -221,7 +232,9 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
 
     controlled_inputs = manifest.get("controlledInputs")
     required_controlled = (
-        REQUIRED_CONTROLLED_INPUT_IDS_V3
+        REQUIRED_CONTROLLED_INPUT_IDS_V4
+        if manifest_version == "RELEASE-MANIFEST-4.0.0"
+        else REQUIRED_CONTROLLED_INPUT_IDS_V3
         if manifest_version == "RELEASE-MANIFEST-3.0.0"
         else REQUIRED_CONTROLLED_INPUT_IDS_V2
         if manifest_version == "RELEASE-MANIFEST-2.0.0"
@@ -237,7 +250,8 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         if isinstance(item, dict)
     } if isinstance(controlled_inputs, list) else {}
     if manifest_version in {
-        "RELEASE-MANIFEST-2.0.0", "RELEASE-MANIFEST-3.0.0"
+        "RELEASE-MANIFEST-2.0.0", "RELEASE-MANIFEST-3.0.0",
+        "RELEASE-MANIFEST-4.0.0",
     }:
         public_integration = controlled_by_id.get("PublicIntegration", {})
         if (
@@ -245,7 +259,9 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
             or public_integration.get("binarySha256") != _file_sha256(PIC_LOCK_PATH)
         ):
             issues.append("RELEASE_PUBLIC_INTEGRATION_INPUT_INVALID")
-    if manifest_version == "RELEASE-MANIFEST-3.0.0":
+    if manifest_version in {
+        "RELEASE-MANIFEST-3.0.0", "RELEASE-MANIFEST-4.0.0"
+    }:
         expected_data_catalog_inputs = {
             "DataContractCatalog": ("DCC-1.0.0", DCC_CATALOG_PATH),
             "QualityGate": ("QG-1.0.0", DCC_QUALITY_GATE_PATH),
@@ -257,6 +273,22 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
                 or reference.get("binarySha256") != _file_sha256(path)
             ):
                 issues.append(f"RELEASE_DATA_CATALOG_INPUT_INVALID: {identity}")
+    if manifest_version == "RELEASE-MANIFEST-4.0.0":
+        expected_subject_inputs = {
+            "SubjectRegistry": (
+                "SUBJECT-REGISTRY-LOCK-1.0.0", SUBJECT_REGISTRY_LOCK_PATH
+            ),
+            "SubjectRegistryRuntime": (
+                "SUBJECT-REGISTRY-RUNTIME-1.0.0", SUBJECT_REGISTRY_RUNTIME_PATH
+            ),
+        }
+        for identity, (version, path) in expected_subject_inputs.items():
+            reference = controlled_by_id.get(identity, {})
+            if (
+                reference.get("version") != version
+                or reference.get("binarySha256") != _file_sha256(path)
+            ):
+                issues.append(f"RELEASE_SUBJECT_REGISTRY_INPUT_INVALID: {identity}")
 
     locks = manifest.get("locks")
     issues.extend(_exact_ids(locks, REQUIRED_LOCK_IDS, "RELEASE_LOCK"))
@@ -334,7 +366,9 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
             issues.extend(_pic_target_node_issues(pic_nodes[0], manifest))
         if dcc_nodes:
             issues.append("RELEASE_V2_DATA_CATALOG_FORBIDDEN")
-    if manifest_version == "RELEASE-MANIFEST-3.0.0":
+    if manifest_version in {
+        "RELEASE-MANIFEST-3.0.0", "RELEASE-MANIFEST-4.0.0"
+    }:
         if len(pic_nodes) != 1:
             issues.append("RELEASE_PUBLIC_INTEGRATION_TARGET_NODE_REQUIRED")
         else:
@@ -346,7 +380,9 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
 
     runtime = manifest.get("runtimeEvidence")
     required_runtime = (
-        frozenset({*RUNTIME_IDS, DCC_RUNTIME_ID})
+        frozenset({*RUNTIME_IDS, DCC_RUNTIME_ID, SUBJECT_REGISTRY_RUNTIME_ID})
+        if manifest_version == "RELEASE-MANIFEST-4.0.0"
+        else frozenset({*RUNTIME_IDS, DCC_RUNTIME_ID})
         if manifest_version == "RELEASE-MANIFEST-3.0.0"
         else RUNTIME_IDS
     )
@@ -355,7 +391,9 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         item.get("id"): item for item in runtime if isinstance(item, dict)
     } if isinstance(runtime, list) else {}
     blocking_runtime_ids = set(BLOCKING_RUNTIME_IDS)
-    if manifest_version == "RELEASE-MANIFEST-3.0.0":
+    if manifest_version in {
+        "RELEASE-MANIFEST-3.0.0", "RELEASE-MANIFEST-4.0.0"
+    }:
         blocking_runtime_ids.add(DCC_RUNTIME_ID)
     for identity in blocking_runtime_ids:
         item = runtime_by_id.get(identity, {})
@@ -399,6 +437,15 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
             or "evidenceIds" in future_boundary
         ):
             issues.append(f"RELEASE_FUTURE_STORY_STATUS_INVALID: {identity}")
+    if manifest_version == "RELEASE-MANIFEST-4.0.0":
+        subject_runtime = runtime_by_id.get(SUBJECT_REGISTRY_RUNTIME_ID, {})
+        if (
+            subject_runtime.get("status") != "deployment-input-required"
+            or subject_runtime.get("runtimeEvidenceClaim") != "none"
+            or subject_runtime.get("ownerStory") != "2.2"
+            or "evidenceIds" in subject_runtime
+        ):
+            issues.append("RELEASE_SUBJECT_REGISTRY_RUNTIME_BOUNDARY_INVALID")
     return sorted(set(issues))
 
 
@@ -490,7 +537,9 @@ def create_evidence_index(
     signature_node = _index_node(manifest_signature, "manifest-signature", manifest_signature.get("dependsOn", []))
     index = {
         "version": (
-            "EVIDENCE-INDEX-3.0.0"
+            "EVIDENCE-INDEX-4.0.0"
+            if release_manifest.get("version") == "RELEASE-MANIFEST-4.0.0"
+            else "EVIDENCE-INDEX-3.0.0"
             if release_manifest.get("version") == "RELEASE-MANIFEST-3.0.0"
             else "EVIDENCE-INDEX-2.0.0"
             if release_manifest.get("version") == "RELEASE-MANIFEST-2.0.0"
@@ -518,7 +567,9 @@ def evidence_index_issues(index: Any, release_manifest: Any) -> list[str]:
     issues = release_document_issues(index)
     manifest_digest = canonical_sha256(release_manifest)
     expected_index_version = (
-        "EVIDENCE-INDEX-3.0.0"
+        "EVIDENCE-INDEX-4.0.0"
+        if release_manifest.get("version") == "RELEASE-MANIFEST-4.0.0"
+        else "EVIDENCE-INDEX-3.0.0"
         if release_manifest.get("version") == "RELEASE-MANIFEST-3.0.0"
         else "EVIDENCE-INDEX-2.0.0"
         if release_manifest.get("version") == "RELEASE-MANIFEST-2.0.0"
@@ -651,6 +702,9 @@ def _release_manifest_version(value: str) -> str:
         "3": "RELEASE-MANIFEST-3.0.0",
         "3.0.0": "RELEASE-MANIFEST-3.0.0",
         "RELEASE-MANIFEST-3.0.0": "RELEASE-MANIFEST-3.0.0",
+        "4": "RELEASE-MANIFEST-4.0.0",
+        "4.0.0": "RELEASE-MANIFEST-4.0.0",
+        "RELEASE-MANIFEST-4.0.0": "RELEASE-MANIFEST-4.0.0",
     }
     if value not in versions:
         raise ValueError("RELEASE_MANIFEST_VERSION_INVALID")

@@ -120,7 +120,7 @@ class DataSourceCatalogPostgreSqlIT {
     @Test
     void exactServerMigrationAndLeastPrivilegeRolesExist() {
         assertEquals("180004", jdbc.queryForObject("select current_setting('server_version_num')", String.class));
-        assertEquals(11, jdbc.queryForObject("""
+        assertEquals(19, jdbc.queryForObject("""
                 select count(*) from information_schema.tables
                  where table_schema='ingestion_quality' and table_type='BASE TABLE'
                 """, Integer.class));

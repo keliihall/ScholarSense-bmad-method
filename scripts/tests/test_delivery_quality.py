@@ -198,6 +198,50 @@ class DeliveryQualityTest(unittest.TestCase):
             npmrc.write_text("//registry.npmjs.org/:_authToken=secret\n", encoding="utf-8")
             self.assertTrue(any(value.startswith("RAW_CREDENTIAL_LITERAL") for value in scan(root)), scan(root))
 
+    def test_subject_registry_fixture_exceptions_are_exact_and_fail_closed(self) -> None:
+        approved = """
+const csrf = { token: 'abcdefghijklmnopqrstuvwxyzABCDEF' };
+const persisted = {
+  local: localStorage.length,
+  session: sessionStorage.length,
+  databases: typeof indexedDB.databases === 'function' ? await indexedDB.databases() : [],
+  workers: (await navigator.serviceWorker.getRegistrations()).length,
+};
+"""
+        relative = "frontend/tests/baseline/subject-registry.spec.ts"
+        with self.fixture() as root:
+            fixture = root / relative
+            fixture.parent.mkdir(parents=True, exist_ok=True)
+            fixture.write_text(approved, encoding="utf-8")
+            self.assertEqual([], scan(root))
+
+            fixture.write_text(
+                approved + "localStorage.setItem('subject', 'plaintext');\n",
+                encoding="utf-8",
+            )
+            self.assertTrue(
+                any(value.startswith("PERSISTENT_BUSINESS_CACHE") for value in scan(root)),
+                scan(root),
+            )
+
+            fixture.write_text(
+                approved.replace("abcdefghijklmnopqrstuvwxyzABCDEF", "real-secret"),
+                encoding="utf-8",
+            )
+            self.assertTrue(
+                any(value.startswith("RAW_CREDENTIAL_LITERAL") for value in scan(root)),
+                scan(root),
+            )
+
+            fixture.write_text(
+                "const csrf = Object.fromEntries([['token', 'real-secret']]);\n",
+                encoding="utf-8",
+            )
+            self.assertTrue(
+                any(value.startswith("RAW_CREDENTIAL_LITERAL") for value in scan(root)),
+                scan(root),
+            )
+
     def test_envrc_case_insensitive_extensions_and_escaped_json_keys_are_rejected(self) -> None:
         cases = {
             "envrc": ("deploy/base/.envrc", "TOKEN=do-not-commit\n"),

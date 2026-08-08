@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/subject-registry/subject-repair-projection-policy.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["policyVersion", "successorOf", "approval", "purpose", "roles", "objects", "globalHiddenFields"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "policyVersion": {"const": "SUBJECT-REPAIR-PROJECTION-1.0.0"},
+    "successorOf": {"const": ["RFP-1.0.0", "FIELD-PROJECTION-1.0.0"]},
+    "approval": {"type": "object"},
+    "purpose": {"const": "SUBJECT_MAPPING_EXCEPTION_REPAIR"},
+    "roles": {"type": "object"},
+    "objects": {"type": "array", "minItems": 3, "maxItems": 3},
+    "globalHiddenFields": {"type": "array", "minItems": 5, "uniqueItems": true}
+  }
+}

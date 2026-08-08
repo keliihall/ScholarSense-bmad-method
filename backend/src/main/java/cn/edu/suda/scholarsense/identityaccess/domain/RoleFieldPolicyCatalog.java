@@ -250,8 +250,9 @@ public final class RoleFieldPolicyCatalog {
                         pair(ObjectClass.DEPENDENCY, "data-quality.read", "data-quality.reconcile"),
                         pair(ObjectClass.QUALITY_SNAPSHOT, "data-quality.read"),
                         pair(ObjectClass.RECOVERY_TASK, "data-quality.read", "quality-fuse.recover"),
+                        pair(ObjectClass.JOB, "data-quality.read"),
                         pair(ObjectClass.SUBJECT_MAPPING_EXCEPTION, "data-quality.read", "data-quality.repair")),
-                anchors(anchor(Set.of(ObjectClass.SOURCE, ObjectClass.DEPENDENCY, ObjectClass.QUALITY_SNAPSHOT, ObjectClass.RECOVERY_TASK, ObjectClass.SUBJECT_MAPPING_EXCEPTION), ScopeAnchor.OWNED_SOURCE)),
+                anchors(anchor(Set.of(ObjectClass.SOURCE, ObjectClass.DEPENDENCY, ObjectClass.QUALITY_SNAPSHOT, ObjectClass.RECOVERY_TASK, ObjectClass.JOB, ObjectClass.SUBJECT_MAPPING_EXCEPTION), ScopeAnchor.OWNED_SOURCE)),
                 fields("C", "M", "H", "H", "C", "H", "C", "C")));
         result.put(RolePackage.R7, roleRule(
                 actions(

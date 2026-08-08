@@ -59,7 +59,9 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("release_version")
     parser.add_argument("output")
-    parser.add_argument("--manifest-version", choices=("1", "2", "3"), default="1")
+    parser.add_argument(
+        "--manifest-version", choices=("1", "2", "3", "4"), default="1"
+    )
     try:
         args = parser.parse_args(argv[1:])
     except SystemExit as error:
@@ -75,11 +77,11 @@ def main(argv: list[str]) -> int:
             "attestation": _required("ATTESTATION_URI"),
             "web": _required("WEB_URI"),
         }
-        if args.manifest_version in {"2", "3"}:
+        if args.manifest_version in {"2", "3", "4"}:
             uris["public-integration-target"] = _required(
                 "PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI"
             )
-        if args.manifest_version == "3":
+        if args.manifest_version in {"3", "4"}:
             uris["data-catalog-target"] = _required(
                 "DATA_CATALOG_TARGET_EVIDENCE_URI"
             )
@@ -123,35 +125,35 @@ def main(argv: list[str]) -> int:
                 manifest_version=args.manifest_version,
                 public_integration_target_evidence_uri=(
                     uris["public-integration-target"]
-                    if args.manifest_version in {"2", "3"} else None
+                    if args.manifest_version in {"2", "3", "4"} else None
                 ),
                 public_integration_target_evidence_path=(
                     root / "public-integration-target" / TARGET_EVIDENCE_FILENAME
-                    if args.manifest_version in {"2", "3"} else None
+                    if args.manifest_version in {"2", "3", "4"} else None
                 ),
                 data_catalog_target_evidence_uri=(
                     uris["data-catalog-target"]
-                    if args.manifest_version == "3" else None
+                    if args.manifest_version in {"3", "4"} else None
                 ),
                 data_catalog_target_evidence_path=(
                     root / "data-catalog-target" / DATA_CATALOG_TARGET_EVIDENCE_FILENAME
-                    if args.manifest_version == "3" else None
+                    if args.manifest_version in {"3", "4"} else None
                 ),
                 data_catalog_target_trusted_signing_key_path=(
                     data_catalog_target_signing_key
-                    if args.manifest_version == "3" else None
+                    if args.manifest_version in {"3", "4"} else None
                 ),
                 data_catalog_target_minimum_handoff_revision=(
                     data_catalog_target_minimum_revision
-                    if args.manifest_version == "3" else None
+                    if args.manifest_version in {"3", "4"} else None
                 ),
                 data_catalog_target_expected_authority=(
                     data_catalog_target_expected_authority
-                    if args.manifest_version == "3" else None
+                    if args.manifest_version in {"3", "4"} else None
                 ),
                 data_catalog_target_expected_environment=(
                     data_catalog_target_expected_environment
-                    if args.manifest_version == "3" else None
+                    if args.manifest_version in {"3", "4"} else None
                 ),
             )
             if os.environ.get("GITHUB_SHA") and payload["buildManifest"].get("sourceCommit") != os.environ["GITHUB_SHA"]:

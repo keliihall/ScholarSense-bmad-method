@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/events/subject-registry/consumer-registry.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["registryVersion", "eventType", "completionRule", "consumers"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "registryVersion": {"const": "SUBJECT-CONSUMERS-1.0.0"},
+    "eventType": {"const": "cn.edu.suda.scholarsense.subject-mapping.changed.v1"},
+    "completionRule": {"const": "all-active-watermarks-at-event-and-reconciliation-passed"},
+    "consumers": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/consumer"}}
+  },
+  "$defs": {
+    "consumer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["consumerId", "ownerModule", "lifecycle", "appliesFromAggregateVersion", "runtimeEvidenceClaim", "ownerStory"],
+      "properties": {
+        "consumerId": {"type": "string", "pattern": "^[a-z][a-z0-9-]+$"},
+        "ownerModule": {"enum": ["ingestion-quality", "signal-evaluation", "clue-care"]},
+        "lifecycle": {"enum": ["active", "planned", "inactive"]},
+        "appliesFromAggregateVersion": {"type": "integer", "minimum": 1},
+        "runtimeEvidenceClaim": {"const": "none"},
+        "ownerStory": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

@@ -35,6 +35,10 @@ RAW_CREDENTIAL = re.compile(
     r"(?im)(?:^|[{,]\s*)['\"]?(?:password|passwd|token|private[_-]?key|client[_-]?secret)['\"]?"
     r"\s*[:=]\s*['\"]?(?!\s*(?:$|[,}]|<|\$\{|secret://|ref:))[^,\s#'\"}]+"
 )
+RAW_CREDENTIAL_ENTRY = re.compile(
+    r"(?im)\[\s*['\"](?:password|passwd|token|private[_-]?key|client[_-]?secret)['\"]\s*,\s*['\"]"
+    r"(?!\s*(?:<|\$\{|secret://|ref:))[^'\"\]\r\n]+['\"]\s*\]"
+)
 PRIVATE_KEY_MATERIAL = re.compile(r"-----BEGIN(?: [A-Z0-9]+)* PRIVATE KEY-----")
 PERSISTENT_CACHE = re.compile(
     r"(?i)(?:localStorage|sessionStorage|indexedDB|caches\.open|navigator\.serviceWorker|"
@@ -67,10 +71,50 @@ APPROVED_TEST_LOOPBACKS = {
         "http://127.0.0.1:4173",
     ),
 }
-APPROVED_PERSISTENCE_ASSERTIONS = {
-    "frontend/tests/baseline/identity-shell.spec.ts",
-    "frontend/tests/baseline/audit-search.spec.ts",
-    "frontend/tests/baseline/data-source-catalog.spec.ts",
+APPROVED_SYNTHETIC_CREDENTIALS = {
+    "frontend/tests/baseline/identity-shell.spec.ts": (
+        "['token', 'abcdefghijklmnopqrstuvwxyzABCDEF']",
+    ),
+    "frontend/tests/baseline/audit-search.spec.ts": (
+        "['token', 'abcdefghijklmnopqrstuvwxyzABCDEF']",
+    ),
+    "frontend/tests/baseline/data-source-catalog.spec.ts": (
+        "['token', 'abcdefghijklmnopqrstuvwxyzABCDEF']",
+    ),
+    "frontend/tests/baseline/host-cross-origin.spec.ts": (
+        "['token', 'abcdefghijklmnopqrstuvwxyzABCDEF']",
+    ),
+    "frontend/tests/baseline/subject-registry.spec.ts": (
+        "token: 'abcdefghijklmnopqrstuvwxyzABCDEF'",
+    ),
+}
+APPROVED_PERSISTENCE_READS = {
+    "frontend/tests/baseline/identity-shell.spec.ts": (
+        "localStorage.length",
+        "sessionStorage.length",
+        "indexedDB.databases",
+        "navigator.serviceWorker.getRegistrations()",
+    ),
+    "frontend/tests/baseline/audit-search.spec.ts": (
+        "localStorage.length",
+        "sessionStorage.length",
+        "indexedDB.databases",
+        "navigator.serviceWorker.getRegistrations()",
+        "localStorageEntries",
+        "sessionStorageEntries",
+    ),
+    "frontend/tests/baseline/data-source-catalog.spec.ts": (
+        "localStorage.length",
+        "sessionStorage.length",
+        "indexedDB.databases",
+        "navigator.serviceWorker.getRegistrations()",
+    ),
+    "frontend/tests/baseline/subject-registry.spec.ts": (
+        "localStorage.length",
+        "sessionStorage.length",
+        "indexedDB.databases",
+        "navigator.serviceWorker.getRegistrations()",
+    ),
 }
 APPROVED_MIGRATION_PREFIX = "backend/src/main/resources/db/migration/"
 NPMRC_FORBIDDEN = re.compile(
@@ -112,7 +156,14 @@ def scan(project_root: Path) -> list[str]:
                 local_scan_content = local_scan_content.replace(approved, "APPROVED_TEST_LOOPBACK")
             if LOCAL_ENDPOINT.search(local_scan_content):
                 violations.append(f"LOCAL_ENDPOINT_LITERAL: {relative}")
-            if RAW_CREDENTIAL.search(content) or (suffix == ".json" and _json_has_raw_credential(content)):
+            credential_scan_content = content
+            for approved in APPROVED_SYNTHETIC_CREDENTIALS.get(relative.as_posix(), ()):
+                credential_scan_content = credential_scan_content.replace(
+                    approved, "APPROVED_SYNTHETIC_CREDENTIAL"
+                )
+            if (RAW_CREDENTIAL.search(credential_scan_content)
+                    or RAW_CREDENTIAL_ENTRY.search(credential_scan_content)
+                    or (suffix == ".json" and _json_has_raw_credential(content))):
                 violations.append(f"RAW_CREDENTIAL_LITERAL: {relative}")
             if entry.name == ".npmrc" and NPMRC_FORBIDDEN.search(content):
                 violations.append(f"RAW_CREDENTIAL_LITERAL: {relative}")
@@ -121,8 +172,12 @@ def scan(project_root: Path) -> list[str]:
             if suffix in CODE_SUFFIXES:
                 if "docs/input/原型" in content or "/原型/" in content:
                     violations.append(f"PROTOTYPE_SOURCE_REFERENCE: {relative}")
-                if (relative_root == "frontend" and PERSISTENT_CACHE.search(content)
-                        and relative.as_posix() not in APPROVED_PERSISTENCE_ASSERTIONS):
+                persistence_scan_content = content
+                for approved in APPROVED_PERSISTENCE_READS.get(relative.as_posix(), ()):
+                    persistence_scan_content = persistence_scan_content.replace(
+                        approved, "APPROVED_PERSISTENCE_READ"
+                    )
+                if relative_root == "frontend" and PERSISTENT_CACHE.search(persistence_scan_content):
                     violations.append(f"PERSISTENT_BUSINESS_CACHE: {relative}")
     return sorted(set(violations))
 

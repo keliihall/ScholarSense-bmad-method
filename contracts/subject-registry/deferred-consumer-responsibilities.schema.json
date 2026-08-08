@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/subject-registry/deferred-consumer-responsibilities.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "dataSideOwner", "runtimeEvidenceClaim", "responsibilities"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "contractVersion": {"const": "SUBJECT-DEFERRED-CONSUMERS-1.0.0"},
+    "dataSideOwner": {"const": "Story 2.2"},
+    "runtimeEvidenceClaim": {"const": "none"},
+    "responsibilities": {"type": "array", "minItems": 3, "items": {"type": "object"}}
+  }
+}

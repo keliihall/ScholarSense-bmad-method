@@ -1,5 +1,5 @@
 # generated: 2026-07-17T20:58:14+0800
-# last_updated: 2026-08-06T12:53:44+0800
+# last_updated: 2026-08-08T14:43:57+0800
 # project: ScholarSense-bmad-method
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - 回顾产生的行动项追加到 action_items，sprint-status 会呈现未完成项
 
 generated: 2026-07-17T20:58:14+0800
-last_updated: 2026-08-06T12:53:44+0800
+last_updated: 2026-08-08T14:43:57+0800
 project: ScholarSense-bmad-method
 project_key: NOKEY
 tracking_system: file-system
@@ -67,7 +67,7 @@ development_status:
 
   epic-2: in-progress
   2-1-管理-p0-p1-数据源目录与最小课表校历切片: done
-  2-2-关联主体-保留历史窗口并受控重算: backlog
+  2-2-关联主体-保留历史窗口并受控重算: done
   2-3-封账批次并计算质量快照: backlog
   2-4-登记规则依赖并发布质量可用性事实: backlog
   2-5a-判定质量熔断并冻结新产出: backlog

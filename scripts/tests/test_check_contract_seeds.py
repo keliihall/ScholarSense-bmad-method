@@ -123,6 +123,17 @@ class ContractSeedTest(unittest.TestCase):
             *web_token_keys,
             "SCHOLARSENSE_INGESTION_QUALITY_MINIMUM_HANDOFF_REVISION",
             "DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION",
+            "SCHOLARSENSE_SUBJECT_REGISTRY_DATASOURCE_URL",
+            "SCHOLARSENSE_SUBJECT_REGISTRY_DATASOURCE_USERNAME",
+            "SCHOLARSENSE_SUBJECT_REGISTRY_DATASOURCE_PASSWORD",
+            "SCHOLARSENSE_SUBJECT_REGISTRY_RELAY_DATASOURCE_URL",
+            "SCHOLARSENSE_SUBJECT_REGISTRY_RELAY_DATASOURCE_USERNAME",
+            "SCHOLARSENSE_SUBJECT_REGISTRY_RELAY_DATASOURCE_PASSWORD",
+            "SCHOLARSENSE_SUBJECT_REGISTRY_ENVIRONMENT",
+            "SCHOLARSENSE_SUBJECT_REGISTRY_KEY_REF",
+            "SCHOLARSENSE_SUBJECT_REGISTRY_KEY_VERSION",
+            "SCHOLARSENSE_SUBJECT_REGISTRY_ENCRYPTION_KEY_PATH",
+            "SCHOLARSENSE_SUBJECT_REGISTRY_SEARCH_KEY_PATH",
         }
 
         self.assertTrue(
@@ -330,6 +341,73 @@ class ContractSeedTest(unittest.TestCase):
             path.write_text(json.dumps(profile), encoding="utf-8")
             self.assert_reason(
                 root, "INGESTION_QUALITY_DATABASE_SET_ROLE_BOUNDARY_INVALID"
+            )
+
+    def test_derived_subject_objects_reuse_frozen_source_owner_bindings(self) -> None:
+        profile = json.loads((
+            PROJECT_ROOT / "deploy/base/ingestion-quality-runtime-1.0.0.json"
+        ).read_text(encoding="utf-8"))
+        owners = profile["ownerBindings"]
+
+        self.assertEqual(
+            {"SOURCE", "DEPENDENCY", "SUBJECT_MAPPING_EXCEPTION", "JOB"},
+            set(owners["objectClasses"]),
+        )
+        self.assertEqual(
+            {
+                "bindingLookupClass": "SOURCE",
+                "bindingKey": "exception-source-id",
+                "authorizationTokenDigest": "sha256(sourceId)",
+                "scopeAnchors": ["owned-source"],
+            },
+            owners["derivedObjectBindings"]["SUBJECT_MAPPING_EXCEPTION"],
+        )
+        self.assertEqual(
+            {
+                "bindingLookupClass": "SOURCE",
+                "bindingKey": "persisted-owner-source-id",
+                "authorizationTokenDigest": "sha256(ownerSourceId)",
+                "scopeAnchors": ["owned-source", "technical-object"],
+            },
+            owners["derivedObjectBindings"]["JOB"],
+        )
+
+        with self.fixture() as root:
+            path = root / "deploy/base/ingestion-quality-runtime-1.0.0.json"
+            mutated = json.loads(path.read_text(encoding="utf-8"))
+            mutated["ownerBindings"]["derivedObjectBindings"]["JOB"][
+                "bindingKey"
+            ] = "job-id"
+            path.write_text(json.dumps(mutated), encoding="utf-8")
+            self.assert_reason(
+                root, "INGESTION_QUALITY_DERIVED_OWNER_BINDINGS_INVALID"
+            )
+
+    def test_subject_runtime_requires_exact_database_and_kms_boundaries(self) -> None:
+        profile = json.loads((
+            PROJECT_ROOT / "deploy/base/subject-registry-runtime-1.0.0.json"
+        ).read_text(encoding="utf-8"))
+        self.assertEqual(
+            "approved-school-kms-to-protected-mount",
+            profile["identifierProtection"]["materialDelivery"],
+        )
+        self.assertTrue(
+            profile["identifierProtection"][
+                "runtimeEvidenceRequiredForProductionCompletion"
+            ]
+        )
+        self.assertEqual(
+            "exact-table-column-function-matrix",
+            profile["databaseStartupGates"]["effectivePrivilegeVerification"],
+        )
+
+        with self.fixture() as root:
+            path = root / "deploy/base/subject-registry-runtime-1.0.0.json"
+            mutated = json.loads(path.read_text(encoding="utf-8"))
+            mutated["identifierProtection"]["materialDelivery"] = "plain-file"
+            path.write_text(json.dumps(mutated), encoding="utf-8")
+            self.assert_reason(
+                root, "SUBJECT_REGISTRY_PROTECTION_BINDING_INVALID"
             )
 
     def test_role_artifact_matches_maven_output_name(self) -> None:

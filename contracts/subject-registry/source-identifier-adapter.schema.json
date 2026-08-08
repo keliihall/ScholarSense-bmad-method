@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/subject-registry/source-identifier-adapter.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "successorMode", "preserves", "required", "properties"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "contractVersion": {"const": "SUBJECT-IDENTIFIER-ADAPTER-1.0.0"},
+    "successorMode": {"const": "pre-normalization-sidecar"},
+    "preserves": {"const": ["DCC-1.0.0", "all-source-schema-1.0.0-digests"]},
+    "required": {"const": ["sourceId", "sourceContractVersion", "identifierType", "sourceNativeIdentifier", "authoritativeStudentNumber", "effectiveFrom", "effectiveTo", "sourceVersion", "sourceWatermark"]},
+    "properties": {"type": "object"}
+  }
+}

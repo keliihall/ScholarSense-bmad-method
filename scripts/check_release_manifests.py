@@ -26,7 +26,9 @@ def main(argv: list[str]) -> int:
             raise ValueError("MANIFEST_OBJECT_REQUIRED")
         contract = "release-manifest" if argv[1] == "release" else "evidence-index"
         suffix = (
-            "-3" if document.get("version") in {
+            "-4" if document.get("version") in {
+                "RELEASE-MANIFEST-4.0.0", "EVIDENCE-INDEX-4.0.0"
+            } else "-3" if document.get("version") in {
                 "RELEASE-MANIFEST-3.0.0", "EVIDENCE-INDEX-3.0.0"
             } else "-2" if document.get("version") in {
                 "RELEASE-MANIFEST-2.0.0", "EVIDENCE-INDEX-2.0.0"

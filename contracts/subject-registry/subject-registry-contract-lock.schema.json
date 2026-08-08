@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/subject-registry/subject-registry-contract-lock.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lockVersion", "approvedPolicyVersions", "digests"],
+  "properties": {
+    "lockVersion": {"const": "SUBJECT-REGISTRY-LOCK-1.0.0"},
+    "approvedPolicyVersions": {"const": ["SMP-1.0.0", "SRP-1.0.0", "SUBJECT-REPAIR-PROJECTION-1.0.0"]},
+    "digests": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}}
+  }
+}

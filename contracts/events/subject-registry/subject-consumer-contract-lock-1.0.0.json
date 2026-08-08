@@ -1,0 +1,9 @@
+{
+  "$schema": "subject-consumer-contract-lock.schema.json",
+  "lockVersion": "SUBJECT-CONSUMER-LOCK-1.0.0",
+  "digests": {
+    "contracts/events/subject-registry/consumer-registry-1.0.0.json": "sha256:a35f5b98ad8250ac2a743aab1754e5e4cc82992a4bb00dac38fe3f7e0d4e0f9e",
+    "contracts/events/subject-registry/consumer-registry.schema.json": "sha256:72e74338e2ed1c624b9886df578836541a8c257fde77bc10e519e8a4ab1e4c21",
+    "contracts/events/subject-registry/subject-mapping-changed-event.schema.json": "sha256:8110a2fa6226301104dece11857d30ef6dcdab5283dec13467aa502b320093d9"
+  }
+}

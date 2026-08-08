@@ -11,6 +11,7 @@ import {
 import type { ReauthenticationTarget } from '../../domains/identity-access';
 import { auditOperationsRouteContribution } from '../../domains/audit-operations';
 import { ingestionQualityRouteContribution } from '../../domains/ingestion-quality';
+import { subjectRegistryRouteContribution } from '../../domains/subject-registry';
 import { queryClient, volatileClientState } from '../state/query-client';
 
 
@@ -23,6 +24,7 @@ export type RouteContribution = Readonly<{
 export const routeContributions: readonly RouteContribution[] = Object.freeze([
   auditOperationsRouteContribution,
   ingestionQualityRouteContribution,
+  subjectRegistryRouteContribution,
 ]);
 
 export const router = createRouter({
@@ -57,6 +59,7 @@ export const router = createRouter({
     },
     ...auditOperationsRouteContribution.routes,
     ...ingestionQualityRouteContribution.routes,
+    ...subjectRegistryRouteContribution.routes,
   ],
 });
 
@@ -152,6 +155,8 @@ function protectedTarget(routeName: unknown): ReauthenticationTarget | undefined
   if (routeName === 'shell-home') return 'shell.home';
   if (routeName === 'audit-search') return 'audit.search';
   if (routeName === 'data-quality-catalogs') return 'data-quality.catalogs';
+  if (routeName === 'subject-mapping-exceptions') return 'data-quality.subject-mapping-exceptions';
+  if (routeName === 'subject-recompute-jobs') return 'subject-registry.recompute-jobs';
   return undefined;
 }
 

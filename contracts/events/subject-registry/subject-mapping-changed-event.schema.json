@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/events/subject-registry/subject-mapping-changed-event.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["specversion", "source", "id", "type", "time", "datacontenttype", "data"],
+  "properties": {
+    "specversion": {"const": "1.0"},
+    "source": {"const": "urn:scholarsense:subject-registry"},
+    "id": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "type": {"const": "cn.edu.suda.scholarsense.subject-mapping.changed.v1"},
+    "time": {"type": "string", "format": "date-time"},
+    "datacontenttype": {"const": "application/json"},
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "contractVersion", "aggregateType", "aggregateId", "aggregateVersion", "occurredAt", "producer", "correlationId", "causationId", "supersedesId", "reason", "effectiveAt", "lineageId", "traceId", "mappingVersion", "relationType", "sourceId", "sourceWatermark", "affectedStudentRefs"],
+      "properties": {
+        "schemaVersion": {"const": "SUBJECT-MAPPING-CHANGED-1.0.0"},
+        "contractVersion": {"const": "SUBJECT-REGISTRY-1.0.0"},
+        "aggregateType": {"const": "SubjectMapping"},
+        "aggregateId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "aggregateVersion": {"type": "integer", "minimum": 1},
+        "occurredAt": {"type": "string", "format": "date-time"},
+        "producer": {"const": "subject-registry"},
+        "correlationId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "causationId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "supersedesId": {"type": ["string", "null"], "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "reason": {"enum": ["AUTHORITY_CORRECTION", "IDENTIFIER_REISSUED", "SUBJECT_MERGED", "SUBJECT_SPLIT", "MAPPING_REVOKED"]},
+        "effectiveAt": {"type": "string", "format": "date-time"},
+        "lineageId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+        "traceId": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "mappingVersion": {"type": "integer", "minimum": 1},
+        "relationType": {"enum": ["alias", "merged-into", "split-into"]},
+        "sourceId": {"type": "string", "pattern": "^SRC-P[01]-[A-Z-]+-[0-9]{3}$"},
+        "sourceWatermark": {"type": "string", "minLength": 1, "maxLength": 128},
+        "affectedStudentRefs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}}
+      }
+    }
+  }
+}

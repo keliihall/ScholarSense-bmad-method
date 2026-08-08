@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/subject-registry/subject-recomputation-policy.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["policyVersion", "contractVersion", "approval", "actionableBoundary", "supportedWindows", "jobIdentity", "expiryBehavior", "jobStateMachine", "fencing", "consumerCompletion"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "policyVersion": {"const": "SRP-1.0.0"},
+    "contractVersion": {"const": "SUBJECT-REGISTRY-1.0.0"},
+    "approval": {"type": "object"},
+    "actionableBoundary": {"type": "object"},
+    "supportedWindows": {"const": ["personal-baseline-28d", "personal-baseline-56d", "versioned-scenario-window"]},
+    "jobIdentity": {"type": "object"},
+    "expiryBehavior": {"type": "object"},
+    "jobStateMachine": {"type": "object"},
+    "fencing": {"type": "object"},
+    "consumerCompletion": {"type": "object"}
+  }
+}

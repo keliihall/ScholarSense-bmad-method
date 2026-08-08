@@ -36,3 +36,11 @@ current scope, college exception projection, and reconciliation result.
 V000008 adds access-invalidation lineage, delivery and real local-consumer fencing. V000009 adds
 the authorization audit-context successor without rewriting historical rows. These statements are
 design/test denominators only; they are not new runtime evidence.
+
+V000010 and V000011 establish the ingestion-quality catalog and its CAS/publication successor.
+V000012 establishes the subject-registry owner boundary, protected temporal mappings, exception
+repair, idempotency, audit, and a producer-owned self-contained correction CloudEvent relay outbox.
+V000013 adds ingestion-quality historical-window, request-level orchestration and fenced
+mapping-recompute state. The latter two migrations communicate only through immutable event payloads
+and identifiers: neither migration creates a cross-schema foreign key, query, grant, or shared
+transaction.

@@ -47,6 +47,7 @@ echo "[verify-core] audit and standard-library regression"
   "$TOOLCHAIN" python3 -B scripts/check_field_projection_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_public_integration_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_data_catalog_contracts.py .
+  "$TOOLCHAIN" python3 -B scripts/check_subject_registry_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_ledger_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_retention_contracts.py .

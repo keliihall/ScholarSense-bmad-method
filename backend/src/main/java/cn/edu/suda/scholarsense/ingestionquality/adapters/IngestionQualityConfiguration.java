@@ -5,6 +5,7 @@ import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityProv
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityState;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationObjectEvidenceProvider;
 import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationPort;
+import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationRecheckPort;
 import cn.edu.suda.scholarsense.identityaccess.api.AuditTokenizationPort;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.CompositeCatalogAuthorizationAdapter;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.CatalogOwnerEvidenceProvider;
@@ -14,25 +15,37 @@ import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.FrozenDataCat
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcCatalogAuditBacklog;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcCatalogStore;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcCatalogTransactionAdapter;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcSubjectWindowRecomputeStore;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.SharedAuditPublicationGuard;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.TrustedTimeRecomputeIds;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.inbound.FrozenDataCatalogBootstrapRunner;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.inbound.TransactionalSubjectMappingChangedConsumer;
 import cn.edu.suda.scholarsense.ingestionquality.application.FrozenDataCatalogBootstrap;
 import cn.edu.suda.scholarsense.ingestionquality.application.DataSourceCatalogService;
 import cn.edu.suda.scholarsense.ingestionquality.application.FrozenDataCatalogPolicy;
+import cn.edu.suda.scholarsense.ingestionquality.application.MappingRecomputeIdPort;
+import cn.edu.suda.scholarsense.ingestionquality.application.MappingRecomputePlanner;
+import cn.edu.suda.scholarsense.ingestionquality.application.SubjectRecomputeJobQueryService;
+import cn.edu.suda.scholarsense.ingestionquality.application.SubjectMappingCorrectionCoordinator;
+import cn.edu.suda.scholarsense.subjectregistry.api.SubjectMappingChangedConsumerPort;
 import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
 import cn.edu.suda.scholarsense.shared.time.AuditAvailabilityPort;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
+import cn.edu.suda.scholarsense.subjectregistry.api.PendingSubjectRecomputeRequestPort;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
@@ -40,6 +53,11 @@ import tools.jackson.databind.ObjectMapper;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "scholarsense.identity.enabled", havingValue = "true")
 public class IngestionQualityConfiguration {
+    @Bean("ingestionQualityTransactionManager")
+    PlatformTransactionManager ingestionQualityTransactionManager(DataSource dataSource) {
+        return new DataSourceTransactionManager(dataSource);
+    }
+
     @Bean
     PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile(
             DataSource dataSource,
@@ -108,6 +126,7 @@ public class IngestionQualityConfiguration {
 
     @Bean
     JdbcCatalogTransactionAdapter dataSourceCatalogTransactions(
+            @Qualifier("ingestionQualityTransactionManager")
             PlatformTransactionManager manager) {
         return new JdbcCatalogTransactionAdapter(new TransactionTemplate(manager));
     }
@@ -160,6 +179,51 @@ public class IngestionQualityConfiguration {
         return () -> List.of(new AuthorizedShellCapability(
                 "data-source-catalogs", "数据源目录", "data-quality.catalogs",
                 AuthorizedShellCapabilityState.AVAILABLE, Set.of("R6-DATA-OWNER")));
+    }
+
+    @Bean
+    JdbcSubjectWindowRecomputeStore jdbcSubjectWindowRecomputeStore(
+            JdbcTemplate jdbc, ObjectMapper json,
+            PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
+        return new JdbcSubjectWindowRecomputeStore(jdbc, json);
+    }
+
+    @Bean
+    MappingRecomputeIdPort mappingRecomputeIds(TrustedTimeSource time) {
+        return new TrustedTimeRecomputeIds(time);
+    }
+
+    @Bean
+    MappingRecomputePlanner mappingRecomputePlanner(
+            JdbcSubjectWindowRecomputeStore store, MappingRecomputeIdPort ids) {
+        return new MappingRecomputePlanner(store, store, store, ids);
+    }
+
+    @Bean
+    SubjectRecomputeJobQueryService subjectRecomputeJobQueryService(
+            JdbcSubjectWindowRecomputeStore store,
+            CompositeAuthorizationPort authorization,
+            CompositeAuthorizationRecheckPort recheck,
+            ObjectProvider<PendingSubjectRecomputeRequestPort> pendingRequests) {
+        return new SubjectRecomputeJobQueryService(
+                store, authorization, recheck,
+                pendingRequests.getIfAvailable(() -> ignored -> java.util.Optional.empty()));
+    }
+
+    @Bean
+    SubjectMappingCorrectionCoordinator subjectMappingCorrectionCoordinator(
+            JdbcSubjectWindowRecomputeStore store, MappingRecomputePlanner planner) {
+        return new SubjectMappingCorrectionCoordinator(store, planner, store);
+    }
+
+    @Bean
+    SubjectMappingChangedConsumerPort subjectMappingChangedConsumer(
+            SubjectMappingCorrectionCoordinator coordinator,
+            @Qualifier("ingestionQualityTransactionManager")
+            PlatformTransactionManager manager,
+            TrustedTimeSource time) {
+        return new TransactionalSubjectMappingChangedConsumer(
+                coordinator, new TransactionTemplate(manager), new TrustedTimeClock(time));
     }
 
     private static Path requiredAbsolutePath(String value) {

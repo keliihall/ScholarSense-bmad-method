@@ -1,0 +1,11 @@
+{
+  "$schema": "deferred-consumer-responsibilities.schema.json",
+  "contractVersion": "SUBJECT-DEFERRED-CONSUMERS-1.0.0",
+  "dataSideOwner": "Story 2.2",
+  "runtimeEvidenceClaim": "none",
+  "responsibilities": [
+    {"ownerStory": "3.4", "ownerModule": "signal-evaluation", "obligation": "create successor RuleEvaluation and mark prior evaluation superseded without rewriting history"},
+    {"ownerStory": "3.5", "ownerModule": "clue-care", "obligation": "append evidence correction or manual review and preserve Candidate lineage deduplication"},
+    {"ownerStory": "3.14c", "ownerModule": "reporting", "obligation": "invalidate unfinished exports at correction watermark and revoke generated download"}
+  ]
+}

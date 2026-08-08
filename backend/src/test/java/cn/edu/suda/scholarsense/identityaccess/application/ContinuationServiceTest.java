@@ -8,6 +8,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,24 @@ class ContinuationServiceTest {
                 created.continuationCode(), "browser-session-1", "https://app.stage.invalid");
         assertEquals("audit.search", target.routeId());
         assertEquals(null, target.opaqueContext());
+    }
+
+    @Test
+    void acceptsSubjectRegistryRoutesWithoutSensitiveOpaqueContext() {
+        for (String route : List.of(
+                "data-quality.subject-mapping-exceptions",
+                "subject-registry.recompute-jobs")) {
+            FakeContinuationRepository repository = new FakeContinuationRepository();
+            ContinuationService service = service(repository, NOW);
+
+            ContinuationCreated created = service.create(
+                    "browser-session-1", "https://app.stage.invalid", route, null);
+            ContinuationTarget target = service.consume(
+                    created.continuationCode(), "browser-session-1", "https://app.stage.invalid");
+
+            assertEquals(route, target.routeId());
+            assertEquals(null, target.opaqueContext());
+        }
     }
 
     @Test

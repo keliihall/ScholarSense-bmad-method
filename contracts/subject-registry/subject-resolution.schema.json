@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/subject-registry/subject-resolution.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["outcome", "studentRef", "mappingVersion", "exceptionCode"],
+  "properties": {
+    "outcome": {"enum": ["no-match", "unique", "ambiguous"]},
+    "studentRef": {"type": ["string", "null"], "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "mappingVersion": {"type": ["integer", "null"], "minimum": 1},
+    "exceptionCode": {"type": ["string", "null"], "maxLength": 64}
+  }
+}

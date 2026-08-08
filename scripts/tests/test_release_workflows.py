@@ -49,12 +49,12 @@ class ReleaseWorkflowContractTest(unittest.TestCase):
         self.assertIn(
             "data-catalog-target-conformance-evidence-1.0.0.json", release
         )
-        self.assertIn("--manifest-version 3", release)
+        self.assertIn("--manifest-version 4", release)
         self.assertIn(
-            "application/vnd.scholarsense.release-manifest.v3+json", release
+            "application/vnd.scholarsense.release-manifest.v4+json", release
         )
         self.assertIn(
-            "application/vnd.scholarsense.evidence-index.v3+json", release
+            "application/vnd.scholarsense.evidence-index.v4+json", release
         )
         self.assertIn("PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI", release)
         self.assertIn("DATA_CATALOG_TARGET_EVIDENCE_URI", release)
@@ -62,7 +62,7 @@ class ReleaseWorkflowContractTest(unittest.TestCase):
         self.assertIn("DATA_CATALOG_TARGET_MINIMUM_HANDOFF_REVISION", release)
         self.assertIn("DATA_CATALOG_TARGET_EXPECTED_AUTHORITY", release)
         self.assertIn("DATA_CATALOG_TARGET_EXPECTED_ENVIRONMENT", release)
-        self.assertIn("RELEASE-MANIFEST-3.0.0", verifier)
+        self.assertIn("RELEASE-MANIFEST-4.0.0", verifier)
         self.assertIn("PublicIntegrationTargetConformance", verifier)
         self.assertIn("DataCatalogTargetConformance", verifier)
         self.assertIn(".ociDigest", verifier)

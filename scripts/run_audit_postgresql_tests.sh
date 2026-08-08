@@ -91,44 +91,44 @@ from (
       pg_get_userbyid(c.relowner)) inventory
   from pg_catalog.pg_class c
   join pg_catalog.pg_namespace n on n.oid=c.relnamespace
-  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality')
+  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality', 'subject_registry')
   union all
   select 'column|' || concat_ws('|', table_schema, table_name, ordinal_position::text,
       column_name, data_type, udt_schema, udt_name, coalesce(character_maximum_length::text, ''),
       coalesce(numeric_precision::text, ''), coalesce(numeric_scale::text, ''), is_nullable,
       coalesce(column_default, ''), is_identity, is_generated)
   from information_schema.columns
-  where table_schema in ('identity_access', 'audit_operations', 'ingestion_quality')
+  where table_schema in ('identity_access', 'audit_operations', 'ingestion_quality', 'subject_registry')
   union all
   select 'constraint|' || concat_ws('|', n.nspname, rel.relname, con.conname, con.contype,
       pg_get_constraintdef(con.oid, true))
   from pg_catalog.pg_constraint con
   join pg_catalog.pg_class rel on rel.oid=con.conrelid
   join pg_catalog.pg_namespace n on n.oid=rel.relnamespace
-  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality')
+  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality', 'subject_registry')
   union all
   select 'index|' || concat_ws('|', schemaname, tablename, indexname, indexdef)
   from pg_catalog.pg_indexes
-  where schemaname in ('identity_access', 'audit_operations', 'ingestion_quality')
+  where schemaname in ('identity_access', 'audit_operations', 'ingestion_quality', 'subject_registry')
   union all
   select 'trigger|' || concat_ws('|', n.nspname, rel.relname, trg.tgname,
       pg_get_triggerdef(trg.oid, true))
   from pg_catalog.pg_trigger trg
   join pg_catalog.pg_class rel on rel.oid=trg.tgrelid
   join pg_catalog.pg_namespace n on n.oid=rel.relnamespace
-  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality') and not trg.tgisinternal
+  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality', 'subject_registry') and not trg.tgisinternal
   union all
   select 'function|' || concat_ws('|', n.nspname, proc.proname,
       pg_get_function_identity_arguments(proc.oid), pg_get_function_result(proc.oid),
       proc.prokind, proc.provolatile, proc.prosecdef::text, md5(pg_get_functiondef(proc.oid)))
   from pg_catalog.pg_proc proc
   join pg_catalog.pg_namespace n on n.oid=proc.pronamespace
-  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality')
+  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality', 'subject_registry')
   union all
   select 'grant|' || concat_ws('|', table_schema, table_name, grantee, privilege_type,
       is_grantable)
   from information_schema.role_table_grants
-  where table_schema in ('identity_access', 'audit_operations', 'ingestion_quality')
+  where table_schema in ('identity_access', 'audit_operations', 'ingestion_quality', 'subject_registry')
 ) catalog
 order by inventory;
 SQL
@@ -147,18 +147,18 @@ SCHEMA_FINGERPRINT="$(shasum -a 256 "$CLEAN_SCHEMA" | awk '{print $1}')"
 SCHEMA_SUMMARY="$($PG_BIN/psql -X -v ON_ERROR_STOP=1 -At -d scholarsense_audit_clean -c "
   select concat_ws('|',
     (select count(*) from information_schema.tables
-      where table_schema in ('identity_access','audit_operations','ingestion_quality') and table_type='BASE TABLE'),
+      where table_schema in ('identity_access','audit_operations','ingestion_quality','subject_registry') and table_type='BASE TABLE'),
     (select count(*) from information_schema.columns
-      where table_schema in ('identity_access','audit_operations','ingestion_quality')),
+      where table_schema in ('identity_access','audit_operations','ingestion_quality','subject_registry')),
     (select count(*) from pg_catalog.pg_constraint c join pg_catalog.pg_namespace n
-      on n.oid=c.connamespace where n.nspname in ('identity_access','audit_operations','ingestion_quality')),
+      on n.oid=c.connamespace where n.nspname in ('identity_access','audit_operations','ingestion_quality','subject_registry')),
     (select count(*) from pg_catalog.pg_indexes
-      where schemaname in ('identity_access','audit_operations','ingestion_quality')),
+      where schemaname in ('identity_access','audit_operations','ingestion_quality','subject_registry')),
     (select count(*) from pg_catalog.pg_trigger t join pg_catalog.pg_class r on r.oid=t.tgrelid
       join pg_catalog.pg_namespace n on n.oid=r.relnamespace
-      where n.nspname in ('identity_access','audit_operations','ingestion_quality') and not t.tgisinternal),
+      where n.nspname in ('identity_access','audit_operations','ingestion_quality','subject_registry') and not t.tgisinternal),
     (select count(*) from pg_catalog.pg_proc p join pg_catalog.pg_namespace n
-      on n.oid=p.pronamespace where n.nspname in ('identity_access','audit_operations','ingestion_quality')))
+      on n.oid=p.pronamespace where n.nspname in ('identity_access','audit_operations','ingestion_quality','subject_registry')))
   ")"
 echo "audit-postgresql: schema fingerprint=$SCHEMA_FINGERPRINT summary=tables|columns|constraints|indexes|triggers|functions=$SCHEMA_SUMMARY (clean=upgrade; inventory=${#MIGRATIONS[@]} migrations; V000009 authorization-audit-context historical rows remain null)"
 
@@ -174,7 +174,7 @@ for database in scholarsense_audit_clean scholarsense_audit_upgrade; do
   fi
 done
 
-POSTGRES_TESTS="IdentityAuditPostgreSqlIT,IdentityAuthorityPostgreSqlIT,ResponsibilityAuthorityPostgreSqlIT,AccessInvalidationPostgreSqlIT,AuditLedgerPostgreSqlIT,PublicIntegrationPostgreSqlIT,DataSourceCatalogPostgreSqlIT"
+POSTGRES_TESTS="IdentityAuditPostgreSqlIT,IdentityAuthorityPostgreSqlIT,ResponsibilityAuthorityPostgreSqlIT,AccessInvalidationPostgreSqlIT,AuditLedgerPostgreSqlIT,PublicIntegrationPostgreSqlIT,DataSourceCatalogPostgreSqlIT,SubjectRegistryPostgreSqlIT,SubjectWindowRecomputePostgreSqlIT"
 if [[ -n "${IDENTITY_SANDBOX_ENDPOINT:-}" ]]; then
   POSTGRES_TESTS="$POSTGRES_TESTS,IdentityAuthoritySandboxIT#sameTraceRunsThroughWorkerPostgreSqlAndCurrentAuthorizationReadBack"
 fi

@@ -1,0 +1,47 @@
+{
+  "$schema": "subject-recomputation-policy.schema.json",
+  "policyVersion": "SRP-1.0.0",
+  "contractVersion": "SUBJECT-REGISTRY-1.0.0",
+  "approval": {
+    "status": "approved",
+    "approvedBy": "Hei",
+    "approvedAt": "2026-08-06T15:39:00+08:00",
+    "decisionAuthority": "user-authorized-product-owner",
+    "evidenceRef": "story://2.2/authorized-decision-2026-08-06"
+  },
+  "actionableBoundary": {
+    "mode": "required-from-rule-or-scenario-contract",
+    "field": "latestActionableAt",
+    "missingBehavior": "record-correction-only",
+    "comparison": "serverNow<latestActionableAt",
+    "recheckBeforePublish": true
+  },
+  "supportedWindows": ["personal-baseline-28d", "personal-baseline-56d", "versioned-scenario-window"],
+  "jobIdentity": {
+    "fields": ["correctionLineageId", "studentRef", "ruleId", "ruleVersion", "scenarioId", "windowId", "inputWatermarksDigest"],
+    "sameKeySameInput": "return-original-result",
+    "newWatermarkOrCorrection": "create-successor"
+  },
+  "expiryBehavior": {
+    "expiredBeforeQueue": "correction-only-no-job",
+    "expiredWhileRunning": "succeed-history-only-no-business-publication"
+  },
+  "jobStateMachine": {
+    "initial": "queued",
+    "transitions": ["queued->running", "running->succeeded", "running->failed", "queued->cancelled", "running->cancelled", "failed->queued"],
+    "attemptRule": "increment-on-each-running-transition"
+  },
+  "fencing": {
+    "fencingToken": "monotonic-int64",
+    "requiredAt": ["lease-acquire", "checkpoint", "business-write", "result-publication"],
+    "staleWorker": "reject"
+  },
+  "consumerCompletion": {
+    "registry": "SUBJECT-CONSUMERS-1.0.0",
+    "criteria": "all-active-consumer-watermarks-at-event-and-reconciliation-passed",
+    "duplicate": "idempotent",
+    "oldVersion": "reject",
+    "gap": "pause-and-backfill",
+    "poison": "quarantine-and-alert"
+  }
+}

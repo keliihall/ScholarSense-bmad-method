@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/subject-registry/subject-mapping-policy.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["policyVersion", "contractVersion", "canonicalSubjectId", "subjectRefSemantics", "approval", "resolutionOutcomes", "matchingRules", "studentRefIssuance", "temporalRules", "linkRules", "protection", "sourceAdapters"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "policyVersion": {"const": "SMP-1.0.0"},
+    "contractVersion": {"const": "SUBJECT-REGISTRY-1.0.0"},
+    "canonicalSubjectId": {"const": "StudentRef"},
+    "subjectRefSemantics": {"const": "wire-alias-of-StudentRef"},
+    "approval": {"$ref": "#/$defs/approval"},
+    "resolutionOutcomes": {"const": ["no-match", "unique", "ambiguous"]},
+    "matchingRules": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mode", "fuzzyMatchingAllowed", "crossSourceFallbackAllowed", "zeroCandidates", "oneCandidate", "multipleCandidates"],
+      "properties": {
+        "mode": {"const": "exact-active-authority-crosswalk"},
+        "fuzzyMatchingAllowed": {"const": false},
+        "crossSourceFallbackAllowed": {"const": false},
+        "zeroCandidates": {"const": "isolate-no-match"},
+        "oneCandidate": {"const": "resolve-unique"},
+        "multipleCandidates": {"const": "isolate-ambiguous"}
+      }
+    },
+    "studentRefIssuance": {"type": "object"},
+    "temporalRules": {"type": "object"},
+    "linkRules": {"type": "object"},
+    "protection": {"type": "object"},
+    "sourceAdapters": {
+      "type": "array", "minItems": 6, "maxItems": 6,
+      "items": {"$ref": "#/$defs/adapter"}
+    }
+  },
+  "$defs": {
+    "approval": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "approvedBy", "approvedAt", "decisionAuthority", "evidenceRef"],
+      "properties": {
+        "status": {"const": "approved"},
+        "approvedBy": {"const": "Hei"},
+        "approvedAt": {"type": "string", "format": "date-time"},
+        "decisionAuthority": {"const": "user-authorized-product-owner"},
+        "evidenceRef": {"type": "string", "minLength": 1}
+      }
+    },
+    "adapter": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sourceId", "ownerRole", "identifierType", "sourceNativeField", "authoritativeStudentKeyField", "normalizationProfile", "matchMode", "mayIssueStudentRef", "inputContract"],
+      "properties": {
+        "sourceId": {"type": "string", "pattern": "^SRC-P[01]-[A-Z-]+-[0-9]{3}$"},
+        "ownerRole": {"type": "string", "minLength": 1},
+        "identifierType": {"enum": ["student-number", "card-number", "campus-network-account", "accommodation-student-number", "campus-access-credential", "dorm-access-credential"]},
+        "sourceNativeField": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]*$"},
+        "authoritativeStudentKeyField": {"const": "authoritativeStudentNumber"},
+        "normalizationProfile": {"enum": ["uppercase-preserve-leading-zero-v1", "lowercase-preserve-leading-zero-v1"]},
+        "matchMode": {"const": "exact-active-crosswalk"},
+        "mayIssueStudentRef": {"type": "boolean"},
+        "inputContract": {"const": "SUBJECT-IDENTIFIER-ADAPTER-1.0.0"}
+      }
+    }
+  }
+}

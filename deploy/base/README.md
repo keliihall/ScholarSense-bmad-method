@@ -22,3 +22,20 @@ the web runtime also reads
 non-symlink deployment mount and verifies each source observation's exact HMAC-SHA256 authority
 signature. A missing, short, insecure, linked, or mismatched key fails startup closed. The binding
 mount, signing key, and database credentials are deployment inputs and are never committed.
+
+Subject mapping exceptions and recompute jobs are derived authorization objects, never new owner
+binding rows: both resolve through the persisted source ID into the frozen SOURCE binding. R6 gets
+the `owned-source` anchor; a job additionally carries `technical-object` for the approved R7 read
+path. Their authorization token is the lowercase SHA-256 digest of that source ID, not an
+exception/job UUID.
+
+The subject-registry capability is separately versioned in
+`subject-registry-runtime-1.0.0.json`. The web role opens distinct online and relay DataSources;
+each startup gate verifies PostgreSQL 18.4, production TLS/channel binding, exact connection
+identity, exclusive inherited NOLOGIN role membership and the complete effective
+table/column/function privilege matrix. The relay confirms the producer outbox only after the
+ingestion-quality consumer transaction commits. The same role runs the database-fenced
+subject-window worker; 60-second leases and monotonic fencing tokens make replica overlap safe.
+Identifier AES-GCM and HMAC material must be delivered from the approved school KMS into protected,
+non-symlink mounts. The profile remains `deployment-input-required`: local fixtures do not claim the
+production KMS runtime evidence required for a production-complete declaration.

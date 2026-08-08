@@ -36,7 +36,11 @@ import tools.jackson.databind.ObjectMapper;
 public final class CatalogOwnerEvidenceProvider implements AuthorizationObjectEvidenceProvider {
     static final String PROFILE_VERSION = "INGESTION-QUALITY-OWNER-BINDINGS-1.0.0";
     private static final int MAX_PROFILE_BYTES = 256 * 1024;
-    private static final Set<String> OBJECT_CLASSES = Set.of("SOURCE", "DEPENDENCY");
+    private static final Set<String> OBJECT_CLASSES = Set.of(
+            "SOURCE", "DEPENDENCY", "SUBJECT_MAPPING_EXCEPTION", "JOB");
+    private static final Set<String> SUBJECT_MAPPING_FIELDS = Set.of(
+            "exceptionId", "status", "subjectOfficialRef", "exceptionCode",
+            "sourceSystem", "sourceOwner", "detectedAt");
     private final Map<BindingKey, OwnerBinding> bindings;
 
     private CatalogOwnerEvidenceProvider(Map<BindingKey, OwnerBinding> bindings) {
@@ -152,8 +156,12 @@ public final class CatalogOwnerEvidenceProvider implements AuthorizationObjectEv
         if (!OBJECT_CLASSES.contains(query.objectClass())) {
             return AuthorizationObjectEvidence.notInstalled();
         }
+        String bindingClass = switch (query.objectClass()) {
+            case "SUBJECT_MAPPING_EXCEPTION", "JOB" -> "SOURCE";
+            default -> query.objectClass();
+        };
         OwnerBinding binding = bindings.get(
-                new BindingKey(query.objectClass(), query.objectTokenDigest()));
+                new BindingKey(bindingClass, query.objectTokenDigest()));
         if (binding == null) {
             return AuthorizationObjectEvidence.unavailable();
         }
@@ -164,11 +172,19 @@ public final class CatalogOwnerEvidenceProvider implements AuthorizationObjectEv
         binding.ownerOrganizationIds().forEach(organization -> scopes.add(
                 new AuthorizationScopeEvidence(
                         AuthorizationScopeAnchor.OWNED_SOURCE, null, organization)));
+        if ("JOB".equals(query.objectClass())) {
+            scopes.add(new AuthorizationScopeEvidence(
+                    AuthorizationScopeAnchor.TECHNICAL_OBJECT, null, null));
+        }
+        String purpose = "SUBJECT_MAPPING_EXCEPTION".equals(query.objectClass())
+                ? "SUBJECT_MAPPING_EXCEPTION_REPAIR" : query.actionId();
+        Set<String> fieldAllowlist = "SUBJECT_MAPPING_EXCEPTION".equals(query.objectClass())
+                ? SUBJECT_MAPPING_FIELDS : Set.of();
         return new AuthorizationObjectEvidence(
                 AuthorizationEvidenceAvailability.AVAILABLE,
                 scopes,
-                query.actionId(),
-                Set.of(),
+                purpose,
+                fieldAllowlist,
                 null,
                 null,
                 Set.of(),

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/subject-registry/subject-mapping-exception.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["exceptionId", "status", "subjectOfficialRef", "exceptionCode", "sourceSystem", "sourceOwner", "detectedAt"],
+  "properties": {
+    "exceptionId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "status": {"enum": ["open", "repairing", "resolved", "dismissed"]},
+    "subjectOfficialRef": {"type": ["string", "null"], "maxLength": 64},
+    "exceptionCode": {"enum": ["NO_MATCH", "AMBIGUOUS", "INTERVAL_OVERLAP", "VERSION_REGRESSION", "REVOCATION_CHAIN_INCOMPLETE", "IDENTIFIER_REISSUE_UNPROVEN"]},
+    "sourceSystem": {"type": "string", "pattern": "^SRC-P[01]-[A-Z-]+-[0-9]{3}$"},
+    "sourceOwner": {"type": "string", "minLength": 1, "maxLength": 128},
+    "detectedAt": {"type": "string", "format": "date-time"}
+  }
+}
