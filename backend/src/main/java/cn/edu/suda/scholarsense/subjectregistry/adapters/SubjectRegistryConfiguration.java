@@ -169,6 +169,6 @@ public class SubjectRegistryConfiguration {
                         "subject-recompute-jobs", "主体重算作业",
                         "subject-registry.recompute-jobs",
                         AuthorizedShellCapabilityState.AVAILABLE,
-                        Set.of("R6-DATA-OWNER", "R7-PLATFORM-OPS")));
+                        Set.of("R7-PLATFORM-OPS")));
     }
 }

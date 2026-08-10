@@ -486,6 +486,88 @@ class MigrationOwnershipContractTest {
     }
 
     @Test
+    void story23MigrationOwnsAtomicBatchSnapshotWorkerAndRetentionBoundaries()
+            throws Exception {
+        String migration = Files.readString(MIGRATIONS.resolve(
+                "ingestion-quality/"
+                        + "V000014__ingestion-quality__data_batch_quality_snapshot_v1.sql"));
+        String lower = migration.toLowerCase();
+
+        for (String table : Set.of(
+                "iq_data_batch", "iq_normalized_fact", "iq_quality_snapshot",
+                "iq_quality_snapshot_audit_token_binding", "iq_quality_snapshot_metric",
+                "iq_quality_snapshot_impact_scope",
+                "iq_batch_quality_measurement", "iq_batch_quality_operand",
+                "iq_batch_quality_impact_scope",
+                "iq_batch_idempotency",
+                "iq_frozen_qmdp_policy",
+                "iq_batch_quality_outbox", "iq_quality_snapshot_deletion_result")) {
+            assertTrue(lower.contains("ingestion_quality." + table), table);
+        }
+        for (String function : Set.of(
+                "iq_receive_data_batch", "iq_inspect_batch_command_precedence",
+                "iq_append_normalized_fact",
+                "iq_record_batch_quality_measurement",
+                "iq_record_batch_quality_impact_scope", "iq_seal_data_batch",
+                "iq_validate_batch_audit_payload", "iq_qmdp_source",
+                "iq_qmdp_ordered_definitions",
+                "iq_require_production_watermark",
+                "iq_require_production_impact_scope", "iq_qmdp_expected_metrics",
+                "iq_qshm_expected_hash", "iq_validate_batch_business_payload",
+                "iq_validate_batch_published_payload",
+                "iq_commit_batch_quality_evaluation",
+                "iq_publish_data_batch",
+                "iq_claim_next_batch_quality_outbox",
+                "iq_release_batch_quality_outbox",
+                "iq_deliver_batch_quality_outbox",
+                "iq_fail_batch_quality_outbox",
+                "iq_ingest_quality_snapshot_retention_authority",
+                "iq_find_next_due_quality_snapshot_retention",
+                "iq_execute_quality_snapshot_retention")) {
+            assertTrue(lower.contains("create function ingestion_quality." + function + "("),
+                    function);
+        }
+        assertTrue(lower.contains("create role scholarsense_ingestion_quality_batch_owner nologin"));
+        assertTrue(lower.contains("create role scholarsense_ingestion_quality_quality_worker nologin"));
+        assertTrue(lower.contains(
+                "create role scholarsense_ingestion_quality_retention_executor nologin"));
+        assertTrue(lower.contains("create role "
+                + "scholarsense_ingestion_quality_consumer_registry_authority nologin"));
+        assertTrue(lower.contains("security definer"));
+        assertTrue(lower.contains("set search_path = pg_catalog"));
+        assertTrue(lower.contains("create view ingestion_quality.iq_published_normalized_fact"));
+        assertTrue(lower.contains("interval '2 years'"));
+        assertTrue(lower.contains("interval '90 days'"));
+        String cleanupPrivilegeBlock = lower.substring(
+                lower.indexOf("revoke execute on function "
+                        + "ingestion_quality.iq_cleanup_expired(timestamptz)"),
+                lower.indexOf("grant execute on function "
+                        + "ingestion_quality.iq_cleanup_expired(timestamptz)"));
+        assertTrue(cleanupPrivilegeBlock.contains(
+                "scholarsense_ingestion_quality_relay"));
+        assertTrue(lower.contains("grant execute on function "
+                + "ingestion_quality.iq_cleanup_expired(timestamptz)\n"
+                + "    to scholarsense_ingestion_quality_retention_executor"));
+        for (String signature : Set.of(
+                "iq_claim_next_batch_quality_outbox()",
+                "iq_release_batch_quality_outbox(uuid, bigint)",
+                "iq_deliver_batch_quality_outbox(uuid, bigint)",
+                "iq_fail_batch_quality_outbox(uuid, bigint)")) {
+            assertTrue(lower.contains("grant execute on function\n"
+                    + "    ingestion_quality." + signature + "\n"
+                    + "    to scholarsense_ingestion_quality_relay"), signature);
+        }
+        assertFalse(lower.contains("grant update (\n"
+                + "    status, attempts, available_at, claimed_until, delivered_at, "
+                + "last_error_code)\n"
+                + "    on ingestion_quality.iq_batch_quality_outbox\n"
+                + "    to scholarsense_ingestion_quality_relay"));
+        assertFalse(lower.contains("audit_operations."));
+        assertFalse(lower.contains("identity_access."));
+        assertFalse(lower.contains("deletionreceipt"));
+    }
+
+    @Test
     void invalidMigrationFixturesAreRejectedForEveryRequiredReason() throws Exception {
         assertRejected("duplicate-version", "MIGRATION_VERSION_DUPLICATE");
         assertRejected("unknown-owner", "UNKNOWN_OWNER");

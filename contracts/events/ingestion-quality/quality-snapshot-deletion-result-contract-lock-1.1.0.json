@@ -1,0 +1,84 @@
+{
+  "$schema": "quality-snapshot-deletion-result-contract-lock.schema.json",
+  "lockVersion": "QUALITY-SNAPSHOT-DELETION-RESULT-CONTRACT-LOCK-1.1.0",
+  "predecessorContractVersion": "QUALITY-SNAPSHOT-DELETION-RESULT-1.0.0",
+  "successorContractVersion": "QUALITY-SNAPSHOT-DELETION-RESULT-1.1.0",
+  "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+  "predecessorFiles": [
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/ordering/quality-snapshot-deletion-ordering-1.0.0.json",
+      "rawSha256": "sha256:0439a547c9d085e89d56589d73e285bce1ae1db54b017fd2ff065efba0014444"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/valid/quality-snapshot-deletion-blocked-v1.json",
+      "rawSha256": "sha256:b0d11e728bc7532698011f6fd943aa12cdaeed02d7a9a65ad209dfd499066b04"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/valid/quality-snapshot-deletion-completed-v1.json",
+      "rawSha256": "sha256:a74a57d80584764636321129e552f216b77acdb8921e6d33f654dac7a1ae1c5f"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/valid/quality-snapshot-deletion-failed-v1.json",
+      "rawSha256": "sha256:94d76ea91d889c9e938121d3141c7da5b1906dba32590bc10f6dfa668d32e8cc"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/valid/quality-snapshot-deletion-partial-v1.json",
+      "rawSha256": "sha256:56b23187885c2d21885dc4dd39dda179b235e2731b7237d807662aa4b24a9013"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/quality-snapshot-deletion-result.schema.json",
+      "rawSha256": "sha256:7d1924966c69cf2465152ca945a4f8b12b7969f7e78adbcd5416fe53bfc3b754"
+    },
+    {
+      "path": "contracts/ingestion-quality/batch-quality/executable-quality-contract-lock-1.0.0.json",
+      "rawSha256": "sha256:b93d5547e6b28aa7281f736bd2440800eea590987d68ae8ab28ffd6a225cdb6f"
+    }
+  ],
+  "successorFiles": [
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/invalid/quality-snapshot-deletion-result-production-negative-fixtures-1.1.0.json",
+      "rawSha256": "sha256:853f69fff64a42189a6354e001b28f19a1548b7287a2946d544a9fc2a3d53237",
+      "canonicalDigest": "sha256:0888ea1da8ff53e3a54e8c85cb868e1c59dc65f2701b7b9b368a059578763e55"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/valid/quality-snapshot-deletion-production-blocked-v1.json",
+      "rawSha256": "sha256:d1fa8340e9da45521fe1b04bc54b3e7b48134c84121d43b7813bef7242851d09",
+      "canonicalDigest": "sha256:ebe3e79cfdf140d840e990992c4980976bfec2ae963b922cde1d807e9fef6950"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/valid/quality-snapshot-deletion-production-completed-v1.json",
+      "rawSha256": "sha256:d70fc494824aa8bf820a0b910f1732e7ce27ebb44c430c0f457174803b3cf463",
+      "canonicalDigest": "sha256:6d5914604aa2147a798d39af5d2bc9596630712473c74f56c90643e064278878"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/valid/quality-snapshot-deletion-production-failed-v1.json",
+      "rawSha256": "sha256:151d96a2bbfba8be8908ac1a1e2e647e9ede39cca1f0ed4f39bc700a407abc4b",
+      "canonicalDigest": "sha256:dc80d2ac5e4208a80598689afebdca402d333430786d89b03ba26ea4f15055fa"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/valid/quality-snapshot-deletion-production-missing-authority-blocked-v1.json",
+      "rawSha256": "sha256:67e13e53aa20c3358ec9847497bbe29c7221f65f9778599ddb33da329b28087e",
+      "canonicalDigest": "sha256:945f4200bc556bc0d77d31d8cfe6dbd684c8347d94e96e0acbef7da5322f14b4"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/valid/quality-snapshot-deletion-production-partial-v1.json",
+      "rawSha256": "sha256:b9ce51eccc31c80fb71abaac609a496ec0e6fd44d76d0a46fa8902b2ba19765f",
+      "canonicalDigest": "sha256:27ef086012215296c074785db3866445670e5e0d6c99362e962fdfc5485aced1"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/valid/quality-snapshot-deletion-production-pre-due-blocked-v1.json",
+      "rawSha256": "sha256:6c92ebf0c28a19715c4b04ba7d389668172d8ffd4ae50889b58d245f51c9c756",
+      "canonicalDigest": "sha256:a71d9f54add7b35768c20287b953644ea3a06d5d59e87644cbac7d5becfb3d73"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/quality-snapshot-deletion-result-1.1.0.schema.json",
+      "rawSha256": "sha256:a39a41ca4300500b1bdf48133ee718e6f060317ee9cfb3f363413bce221dc451",
+      "canonicalDigest": "sha256:12bf17541b8d3c30912dd3221be3bcfd6156d020ebaaa6b2b50a96197affd1b4"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/quality-snapshot-deletion-result-contract-lock.schema.json",
+      "rawSha256": "sha256:279b6d4726b81338a722de87c0c41c56e3c02fc0ff15be08bb449d9a963fcbc3",
+      "canonicalDigest": "sha256:791d8e03d5b592805fe5d1854e62831e34f2aa8147cf7ec2d0fffd71407fb5f7"
+    }
+  ]
+}

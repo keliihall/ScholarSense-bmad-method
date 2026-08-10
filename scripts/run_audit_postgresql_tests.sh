@@ -120,9 +120,40 @@ from (
   union all
   select 'function|' || concat_ws('|', n.nspname, proc.proname,
       pg_get_function_identity_arguments(proc.oid), pg_get_function_result(proc.oid),
-      proc.prokind, proc.provolatile, proc.prosecdef::text, md5(pg_get_functiondef(proc.oid)))
+      proc.prokind, proc.provolatile, proc.prosecdef::text,
+      pg_get_userbyid(proc.proowner),
+      case when proc.proacl is null then 'default' else 'explicit' end,
+      coalesce((
+        select string_agg(concat_ws(':',
+            case when privilege.grantee=0 then 'PUBLIC'
+                 else pg_get_userbyid(privilege.grantee) end,
+            privilege.privilege_type,
+            privilege.is_grantable::text,
+            pg_get_userbyid(privilege.grantor)), ',' order by
+            case when privilege.grantee=0 then 'PUBLIC'
+                 else pg_get_userbyid(privilege.grantee) end,
+            privilege.privilege_type,
+            privilege.is_grantable,
+            pg_get_userbyid(privilege.grantor))
+          from pg_catalog.aclexplode(coalesce(
+                 proc.proacl,
+                 pg_catalog.acldefault('f', proc.proowner))) privilege
+      ), ''),
+      md5(pg_get_functiondef(proc.oid)))
   from pg_catalog.pg_proc proc
   join pg_catalog.pg_namespace n on n.oid=proc.pronamespace
+  where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality', 'subject_registry')
+  union all
+  select 'routine-grant|' || concat_ws('|', n.nspname, proc.proname,
+      pg_get_function_identity_arguments(proc.oid),
+      case when privilege.grantee=0 then 'PUBLIC'
+           else pg_get_userbyid(privilege.grantee) end,
+      privilege.privilege_type, privilege.is_grantable::text,
+      pg_get_userbyid(privilege.grantor))
+  from pg_catalog.pg_proc proc
+  join pg_catalog.pg_namespace n on n.oid=proc.pronamespace
+  cross join lateral pg_catalog.aclexplode(coalesce(
+      proc.proacl, pg_catalog.acldefault('f', proc.proowner))) privilege
   where n.nspname in ('identity_access', 'audit_operations', 'ingestion_quality', 'subject_registry')
   union all
   select 'grant|' || concat_ws('|', table_schema, table_name, grantee, privilege_type,
@@ -174,7 +205,8 @@ for database in scholarsense_audit_clean scholarsense_audit_upgrade; do
   fi
 done
 
-POSTGRES_TESTS="IdentityAuditPostgreSqlIT,IdentityAuthorityPostgreSqlIT,ResponsibilityAuthorityPostgreSqlIT,AccessInvalidationPostgreSqlIT,AuditLedgerPostgreSqlIT,PublicIntegrationPostgreSqlIT,DataSourceCatalogPostgreSqlIT,SubjectRegistryPostgreSqlIT,SubjectWindowRecomputePostgreSqlIT"
+DEFAULT_POSTGRES_TESTS="IdentityAuditPostgreSqlIT,IdentityAuthorityPostgreSqlIT,ResponsibilityAuthorityPostgreSqlIT,AccessInvalidationPostgreSqlIT,AuditLedgerPostgreSqlIT,PublicIntegrationPostgreSqlIT,DataSourceCatalogPostgreSqlIT,IngestionQualityWorkloadActualLoginPostgreSqlIT,DataBatchPersistencePostgreSqlIT,DataBatchIdempotencyAndLineagePostgreSqlIT,DataBatchAtomicEvidencePostgreSqlIT,QualityMeasurementProvenancePostgreSqlIT,QualitySnapshotProductionPrivacyPostgreSqlIT,BatchQualityOutboxTransitionPostgreSqlIT,QualitySnapshotRetentionAuthorityPostgreSqlIT,QualitySnapshotRetentionLineagePostgreSqlIT,QualitySnapshotRetentionDeletionEventPostgreSqlIT,SubjectRegistryPostgreSqlIT,SubjectWindowRecomputePostgreSqlIT,QualitySnapshotCanonicalPostgreSqlIT,QualityMetricPostgreSqlIT"
+POSTGRES_TESTS="$DEFAULT_POSTGRES_TESTS"
 if [[ -n "${IDENTITY_SANDBOX_ENDPOINT:-}" ]]; then
   POSTGRES_TESTS="$POSTGRES_TESTS,IdentityAuthoritySandboxIT#sameTraceRunsThroughWorkerPostgreSqlAndCurrentAuthorizationReadBack"
 fi
@@ -182,6 +214,7 @@ fi
 if [[ -n "${IDENTITY_SANDBOX_ENDPOINT:-}" ]]; then
   "$ROOT/_bmad/scripts/with_pab_toolchain.sh" mvn -q -f "$ROOT/backend/pom.xml" \
     "-Dtest=$POSTGRES_TESTS" \
+    -Dsurefire.runOrder=alphabetical \
     -Dscholarsense.audit.pg.url="jdbc:postgresql://127.0.0.1:$PORT/scholarsense_audit_clean" \
     -Dscholarsense.audit.pg.upgrade-url="jdbc:postgresql://127.0.0.1:$PORT/scholarsense_audit_upgrade" \
     -Dscholarsense.audit.pg.user="$USER_NAME" \
@@ -191,9 +224,10 @@ if [[ -n "${IDENTITY_SANDBOX_ENDPOINT:-}" ]]; then
 else
   "$ROOT/_bmad/scripts/with_pab_toolchain.sh" mvn -q -f "$ROOT/backend/pom.xml" \
     "-Dtest=$POSTGRES_TESTS" \
+    -Dsurefire.runOrder=alphabetical \
     -Dscholarsense.audit.pg.url="jdbc:postgresql://127.0.0.1:$PORT/scholarsense_audit_clean" \
     -Dscholarsense.audit.pg.upgrade-url="jdbc:postgresql://127.0.0.1:$PORT/scholarsense_audit_upgrade" \
     -Dscholarsense.audit.pg.user="$USER_NAME" test
 fi
 
-echo "audit-postgresql: PASS (PostgreSQL 18.4; clean + full production inventory upgrade + authorization successor persistence + identity/responsibility invalidation fencing/atomicity/SLO/privilege + PIC test-scope queue/current/mapping/fence/retention + audit projection/concurrency/rollback/replay/tamper probes)"
+echo "audit-postgresql: PASS (PostgreSQL 18.4; clean + full production inventory upgrade + authorization successor persistence + identity/responsibility invalidation fencing/atomicity/SLO/privilege + PIC test-scope queue/current/mapping/fence/retention + batch-quality outbox CAS/lease/exhaustion + audit projection/concurrency/rollback/replay/tamper probes)"

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/batch-quality/executable-quality-contract-lock.schema.json",
+  "title": "Executable quality contract raw-byte lock",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lockVersion", "profileVersion", "catalogVersion", "qualityGateVersion", "policyCanonicalDigest", "lifecycleCanonicalDigest", "retentionCanonicalDigest", "digests"],
+  "properties": {
+    "$schema": {"const": "executable-quality-contract-lock.schema.json"},
+    "lockVersion": {"const": "EXECUTABLE-QUALITY-CONTRACT-LOCK-1.0.0"},
+    "profileVersion": {"const": "QMDP-1.0.0"},
+    "catalogVersion": {"const": "DCC-1.1.0"},
+    "qualityGateVersion": {"const": "QG-1.0.0"},
+    "policyCanonicalDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "lifecycleCanonicalDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "retentionCanonicalDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "digests": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+    }
+  }
+}

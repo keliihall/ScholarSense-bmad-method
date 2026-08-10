@@ -244,6 +244,27 @@ class FrozenDataCatalogLoaderTest {
     }
 
     @Test
+    void rejectsTamperedApprovedAdditiveContract() throws Exception {
+        ReportFixture fixture = report();
+        Path tamperedRoot = contractCopy("tampered-additive-contract-root");
+        Path successor = tamperedRoot.resolve("dcc-1.1.0.json");
+        Files.writeString(successor, Files.readString(successor) + "\n");
+
+        assertThrows(IngestionQualityException.class, () -> new FrozenDataCatalogLoader(
+                JSON, tamperedRoot, fixture.path(), fixture.uri(), AUTHORITY_KEY, SUBJECT).load());
+    }
+
+    @Test
+    void rejectsUnapprovedAdditionalContractFile() throws Exception {
+        ReportFixture fixture = report();
+        Path expandedRoot = contractCopy("expanded-contract-root");
+        Files.writeString(expandedRoot.resolve("unapproved-successor.json"), "{}\n");
+
+        assertThrows(IngestionQualityException.class, () -> new FrozenDataCatalogLoader(
+                JSON, expandedRoot, fixture.path(), fixture.uri(), AUTHORITY_KEY, SUBJECT).load());
+    }
+
+    @Test
     void rejectsTextualFalseInTargetReportPrivacyClaims() throws Exception {
         ReportFixture fixture = report();
         @SuppressWarnings("unchecked")

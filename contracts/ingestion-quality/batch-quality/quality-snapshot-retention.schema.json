@@ -1,0 +1,709 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/batch-quality/quality-snapshot-retention.schema.json",
+  "title": "QualitySnapshot retention and deletion handoff policy",
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "policyVersion",
+    "decisionId",
+    "authorityRef",
+    "effectiveAt",
+    "owner",
+    "executor",
+    "objectType",
+    "retentionScheduleVersion",
+    "retentionClass",
+    "retentionStartField",
+    "retentionPeriod",
+    "calendarArithmetic",
+    "appliesToOverallResults",
+    "publishedAtAffectsRetention",
+    "expirationAction",
+    "anonymizationFallbackAllowed",
+    "ownerLocalTargets",
+    "derivedFrom",
+    "scopeDigestBinding",
+    "consumerRegistryBinding",
+    "legalHoldScopeBinding",
+    "eventChronology",
+    "eligibility",
+    "downstreamEvidence",
+    "ownerResult",
+    "backup",
+    "auditHandoff",
+    "canonicalizationProfile",
+    "runtimeEvidenceClaim"
+  ],
+  "properties": {
+    "$schema": {"const": "quality-snapshot-retention.schema.json"},
+    "policyVersion": {"const": "QUALITY-SNAPSHOT-RETENTION-1.0.0"},
+    "decisionId": {"const": "DEC-019"},
+    "authorityRef": {"const": "AUTH-2026-08-08-001"},
+    "effectiveAt": {"const": "2026-08-09T10:02:22+08:00"},
+    "owner": {"const": "ingestion-quality"},
+    "executor": {"const": "ingestion-quality-retention-executor"},
+    "objectType": {"const": "QualitySnapshot"},
+    "retentionScheduleVersion": {"const": "RS-1.0.0"},
+    "retentionClass": {"const": "reporting-and-operational-snapshot"},
+    "retentionStartField": {"const": "evaluatedAt"},
+    "retentionPeriod": {"const": "P2Y"},
+    "calendarArithmetic": {
+      "const": "utc-calendar-plus-years-end-of-month-clamp"
+    },
+    "appliesToOverallResults": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"enum": ["quality-passed", "quality-failed"]}
+    },
+    "publishedAtAffectsRetention": {"const": false},
+    "expirationAction": {"const": "delete"},
+    "anonymizationFallbackAllowed": {"const": false},
+    "ownerLocalTargets": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "quality-snapshot-row",
+          "quality-snapshot-metric-rows",
+          "owner-read-models",
+          "owner-indexes",
+          "owner-caches",
+          "owner-objects"
+        ]
+      }
+    },
+    "derivedFrom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "consumedBaseline",
+        "reusedPrimitives",
+        "excludedSemantics"
+      ],
+      "properties": {
+        "consumedBaseline": {
+          "const": "AUDIT-RETENTION-CONTRACT-LOCK-1.0.0"
+        },
+        "reusedPrimitives": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "utc-calendar-plus-years-end-of-month-clamp",
+              "equal-due-eligible",
+              "targeted-half-open-legal-hold"
+            ]
+          }
+        },
+        "excludedSemantics": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "audit-data-class",
+              "occurredAt-retention-anchor",
+              "RetentionExecution",
+              "deletion-receipt"
+            ]
+          }
+        }
+      }
+    },
+    "scopeDigestBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "canonicalizationProfile",
+        "materialFields",
+        "digestField"
+      ],
+      "properties": {
+        "algorithm": {"const": "sha256-canonical-json"},
+        "canonicalizationProfile": {
+          "const": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"
+        },
+        "materialFields": {
+          "type": "array",
+          "minItems": 9,
+          "maxItems": 9,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "objectType",
+              "snapshotId",
+              "sourceId",
+              "snapshotAggregateVersion",
+              "evaluatedAt",
+              "retentionDueAt",
+              "snapshotImmutableHash",
+              "retentionPolicyVersion",
+              "retentionScheduleVersion"
+            ]
+          }
+        },
+        "digestField": {"const": "scope.scopeDigest"}
+      }
+    },
+    "consumerRegistryBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exactMemberSetSource",
+        "memberSort",
+        "memberFields",
+        "registryDigestAlgorithm",
+        "registryDigestMaterialFields",
+        "emptyMemberSetAllowed",
+        "consumerIdUnique",
+        "membershipLifecycleRules",
+        "attestationBindingFields",
+        "conformanceEvidence",
+        "productionAuthority",
+        "conformanceAnchors"
+      ],
+      "properties": {
+        "exactMemberSetSource": {
+          "const": "consumerRegistry.members=sorted-consumers-projection"
+        },
+        "memberSort": {"const": "consumerId-ascending"},
+        "memberFields": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["consumerId", "registryMembership", "lifecycleStatus"]
+          }
+        },
+        "registryDigestAlgorithm": {"const": "sha256-canonical-json"},
+        "registryDigestMaterialFields": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["registryVersion", "members"]}
+        },
+        "emptyMemberSetAllowed": {"const": true},
+        "consumerIdUnique": {"const": true},
+        "membershipLifecycleRules": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "required-for-snapshot",
+            "unreleased-reference-holder",
+            "planned-never-held-reference"
+          ],
+          "properties": {
+            "required-for-snapshot": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "uniqueItems": true,
+              "items": {"enum": ["active", "inactive"]}
+            },
+            "unreleased-reference-holder": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "uniqueItems": true,
+              "items": {"enum": ["active", "inactive", "retired"]}
+            },
+            "planned-never-held-reference": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": {"const": "planned"}
+            }
+          }
+        },
+        "attestationBindingFields": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "consumerId",
+              "registryVersion",
+              "registryDigest",
+              "scopeDigest",
+              "snapshotId",
+              "snapshotImmutableHash",
+              "requiredAggregateVersion"
+            ]
+          }
+        },
+        "conformanceEvidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "provider",
+            "evidenceRefPrefix",
+            "verificationStatus",
+            "runtimeEvidenceClaim"
+          ],
+          "properties": {
+            "provider": {
+              "const": "quality-snapshot-consumer-registry-conformance-anchor"
+            },
+            "evidenceRefPrefix": {
+              "const": "contract://quality-snapshot-retention/consumer-registry/"
+            },
+            "verificationStatus": {"const": "contract-conformance"},
+            "runtimeEvidenceClaim": {"const": "none"}
+          }
+        },
+        "productionAuthority": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "conformanceAnchorAccepted",
+            "trustedPortOwnerTask",
+            "trustedPort"
+          ],
+          "properties": {
+            "conformanceAnchorAccepted": {"const": false},
+            "trustedPortOwnerTask": {"const": "Task 3"},
+            "trustedPort": {"const": "consumer-registry-authority"}
+          }
+        },
+        "conformanceAnchors": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "conformanceAnchorId",
+              "registryVersion",
+              "members",
+              "membersDigest",
+              "registryDigest"
+            ],
+            "properties": {
+              "conformanceAnchorId": {
+                "enum": [
+                  "active-clue-care-consumer-set",
+                  "inactive-legacy-holder-consumer-set",
+                  "empty-consumer-set"
+                ]
+              },
+              "registryVersion": {
+                "const": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0"
+              },
+              "members": {
+                "type": "array",
+                "maxItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "consumerId",
+                    "registryMembership",
+                    "lifecycleStatus"
+                  ],
+                  "properties": {
+                    "consumerId": {"type": "string", "minLength": 1},
+                    "registryMembership": {
+                      "enum": [
+                        "required-for-snapshot",
+                        "unreleased-reference-holder"
+                      ]
+                    },
+                    "lifecycleStatus": {"enum": ["active", "inactive"]}
+                  }
+                }
+              },
+              "membersDigest": {"$ref": "#/$defs/digest"},
+              "registryDigest": {"$ref": "#/$defs/digest"}
+            }
+          }
+        }
+      }
+    },
+    "legalHoldScopeBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checkedScopeDigestField",
+        "mustEqualField",
+        "clearStillBindsCurrentScope",
+        "matchedRequiresCurrentScopeAndExactCount"
+      ],
+      "properties": {
+        "checkedScopeDigestField": {
+          "const": "guards.legalHold.checkedScopeDigest"
+        },
+        "mustEqualField": {"const": "scope.scopeDigest"},
+        "clearStillBindsCurrentScope": {"const": true},
+        "matchedRequiresCurrentScopeAndExactCount": {"const": true}
+      }
+    },
+    "eventChronology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "committedOrdering",
+        "noCommitOrdering",
+        "guardCheckFields",
+        "attestationUpperBound",
+        "availableCheckTimeRequired"
+      ],
+      "properties": {
+        "committedOrdering": {
+          "const": "retentionDueAt<=guardChecks<=deletionCommittedAt<=occurredAt"
+        },
+        "noCommitOrdering": {
+          "const": "retentionDueAt<=guardChecks<=occurredAt"
+        },
+        "guardCheckFields": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "guards.trustedTime.observedAt",
+              "guards.legalHold.checkedAt",
+              "guards.consumerRegistry.checkedAt",
+              "guards.consumerWatermarksCheckedAt"
+            ]
+          }
+        },
+        "attestationUpperBound": {
+          "const": "deletionCommittedAt-when-present-otherwise-occurredAt"
+        },
+        "availableCheckTimeRequired": {"const": true}
+      }
+    },
+    "eligibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trustedTimeRequired",
+        "dueComparison",
+        "legalHoldWindow",
+        "consumerDenominator",
+        "consumerRegistryVersionField",
+        "consumerRegistryDigestField",
+        "inactiveExitRule",
+        "plannedExclusionRule",
+        "watermarkRule",
+        "watermarkEqualitySatisfies",
+        "watermarkBlockingStates",
+        "watermarkDoesNotReplaceAttestation",
+        "evidenceCopyAckRequired",
+        "evidenceCopyAckSatisfyingValues",
+        "notRequiredAttestationBinding",
+        "transportAckCountsAsEvidenceCopyAck",
+        "inboxAckCountsAsEvidenceCopyAck",
+        "dependencyUnavailableResult"
+      ],
+      "properties": {
+        "trustedTimeRequired": {"const": true},
+        "dueComparison": {"const": "trustedNow>=retentionDueAt"},
+        "legalHoldWindow": {"const": "[startAt,endAt)"},
+        "consumerDenominator": {
+          "const": "required-for-snapshot-plus-unreleased-reference-holders"
+        },
+        "consumerRegistryVersionField": {
+          "const": "guards.consumerRegistry.registryVersion"
+        },
+        "consumerRegistryDigestField": {
+          "const": "guards.consumerRegistry.registryDigest"
+        },
+        "inactiveExitRule": {
+          "const": "decommission-no-reference-attestation-required"
+        },
+        "plannedExclusionRule": {
+          "const": "planned-and-never-held-reference"
+        },
+        "watermarkRule": {
+          "const": "confirmedAggregateVersion>=requiredAggregateVersion"
+        },
+        "watermarkEqualitySatisfies": {"const": true},
+        "watermarkBlockingStates": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["behind", "missing", "unknown", "registry-unavailable"]
+          }
+        },
+        "watermarkDoesNotReplaceAttestation": {"const": true},
+        "evidenceCopyAckRequired": {"const": true},
+        "evidenceCopyAckSatisfyingValues": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["copied", "not-required"]}
+        },
+        "notRequiredAttestationBinding": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "snapshotId",
+              "snapshotImmutableHash",
+              "requiredAggregateVersion"
+            ]
+          }
+        },
+        "transportAckCountsAsEvidenceCopyAck": {"const": false},
+        "inboxAckCountsAsEvidenceCopyAck": {"const": false},
+        "dependencyUnavailableResult": {"const": "blocked"}
+      }
+    },
+    "downstreamEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ownerModule",
+        "ownerStories",
+        "objectType",
+        "copyTriggers",
+        "copyMode",
+        "ownerSnapshotReferenceMayBeSoleEvidence",
+        "retentionScheduleVersion",
+        "retentionAnchor",
+        "retentionPeriod",
+        "runtimeEvidenceClaim"
+      ],
+      "properties": {
+        "ownerModule": {"const": "clue-care"},
+        "ownerStories": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["3.4", "3.5"]}
+        },
+        "objectType": {"const": "EvidenceSnapshot"},
+        "copyTriggers": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["candidate-create", "clue-create"]}
+        },
+        "copyMode": {"const": "self-contained-minimum"},
+        "ownerSnapshotReferenceMayBeSoleEvidence": {"const": false},
+        "retentionScheduleVersion": {"const": "RS-1.0.0"},
+        "retentionAnchor": {"const": "owner-domain-case-closure"},
+        "retentionPeriod": {"const": "P3Y"},
+        "runtimeEvidenceClaim": {"const": "none"}
+      }
+    },
+    "ownerResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "eventType",
+        "payloadContractVersion",
+        "outcomes",
+        "wireSizeLimitBytes",
+        "wireEncoding",
+        "wireMeasurement",
+        "byteOrderMarkAllowed",
+        "wireJsonParser",
+        "wirePrettyJsonAllowed",
+        "wireCanonicalByteEqualityRequired",
+        "blockedCompletionRule",
+        "idempotencyIdentity",
+        "sameIdentitySamePayload",
+        "sameIdentityDifferentPayload",
+        "lineageRootRule",
+        "lineageSuccessorRule",
+        "lineageScopeRule",
+        "lineageChronologyRule",
+        "lineageForkAllowed",
+        "completedSupersessionAllowed",
+        "ownerResultIsFinalReceipt",
+        "databaseTransactionDigestBinding"
+      ],
+      "properties": {
+        "eventType": {
+          "const": "scholarsense.ingestion-quality.quality-snapshot.deletion-result.v1"
+        },
+        "payloadContractVersion": {"const": "PIC-1.0.0"},
+        "outcomes": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {"enum": ["completed", "blocked", "partial", "failed"]}
+        },
+        "wireSizeLimitBytes": {"const": 65536},
+        "wireEncoding": {"const": "UTF-8"},
+        "wireMeasurement": {
+          "const": "received-raw-utf8-bytes-before-json-parse"
+        },
+        "byteOrderMarkAllowed": {"const": false},
+        "wireJsonParser": {"const": "strict-duplicate-key-rejecting"},
+        "wirePrettyJsonAllowed": {"const": true},
+        "wireCanonicalByteEqualityRequired": {"const": false},
+        "blockedCompletionRule": {
+          "const": "direct-successor-same-aggregate"
+        },
+        "idempotencyIdentity": {"const": "eventId"},
+        "sameIdentitySamePayload": {"const": "duplicate"},
+        "sameIdentityDifferentPayload": {"const": "conflict"},
+        "lineageRootRule": {
+          "const": "aggregateVersion=1-and-supersedesResultId=null"
+        },
+        "lineageSuccessorRule": {
+          "const": "aggregateVersion=predecessor.aggregateVersion+1-and-supersedesResultId=predecessor.eventId"
+        },
+        "lineageScopeRule": {"const": "same-aggregate-and-same-scope"},
+        "lineageChronologyRule": {
+          "const": "successor-evidence-at-or-after-predecessor-occurredAt"
+        },
+        "lineageForkAllowed": {"const": false},
+        "completedSupersessionAllowed": {"const": false},
+        "ownerResultIsFinalReceipt": {"const": false},
+        "databaseTransactionDigestBinding": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "semantics",
+            "algorithm",
+            "canonicalizationProfile",
+            "materialFields",
+            "targetMaterialFields",
+            "digestFields",
+            "databaseCommitProof",
+            "runtimeEvidenceClaim",
+            "productionAtomicityEvidenceTasks"
+          ],
+          "properties": {
+            "semantics": {"const": "contract-binding-only"},
+            "algorithm": {"const": "sha256-canonical-json"},
+            "canonicalizationProfile": {
+              "const": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"
+            },
+            "materialFields": {
+              "type": "array",
+              "minItems": 7,
+              "maxItems": 7,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "executionId",
+                  "scopeDigest",
+                  "result",
+                  "deletionCommittedAt",
+                  "transactionId",
+                  "onlineSnapshot",
+                  "onlineMetrics"
+                ]
+              }
+            },
+            "targetMaterialFields": {
+              "type": "array",
+              "minItems": 6,
+              "maxItems": 6,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "status",
+                  "selectedCount",
+                  "deletedCount",
+                  "remainingCount",
+                  "evidenceDigest",
+                  "errorCode"
+                ]
+              }
+            },
+            "digestFields": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "ownerLocalResults.onlineSnapshot.transactionEvidenceDigest",
+                  "ownerLocalResults.onlineMetrics.transactionEvidenceDigest"
+                ]
+              }
+            },
+            "databaseCommitProof": {"const": false},
+            "runtimeEvidenceClaim": {"const": "none"},
+            "productionAtomicityEvidenceTasks": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "uniqueItems": true,
+              "items": {"enum": ["Task 3", "Task 7"]}
+            }
+          }
+        }
+      }
+    },
+    "backup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policyVersion",
+        "maximumRetentionPeriod",
+        "maximumRetentionDays",
+        "dueWindow",
+        "partialBackupExpiryDueAtRequired",
+        "physicalDeletionClaim"
+      ],
+      "properties": {
+        "policyVersion": {"const": "DRP-1.0.0"},
+        "maximumRetentionPeriod": {"const": "P35D"},
+        "maximumRetentionDays": {"const": 35},
+        "dueWindow": {
+          "const": "deletionCommittedAt<=backupExpiryDueAt<=deletionCommittedAt+P35D"
+        },
+        "partialBackupExpiryDueAtRequired": {"const": true},
+        "physicalDeletionClaim": {"const": "none"}
+      }
+    },
+    "auditHandoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targetOwner",
+        "inputKind",
+        "finalReceiptOwner",
+        "conformanceReceiptSatisfiesProduction"
+      ],
+      "properties": {
+        "targetOwner": {"const": "audit-operations"},
+        "inputKind": {"const": "owner-local-deletion-result"},
+        "finalReceiptOwner": {"const": "audit-operations"},
+        "conformanceReceiptSatisfiesProduction": {"const": false}
+      }
+    },
+    "canonicalizationProfile": {
+      "const": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"
+    },
+    "runtimeEvidenceClaim": {"const": "none"}
+  }
+}

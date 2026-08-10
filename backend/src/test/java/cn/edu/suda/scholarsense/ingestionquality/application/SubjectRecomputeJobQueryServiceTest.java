@@ -33,7 +33,7 @@ class SubjectRecomputeJobQueryServiceTest {
             new RecomputeJobActorContext("actor", "192.0.2.10");
 
     @Test
-    void r7FallsBackToPlatformReadWhileR6UsesOwnedSourceRead() {
+    void recomputeJobsUseOnlyTheR7TechnicalPlatformReadCapability() {
         List<CompositeAuthorizationRequest> requests = new ArrayList<>();
         var service = new SubjectRecomputeJobQueryService(
                 jobPort(record(4)),
@@ -50,7 +50,7 @@ class SubjectRecomputeJobQueryServiceTest {
                 ignored -> Optional.empty());
 
         assertEquals("running", service.get(JOB, ACTOR, TRACE).status());
-        assertEquals(List.of("data-quality.read", "platform.read"),
+        assertEquals(List.of("platform.read"),
                 requests.stream().map(CompositeAuthorizationRequest::actionId).toList());
         assertEquals("JOB", requests.getLast().objectClass());
         assertEquals(sha256(SOURCE), requests.getLast().objectTokenDigest());

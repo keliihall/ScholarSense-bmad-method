@@ -27,7 +27,10 @@ class CompositeAuthorizationEvaluatorTest {
         assertAllow(request(RolePackage.R4, ObjectClass.AGGREGATE_REPORT, "aggregate.read", ScopeAnchor.SCHOOL_AGGREGATE));
         assertAllow(transferRequest(RolePackage.R5, "transfer.process"));
         assertAllow(request(RolePackage.R6, ObjectClass.QUALITY_SNAPSHOT, "data-quality.read", ScopeAnchor.OWNED_SOURCE));
-        assertAllow(request(RolePackage.R6, ObjectClass.JOB, "data-quality.read", ScopeAnchor.OWNED_SOURCE));
+        assertDeny(request(RolePackage.R6, ObjectClass.QUALITY_SNAPSHOT, "data-quality.read", ScopeAnchor.TECHNICAL_OBJECT),
+                "SCOPE_NOT_PROVEN");
+        assertDeny(request(RolePackage.R6, ObjectClass.JOB, "data-quality.read", ScopeAnchor.OWNED_SOURCE),
+                "ROLE_OBJECT_ACTION_NOT_ALLOWED");
         assertAllow(request(RolePackage.R7, ObjectClass.JOB, "platform.read", ScopeAnchor.TECHNICAL_OBJECT));
 
         assertDeny(request(RolePackage.R2, ObjectClass.CLUE, "care.read", ScopeAnchor.CURRENT_RESPONSIBILITY),

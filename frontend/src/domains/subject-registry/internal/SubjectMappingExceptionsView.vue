@@ -447,11 +447,7 @@ onBeforeUnmount(() => {
       <section v-if="result" class="subject-success" aria-labelledby="repair-result-heading">
         <h4 id="repair-result-heading">修复已受理</h4>
         <p>状态：已解决；修复事实编号 {{ result.correctionId }}。</p>
-        <ul>
-          <li v-for="acceptedJobId in result.jobIds" :key="acceptedJobId">
-            <RouterLink :to="{ name: 'subject-recompute-jobs', query: { jobId: acceptedJobId } }">查看作业 {{ acceptedJobId }}</RouterLink>
-          </li>
-        </ul>
+        <p v-if="result.jobIds.length > 0">技术作业已转交平台运维。</p>
       </section>
     </section>
   </section>

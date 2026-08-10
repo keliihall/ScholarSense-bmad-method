@@ -233,6 +233,32 @@ const persisted = {
                 scan(root),
             )
 
+    def test_quality_snapshot_persistence_probe_exception_is_exact(self) -> None:
+        approved = """
+const persisted = {
+  local: localStorage.length,
+  session: sessionStorage.length,
+  databases: typeof indexedDB.databases === 'function' ? await indexedDB.databases() : [],
+  caches: 'caches' in window ? await caches.keys() : [],
+};
+"""
+        relative = "frontend/tests/baseline/quality-snapshots.spec.ts"
+        with self.fixture() as root:
+            fixture = root / relative
+            fixture.parent.mkdir(parents=True, exist_ok=True)
+            fixture.write_text(approved, encoding="utf-8")
+            self.assertEqual([], scan(root))
+
+            fixture.write_text(
+                approved + "sessionStorage.setItem('snapshot', 'business-data');\n",
+                encoding="utf-8",
+            )
+            actual = scan(root)
+            self.assertTrue(
+                any(value.startswith("PERSISTENT_BUSINESS_CACHE") for value in actual),
+                actual,
+            )
+
             fixture.write_text(
                 "const csrf = Object.fromEntries([['token', 'real-secret']]);\n",
                 encoding="utf-8",

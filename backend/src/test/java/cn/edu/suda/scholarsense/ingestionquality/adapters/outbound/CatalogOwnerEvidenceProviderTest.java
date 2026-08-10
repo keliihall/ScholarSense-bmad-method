@@ -59,7 +59,7 @@ class CatalogOwnerEvidenceProviderTest {
     }
 
     @Test
-    void projectsControlledSourceOwnershipForMappingExceptionsAndRecomputeJobs() throws Exception {
+    void projectsOwnedSourceForMappingExceptionsButOnlyTechnicalScopeForJobs() throws Exception {
         byte[] document = document().getBytes(StandardCharsets.UTF_8);
         Path path = temporaryDirectory.resolve("owner-bindings.json");
         Files.write(path, document);
@@ -81,7 +81,7 @@ class CatalogOwnerEvidenceProviderTest {
                 "sourceSystem", "sourceOwner", "detectedAt"), exception.fieldAllowlist());
         assertTrue(exception.scopeEvidence().stream().anyMatch(scope ->
                 scope.anchor() == AuthorizationScopeAnchor.OWNED_SOURCE));
-        assertTrue(ownerJob.scopeEvidence().stream().anyMatch(scope ->
+        assertTrue(ownerJob.scopeEvidence().stream().noneMatch(scope ->
                 scope.anchor() == AuthorizationScopeAnchor.OWNED_SOURCE));
         assertTrue(technicalJob.scopeEvidence().stream().anyMatch(scope ->
                 scope.anchor() == AuthorizationScopeAnchor.TECHNICAL_OBJECT));

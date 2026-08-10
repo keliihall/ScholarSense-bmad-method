@@ -1,0 +1,136 @@
+{
+  "$schema": "quality-snapshot-hash-profile.schema.json",
+  "hashProfileVersion": "QSHM-1.0.0",
+  "addendumId": "DEC-019-QSHM-ADDENDUM",
+  "decisionId": "DEC-019",
+  "authorityRef": "AUTH-2026-08-09-001",
+  "approvalRef": "AUTH-2026-08-09-001",
+  "approvedAt": "2026-08-09T19:24:55+08:00",
+  "effectiveAt": "2026-08-09T19:24:55+08:00",
+  "status": "approved",
+  "domainTag": "scholarsense.ingestion-quality.quality-snapshot.immutable-hash.v1",
+  "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+  "algorithm": "SHA-256",
+  "digestPrefix": "sha256:",
+  "includedTopLevelFields": [
+    "domainTag",
+    "hashProfileVersion",
+    "hashProfileDigest",
+    "batchId",
+    "sourceId",
+    "assessedBatchStatus",
+    "overallResult",
+    "observationWindow",
+    "cutoffAt",
+    "watermark",
+    "metricResults",
+    "impactScopeCodes",
+    "sourceOwnerRef",
+    "approvalRef",
+    "effectiveAt",
+    "retentionScheduleVersion",
+    "qualityMetricDecisionProfileVersion",
+    "qualityMetricDecisionProfileDigest",
+    "qualityGateVersion",
+    "qualityGateDigest",
+    "canonicalizationProfile",
+    "manifestDigest",
+    "sourceSchemaVersion",
+    "sourceSchemaDigest",
+    "lineageId",
+    "supersedesSnapshotId"
+  ],
+  "excludedSnapshotFields": [
+    "snapshotId",
+    "evaluatedAt",
+    "traceId",
+    "aggregateVersion",
+    "immutableHash"
+  ],
+  "metricResultFields": [
+    "metricId",
+    "formulaId",
+    "formulaVersion",
+    "result",
+    "applicable",
+    "numerator",
+    "denominator",
+    "valueBasisPoints",
+    "unit",
+    "operator",
+    "thresholdNumerator",
+    "thresholdDenominator",
+    "boundary",
+    "reasonCode"
+  ],
+  "metricOrdering": {
+    "common": "policy.commonMetrics[] filtered by source.applicableCommonMetricIds, preserving policy order",
+    "sourceGates": "policy.sources[sourceId].sourceGates[], preserving policy order",
+    "formulaCardinality": "exactly-once"
+  },
+  "impactScopeOrdering": {
+    "order": "ascending-Unicode-code-point",
+    "duplicates": "reject",
+    "empty": "[]"
+  },
+  "nullableMaterialFields": [
+    "metricResults[].valueBasisPoints",
+    "metricResults[].reasonCode",
+    "supersedesSnapshotId"
+  ],
+  "timeCanonicalization": {
+    "semanticType": "Instant",
+    "timezone": "UTC",
+    "precision": "microsecond",
+    "format": "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",
+    "subMicrosecond": "reject"
+  },
+  "stringEscaping": {
+    "strategy": "minimal-json-escapes",
+    "quotationMark": "\\\"",
+    "reverseSolidus": "\\\\",
+    "backspace": "\\b",
+    "formFeed": "\\f",
+    "lineFeed": "\\n",
+    "carriageReturn": "\\r",
+    "tab": "\\t",
+    "otherControls": "lowercase-\\u00xx",
+    "solidus": "unescaped",
+    "nonAscii": "direct-utf8",
+    "unicodeScalarsOnly": true
+  },
+  "operandClosure": {
+    "independentField": false,
+    "ratio": "numerator/denominator",
+    "count": "numerator/1",
+    "duration": "integer-milliseconds/1",
+    "compositeAnd": "passing-members/applicable-members",
+    "notApplicable": "applicable=false,numerator=0,denominator=0"
+  },
+  "controlledInputs": [
+    {
+      "path": "contracts/ingestion-quality/batch-quality/executable-quality-policy-1.0.0.json",
+      "rawSha256": "1e7703748a7bda56034ab189700a82a503674d364ecac67c1eb35fe6ee8c0d84",
+      "canonicalDigest": "sha256:c574eda413a5d3f7e9e8406f117a91dee8a7874beb82c19166c06584f6051bc8"
+    },
+    {
+      "path": "contracts/ingestion-quality/batch-quality/executable-quality-contract-lock-1.0.0.json",
+      "rawSha256": "b93d5547e6b28aa7281f736bd2440800eea590987d68ae8ab28ffd6a225cdb6f",
+      "canonicalDigest": "sha256:386f02acbdb9310fbe93e155e021023154005b2e9e01673f93c2ecdc881f8fce"
+    },
+    {
+      "path": "contracts/field-projection/field-projection-policy-binding-1.1.0.json",
+      "rawSha256": "9a7e8edb67ad6c7c010af74e57ce62f64a38662aaa16c049a81dc1e7c58842b4",
+      "canonicalDigest": "sha256:0ca0a7814184292ad4d0dffd3e75a8dbec750826dcc712c3b18c0566316f7c34"
+    },
+    {
+      "path": "contracts/release/canonical-json-profile-1.0.0.json",
+      "rawSha256": "28cfa27dfc947d1a352f2e68e9f5df7274d582dcc666a3a46f13f65898a15245",
+      "canonicalDigest": "sha256:0a81cb007877194fd933f569a5d36cedbf089b0184b3906d634ccf0b4ceef499"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/sprint-change-proposal-2026-08-09.md",
+      "rawSha256": "6b090edabee4d72f0164d961a59dc15995c5c16f5138876eedc9a4764fceb2ed"
+    }
+  ]
+}

@@ -71,6 +71,8 @@ public final class OidcLoginSuccessHandler implements AuthenticationSuccessHandl
                     case "shell.session" -> "/scholarsense/session";
                     case "audit.search" -> "/scholarsense/audit/search";
                     case "data-quality.catalogs" -> "/scholarsense/data-quality/catalogs";
+                    case "data-quality.quality-snapshots" ->
+                            "/scholarsense/data-quality/quality-snapshots";
                     case "data-quality.subject-mapping-exceptions" ->
                             "/scholarsense/data-quality/subject-mapping-exceptions";
                     case "subject-registry.recompute-jobs" ->

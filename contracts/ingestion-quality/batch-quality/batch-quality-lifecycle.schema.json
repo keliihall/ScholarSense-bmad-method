@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/batch-quality/batch-quality-lifecycle.schema.json",
+  "title": "Ingestion batch quality lifecycle contract",
+  "$defs": {
+    "state": {
+      "enum": [
+        "receiving",
+        "sealed",
+        "quality-passed",
+        "quality-failed",
+        "published"
+      ]
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to"],
+      "properties": {
+        "from": {"$ref": "#/$defs/state"},
+        "to": {"$ref": "#/$defs/state"}
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "contractVersion",
+    "decisionId",
+    "authorityRef",
+    "effectiveAt",
+    "owner",
+    "initialState",
+    "terminalStates",
+    "allowedTransitions",
+    "reopenAllowed",
+    "manualResultOverrideAllowed",
+    "sealedManifestFields",
+    "sealImmutability",
+    "factVisibility",
+    "identity",
+    "correction",
+    "timeSemantics",
+    "evaluation",
+    "canonicalizationProfile",
+    "runtimeEvidenceClaim"
+  ],
+  "properties": {
+    "$schema": {"const": "batch-quality-lifecycle.schema.json"},
+    "contractVersion": {"const": "BATCH-QUALITY-LIFECYCLE-1.0.0"},
+    "decisionId": {"const": "DEC-019"},
+    "authorityRef": {"const": "AUTH-2026-08-08-001"},
+    "effectiveAt": {"const": "2026-08-09T10:02:22+08:00"},
+    "owner": {"const": "ingestion-quality"},
+    "initialState": {"const": "receiving"},
+    "terminalStates": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"enum": ["published", "quality-failed"]}
+    },
+    "allowedTransitions": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/transition"}
+    },
+    "reopenAllowed": {"const": false},
+    "manualResultOverrideAllowed": {"const": false},
+    "sealedManifestFields": {
+      "type": "array",
+      "minItems": 21,
+      "maxItems": 21,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "recordCount",
+          "validRecordCount",
+          "rejectedRecordCount",
+          "observationWindow.startAt",
+          "observationWindow.endAt",
+          "cutoffAt",
+          "timezone",
+          "watermark",
+          "sourceSchemaVersion",
+          "sourceSchemaDigest",
+          "dataCatalogVersion",
+          "dataCatalogDigest",
+          "qualityGateVersion",
+          "qualityGateDigest",
+          "qualityMetricDecisionProfileVersion",
+          "qualityMetricDecisionProfileDigest",
+          "sourceOccurredAt",
+          "scheduledDueAt",
+          "receivedAt",
+          "laneId",
+          "manifestDigest"
+        ]
+      }
+    },
+    "sealImmutability": {"const": "all-fields-frozen"},
+    "factVisibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["invisibleStates", "visibleState", "publicationUnit"],
+      "properties": {
+        "invisibleStates": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {"enum": ["receiving", "sealed", "quality-failed"]}
+        },
+        "visibleState": {"const": "published"},
+        "publicationUnit": {"const": "whole-batch-atomic"}
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "businessIdentityFields",
+        "manifestDigestField",
+        "sameIdentitySameDigest",
+        "sameIdentityDifferentDigest",
+        "sourceVersionRegression"
+      ],
+      "properties": {
+        "businessIdentityFields": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {"enum": ["sourceId", "businessKey", "sourceVersion"]}
+        },
+        "manifestDigestField": {"const": "manifestDigest"},
+        "sameIdentitySameDigest": {"const": "return-existing"},
+        "sameIdentityDifferentDigest": {"const": "identity-conflict"},
+        "sourceVersionRegression": {"const": "version-regression"}
+      }
+    },
+    "correction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "createsNewBatch",
+        "sameLineageRequired",
+        "directPredecessorOnly",
+        "requiredEvidenceFields",
+        "reasonCodeEnum",
+        "mutatePredecessor",
+        "forksAllowed",
+        "derivationKind"
+      ],
+      "properties": {
+        "createsNewBatch": {"const": true},
+        "sameLineageRequired": {"const": true},
+        "directPredecessorOnly": {"const": true},
+        "requiredEvidenceFields": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "supersedesBatchId",
+              "lineageId",
+              "reasonCode",
+              "effectiveAt"
+            ]
+          }
+        },
+        "reasonCodeEnum": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["LATE_ARRIVAL", "SOURCE_CORRECTION"]}
+        },
+        "mutatePredecessor": {"const": false},
+        "forksAllowed": {"const": false},
+        "derivationKind": {"const": "fail-closed-materialization"}
+      }
+    },
+    "timeSemantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observationWindow",
+        "storageTimezone",
+        "businessTimezone",
+        "cutoffSource",
+        "cutoffFrozenAtSeal",
+        "evaluatedAtMeaning",
+        "publishedAtMeaning",
+        "assessmentChronology",
+        "failedPublishedAtAllowed",
+        "technicalErrorEvaluatedAtAllowed"
+      ],
+      "properties": {
+        "observationWindow": {"const": "[startAt,endAt)"},
+        "storageTimezone": {"const": "UTC"},
+        "businessTimezone": {"const": "Asia/Shanghai"},
+        "cutoffSource": {"const": "sealed-manifest"},
+        "cutoffFrozenAtSeal": {"const": true},
+        "evaluatedAtMeaning": {
+          "const": "valid-assessment-commit-time"
+        },
+        "publishedAtMeaning": {
+          "const": "passed-facts-visibility-commit-time"
+        },
+        "assessmentChronology": {
+          "const": "sealedAt<=evaluatedAt<=publishedAt-when-present"
+        },
+        "failedPublishedAtAllowed": {"const": false},
+        "technicalErrorEvaluatedAtAllowed": {"const": false}
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "validPassingResultState",
+        "validFailingResultState",
+        "technicalErrorState",
+        "validEvaluationCreatesUniqueSnapshot",
+        "technicalErrorCreatesSnapshot",
+        "technicalErrorPublishesFacts"
+      ],
+      "properties": {
+        "validPassingResultState": {"const": "quality-passed"},
+        "validFailingResultState": {"const": "quality-failed"},
+        "technicalErrorState": {"const": "sealed"},
+        "validEvaluationCreatesUniqueSnapshot": {"const": true},
+        "technicalErrorCreatesSnapshot": {"const": false},
+        "technicalErrorPublishesFacts": {"const": false}
+      }
+    },
+    "canonicalizationProfile": {
+      "const": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"
+    },
+    "runtimeEvidenceClaim": {"const": "none"}
+  }
+}

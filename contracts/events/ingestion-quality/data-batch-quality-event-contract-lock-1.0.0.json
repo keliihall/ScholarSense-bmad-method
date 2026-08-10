@@ -1,0 +1,24 @@
+{
+  "version": "DATA-BATCH-QUALITY-EVENT-CONTRACT-LOCK-1.0.0",
+  "authorityRef": "AUTH-2026-08-08-001",
+  "contractVersion": "PIC-1.0.0",
+  "maximumWireBytes": 65536,
+  "runtimeEvidenceClaim": "none",
+  "downstreamHandoff": {
+    "candidateConsumer": "not-installed",
+    "clueConsumer": "not-installed",
+    "requiredEvidenceCopy": ["qualitySnapshotId", "immutableHash", "manifestDigest", "watermark", "qualityMetricDecisionProfileVersion", "qualityMetricDecisionProfileDigest", "qualityGateVersion", "qualityGateDigest", "metricResults"],
+    "prohibitedOwnerLookup": "latest",
+    "retentionResponsibility": "consumer-owned immutable copy for evidence-snapshot/closure-plus-3-years"
+  },
+  "files": {
+    "contracts/events/ingestion-quality/data-batch-quality-event.schema.json": "sha256:ca48998e1007a6e7e501eb9fdb9887ea16bd3ac10dd22177143689f123ad0f8d",
+    "contracts/events/ingestion-quality/data-batch-quality-assessed.schema.json": "sha256:555b14e237b8d2b8e998be877834f0d4256fa132ce599ff36e0f5ea2ba5e4ed8",
+    "contracts/events/ingestion-quality/data-batch-published.schema.json": "sha256:26e939d55c32ed6877673da9fce1da7198fad29851c81aa558c139820c3cf660",
+    "contracts/events/ingestion-quality/fixtures/valid/data-batch-quality-assessed-v1.json": "sha256:183b516f7b37402762cc75de9975d9edcbc990f2f4b9b3ad49358b6a8c873619",
+    "contracts/events/ingestion-quality/fixtures/valid/data-batch-published-v1.json": "sha256:e2f06b790679909111ad207160aef3fd7640161c1fd5bf268e145cef24e593b2",
+    "contracts/events/ingestion-quality/fixtures/invalid/data-batch-quality-event-missing-snapshot.json": "sha256:bb605bdf52f0e5c7f7e88d2d2bfe953d6a505a360f796f656a68289afc856343",
+    "contracts/events/ingestion-quality/fixtures/ordering/data-batch-quality-ordering-1.0.0.json": "sha256:bab6ae47fdae87dbfa94f60b0573e338c268170d8b5f41d35b49b22ad90da321",
+    "contracts/events/ingestion-quality/candidate-clue-quality-snapshot-handoff-1.0.0.json": "sha256:aeee39bd546016226494c2a26d83b75a9b88f1a4ac68f65d314854c8f4ffaa98"
+  }
+}

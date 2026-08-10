@@ -1,0 +1,67 @@
+{
+  "$schema": "quality-snapshot-hash-contract-lock.schema.json",
+  "lockVersion": "QSHM-CONTRACT-LOCK-1.0.0",
+  "hashProfileVersion": "QSHM-1.0.0",
+  "authorityRef": "AUTH-2026-08-09-001",
+  "profileCanonicalDigest": "sha256:cf5837474ae3bd7e82ae05ae9d6a74ea60677566ff6ee59ee780ab5e60f518b2",
+  "digests": [
+    {
+      "path": "contracts/ingestion-quality/batch-quality/fixtures/invalid/quality-snapshot-hash-negative-fixtures-1.0.0.json",
+      "rawDigest": "sha256:7a5ca13617949f47d7fac2e438d35b8ceffac19490e5ff64b668263bd02ac098"
+    },
+    {
+      "path": "contracts/ingestion-quality/batch-quality/fixtures/valid/quality-snapshot-hash-vectors-1.0.0.json",
+      "rawDigest": "sha256:80637ea3fc15aeecccef5a1afd0b3924a1f3adc98e1044507b797a7c72626199"
+    },
+    {
+      "path": "contracts/ingestion-quality/batch-quality/quality-snapshot-hash-contract-lock.schema.json",
+      "rawDigest": "sha256:7a06486092f0201ee7175cb6eea7ed818a0369e89e2e2c8f03005e492d165461"
+    },
+    {
+      "path": "contracts/ingestion-quality/batch-quality/quality-snapshot-hash-material.schema.json",
+      "rawDigest": "sha256:ca104c0daea2bafc18537a9cce9b49cfc5a81d6086b182550c551395c1b7ccb7"
+    },
+    {
+      "path": "contracts/ingestion-quality/batch-quality/quality-snapshot-hash-negative-fixtures.schema.json",
+      "rawDigest": "sha256:b0581dfc04b500ac310a651c0075423b2e53cf4f39e35ca9e4805fb7069ce4df"
+    },
+    {
+      "path": "contracts/ingestion-quality/batch-quality/quality-snapshot-hash-profile-1.0.0.json",
+      "rawDigest": "sha256:2389902346fa1cef377bba7d8d575b03ef41e7f0614262b540df2e494f7fb882"
+    },
+    {
+      "path": "contracts/ingestion-quality/batch-quality/quality-snapshot-hash-profile.schema.json",
+      "rawDigest": "sha256:694b380fe44905ef2a67bc192234820d50155c834545b7422a07337f6a6a575c"
+    },
+    {
+      "path": "contracts/ingestion-quality/batch-quality/quality-snapshot-hash-vectors.schema.json",
+      "rawDigest": "sha256:d7c2d9453fa5857f27c32f0b076bdfe4d9cbcbd2f908fc37ef568bd917d41e2b"
+    }
+  ],
+  "upstreamBindings": [
+    {
+      "path": "contracts/ingestion-quality/batch-quality/executable-quality-policy-1.0.0.json",
+      "rawSha256": "1e7703748a7bda56034ab189700a82a503674d364ecac67c1eb35fe6ee8c0d84",
+      "canonicalDigest": "sha256:c574eda413a5d3f7e9e8406f117a91dee8a7874beb82c19166c06584f6051bc8"
+    },
+    {
+      "path": "contracts/ingestion-quality/batch-quality/executable-quality-contract-lock-1.0.0.json",
+      "rawSha256": "b93d5547e6b28aa7281f736bd2440800eea590987d68ae8ab28ffd6a225cdb6f",
+      "canonicalDigest": "sha256:386f02acbdb9310fbe93e155e021023154005b2e9e01673f93c2ecdc881f8fce"
+    },
+    {
+      "path": "contracts/field-projection/field-projection-policy-binding-1.1.0.json",
+      "rawSha256": "9a7e8edb67ad6c7c010af74e57ce62f64a38662aaa16c049a81dc1e7c58842b4",
+      "canonicalDigest": "sha256:0ca0a7814184292ad4d0dffd3e75a8dbec750826dcc712c3b18c0566316f7c34"
+    },
+    {
+      "path": "contracts/release/canonical-json-profile-1.0.0.json",
+      "rawSha256": "28cfa27dfc947d1a352f2e68e9f5df7274d582dcc666a3a46f13f65898a15245",
+      "canonicalDigest": "sha256:0a81cb007877194fd933f569a5d36cedbf089b0184b3906d634ccf0b4ceef499"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/sprint-change-proposal-2026-08-09.md",
+      "rawSha256": "6b090edabee4d72f0164d961a59dc15995c5c16f5138876eedc9a4764fceb2ed"
+    }
+  ]
+}

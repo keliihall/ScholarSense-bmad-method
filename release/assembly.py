@@ -86,6 +86,32 @@ CONTROLLED_INPUTS_V4 = {
         "deploy/base/subject-registry-runtime-1.0.0.json",
     ),
 }
+CONTROLLED_INPUTS_V5 = {
+    **CONTROLLED_INPUTS_V4,
+    "IngestionBatchQuality": (
+        "EXECUTABLE-QUALITY-CONTRACT-LOCK-1.0.0",
+        "contracts/ingestion-quality/batch-quality/"
+        "executable-quality-contract-lock-1.0.0.json",
+    ),
+    "QualitySnapshotHash": (
+        "QSHM-CONTRACT-LOCK-1.0.0",
+        "contracts/ingestion-quality/batch-quality/"
+        "quality-snapshot-hash-contract-lock-1.0.0.json",
+    ),
+    "DataBatchQualityEvent": (
+        "DATA-BATCH-QUALITY-EVENT-CONTRACT-LOCK-1.0.0",
+        "contracts/events/ingestion-quality/"
+        "data-batch-quality-event-contract-lock-1.0.0.json",
+    ),
+    "IngestionQualityRuntime": (
+        "INGESTION-QUALITY-RUNTIME-2.0.0",
+        "deploy/base/ingestion-quality-runtime-2.0.0.json",
+    ),
+    "IngestionQualityRoles": (
+        "INGESTION-QUALITY-ROLES-2.0.0",
+        "deploy/base/ingestion-quality-roles-2.0.0.json",
+    ),
+}
 # Backward-compatible public name: it remains the immutable V1 mapping.
 CONTROLLED_INPUTS = CONTROLLED_INPUTS_V1
 LOCKS = {
@@ -275,15 +301,16 @@ def assemble_release_manifest_input(
             _reference("frontend-brand-asset-manifest", "BRAND-ASSET-MANIFEST-1.0.0", artifact_uri, source_root / "contracts/release/brand-asset-manifest-1.0.0.json", kind="brand-asset-manifest", subject_sha256=subject_digests["frontend"]),
         ]
     )
-    if manifest_version not in {"1", "2", "3", "4"}:
+    if manifest_version not in {"1", "2", "3", "4", "5"}:
         raise ValueError("RELEASE_ASSEMBLY_MANIFEST_VERSION_INVALID")
     controlled_inputs = (
-        CONTROLLED_INPUTS_V4 if manifest_version == "4"
+        CONTROLLED_INPUTS_V5 if manifest_version == "5"
+        else CONTROLLED_INPUTS_V4 if manifest_version == "4"
         else CONTROLLED_INPUTS_V3 if manifest_version == "3"
         else CONTROLLED_INPUTS_V2 if manifest_version == "2"
         else CONTROLLED_INPUTS_V1
     )
-    if manifest_version in {"2", "3", "4"}:
+    if manifest_version in {"2", "3", "4", "5"}:
         if (
             public_integration_target_evidence_uri is None
             or public_integration_target_evidence_path is None
@@ -360,7 +387,7 @@ def assemble_release_manifest_input(
             "scenarioSetSha256": scenario_digest,
         })
         evidence.append(pic_reference)
-    if manifest_version in {"3", "4"}:
+    if manifest_version in {"3", "4", "5"}:
         if (
             data_catalog_target_evidence_uri is None
             or data_catalog_target_evidence_path is None
@@ -490,17 +517,24 @@ def assemble_release_manifest_input(
             "runtimeEvidenceClaim": "none",
         },
     ]
-    if manifest_version in {"3", "4"}:
+    if manifest_version in {"3", "4", "5"}:
         runtime_evidence.append({
             "id": "data-catalog-target-conformance",
             "status": "passed",
             "evidenceIds": ["DataCatalogTargetConformance"],
         })
-    if manifest_version == "4":
+    if manifest_version in {"4", "5"}:
         runtime_evidence.append({
             "id": "subject-registry-production-kms",
             "status": "deployment-input-required",
             "ownerStory": "2.2",
+            "runtimeEvidenceClaim": "none",
+        })
+    if manifest_version == "5":
+        runtime_evidence.append({
+            "id": "ingestion-quality-quality-worker-deployment",
+            "status": "deployment-input-required",
+            "ownerStory": "2.3",
             "runtimeEvidenceClaim": "none",
         })
     return {

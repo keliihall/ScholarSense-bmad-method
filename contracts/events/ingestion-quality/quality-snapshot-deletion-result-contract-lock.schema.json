@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/events/ingestion-quality/quality-snapshot-deletion-result-contract-lock.schema.json",
+  "title": "QualitySnapshot deletion-result successor contract lock",
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "predecessorFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "rawSha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "rawSha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "successorFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "rawSha256",
+        "canonicalDigest"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "rawSha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "canonicalDigest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "lockVersion",
+    "predecessorContractVersion",
+    "successorContractVersion",
+    "canonicalizationProfile",
+    "predecessorFiles",
+    "successorFiles"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "quality-snapshot-deletion-result-contract-lock.schema.json"
+    },
+    "lockVersion": {
+      "const": "QUALITY-SNAPSHOT-DELETION-RESULT-CONTRACT-LOCK-1.1.0"
+    },
+    "predecessorContractVersion": {
+      "const": "QUALITY-SNAPSHOT-DELETION-RESULT-1.0.0"
+    },
+    "successorContractVersion": {
+      "const": "QUALITY-SNAPSHOT-DELETION-RESULT-1.1.0"
+    },
+    "canonicalizationProfile": {
+      "const": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"
+    },
+    "predecessorFiles": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/predecessorFile"
+      }
+    },
+    "successorFiles": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/successorFile"
+      }
+    }
+  }
+}

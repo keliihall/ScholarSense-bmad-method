@@ -1,0 +1,329 @@
+{
+  "$schema": "quality-snapshot-retention-vectors.schema.json",
+  "vectorVersion": "QUALITY-SNAPSHOT-RETENTION-VECTORS-1.0.0",
+  "policyVersion": "QUALITY-SNAPSHOT-RETENTION-1.0.0",
+  "cases": [
+    {
+      "caseId": "quality-passed-exact-due",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 9,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "eligible", "reasonCodes": []}
+    },
+    {
+      "caseId": "quality-failed-exact-due",
+      "overallResult": "quality-failed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": null,
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 9,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "not-required","attestation": {"kind": "zero-dependency-no-reference","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "eligible", "reasonCodes": []}
+    },
+    {
+      "caseId": "published-at-ignored",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2026-08-08T23:59:59.999Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 9,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "eligible", "reasonCodes": []}
+    },
+    {
+      "caseId": "one-millisecond-before-due",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-08T23:59:59.999Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-08T23:59:59.999Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-08T23:59:59.999Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 9,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-08T23:59:59.999Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "blocked", "reasonCodes": ["RETENTION_NOT_DUE"]}
+    },
+    {
+      "caseId": "leap-day-end-of-month-clamp",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-02-29T12:00:00Z",
+      "publishedAt": "2024-02-29T12:05:00Z",
+      "trustedNow": "2026-02-28T12:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-02-29T12:00:00Z","retentionDueAt": "2026-02-28T12:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:8a2ad943c1f7dc49a738c4794ad70f1c560b9585ee72eaf8eca3721380fd751e"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-02-28T12:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:8a2ad943c1f7dc49a738c4794ad70f1c560b9585ee72eaf8eca3721380fd751e","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-02-28T12:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 9,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:8a2ad943c1f7dc49a738c4794ad70f1c560b9585ee72eaf8eca3721380fd751e","attestedAt": "2026-02-28T12:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-02-28T12:00:00Z", "decision": "eligible", "reasonCodes": []}
+    },
+    {
+      "caseId": "legal-hold-start-inclusive",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [
+        {"holdId": "hold-start-boundary", "scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62", "startAt": "2026-08-09T00:00:00Z", "endAt": "2026-08-10T00:00:00Z"}
+      ],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 9,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "blocked", "reasonCodes": ["LEGAL_HOLD_ACTIVE"]}
+    },
+    {
+      "caseId": "legal-hold-end-exclusive",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-10T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-10T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-10T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [
+        {"holdId": "hold-end-boundary", "scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62", "startAt": "2026-08-09T00:00:00Z", "endAt": "2026-08-10T00:00:00Z"}
+      ],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 9,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-10T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "eligible", "reasonCodes": []}
+    },
+    {
+      "caseId": "watermark-equal",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 9,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "eligible", "reasonCodes": []}
+    },
+    {
+      "caseId": "watermark-one-behind",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 8,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "blocked", "reasonCodes": ["CONSUMER_WATERMARK_BEHIND"]}
+    },
+    {
+      "caseId": "evidence-copy-ack-missing",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 9,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "missing","attestation": null}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "blocked", "reasonCodes": ["EVIDENCE_COPY_ACK_MISSING"]}
+    },
+    {
+      "caseId": "trusted-time-unavailable",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": null,
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "unavailable", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 9,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "blocked", "reasonCodes": ["TRUSTED_TIME_UNAVAILABLE"]}
+    },
+    {
+      "caseId": "legal-hold-dependency-unavailable",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "unavailable", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 9,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "blocked", "reasonCodes": ["LEGAL_HOLD_DEPENDENCY_UNAVAILABLE"]}
+    },
+    {
+      "caseId": "watermark-dependency-unavailable",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "unavailable"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "unknown","confirmedAggregateVersion": null,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "unavailable","attestation": null}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "blocked", "reasonCodes": ["CONSUMER_WATERMARK_DEPENDENCY_UNAVAILABLE", "EVIDENCE_COPY_ACK_MISSING"]}
+    },
+    {
+      "caseId": "inactive-reference-holder-blocked",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:7728b0a7cc6bb5e2c73d6c623ac7200e345ddba84f5e83ed517fdec97309afae","members":[{"consumerId":"legacy-clue-projection","registryMembership":"unreleased-reference-holder","lifecycleStatus":"inactive"}],"conformanceAnchorId":"inactive-legacy-holder-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/inactive-legacy-holder-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:7728b0a7cc6bb5e2c73d6c623ac7200e345ddba84f5e83ed517fdec97309afae","membersDigest":"sha256:9ebf1ec0f3317b9959fb9d183cb814bd5c624b9f62d34c4cd3b0d162f83e28e0","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "legacy-clue-projection","registryMembership": "unreleased-reference-holder","lifecycleStatus": "inactive","watermarkStatus": "confirmed","confirmedAggregateVersion": 8,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "legacy-clue-projection","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:7728b0a7cc6bb5e2c73d6c623ac7200e345ddba84f5e83ed517fdec97309afae","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "blocked", "reasonCodes": ["CONSUMER_WATERMARK_BEHIND"]}
+    },
+    {
+      "caseId": "inactive-no-reference-attested-excluded",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:7728b0a7cc6bb5e2c73d6c623ac7200e345ddba84f5e83ed517fdec97309afae","members":[{"consumerId":"legacy-clue-projection","registryMembership":"unreleased-reference-holder","lifecycleStatus":"inactive"}],"conformanceAnchorId":"inactive-legacy-holder-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/inactive-legacy-holder-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:7728b0a7cc6bb5e2c73d6c623ac7200e345ddba84f5e83ed517fdec97309afae","membersDigest":"sha256:9ebf1ec0f3317b9959fb9d183cb814bd5c624b9f62d34c4cd3b0d162f83e28e0","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "legacy-clue-projection","registryMembership": "unreleased-reference-holder","lifecycleStatus": "inactive","watermarkStatus": "missing","confirmedAggregateVersion": null,"transportAck": "missing","inboxAck": "missing","evidenceCopyAck": "not-required","attestation": {"kind": "decommission-no-reference","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "legacy-clue-projection","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:7728b0a7cc6bb5e2c73d6c623ac7200e345ddba84f5e83ed517fdec97309afae","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "eligible", "reasonCodes": []}
+    },
+    {
+      "caseId": "empty-required-consumer-set",
+      "overallResult": "quality-failed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": null,
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:8857f8a20f859397609157dd8f84eaae9bd674f28b9ddad3025d92cb8ffe3c3b","members":[],"conformanceAnchorId":"empty-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/empty-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:8857f8a20f859397609157dd8f84eaae9bd674f28b9ddad3025d92cb8ffe3c3b","membersDigest":"sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "eligible", "reasonCodes": []}
+    },
+    {
+      "caseId": "legal-hold-scope-mismatch-ignored",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [
+        {"holdId": "hold-other-scope", "scopeDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd", "startAt": "2026-08-09T00:00:00Z", "endAt": "2026-08-10T00:00:00Z"}
+      ],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "confirmed","confirmedAggregateVersion": 9,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "eligible", "reasonCodes": []}
+    },
+    {
+      "caseId": "watermark-missing-blocked",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "missing","confirmedAggregateVersion": null,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "blocked", "reasonCodes": ["CONSUMER_WATERMARK_MISSING"]}
+    },
+    {
+      "caseId": "watermark-unknown-blocked",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"available","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","members":[{"consumerId":"clue-care","registryMembership":"required-for-snapshot","lifecycleStatus":"active"}],"conformanceAnchorId":"active-clue-care-consumer-set","checkedAt":"2026-08-09T00:00:00Z","authorityEvidence":{"provider":"quality-snapshot-consumer-registry-conformance-anchor","evidenceRef":"contract://quality-snapshot-retention/consumer-registry/active-clue-care-consumer-set","scopeDigest":"sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","membersDigest":"sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5","checkedAt":"2026-08-09T00:00:00Z","verificationStatus":"contract-conformance","runtimeEvidenceClaim":"none"}},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [
+        {"consumerId": "clue-care","registryMembership": "required-for-snapshot","lifecycleStatus": "active","watermarkStatus": "unknown","confirmedAggregateVersion": null,"transportAck": "acked","inboxAck": "acked","evidenceCopyAck": "copied","attestation": {"kind": "evidence-copy","snapshotId": "019d2c7d-4000-7000-8000-000000000110","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","requiredAggregateVersion": 9,"consumerId": "clue-care","registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62","attestedAt": "2026-08-09T00:00:00Z"}}
+      ],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "blocked", "reasonCodes": ["CONSUMER_WATERMARK_UNKNOWN"]}
+    },
+    {
+      "caseId": "consumer-registry-unavailable",
+      "overallResult": "quality-passed",
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "publishedAt": "2024-08-09T00:05:00Z",
+      "trustedNow": "2026-08-09T00:00:00Z",
+      "scope": {"objectType": "QualitySnapshot","snapshotId": "019d2c7d-4000-7000-8000-000000000110","sourceId": "SRC-P0-STUDENT-001","snapshotAggregateVersion": 9,"evaluatedAt": "2024-08-09T00:00:00Z","retentionDueAt": "2026-08-09T00:00:00Z","snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111","scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"},
+      "consumerRegistry": {"status":"unavailable","registryVersion":"QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0","registryDigest":"sha256:8857f8a20f859397609157dd8f84eaae9bd674f28b9ddad3025d92cb8ffe3c3b","members":[],"conformanceAnchorId":null,"checkedAt":null,"authorityEvidence":null},
+      "dependencies": {"trustedTime": "available", "legalHold": "available", "consumerWatermarks": "available"},
+      "legalHolds": [],
+      "requiredAggregateVersion": 9,
+      "consumers": [],
+      "expected": {"retentionDueAt": "2026-08-09T00:00:00Z", "decision": "blocked", "reasonCodes": ["CONSUMER_REGISTRY_UNAVAILABLE"]}
+    }
+  ]
+}

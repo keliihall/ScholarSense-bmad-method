@@ -39,7 +39,7 @@ public final class SubjectRecomputeJobQueryService {
                 ? "SRC-P0-STUDENT-001" : current.ownerSourceId();
         boolean dependencyUnavailable = false;
         try {
-            for (String action : java.util.List.of("data-quality.read", "platform.read")) {
+            for (String action : java.util.List.of("platform.read")) {
                 CompositeAuthorizationRequest request = new CompositeAuthorizationRequest(
                         actor.actorPseudonym(), "JOB", action,
                         digest(ownerSource), version, Optional.empty(), Optional.empty(), traceId);

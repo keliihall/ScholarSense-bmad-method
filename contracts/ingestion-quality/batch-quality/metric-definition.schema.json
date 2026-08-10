@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/batch-quality/metric-definition.schema.json",
+  "title": "Executable quality metric definition",
+  "$defs": {
+    "operand": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "operandId"],
+          "properties": {
+            "kind": {"const": "measured"},
+            "operandId": {
+              "enum": [
+                "manifest-records-with-complete-valid-business-key",
+                "manifest-declared-record-count",
+                "p0-records-with-unique-student-ref",
+                "p0-records-requiring-subject-mapping",
+                "records-with-valid-required-field-set",
+                "records-passing-schema-interval-purpose",
+                "valid-core-field-cells",
+                "expected-core-field-cells",
+                "on-time-delivery-units",
+                "expected-delivery-units",
+                "unresolved-interval-conflicts",
+                "duplicate-business-keys",
+                "version-regressions",
+                "passing-member-count",
+                "applicable-member-count",
+                "schema-allowlist-compatible-records",
+                "forbidden-field-hits",
+                "records-passing-source-field-group",
+                "records-applicable-to-source-field-group",
+                "unmapped-active-authority-evidence",
+                "revocation-duration-milliseconds",
+                "manifest-reconciled-records",
+                "correction-chain-violations",
+                "concurrent-interval-conflicts",
+                "duplicate-event-ids",
+                "building-catalog-mapped-records",
+                "device-map-valid-records",
+                "unexplained-heartbeat-gaps",
+                "calendar-current-days",
+                "calendar-expected-days",
+                "overlap-disambiguated-records",
+                "overlap-records",
+                "forbidden-content-hits",
+                "manifest-reconciled-partitions",
+                "chain-violations",
+                "allowlist-valid-records"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "value"],
+          "properties": {
+            "kind": {"const": "constant"},
+            "value": {"type": "integer", "minimum": 0, "maximum": 9007199254740991}
+          }
+        }
+      ]
+    },
+    "applicability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["predicateId"],
+      "properties": {
+        "predicateId": {
+          "enum": [
+            "always",
+            "source-in-approved-set",
+            "source-field-group-present",
+            "overlap-records-present"
+          ]
+        },
+        "sourceIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 17,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^SRC-P[01]-[A-Z-]+-[0-9]{3}$"}
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "definitionKind",
+    "metricId",
+    "formulaId",
+    "formulaVersion",
+    "category",
+    "calculation",
+    "unit",
+    "operator",
+    "boundary",
+    "thresholdNumerator",
+    "thresholdDenominator",
+    "denominatorZeroBehavior",
+    "valueScale",
+    "roundingMode",
+    "comparisonStage",
+    "applicability",
+    "owner",
+    "approvalRef",
+    "effectiveAt",
+    "evidenceRef",
+    "hardGate"
+  ],
+  "properties": {
+    "definitionKind": {"enum": ["common", "source-gate"]},
+    "metricId": {
+      "enum": [
+        "PRIMARY_KEY_COMPLETENESS_BP",
+        "P0_SUBJECT_MAPPING_BP",
+        "REQUIRED_FIELD_VALIDITY_BP",
+        "VALID_RECORD_RATE_BP",
+        "CORE_FIELD_COVERAGE_BP",
+        "FRESHNESS_WITHIN_SLO_BP",
+        "UNRESOLVED_INTERVAL_CONFLICT_COUNT",
+        "DUPLICATE_BUSINESS_KEY_COUNT",
+        "VERSION_REGRESSION_COUNT",
+        "SOURCE_CONTINUITY_GATE",
+        "SCHEMA_ALLOWLIST_COMPATIBILITY_BP",
+        "FORBIDDEN_FIELD_COUNT"
+      ]
+    },
+    "sourceId": {"type": "string", "pattern": "^SRC-P[01]-[A-Z-]+-[0-9]{3}$"},
+    "gateId": {"type": "string", "pattern": "^[a-z][a-z0-9-]{2,79}$"},
+    "formulaId": {"type": "string", "pattern": "^QMDP-1\\.0\\.0/[A-Za-z0-9_-]+(?:/[a-z][a-z0-9-]{2,79})?$"},
+    "formulaVersion": {"const": "1.0.0"},
+    "category": {"enum": ["primary-key", "continuity", "coverage", "freshness", "compatibility", "privacy"]},
+    "calculation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "numerator", "denominator"],
+      "properties": {
+        "kind": {"enum": ["ratio", "count", "duration", "composite-and"]},
+        "numerator": {"$ref": "#/$defs/operand"},
+        "denominator": {"$ref": "#/$defs/operand"}
+      }
+    },
+    "unit": {"enum": ["basis-point", "count", "millisecond", "member-count"]},
+    "operator": {"enum": [">=", "<=", "="]},
+    "boundary": {"const": "inclusive"},
+    "thresholdNumerator": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "thresholdDenominator": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "denominatorZeroBehavior": {"const": "evaluation-error"},
+    "valueScale": {"const": 0},
+    "roundingMode": {"const": "HALF_UP"},
+    "comparisonStage": {"const": "pre-rounding-cross-multiply"},
+    "applicability": {"$ref": "#/$defs/applicability"},
+    "fieldSet": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]*$"}
+    },
+    "owner": {"type": "string", "minLength": 2},
+    "approvalRef": {"const": "AUTH-2026-08-08-001"},
+    "effectiveAt": {"const": "2026-08-09T10:02:22+08:00"},
+    "evidenceRef": {"const": "story://2.3/DEC-019/AUTH-2026-08-08-001"},
+    "hardGate": {"const": true}
+  }
+}

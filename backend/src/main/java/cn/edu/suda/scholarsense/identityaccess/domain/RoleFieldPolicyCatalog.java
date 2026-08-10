@@ -89,6 +89,23 @@ public final class RoleFieldPolicyCatalog {
         return roleRules.get(role).fieldVisibility();
     }
 
+    public Map<FieldClass, Visibility> fieldVisibility(
+            RolePackage role, ObjectClass objectClass) {
+        Map<FieldClass, Visibility> base = fieldVisibility(role);
+        if (role != RolePackage.R6 || objectClass != ObjectClass.QUALITY_SNAPSHOT) {
+            return base;
+        }
+        EnumMap<FieldClass, Visibility> objectScoped = new EnumMap<>(base);
+        for (FieldClass hidden : Set.of(
+                FieldClass.IDENTITY,
+                FieldClass.CONTACT,
+                FieldClass.SENSITIVE_CARE,
+                FieldClass.NARRATIVE)) {
+            objectScoped.put(hidden, Visibility.HIDDEN);
+        }
+        return Map.copyOf(objectScoped);
+    }
+
     public Set<String> conditionalClearFields(
             RolePackage role, ObjectClass objectClass, String purpose, Set<String> requested) {
         if (role == RolePackage.R5 && objectClass == ObjectClass.TRANSFER_ORDER) {
@@ -250,9 +267,8 @@ public final class RoleFieldPolicyCatalog {
                         pair(ObjectClass.DEPENDENCY, "data-quality.read", "data-quality.reconcile"),
                         pair(ObjectClass.QUALITY_SNAPSHOT, "data-quality.read"),
                         pair(ObjectClass.RECOVERY_TASK, "data-quality.read", "quality-fuse.recover"),
-                        pair(ObjectClass.JOB, "data-quality.read"),
                         pair(ObjectClass.SUBJECT_MAPPING_EXCEPTION, "data-quality.read", "data-quality.repair")),
-                anchors(anchor(Set.of(ObjectClass.SOURCE, ObjectClass.DEPENDENCY, ObjectClass.QUALITY_SNAPSHOT, ObjectClass.RECOVERY_TASK, ObjectClass.JOB, ObjectClass.SUBJECT_MAPPING_EXCEPTION), ScopeAnchor.OWNED_SOURCE)),
+                anchors(anchor(Set.of(ObjectClass.SOURCE, ObjectClass.DEPENDENCY, ObjectClass.QUALITY_SNAPSHOT, ObjectClass.RECOVERY_TASK, ObjectClass.SUBJECT_MAPPING_EXCEPTION), ScopeAnchor.OWNED_SOURCE)),
                 fields("C", "M", "H", "H", "C", "H", "C", "C")));
         result.put(RolePackage.R7, roleRule(
                 actions(

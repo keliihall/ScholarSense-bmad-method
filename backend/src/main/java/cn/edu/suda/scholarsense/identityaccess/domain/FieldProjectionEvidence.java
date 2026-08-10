@@ -73,6 +73,20 @@ public record FieldProjectionEvidence(
                 Optional.empty());
     }
 
+    public static FieldProjectionEvidence qualitySnapshot(
+            Instant serverNow, boolean ownedSource) {
+        return new FieldProjectionEvidence(
+                ProjectionObjectClass.QUALITY_SNAPSHOT,
+                "data-quality.read",
+                serverNow,
+                Optional.empty(),
+                true,
+                false,
+                ownedSource,
+                Set.of(),
+                Optional.empty());
+    }
+
     public static FieldProjectionEvidence unknown(Instant serverNow) {
         return new FieldProjectionEvidence(
                 ProjectionObjectClass.UNKNOWN,

@@ -40,6 +40,18 @@ public final class PostgreSqlDataSourceStartupGate {
                      'SET'),
                    pg_has_role(
                      current_user,
+                     'scholarsense_ingestion_quality_quality_worker',
+                     'MEMBER'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_quality_worker',
+                     'USAGE'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_quality_worker',
+                     'SET'),
+                   pg_has_role(
+                     current_user,
                      'scholarsense_ingestion_quality_relay',
                      'MEMBER'),
                    pg_has_role(
@@ -50,19 +62,81 @@ public final class PostgreSqlDataSourceStartupGate {
                      current_user,
                      'scholarsense_ingestion_quality_relay',
                      'SET'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_retention_executor',
+                     'MEMBER'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_retention_executor',
+                     'USAGE'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_retention_executor',
+                     'SET'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_consumer_registry_authority',
+                     'MEMBER'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_consumer_registry_authority',
+                     'USAGE'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_consumer_registry_authority',
+                     'SET'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_batch_owner',
+                     'MEMBER'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_batch_owner',
+                     'USAGE'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_batch_owner',
+                     'SET'),
                    not exists (
                      select 1
                        from pg_catalog.pg_roles controlled
                       where controlled.rolname in (
                               'scholarsense_ingestion_quality_online',
-                              'scholarsense_ingestion_quality_relay')
+                              'scholarsense_ingestion_quality_quality_worker',
+                              'scholarsense_ingestion_quality_relay',
+                              'scholarsense_ingestion_quality_retention_executor',
+                              'scholarsense_ingestion_quality_consumer_registry_authority',
+                              'scholarsense_ingestion_quality_batch_owner')
                         and (
                           controlled.rolcanlogin
                           or controlled.rolsuper
                           or controlled.rolcreaterole
                           or controlled.rolcreatedb
                           or controlled.rolreplication
-                          or controlled.rolbypassrls))
+                          or controlled.rolbypassrls)),
+                   (
+                     select count(*)=1
+                            and bool_and(membership.inherit_option)
+                            and not bool_or(membership.set_option)
+                            and not bool_or(membership.admin_option)
+                       from pg_catalog.pg_auth_members membership
+                      where membership.member=login.oid),
+                   (
+                     select count(*)=1
+                       from (
+                         with recursive reachable(roleid) as (
+                           select membership.roleid
+                             from pg_catalog.pg_auth_members membership
+                            where membership.member=login.oid
+                           union
+                           select membership.roleid
+                             from pg_catalog.pg_auth_members membership
+                             join reachable
+                               on membership.member=reachable.roleid
+                         )
+                         select roleid from reachable
+                       ) all_memberships)
               from pg_catalog.pg_roles login
              where login.rolname=current_user
             """;
@@ -159,12 +233,69 @@ public final class PostgreSqlDataSourceStartupGate {
                     "iq_fail_mapping_recompute_job(uuid, bigint, timestamp with time zone, "
                             + "character varying)",
                     "iq_requeue_mapping_recompute_job(uuid, bigint, timestamp with time zone)",
-                    "iq_cancel_mapping_recompute_job(uuid, bigint, timestamp with time zone)"));
+                    "iq_cancel_mapping_recompute_job(uuid, bigint, timestamp with time zone)",
+                    "iq_find_assessed_quality_snapshot_ids(character varying, character varying, "
+                            + "timestamp with time zone, timestamp with time zone, "
+                            + "character varying, character varying, timestamp with time zone, "
+                            + "uuid, integer)",
+                    "iq_find_assessed_quality_snapshot(uuid)",
+                    "iq_find_assessed_quality_snapshot_metrics(uuid)",
+                    "iq_find_assessed_quality_snapshot_impact_scopes(uuid)",
+                    "iq_find_assessed_quality_snapshot_page(uuid[])",
+                    "iq_find_assessed_quality_snapshot_page_metrics(uuid[])",
+                    "iq_find_assessed_quality_snapshot_page_impact_scopes(uuid[])",
+                    "iq_resolve_quality_snapshot_source(character)",
+                    "iq_append_quality_snapshot_read_audit(uuid, uuid, uuid, character varying, "
+                            + "character varying, character varying, character varying, "
+                            + "character varying, bigint, character, timestamp with time zone, "
+                            + "jsonb, character)"));
+    private static final String QUALITY_WORKER_PRIVILEGE_QUERY = privilegeQuery(
+            List.of(
+                    entry("iq_data_batch", "SELECT"),
+                    entry("iq_normalized_fact", "SELECT"),
+                    entry("iq_batch_quality_measurement", "SELECT"),
+                    entry("iq_batch_quality_operand", "SELECT"),
+                    entry("iq_batch_quality_impact_scope", "SELECT"),
+                    entry("iq_quality_snapshot", "SELECT"),
+                    entry("iq_quality_snapshot_metric", "SELECT"),
+                    entry("iq_quality_snapshot_impact_scope", "SELECT"),
+                    entry("iq_batch_idempotency", "SELECT")),
+            List.of(),
+            List.of(
+                    "iq_receive_data_batch(uuid, uuid, character varying, bytea, bigint, uuid, uuid, "
+                            + "character varying, timestamp with time zone, character, "
+                            + "timestamp with time zone, character, character, character, jsonb, "
+                            + "character)",
+                    "iq_inspect_batch_command_precedence(character, character varying, character)",
+                    "iq_append_normalized_fact(uuid, bytea, character varying, bytea, bigint, "
+                            + "character varying, character, uuid, character, "
+                            + "timestamp with time zone)",
+                    "iq_record_batch_quality_measurement(uuid, character varying, integer, boolean, "
+                            + "jsonb, character, timestamp with time zone)",
+                    "iq_record_batch_quality_impact_scope(uuid, bytea, timestamp with time zone)",
+                    "iq_seal_data_batch(uuid, uuid, bigint, bigint, bigint, bigint, "
+                            + "timestamp with time zone, timestamp with time zone, "
+                            + "timestamp with time zone, character varying, bytea, "
+                            + "character varying, character, character varying, character, "
+                            + "character varying, character, character varying, character, "
+                            + "timestamp with time zone, timestamp with time zone, "
+                            + "timestamp with time zone, character varying, character, jsonb, "
+                            + "timestamp with time zone, character, character, character, jsonb, "
+                            + "character)",
+                    "iq_commit_batch_quality_evaluation(uuid, uuid, bigint, uuid, character varying, "
+                            + "character varying, character varying, character varying, "
+                            + "timestamp with time zone, character, character, "
+                            + "character, jsonb, character, character, jsonb, character, uuid, "
+                            + "character varying, character varying, bytea, character)",
+                    "iq_publish_data_batch(uuid, uuid, bigint, timestamp with time zone, character, "
+                            + "character, character, jsonb, character, uuid, character varying, "
+                            + "character varying, bytea, character)"));
     private static final String RELAY_PRIVILEGE_QUERY = privilegeQuery(
             List.of(
                     entry("iq_local_audit_fact", "SELECT"),
                     entry("iq_local_audit_outbox", "SELECT"),
-                    entry("iq_mapping_recompute_outbox", "SELECT")),
+                    entry("iq_mapping_recompute_outbox", "SELECT"),
+                    entry("iq_batch_quality_outbox", "SELECT")),
             List.of(
                     columnEntry("iq_local_audit_outbox", "status", "UPDATE"),
                     columnEntry("iq_local_audit_outbox", "attempts", "UPDATE"),
@@ -178,7 +309,24 @@ public final class PostgreSqlDataSourceStartupGate {
                     columnEntry("iq_mapping_recompute_outbox", "claimed_until", "UPDATE"),
                     columnEntry("iq_mapping_recompute_outbox", "delivered_at", "UPDATE"),
                     columnEntry("iq_mapping_recompute_outbox", "last_error_code", "UPDATE")),
-            List.of("iq_cleanup_expired(timestamp with time zone)"));
+            List.of(
+                    "iq_claim_next_batch_quality_outbox()",
+                    "iq_release_batch_quality_outbox(uuid, bigint)",
+                    "iq_deliver_batch_quality_outbox(uuid, bigint)",
+                    "iq_fail_batch_quality_outbox(uuid, bigint)"));
+    private static final String RETENTION_PRIVILEGE_QUERY = privilegeQuery(
+            List.of(),
+            List.of(),
+            List.of(
+                    "iq_cleanup_expired(timestamp with time zone)",
+                    "iq_find_next_due_quality_snapshot_retention()",
+                    "iq_execute_quality_snapshot_retention(uuid, uuid, uuid, character, character, "
+                            + "uuid, character)"));
+    private static final String CONSUMER_REGISTRY_AUTHORITY_PRIVILEGE_QUERY = privilegeQuery(
+            List.of(),
+            List.of(),
+            List.of(
+                    "iq_ingest_quality_snapshot_retention_authority(uuid, bytea, character)"));
 
     private PostgreSqlDataSourceStartupGate() {}
 
@@ -190,6 +338,26 @@ public final class PostgreSqlDataSourceStartupGate {
     public static PostgreSqlConnectionProfile verifyRelay(
             DataSource dataSource, String environment, String expectedWorkloadIdentity) {
         return verify(dataSource, environment, expectedWorkloadIdentity, Workload.RELAY);
+    }
+
+    public static PostgreSqlConnectionProfile verifyQualityWorker(
+            DataSource dataSource, String environment, String expectedWorkloadIdentity) {
+        return verify(dataSource, environment, expectedWorkloadIdentity, Workload.QUALITY_WORKER);
+    }
+
+    public static PostgreSqlConnectionProfile verifyRetentionExecutor(
+            DataSource dataSource, String environment, String expectedWorkloadIdentity) {
+        return verify(
+                dataSource, environment, expectedWorkloadIdentity, Workload.RETENTION_EXECUTOR);
+    }
+
+    public static PostgreSqlConnectionProfile verifyConsumerRegistryAuthority(
+            DataSource dataSource, String environment, String expectedWorkloadIdentity) {
+        return verify(
+                dataSource,
+                environment,
+                expectedWorkloadIdentity,
+                Workload.CONSUMER_REGISTRY_AUTHORITY);
     }
 
     private static PostgreSqlConnectionProfile verify(
@@ -212,10 +380,24 @@ public final class PostgreSqlDataSourceStartupGate {
                 boolean onlineMember = proof.getBoolean(5);
                 boolean onlineUsage = proof.getBoolean(6);
                 boolean onlineSet = proof.getBoolean(7);
-                boolean relayMember = proof.getBoolean(8);
-                boolean relayUsage = proof.getBoolean(9);
-                boolean relaySet = proof.getBoolean(10);
-                boolean restrictedGroups = proof.getBoolean(11);
+                boolean qualityMember = proof.getBoolean(8);
+                boolean qualityUsage = proof.getBoolean(9);
+                boolean qualitySet = proof.getBoolean(10);
+                boolean relayMember = proof.getBoolean(11);
+                boolean relayUsage = proof.getBoolean(12);
+                boolean relaySet = proof.getBoolean(13);
+                boolean retentionMember = proof.getBoolean(14);
+                boolean retentionUsage = proof.getBoolean(15);
+                boolean retentionSet = proof.getBoolean(16);
+                boolean authorityMember = proof.getBoolean(17);
+                boolean authorityUsage = proof.getBoolean(18);
+                boolean authoritySet = proof.getBoolean(19);
+                boolean ownerMember = proof.getBoolean(20);
+                boolean ownerUsage = proof.getBoolean(21);
+                boolean ownerSet = proof.getBoolean(22);
+                boolean restrictedGroups = proof.getBoolean(23);
+                boolean exactDirectMembership = proof.getBoolean(24);
+                boolean noIndirectMembership = proof.getBoolean(25);
                 if (proof.next()) throw identityUnavailable();
                 profile = PostgreSqlConnectionProfile.validate(
                         environment,
@@ -236,11 +418,42 @@ public final class PostgreSqlDataSourceStartupGate {
                 }
                 boolean membershipValid = switch (workload) {
                     case ONLINE -> onlineMember && onlineUsage && !onlineSet
-                            && !relayMember && !relayUsage && !relaySet;
+                            && !qualityMember && !qualityUsage && !qualitySet
+                            && !relayMember && !relayUsage && !relaySet
+                            && !retentionMember && !retentionUsage && !retentionSet
+                            && !authorityMember && !authorityUsage && !authoritySet
+                            && !ownerMember && !ownerUsage && !ownerSet;
+                    case QUALITY_WORKER -> qualityMember && qualityUsage && !qualitySet
+                            && !onlineMember && !onlineUsage && !onlineSet
+                            && !relayMember && !relayUsage && !relaySet
+                            && !retentionMember && !retentionUsage && !retentionSet
+                            && !authorityMember && !authorityUsage && !authoritySet
+                            && !ownerMember && !ownerUsage && !ownerSet;
                     case RELAY -> relayMember && relayUsage && !relaySet
-                            && !onlineMember && !onlineUsage && !onlineSet;
+                            && !onlineMember && !onlineUsage && !onlineSet
+                            && !qualityMember && !qualityUsage && !qualitySet
+                            && !retentionMember && !retentionUsage && !retentionSet
+                            && !authorityMember && !authorityUsage && !authoritySet
+                            && !ownerMember && !ownerUsage && !ownerSet;
+                    case RETENTION_EXECUTOR -> retentionMember && retentionUsage && !retentionSet
+                            && !onlineMember && !onlineUsage && !onlineSet
+                            && !qualityMember && !qualityUsage && !qualitySet
+                            && !relayMember && !relayUsage && !relaySet
+                            && !authorityMember && !authorityUsage && !authoritySet
+                            && !ownerMember && !ownerUsage && !ownerSet;
+                    case CONSUMER_REGISTRY_AUTHORITY ->
+                            authorityMember && authorityUsage && !authoritySet
+                            && !onlineMember && !onlineUsage && !onlineSet
+                            && !qualityMember && !qualityUsage && !qualitySet
+                            && !relayMember && !relayUsage && !relaySet
+                            && !retentionMember && !retentionUsage && !retentionSet
+                            && !ownerMember && !ownerUsage && !ownerSet;
                 };
                 if (!membershipValid) {
+                    throw new IllegalArgumentException(
+                            "INGESTION_QUALITY_DATABASE_ROLE_MEMBERSHIP_MISMATCH");
+                }
+                if (!exactDirectMembership || !noIndirectMembership) {
                     throw new IllegalArgumentException(
                             "INGESTION_QUALITY_DATABASE_ROLE_MEMBERSHIP_MISMATCH");
                 }
@@ -264,17 +477,17 @@ public final class PostgreSqlDataSourceStartupGate {
             List<String> executableFunctions) {
         return """
                 with expected_table(table_name, privilege_type) as (
-                  values %s
+                  %s
                 ),
                 expected_column_extra(table_name, column_name, privilege_type) as (
-                  values %s
+                  %s
                 ),
                 actual_table(table_name, privilege_type) as (
                   select tables.table_name, privileges.privilege_type
                     from information_schema.tables tables
                     cross join (values %s) privileges(privilege_type)
                    where tables.table_schema='ingestion_quality'
-                     and tables.table_type='BASE TABLE'
+                     and tables.table_type in ('BASE TABLE','VIEW')
                      and has_table_privilege(
                        current_user,
                        format('%%I.%%I', tables.table_schema, tables.table_name),
@@ -308,7 +521,7 @@ public final class PostgreSqlDataSourceStartupGate {
                        privileges.privilege_type)
                 ),
                 expected_function(function_signature) as (
-                  values %s
+                  %s
                 ),
                 actual_function(function_signature) as (
                   select procedure.proname || '(' ||
@@ -332,14 +545,23 @@ public final class PostgreSqlDataSourceStartupGate {
                           union all
                          (select * from expected_function except select * from actual_function))
                 """.formatted(
-                String.join(",\n", tablePrivileges),
-                String.join(",\n", columnPrivileges),
+                expectedRelation(tablePrivileges, 2),
+                expectedRelation(columnPrivileges, 3),
                 privilegeValues(TABLE_PRIVILEGES),
                 privilegeValues(COLUMN_PRIVILEGES),
-                executableFunctions.stream()
-                        .map(function -> "('%s')".formatted(function))
-                        .reduce((left, right) -> left + ",\n" + right)
-                        .orElseThrow());
+                expectedRelation(
+                        executableFunctions.stream()
+                                .map(function -> "('%s')".formatted(function))
+                                .toList(),
+                        1));
+    }
+
+    private static String expectedRelation(List<String> rows, int columnCount) {
+        if (!rows.isEmpty()) return "values " + String.join(",\n", rows);
+        return "select " + java.util.stream.IntStream.range(0, columnCount)
+                .mapToObj(ignored -> "null::text")
+                .reduce((left, right) -> left + ", " + right)
+                .orElseThrow() + " where false";
     }
 
     private static String entry(String table, String privilege) {
@@ -363,7 +585,10 @@ public final class PostgreSqlDataSourceStartupGate {
 
     private enum Workload {
         ONLINE(ONLINE_PRIVILEGE_QUERY),
-        RELAY(RELAY_PRIVILEGE_QUERY);
+        QUALITY_WORKER(QUALITY_WORKER_PRIVILEGE_QUERY),
+        RELAY(RELAY_PRIVILEGE_QUERY),
+        RETENTION_EXECUTOR(RETENTION_PRIVILEGE_QUERY),
+        CONSUMER_REGISTRY_AUTHORITY(CONSUMER_REGISTRY_AUTHORITY_PRIVILEGE_QUERY);
 
         private final String privilegeQuery;
 

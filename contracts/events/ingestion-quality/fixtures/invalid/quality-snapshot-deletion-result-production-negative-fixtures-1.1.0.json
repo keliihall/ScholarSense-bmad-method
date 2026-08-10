@@ -1,0 +1,785 @@
+{
+  "fixtureVersion": "QUALITY-SNAPSHOT-DELETION-RESULT-PRODUCTION-NEGATIVE-FIXTURES-1.1.0",
+  "baseContractVersion": "QUALITY-SNAPSHOT-DELETION-RESULT-1.1.0",
+  "cases": [
+    {
+      "caseId": "predecessor-result-version-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/resultContractVersion",
+          "value": "QUALITY-SNAPSHOT-DELETION-RESULT-1.0.0"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "conformance-anchor-field-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "add",
+          "path": "/data/guards/consumerRegistry/conformanceAnchorId",
+          "value": "active-clue-care-consumer-set"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "conformance-provider-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/provider",
+          "value": "quality-snapshot-consumer-registry-conformance-anchor"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "authority-runtime-none-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/runtimeEvidenceClaim",
+          "value": "none"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "authority-id-not-uuidv7",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/authorityEvidenceId",
+          "value": "019d2c7d-4000-6000-8000-000000000201"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "event-id-trailing-lf-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/id",
+          "value": "019d2c7d-4000-7000-8000-000000000202\n"
+        },
+        {
+          "op": "replace",
+          "path": "/data/eventId",
+          "value": "019d2c7d-4000-7000-8000-000000000202\n"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "traceparent-trailing-lf-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/traceparent",
+          "value": "00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbb-01\n"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "snapshot-digest-trailing-lf-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/scope/snapshotImmutableHash",
+          "value": "sha256:1111111111111111111111111111111111111111111111111111111111111111\n"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "source-id-trailing-lf-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/scope/sourceId",
+          "value": "SRC-P0-STUDENT-001\n"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "consumer-id-trailing-lf-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/members/0/consumerId",
+          "value": "clue-care\n"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "malformed-database-transaction-id-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/ownerLocalResults/readModels/transactionId",
+          "value": []
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "authority-evidence-ref-id-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/evidenceRef",
+          "value": "consumer-registry-authority://production/quality-snapshot/019d2c7d-4000-7000-8000-000000000299"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_AUTHORITY_EVIDENCE_INVALID"
+    },
+    {
+      "caseId": "authority-evidence-id-aliases-prior-result",
+      "lineageFixtures": [
+        "blocked",
+        "completed"
+      ],
+      "mutations": [
+        {
+          "targetFixture": "completed",
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/authorityEvidenceId",
+          "value": "019d2c7d-4000-7000-8000-000000000201"
+        },
+        {
+          "targetFixture": "completed",
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/evidenceRef",
+          "value": "consumer-registry-authority://production/quality-snapshot/019d2c7d-4000-7000-8000-000000000201"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_LINEAGE_AUTHORITY_ID_ALIAS"
+    },
+    {
+      "caseId": "missing-authority-root-causation-aliases-future-result",
+      "lineageFixtures": [
+        "missing-authority-blocked",
+        "completed"
+      ],
+      "mutations": [
+        {
+          "targetFixture": "completed",
+          "op": "replace",
+          "path": "/id",
+          "value": "019d2c7d-4000-7000-8000-000000000210"
+        },
+        {
+          "targetFixture": "completed",
+          "op": "replace",
+          "path": "/data/eventId",
+          "value": "019d2c7d-4000-7000-8000-000000000210"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_LINEAGE_AUTHORITY_ID_ALIAS"
+    },
+    {
+      "caseId": "authority-scope-digest-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/scopeDigest",
+          "value": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_AUTHORITY_EVIDENCE_INVALID"
+    },
+    {
+      "caseId": "authority-registry-version-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/registryVersion",
+          "value": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-9.9.9"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "authority-registry-digest-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/registryDigest",
+          "value": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_AUTHORITY_EVIDENCE_INVALID"
+    },
+    {
+      "caseId": "authority-members-digest-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/membersDigest",
+          "value": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_AUTHORITY_EVIDENCE_INVALID"
+    },
+    {
+      "caseId": "authority-checked-at-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/checkedAt",
+          "value": "2026-08-09T00:04:59Z"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_AUTHORITY_EVIDENCE_INVALID"
+    },
+    {
+      "caseId": "authority-verification-status-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/verificationStatus",
+          "value": "contract-conformance"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "outer-runtime-production-claim-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/runtimeEvidenceClaim",
+          "value": "production-verified"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "unknown-authority-field-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "add",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/assertedByCaller",
+          "value": true
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "registry-digest-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/registryDigest",
+          "value": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_REGISTRY_BINDING_INVALID"
+    },
+    {
+      "caseId": "registry-members-unsorted",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "append",
+          "path": "/data/guards/consumerRegistry/members",
+          "value": {
+            "consumerId": "audit-archive",
+            "registryMembership": "required-for-snapshot",
+            "lifecycleStatus": "active"
+          }
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_REGISTRY_BINDING_INVALID"
+    },
+    {
+      "caseId": "registry-member-duplicate-consumer-id",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "append-copy",
+          "path": "/data/guards/consumerRegistry/members/0"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "watermark-member-set-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/consumerId",
+          "value": "unknown-consumer"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_WATERMARK_BINDING_INVALID"
+    },
+    {
+      "caseId": "watermark-duplicate-consumer-id",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "append-copy",
+          "path": "/data/guards/consumerWatermarks/0"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "watermark-behind-completed-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/confirmedAggregateVersion",
+          "value": 8
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_BLOCKER_SET_MISMATCH"
+    },
+    {
+      "caseId": "transport-ack-missing-completed-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/transportAck",
+          "value": "missing"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_BLOCKER_SET_MISMATCH"
+    },
+    {
+      "caseId": "inbox-ack-missing-completed-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/inboxAck",
+          "value": "missing"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_BLOCKER_SET_MISMATCH"
+    },
+    {
+      "caseId": "evidence-copy-ack-missing-completed-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/evidenceCopyAck",
+          "value": "missing"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_BLOCKER_SET_MISMATCH"
+    },
+    {
+      "caseId": "attestation-consumer-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/attestation/consumerId",
+          "value": "unknown-consumer"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_ATTESTATION_BINDING_INVALID"
+    },
+    {
+      "caseId": "attestation-snapshot-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/attestation/snapshotId",
+          "value": "019d2c7d-4000-7000-8000-000000000199"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_ATTESTATION_BINDING_INVALID"
+    },
+    {
+      "caseId": "attestation-hash-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/attestation/snapshotImmutableHash",
+          "value": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_ATTESTATION_BINDING_INVALID"
+    },
+    {
+      "caseId": "attestation-version-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/attestation/requiredAggregateVersion",
+          "value": 8
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_ATTESTATION_BINDING_INVALID"
+    },
+    {
+      "caseId": "attestation-registry-digest-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/attestation/registryDigest",
+          "value": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_ATTESTATION_BINDING_INVALID"
+    },
+    {
+      "caseId": "attestation-scope-digest-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/attestation/scopeDigest",
+          "value": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_ATTESTATION_BINDING_INVALID"
+    },
+    {
+      "caseId": "attestation-after-commit",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/attestation/attestedAt",
+          "value": "2026-08-09T00:05:01Z"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_CHRONOLOGY_INVALID"
+    },
+    {
+      "caseId": "authority-check-after-commit",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/checkedAt",
+          "value": "2026-08-09T00:05:01Z"
+        },
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/checkedAt",
+          "value": "2026-08-09T00:05:01Z"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_CHRONOLOGY_INVALID"
+    },
+    {
+      "caseId": "available-authority-null-rejected",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence",
+          "value": null
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "read-models-transaction-id-missing",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/ownerLocalResults/readModels/transactionId",
+          "value": null
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "read-models-transaction-digest-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/ownerLocalResults/readModels/transactionEvidenceDigest",
+          "value": "sha256:70e47055ffc22e725a7e5b10acda8d32e767801a184a0fc06ce71294de1a1f5b"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_OWNER_DB_ATOMICITY_EVIDENCE_INVALID"
+    },
+    {
+      "caseId": "read-models-count-drift",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/ownerLocalResults/readModels/selectedCount",
+          "value": 3
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_TARGET_COUNT_INVALID"
+    },
+    {
+      "caseId": "unavailable-members-nonempty-rejected",
+      "baseFixture": "missing-authority-blocked",
+      "mutations": [
+        {
+          "op": "append",
+          "path": "/data/guards/consumerRegistry/members",
+          "value": {
+            "consumerId": "clue-care",
+            "registryMembership": "required-for-snapshot",
+            "lifecycleStatus": "active"
+          }
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "pre-due-blocker-missing",
+      "baseFixture": "pre-due-blocked",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/blockerCodes",
+          "value": []
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "pre-due-blocker-wrong",
+      "baseFixture": "pre-due-blocked",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/blockerCodes",
+          "value": [
+            "LEGAL_HOLD_MATCHED"
+          ]
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_BLOCKER_SET_MISMATCH"
+    },
+    {
+      "caseId": "pre-due-trusted-time-reaches-due",
+      "baseFixture": "pre-due-blocked",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/trustedTime/observedAt",
+          "value": "2026-08-09T00:00:00Z"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_BLOCKER_SET_MISMATCH"
+    },
+    {
+      "caseId": "pre-due-guard-after-decision",
+      "baseFixture": "pre-due-blocked",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/legalHold/checkedAt",
+          "value": "2026-08-09T00:00:00Z"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_CHRONOLOGY_INVALID"
+    },
+    {
+      "caseId": "completed-cannot-use-pre-due-chronology",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/trustedTime/observedAt",
+          "value": "2026-08-08T23:59:59.999Z"
+        },
+        {
+          "op": "replace",
+          "path": "/data/guards/legalHold/checkedAt",
+          "value": "2026-08-08T23:59:59.999Z"
+        },
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/checkedAt",
+          "value": "2026-08-08T23:59:59.999Z"
+        },
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerRegistry/authorityEvidence/checkedAt",
+          "value": "2026-08-08T23:59:59.999Z"
+        },
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarksCheckedAt",
+          "value": "2026-08-08T23:59:59.999Z"
+        },
+        {
+          "op": "replace",
+          "path": "/data/guards/consumerWatermarks/0/attestation/attestedAt",
+          "value": "2026-08-08T23:59:59.998Z"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_CHRONOLOGY_INVALID"
+    },
+    {
+      "caseId": "pre-due-successor-time-regression",
+      "lineageFixtures": [
+        "pre-due-blocked",
+        "completed"
+      ],
+      "mutations": [
+        {
+          "targetFixture": "completed",
+          "op": "replace",
+          "path": "/data/correlationId",
+          "value": "019d2c7d-4000-7000-8000-000000000220"
+        },
+        {
+          "targetFixture": "completed",
+          "op": "replace",
+          "path": "/data/aggregateId",
+          "value": "019d2c7d-4000-7000-8000-000000000220"
+        },
+        {
+          "targetFixture": "completed",
+          "op": "replace",
+          "path": "/data/executionId",
+          "value": "019d2c7d-4000-7000-8000-000000000220"
+        },
+        {
+          "targetFixture": "completed",
+          "op": "replace",
+          "path": "/data/supersedesResultId",
+          "value": "019d2c7d-4000-7000-8000-000000000221"
+        },
+        {
+          "targetFixture": "completed",
+          "op": "replace",
+          "path": "/time",
+          "value": "2026-08-08T23:59:59.998Z"
+        },
+        {
+          "targetFixture": "completed",
+          "op": "replace",
+          "path": "/data/occurredAt",
+          "value": "2026-08-08T23:59:59.998Z"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_LINEAGE_CHRONOLOGY_INVALID"
+    },
+    {
+      "caseId": "completed-with-legal-hold",
+      "baseFixture": "completed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/guards/legalHold/status",
+          "value": "matched"
+        },
+        {
+          "op": "replace",
+          "path": "/data/guards/legalHold/matchedCount",
+          "value": 1
+        },
+        {
+          "op": "append",
+          "path": "/data/guards/legalHold/matchedScopeDigests",
+          "value": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_COMPLETED_INVARIANT"
+    },
+    {
+      "caseId": "blocked-after-delete",
+      "baseFixture": "blocked",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/deletionCommittedAt",
+          "value": "2026-08-09T00:04:00Z"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "partial-without-failure",
+      "baseFixture": "partial",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/failureCodes",
+          "value": []
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "failed-after-commit",
+      "baseFixture": "failed",
+      "mutations": [
+        {
+          "op": "replace",
+          "path": "/data/deletionCommittedAt",
+          "value": "2026-08-11T00:04:30Z"
+        }
+      ],
+      "expectedCode": "DELETION_RESULT_1_1_SCHEMA_REJECTED"
+    },
+    {
+      "caseId": "wire-bom-rejected",
+      "baseFixture": "completed",
+      "wireMutation": "bom-prefix",
+      "expectedCode": "DELETION_RESULT_1_1_WIRE_JSON_INVALID"
+    },
+    {
+      "caseId": "wire-duplicate-key-rejected",
+      "baseFixture": "completed",
+      "wireMutation": "duplicate-top-level-id",
+      "expectedCode": "DELETION_RESULT_1_1_WIRE_JSON_INVALID"
+    },
+    {
+      "caseId": "wire-unsafe-number-rejected",
+      "baseFixture": "completed",
+      "wireMutation": "unsafe-aggregate-version",
+      "expectedCode": "DELETION_RESULT_1_1_WIRE_JSON_INVALID"
+    },
+    {
+      "caseId": "wire-over-64-kib-rejected",
+      "baseFixture": "completed",
+      "wireMutation": "oversize-padding",
+      "expectedCode": "DELETION_RESULT_1_1_PAYLOAD_TOO_LARGE"
+    }
+  ]
+}

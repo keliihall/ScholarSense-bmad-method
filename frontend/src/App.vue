@@ -27,6 +27,7 @@ function localRouteName(routeId: string): string | undefined {
     'shell.session': 'shell-session',
     'audit.search': 'audit-search',
     'data-quality.catalogs': 'data-quality-catalogs',
+    'data-quality.quality-snapshots': 'data-quality-quality-snapshots',
     'data-quality.subject-mapping-exceptions': 'subject-mapping-exceptions',
     'subject-registry.recompute-jobs': 'subject-recompute-jobs',
   }[routeId];

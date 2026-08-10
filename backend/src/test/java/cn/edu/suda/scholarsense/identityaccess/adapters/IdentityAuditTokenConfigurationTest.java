@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.HmacIdentityAuditTokenAdapter;
+import cn.edu.suda.scholarsense.identityaccess.api.AuditTokenizationDomain;
+import cn.edu.suda.scholarsense.identityaccess.api.AuditTokenizationPort;
 import cn.edu.suda.scholarsense.identityaccess.application.AuditTokenDomain;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuditTokenPort;
 import java.nio.charset.StandardCharsets;
@@ -35,11 +37,31 @@ class IdentityAuditTokenConfigurationTest {
                 "scholarsense.identity.audit-token-key-path", key.toString(),
                 "scholarsense.identity.audit-token-key-version", "k7"))) {
             IdentityAuditTokenPort tokens = context.getBean(IdentityAuditTokenPort.class);
+            AuditTokenizationPort internal = context.getBean(AuditTokenizationPort.class);
 
             assertInstanceOf(HmacIdentityAuditTokenAdapter.class, tokens);
             assertTrue(tokens.tokenize(AuditTokenDomain.ACTOR, "actor-123")
                     .value()
                     .startsWith("ast_v1_k7_"));
+            assertTrue(internal.tokenize(AuditTokenizationDomain.OBJECT, "snapshot-123")
+                    .value().startsWith("ost_v1_k7_"));
+        }
+    }
+
+    @Test
+    void qualityWorkerOnlyAssemblyProvidesTheSameTokenizationBoundary() throws Exception {
+        Path key = protectedKey(
+                "quality-worker-audit-hmac.key",
+                "controlled-quality-worker-key-32".getBytes(StandardCharsets.US_ASCII));
+
+        try (var context = context(Map.of(
+                "scholarsense.identity.enabled", "false",
+                "scholarsense.ingestion-quality.quality-worker-enabled", "true",
+                "scholarsense.identity.audit-token-key-path", key.toString(),
+                "scholarsense.identity.audit-token-key-version", "k9"))) {
+            assertTrue(context.getBean(AuditTokenizationPort.class)
+                    .tokenize(AuditTokenizationDomain.AGGREGATE, "snapshot-123")
+                    .value().startsWith("agt_v1_k9_"));
         }
     }
 

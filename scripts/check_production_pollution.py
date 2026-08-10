@@ -115,6 +115,11 @@ APPROVED_PERSISTENCE_READS = {
         "indexedDB.databases",
         "navigator.serviceWorker.getRegistrations()",
     ),
+    "frontend/tests/baseline/quality-snapshots.spec.ts": (
+        "localStorage.length",
+        "sessionStorage.length",
+        "indexedDB.databases",
+    ),
 }
 APPROVED_MIGRATION_PREFIX = "backend/src/main/resources/db/migration/"
 NPMRC_FORBIDDEN = re.compile(

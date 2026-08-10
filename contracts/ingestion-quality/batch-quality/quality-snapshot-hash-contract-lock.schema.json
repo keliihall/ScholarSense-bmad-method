@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/batch-quality/quality-snapshot-hash-contract-lock.schema.json",
+  "title": "QualitySnapshot hash additive contract lock",
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "fileBinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "rawDigest"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "rawDigest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "upstreamCanonicalBinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "rawSha256", "canonicalDigest"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "rawSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "canonicalDigest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "upstreamRawBinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "rawSha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "rawSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "lockVersion", "hashProfileVersion", "authorityRef",
+    "profileCanonicalDigest", "digests", "upstreamBindings"
+  ],
+  "properties": {
+    "$schema": {"const": "quality-snapshot-hash-contract-lock.schema.json"},
+    "lockVersion": {"const": "QSHM-CONTRACT-LOCK-1.0.0"},
+    "hashProfileVersion": {"const": "QSHM-1.0.0"},
+    "authorityRef": {"const": "AUTH-2026-08-09-001"},
+    "profileCanonicalDigest": {"$ref": "#/$defs/digest"},
+    "digests": {
+      "type": "array", "minItems": 8, "maxItems": 8,
+      "items": {"$ref": "#/$defs/fileBinding"}
+    },
+    "upstreamBindings": {
+      "type": "array", "minItems": 5, "maxItems": 5,
+      "items": {
+        "oneOf": [
+          {"$ref": "#/$defs/upstreamCanonicalBinding"},
+          {"$ref": "#/$defs/upstreamRawBinding"}
+        ]
+      }
+    }
+  }
+}

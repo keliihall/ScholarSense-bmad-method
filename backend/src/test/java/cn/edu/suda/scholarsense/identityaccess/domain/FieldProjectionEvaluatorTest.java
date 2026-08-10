@@ -29,6 +29,60 @@ class FieldProjectionEvaluatorTest {
     private final FieldProjectionEvaluator evaluator = new FieldProjectionEvaluator();
 
     @Test
+    void qualitySnapshotUsesObjectScopedLeafClassesAndRequiresOwnedSource() {
+        ProjectionObjectSchema qualitySnapshotSchema = CATALOG.objectSchema(
+                ProjectionObjectClass.QUALITY_SNAPSHOT).orElseThrow();
+        assertEquals(42, qualitySnapshotSchema.fieldNames().size());
+        EnumMap<FieldClass, Integer> classCounts = new EnumMap<>(FieldClass.class);
+        qualitySnapshotSchema.fieldNames().forEach(path -> classCounts.merge(
+                CATALOG.field(ProjectionObjectClass.QUALITY_SNAPSHOT, path)
+                        .orElseThrow().fieldClass(),
+                1,
+                Integer::sum));
+        assertEquals(
+                Map.of(
+                        FieldClass.BASIC, 21,
+                        FieldClass.EVIDENCE, 2,
+                        FieldClass.GOVERNANCE, 4,
+                        FieldClass.TECHNICAL, 15),
+                classCounts);
+        assertEquals(
+                FieldClass.BASIC,
+                CATALOG.field(
+                        ProjectionObjectClass.AUDIT_SEARCH_RECORD,
+                        "retentionScheduleVersion").orElseThrow().fieldClass());
+        assertEquals(
+                FieldClass.GOVERNANCE,
+                CATALOG.field(
+                        ProjectionObjectClass.QUALITY_SNAPSHOT,
+                        "retentionScheduleVersion").orElseThrow().fieldClass());
+
+        CompositeAuthorizationDecision authorization = authorization(Set.of(RolePackage.R6), Set.of());
+        FieldProjectionDecision owned = evaluator.evaluate(
+                authorization,
+                FieldProjectionEvidence.qualitySnapshot(START, true),
+                Set.of(
+                        "snapshotId", "retentionScheduleVersion", "metricResults[].formulaId",
+                        "studentOfficialRef"),
+                CATALOG,
+                POLICY);
+        FieldProjectionDecision unowned = evaluator.evaluate(
+                authorization,
+                FieldProjectionEvidence.qualitySnapshot(START, false),
+                Set.of("snapshotId"),
+                CATALOG,
+                POLICY);
+
+        assertTrue(owned.allowed());
+        assertEquals(Visibility.CLEAR, owned.visibilityFor("snapshotId"));
+        assertEquals(Visibility.CLEAR, owned.visibilityFor("retentionScheduleVersion"));
+        assertEquals(Visibility.CLEAR, owned.visibilityFor("metricResults[].formulaId"));
+        assertEquals(Visibility.HIDDEN, owned.visibilityFor("studentOfficialRef"));
+        assertFalse(unowned.allowed());
+        assertEquals("OWNED_SOURCE_REQUIRED", unowned.reasonCode());
+    }
+
+    @Test
     void applies_the_strictest_role_and_keeps_catalog_order() {
         CompositeAuthorizationDecision authorization = authorization(
                 Set.of(RolePackage.R1, RolePackage.R7), Set.of());

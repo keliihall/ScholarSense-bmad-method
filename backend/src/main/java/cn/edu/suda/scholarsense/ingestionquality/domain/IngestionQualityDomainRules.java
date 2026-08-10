@@ -1,5 +1,8 @@
 package cn.edu.suda.scholarsense.ingestionquality.domain;
 
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.util.Locale;
 import java.util.UUID;
 
 final class IngestionQualityDomainRules {
@@ -8,8 +11,23 @@ final class IngestionQualityDomainRules {
     private IngestionQualityDomainRules() {}
 
     static String requireText(String value, int maximumLength) {
-        if (value == null || value.isBlank() || value.length() > maximumLength) {
+        if (value == null || value.isBlank() || maximumLength < 1) {
             throw invalid();
+        }
+        int scalarCount = 0;
+        for (int offset = 0; offset < value.length(); ) {
+            char current = value.charAt(offset);
+            if (Character.isHighSurrogate(current)) {
+                if (offset + 1 >= value.length()
+                        || !Character.isLowSurrogate(value.charAt(offset + 1))) {
+                    throw invalid();
+                }
+                offset += 2;
+            } else {
+                if (Character.isLowSurrogate(current)) throw invalid();
+                offset++;
+            }
+            if (++scalarCount > maximumLength) throw invalid();
         }
         return value;
     }
@@ -36,6 +54,27 @@ final class IngestionQualityDomainRules {
             throw invalid();
         }
         return value;
+    }
+
+    static String requireProductionWatermark(String sourceId, String watermark) {
+        requireText(sourceId, 64);
+        requireText(watermark, 512);
+        if (watermark.matches("sha256:[0-9a-f]{64}")) return watermark;
+
+        String prefix = sourceId.toLowerCase(Locale.ROOT) + "@";
+        if (!watermark.startsWith(prefix)) throw invalid();
+        String dateText = watermark.substring(prefix.length());
+        if (!dateText.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) throw invalid();
+        try {
+            LocalDate date = LocalDate.parse(dateText);
+            if (date.getYear() < 1 || date.getYear() > 9_999
+                    || !date.toString().equals(dateText)) {
+                throw invalid();
+            }
+        } catch (DateTimeException invalidDate) {
+            throw invalid();
+        }
+        return watermark;
     }
 
     static long requireVersion(long value) {

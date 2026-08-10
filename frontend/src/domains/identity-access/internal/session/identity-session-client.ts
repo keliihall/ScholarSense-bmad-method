@@ -12,6 +12,7 @@ export type ReauthenticationTarget =
   | 'shell.session'
   | 'audit.search'
   | 'data-quality.catalogs'
+  | 'data-quality.quality-snapshots'
   | 'data-quality.subject-mapping-exceptions'
   | 'subject-registry.recompute-jobs';
 

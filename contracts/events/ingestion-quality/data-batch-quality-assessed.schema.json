@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/events/ingestion-quality/data-batch-quality-assessed.schema.json",
+  "title": "Data batch quality assessed self-contained CloudEvent",
+  "$ref": "data-batch-quality-event.schema.json",
+  "x-eventType": "scholarsense.ingestion-quality.data-batch.quality-assessed.v1",
+  "x-schemaVersion": "DATA-BATCH-QUALITY-ASSESSED-1.0.0",
+  "x-aggregateVersion": 3,
+  "x-runtimeEvidenceClaim": "none"
+}

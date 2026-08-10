@@ -42,6 +42,15 @@ public final class FrozenDataCatalogLoader
     private static final String FULL_LOCK_DIGEST =
             "sha256:d1d701338c39c9b480a06f699f09309e8d89c699333f113fc8b909aa3bc3e6e2";
     private static final String LOCK_PATH_PREFIX = "contracts/data-catalog/";
+    private static final Map<Path, String> APPROVED_ADDITIVE_FILES = Map.of(
+            Path.of("data-source-catalog-1.1.0.schema.json"),
+                    "2b967a7b89cd8febed7cc3d2a59d79e7e702ac2b638058bfb452e9a6672695f2",
+            Path.of("dcc-1.1.0.json"),
+                    "aeb19962071e2144a85bb2e07fd124eff0d69edf93f7202e821204616a60f219",
+            Path.of("sources/src-p0-responsibility-001-2.1.0.schema.json"),
+                    "a5e3b7a1673b0c55d09eadd4cc491be297aa46f24dc83bc6e56053a33b8b86a1",
+            Path.of("sources/src-p1-care-list-001-1.1.0.schema.json"),
+                    "d4ed4ca282b12c23024600635546729be6550ff1b3c773209dd3c2634a4c9e01");
     private static final Map<String, String> MINIMAL_SCHEMA_DIGESTS = Map.of(
             "SRC-P0-ACCOMMODATION-001", "sha256:eb06f4eea84531e0461911bef272419b22d69737dcb0d73b12b28d2e7fde2927",
             "SRC-P0-CALENDAR-001", "sha256:7436c9709e1c331c99d6c018d3129537bb4c24db1462396b3b82abcbe2cf2f87",
@@ -364,9 +373,22 @@ public final class FrozenDataCatalogLoader
         }
         Set<Path> expectedClosure = new HashSet<>(expected.keySet());
         expectedClosure.add(Path.of("data-catalog-contract-lock-1.0.1.json"));
+        expectedClosure.addAll(APPROVED_ADDITIVE_FILES.keySet());
         if (!actual.equals(expectedClosure)) throw contractInvalid();
         expected.forEach((relative, expectedDigest) ->
                 requireDigest(read(contractRoot.resolve(relative)), expectedDigest));
+        APPROVED_ADDITIVE_FILES.forEach((relative, expectedDigest) ->
+                requireRawDigest(contractRoot.resolve(relative), expectedDigest));
+    }
+
+    private static void requireRawDigest(Path path, String expectedDigest) {
+        try {
+            byte[] actual = MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(path));
+            byte[] expected = HexFormat.of().parseHex(expectedDigest);
+            if (!MessageDigest.isEqual(expected, actual)) throw contractInvalid();
+        } catch (IOException | java.security.NoSuchAlgorithmException | IllegalArgumentException failure) {
+            throw contractInvalid();
+        }
     }
 
     private JsonNode read(Path path) {

@@ -1,0 +1,117 @@
+{
+  "$schema": "batch-quality-lifecycle.schema.json",
+  "contractVersion": "BATCH-QUALITY-LIFECYCLE-1.0.0",
+  "decisionId": "DEC-019",
+  "authorityRef": "AUTH-2026-08-08-001",
+  "effectiveAt": "2026-08-09T10:02:22+08:00",
+  "owner": "ingestion-quality",
+  "initialState": "receiving",
+  "terminalStates": [
+    "published",
+    "quality-failed"
+  ],
+  "allowedTransitions": [
+    {
+      "from": "receiving",
+      "to": "sealed"
+    },
+    {
+      "from": "sealed",
+      "to": "quality-passed"
+    },
+    {
+      "from": "sealed",
+      "to": "quality-failed"
+    },
+    {
+      "from": "quality-passed",
+      "to": "published"
+    }
+  ],
+  "reopenAllowed": false,
+  "manualResultOverrideAllowed": false,
+  "sealedManifestFields": [
+    "recordCount",
+    "validRecordCount",
+    "rejectedRecordCount",
+    "observationWindow.startAt",
+    "observationWindow.endAt",
+    "cutoffAt",
+    "timezone",
+    "watermark",
+    "sourceSchemaVersion",
+    "sourceSchemaDigest",
+    "dataCatalogVersion",
+    "dataCatalogDigest",
+    "qualityGateVersion",
+    "qualityGateDigest",
+    "qualityMetricDecisionProfileVersion",
+    "qualityMetricDecisionProfileDigest",
+    "sourceOccurredAt",
+    "scheduledDueAt",
+    "receivedAt",
+    "laneId",
+    "manifestDigest"
+  ],
+  "sealImmutability": "all-fields-frozen",
+  "factVisibility": {
+    "invisibleStates": [
+      "receiving",
+      "sealed",
+      "quality-failed"
+    ],
+    "visibleState": "published",
+    "publicationUnit": "whole-batch-atomic"
+  },
+  "identity": {
+    "businessIdentityFields": [
+      "sourceId",
+      "businessKey",
+      "sourceVersion"
+    ],
+    "manifestDigestField": "manifestDigest",
+    "sameIdentitySameDigest": "return-existing",
+    "sameIdentityDifferentDigest": "identity-conflict",
+    "sourceVersionRegression": "version-regression"
+  },
+  "correction": {
+    "createsNewBatch": true,
+    "sameLineageRequired": true,
+    "directPredecessorOnly": true,
+    "requiredEvidenceFields": [
+      "supersedesBatchId",
+      "lineageId",
+      "reasonCode",
+      "effectiveAt"
+    ],
+    "reasonCodeEnum": [
+      "LATE_ARRIVAL",
+      "SOURCE_CORRECTION"
+    ],
+    "mutatePredecessor": false,
+    "forksAllowed": false,
+    "derivationKind": "fail-closed-materialization"
+  },
+  "timeSemantics": {
+    "observationWindow": "[startAt,endAt)",
+    "storageTimezone": "UTC",
+    "businessTimezone": "Asia/Shanghai",
+    "cutoffSource": "sealed-manifest",
+    "cutoffFrozenAtSeal": true,
+    "evaluatedAtMeaning": "valid-assessment-commit-time",
+    "publishedAtMeaning": "passed-facts-visibility-commit-time",
+    "assessmentChronology": "sealedAt<=evaluatedAt<=publishedAt-when-present",
+    "failedPublishedAtAllowed": false,
+    "technicalErrorEvaluatedAtAllowed": false
+  },
+  "evaluation": {
+    "validPassingResultState": "quality-passed",
+    "validFailingResultState": "quality-failed",
+    "technicalErrorState": "sealed",
+    "validEvaluationCreatesUniqueSnapshot": true,
+    "technicalErrorCreatesSnapshot": false,
+    "technicalErrorPublishesFacts": false
+  },
+  "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+  "runtimeEvidenceClaim": "none"
+}

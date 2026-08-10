@@ -60,7 +60,7 @@ public final class DataSourceCatalogService {
     public CatalogView validate(ValidateCatalogCommand command) {
         Objects.requireNonNull(command);
         authorizedLoad(command.catalogId(), command.actorContext().authorizationSessionRef(),
-                "data-quality.reconcile", "data-quality.reconcile",
+                "data-quality.reconcile", "data-quality.read",
                 command.traceId());
         TrustedTime trusted = trustedTime();
         Instant now = trusted.instant();
@@ -84,7 +84,7 @@ public final class DataSourceCatalogService {
     public CatalogView publish(PublishCatalogCommand command) {
         Objects.requireNonNull(command);
         authorizedLoad(command.catalogId(), command.actorContext().authorizationSessionRef(),
-                "data-quality.repair", "data-quality.reconcile",
+                "data-quality.repair", "data-quality.read",
                 command.traceId());
         TrustedTime trusted = trustedTime();
         Instant now = trusted.instant();

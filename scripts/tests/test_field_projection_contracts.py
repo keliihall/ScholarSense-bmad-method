@@ -11,11 +11,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from check_field_projection_contracts import (  # noqa: E402
-    fixture_issues,
-    project_fixture,
-    validate,
-)
+import check_field_projection_contracts as field_projection_checker  # noqa: E402
+from check_field_projection_contracts import fixture_issues, project_fixture, validate  # noqa: E402
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -194,6 +191,126 @@ class FieldProjectionContractTest(unittest.TestCase):
         runtime = {item["id"]: item for item in manifest["runtimeEvidence"]}
         for identity in ("export-job-download", "transfer-task", "mobile-projection"):
             self.assertEqual("none", runtime[identity]["runtimeEvidenceClaim"])
+
+    def test_quality_snapshot_successor_is_exact_object_scoped_and_additive(self) -> None:
+        binding = self.load("field-projection-policy-binding-1.1.0.json")
+        predecessor = self.load("field-projection-policy-binding-1.0.0.json")
+        expected_by_class = {
+            "B": {
+                "snapshotId", "batchId", "sourceId", "assessedBatchStatus", "overallResult",
+                "observationWindow.startAt", "observationWindow.endAt", "cutoffAt", "evaluatedAt",
+                "watermark", "metricResults[].metricId", "metricResults[].result",
+                "metricResults[].applicable", "metricResults[].numerator",
+                "metricResults[].denominator", "metricResults[].valueBasisPoints",
+                "metricResults[].unit", "metricResults[].operator",
+                "metricResults[].thresholdNumerator", "metricResults[].thresholdDenominator",
+                "metricResults[].boundary",
+            },
+            "E": {"metricResults[].reasonCode", "impactScopeCodes[]"},
+            "G": {"sourceOwnerRef", "approvalRef", "effectiveAt", "retentionScheduleVersion"},
+            "T": {
+                "qualityMetricDecisionProfileVersion", "qualityMetricDecisionProfileDigest",
+                "qualityGateVersion", "qualityGateDigest", "metricResults[].formulaId",
+                "metricResults[].formulaVersion", "canonicalizationProfile", "manifestDigest",
+                "sourceSchemaVersion", "sourceSchemaDigest", "immutableHash", "traceId",
+                "lineageId", "supersedesSnapshotId", "aggregateVersion",
+            },
+        }
+        quality_snapshot = next(
+            item for item in binding["objectSchemas"]
+            if item["objectClass"] == "QualitySnapshot"
+        )
+        fields = quality_snapshot["fields"]
+        actual_by_class = {
+            field_class: {item["path"] for item in fields if item["fieldClass"] == field_class}
+            for field_class in "BICSENGT"
+        }
+        self.assertEqual(expected_by_class, {
+            key: value for key, value in actual_by_class.items() if value
+        })
+        self.assertEqual(42, len(fields))
+        self.assertEqual(42, len({item["path"] for item in fields}))
+        self.assertEqual(["data-quality.read"], quality_snapshot["approvedPurposes"])
+        self.assertEqual("OWNED_SOURCE", quality_snapshot["requiredScopeAnchor"])
+        self.assertEqual("G", next(
+            item["fieldClass"] for item in fields
+            if item["path"] == "retentionScheduleVersion"
+        ))
+        old_fields = {item["name"]: item for item in predecessor["fields"]}
+        self.assertEqual("B", old_fields["retentionScheduleVersion"]["fieldClass"])
+        self.assertNotIn("QualitySnapshot", {
+            item["objectClass"] for item in predecessor["objectSchemas"]
+        })
+        self.assertNotIn("DataBatch", json.dumps(binding, ensure_ascii=False))
+
+    def test_quality_snapshot_r6_oracle_is_owned_clear_and_unknowns_are_omitted(self) -> None:
+        binding = self.load("field-projection-policy-binding-1.1.0.json")
+        fixture = self.load("fixtures/valid/field-projection-oracle-1.1.0.json")
+        scenarios = {item["scenarioId"]: item for item in fixture["scenarios"]}
+
+        owned = field_projection_checker.project_quality_snapshot_fixture(
+            binding, scenarios["R6-OWNED-QUALITY-SNAPSHOT"]
+        )
+        unowned = field_projection_checker.project_quality_snapshot_fixture(
+            binding, scenarios["R6-UNOWNED-QUALITY-SNAPSHOT"]
+        )
+        unknown = field_projection_checker.project_quality_snapshot_fixture(
+            binding, scenarios["R6-OWNED-UNKNOWN-PATH"]
+        )
+
+        self.assertIsNone(owned["error"])
+        self.assertEqual(42, len(owned["json"]))
+        self.assertEqual(owned["json"], owned["exportSink"])
+        self.assertEqual("FIELD_PROJECTION_DENIED", unowned["error"]["code"])
+        self.assertEqual({}, unowned["json"])
+        self.assertNotIn("studentOfficialRef", unknown["json"])
+        self.assertNotIn("metricResults[].evidenceBody", unknown["json"])
+        self.assertEqual(unknown["json"], unknown["exportSink"])
+
+    def test_quality_snapshot_invalid_vectors_and_runtime_parity_fail_closed(self) -> None:
+        binding = self.load("field-projection-policy-binding-1.1.0.json")
+        invalid = self.load("fixtures/invalid/negative-fixtures-1.1.0.json")
+        for case in invalid["cases"]:
+            issues = field_projection_checker.quality_snapshot_fixture_issues(
+                binding, case["document"]
+            )
+            self.assertIn(case["expectedCode"], issues, case["caseId"])
+
+        self.assertEqual([], field_projection_checker.runtime_parity_issues(PROJECT_ROOT))
+
+    def test_quality_snapshot_successor_lock_detects_drift_and_preserves_1_0_bytes(self) -> None:
+        expected_predecessor = {
+            "field-projection.schema.json":
+                "2a21e1c7285c9956ff15123ba0b4df011fe4e99440a1c34414a75dd7d6118c28",
+            "field-projection-fixture.schema.json":
+                "da39d2bf426a4e5c84a329301e154d00333026eca19c1e5027607cc8a54f5edb",
+            "field-projection-policy-binding-1.0.0.json":
+                "5a0592296a43049bf745f9e826df65dc3f4b0479cea17fd822e98ac04d92f880",
+            "field-projection-contract-lock-1.0.0.json":
+                "9b81341bab67d0c9c04858c90946c1184d5e02de67ff5c7752b3439b913ffee6",
+        }
+        for relative, digest in expected_predecessor.items():
+            self.assertEqual(
+                digest,
+                hashlib.sha256((CONTRACTS / relative).read_bytes()).hexdigest(),
+            )
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "contracts/field-projection"
+            target.mkdir(parents=True)
+            for source in CONTRACTS.rglob("*"):
+                if source.is_file():
+                    destination = target / source.relative_to(CONTRACTS)
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    destination.write_bytes(source.read_bytes())
+            successor = target / "field-projection-policy-binding-1.1.0.json"
+            successor.write_bytes(successor.read_bytes() + b"\n")
+            issues = validate(root, include_release=False, include_predecessors=False)
+        self.assertTrue(any(
+            item.startswith("FIELD_PROJECTION_SUCCESSOR_LOCK_DIGEST_MISMATCH")
+            for item in issues
+        ))
 
     @staticmethod
     def load(relative: str) -> dict:

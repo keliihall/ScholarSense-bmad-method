@@ -1,0 +1,143 @@
+{
+  "specversion": "1.0",
+  "id": "019d2c7d-4000-7000-8000-000000000211",
+  "source": "urn:scholarsense:ingestion-quality",
+  "type": "scholarsense.ingestion-quality.quality-snapshot.deletion-result.v1",
+  "subject": "quality-snapshot/019d2c7d-4000-7000-8000-000000000110",
+  "time": "2026-08-09T00:04:00Z",
+  "datacontenttype": "application/json",
+  "traceparent": "00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbb-01",
+  "data": {
+    "resultContractVersion": "QUALITY-SNAPSHOT-DELETION-RESULT-1.1.0",
+    "contractVersion": "PIC-1.0.0",
+    "correlationId": "019d2c7d-4000-7000-8000-000000000209",
+    "causationId": "019d2c7d-4000-7000-8000-000000000210",
+    "eventId": "019d2c7d-4000-7000-8000-000000000211",
+    "aggregateType": "quality-snapshot-deletion-execution",
+    "aggregateId": "019d2c7d-4000-7000-8000-000000000209",
+    "aggregateVersion": 1,
+    "executionId": "019d2c7d-4000-7000-8000-000000000209",
+    "supersedesResultId": null,
+    "producer": "ingestion-quality-retention-executor",
+    "occurredAt": "2026-08-09T00:04:00Z",
+    "traceId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "result": "blocked",
+    "retentionPolicyVersion": "QUALITY-SNAPSHOT-RETENTION-1.0.0",
+    "retentionScheduleVersion": "RS-1.0.0",
+    "scope": {
+      "objectType": "QualitySnapshot",
+      "snapshotId": "019d2c7d-4000-7000-8000-000000000110",
+      "sourceId": "SRC-P0-STUDENT-001",
+      "snapshotAggregateVersion": 9,
+      "evaluatedAt": "2024-08-09T00:00:00Z",
+      "retentionDueAt": "2026-08-09T00:00:00Z",
+      "snapshotImmutableHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "scopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62"
+    },
+    "guards": {
+      "trustedTime": {
+        "status": "available",
+        "observedAt": "2026-08-09T00:04:00Z"
+      },
+      "legalHold": {
+        "status": "clear",
+        "checkedScopeDigest": "sha256:083f0779c7b4926163dd9f8df9fe500c0f2d8672b8f6e1b54ae83bf4c203ff62",
+        "matchedCount": 0,
+        "matchedScopeDigests": [],
+        "checkedAt": "2026-08-09T00:04:00Z"
+      },
+      "consumerRegistry": {
+        "status": "unavailable",
+        "registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0",
+        "registryDigest": "sha256:8857f8a20f859397609157dd8f84eaae9bd674f28b9ddad3025d92cb8ffe3c3b",
+        "members": [],
+        "checkedAt": null,
+        "authorityEvidence": null
+      },
+      "consumerWatermarksCheckedAt": null,
+      "consumerWatermarks": []
+    },
+    "ownerLocalResults": {
+      "onlineSnapshot": {
+        "status": "not-attempted",
+        "selectedCount": 0,
+        "deletedCount": 0,
+        "remainingCount": 0,
+        "evidenceDigest": null,
+        "errorCode": null,
+        "transactionId": null,
+        "transactionEvidenceDigest": null
+      },
+      "onlineMetrics": {
+        "status": "not-attempted",
+        "selectedCount": 0,
+        "deletedCount": 0,
+        "remainingCount": 0,
+        "evidenceDigest": null,
+        "errorCode": null,
+        "transactionId": null,
+        "transactionEvidenceDigest": null
+      },
+      "readModels": {
+        "status": "not-attempted",
+        "selectedCount": 0,
+        "deletedCount": 0,
+        "remainingCount": 0,
+        "evidenceDigest": null,
+        "errorCode": null,
+        "transactionId": null,
+        "transactionEvidenceDigest": null
+      },
+      "indexes": {
+        "status": "not-attempted",
+        "selectedCount": 0,
+        "deletedCount": 0,
+        "remainingCount": 0,
+        "evidenceDigest": null,
+        "errorCode": null,
+        "transactionId": null,
+        "transactionEvidenceDigest": null
+      },
+      "caches": {
+        "status": "not-attempted",
+        "selectedCount": 0,
+        "deletedCount": 0,
+        "remainingCount": 0,
+        "evidenceDigest": null,
+        "errorCode": null,
+        "transactionId": null,
+        "transactionEvidenceDigest": null
+      },
+      "objects": {
+        "status": "not-attempted",
+        "selectedCount": 0,
+        "deletedCount": 0,
+        "remainingCount": 0,
+        "evidenceDigest": null,
+        "errorCode": null,
+        "transactionId": null,
+        "transactionEvidenceDigest": null
+      }
+    },
+    "deletionCommittedAt": null,
+    "blockerCodes": [
+      "CONSUMER_REGISTRY_UNAVAILABLE"
+    ],
+    "failureCodes": [],
+    "backup": {
+      "policyVersion": "DRP-1.0.0",
+      "maximumRetentionDays": 35,
+      "backupExpiryDueAt": null,
+      "physicalDeletionClaim": "none"
+    },
+    "auditHandoff": {
+      "targetOwner": "audit-operations",
+      "inputKind": "owner-local-deletion-result",
+      "finalReceiptOwner": "audit-operations",
+      "ownerResultIsFinalReceipt": false,
+      "conformanceReceiptSatisfiesProduction": false
+    },
+    "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+    "runtimeEvidenceClaim": "none"
+  }
+}

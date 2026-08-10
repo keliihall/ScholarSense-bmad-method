@@ -42,6 +42,11 @@ public final class FieldProjectionEvaluator {
         if (roles.isEmpty()) {
             return FieldProjectionDecision.denied("ROLE_NOT_APPLICABLE");
         }
+        if (evidence.objectClass() == ProjectionObjectClass.QUALITY_SNAPSHOT
+                && roles.contains(RolePackage.R6)
+                && !evidence.ownedSource()) {
+            return FieldProjectionDecision.denied("OWNED_SOURCE_REQUIRED");
+        }
         if (roles.contains(RolePackage.R2) && !evidence.currentWorkItem()) {
             return FieldProjectionDecision.denied("CURRENT_WORK_ITEM_REQUIRED");
         }
@@ -55,7 +60,7 @@ public final class FieldProjectionEvaluator {
             if (!requestedFields.contains(fieldName)) {
                 continue;
             }
-            ApprovedFieldDescriptor descriptor = catalog.field(fieldName).orElse(null);
+            ApprovedFieldDescriptor descriptor = catalog.field(evidence.objectClass(), fieldName).orElse(null);
             if (descriptor == null) {
                 continue;
             }

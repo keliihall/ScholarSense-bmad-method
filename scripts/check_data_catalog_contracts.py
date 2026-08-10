@@ -347,12 +347,46 @@ def execute_negative_fixture(case: dict[str, Any], project_root: Path) -> str:
     return next((code for code in priorities if code in issues), issues[0] if issues else "DCC_FIXTURE_DID_NOT_FAIL")
 
 
-def _controlled_files(root: Path) -> list[Path]:
-    contract = root / CONTRACT_ROOT
-    return sorted(
-        (path for path in contract.rglob("*.json") if path.name != LOCK.name),
-        key=lambda path: path.relative_to(root).as_posix(),
-    )
+def _controlled_files(root: Path, locked_paths: list[str]) -> tuple[list[Path], list[str]]:
+    """Resolve the frozen 1.0.1 file set and require additive files to have a successor lock."""
+    issues: list[str] = []
+    if len(locked_paths) != len(set(locked_paths)):
+        issues.append("DCC_LOCK_FILE_SET_INVALID")
+    controlled: list[Path] = []
+    for relative in sorted(set(locked_paths)):
+        path = root / relative
+        if (
+            not relative.startswith("contracts/data-catalog/")
+            or ".." in Path(relative).parts
+            or relative == LOCK.as_posix()
+            or not path.is_file()
+        ):
+            issues.append("DCC_LOCK_FILE_SET_INVALID")
+            continue
+        controlled.append(path)
+
+    all_data_catalog_files = {
+        path.relative_to(root).as_posix()
+        for path in (root / CONTRACT_ROOT).rglob("*.json")
+        if path.relative_to(root).as_posix() != LOCK.as_posix()
+    }
+    additive = all_data_catalog_files - set(locked_paths)
+    if additive:
+        successor_lock_path = root / "contracts/ingestion-quality/batch-quality/executable-quality-contract-lock-1.0.0.json"
+        try:
+            successor_lock = load_json(successor_lock_path)
+        except (OSError, ValueError):
+            issues.append("DCC_LOCK_FILE_SET_INVALID")
+        else:
+            successor_digests = successor_lock.get("digests", {})
+            if not isinstance(successor_digests, dict) or not additive.issubset(successor_digests):
+                issues.append("DCC_LOCK_FILE_SET_INVALID")
+            else:
+                for relative in additive:
+                    path = root / relative
+                    if successor_digests.get(relative) != "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest():
+                        issues.append("DCC_LOCK_DIGEST_MISMATCH")
+    return controlled, issues
 
 
 def validate(project_root: Path) -> list[str]:
@@ -384,11 +418,11 @@ def validate(project_root: Path) -> list[str]:
     source_paths = [root / CONTRACT_ROOT / item["schemaRef"] for item in documents[CATALOG]["sources"]]
     issues.extend(_reference_issues(root, source_paths))
     lock = documents[LOCK]
-    locked = {item.get("path"): item.get("canonicalDigest") for item in lock.get("files", []) if isinstance(item, dict)}
-    controlled = _controlled_files(root)
-    expected_paths = {path.relative_to(root).as_posix() for path in controlled}
-    if set(locked) != expected_paths:
-        issues.append("DCC_LOCK_FILE_SET_INVALID")
+    lock_entries = [item for item in lock.get("files", []) if isinstance(item, dict)]
+    locked_paths = [item.get("path") for item in lock_entries if isinstance(item.get("path"), str)]
+    locked = {item.get("path"): item.get("canonicalDigest") for item in lock_entries}
+    controlled, controlled_issues = _controlled_files(root, locked_paths)
+    issues.extend(controlled_issues)
     for path in controlled:
         relative = path.relative_to(root).as_posix()
         if locked.get(relative) != canonical_digest(load_json(path)):

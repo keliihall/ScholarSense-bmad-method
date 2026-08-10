@@ -1,0 +1,142 @@
+{
+  "version": "INGESTION-QUALITY-RUNTIME-2.0.0",
+  "status": "deployment-input-required",
+  "runtimeEvidenceClaim": "none",
+  "predecessor": {
+    "path": "ingestion-quality-runtime-1.0.0.json",
+    "rawSha256": "5276c333f311be31a2f285f13138e889e10196637c0fb2ed994d876896627e5c",
+    "mutationAllowed": false
+  },
+  "sameArtifactRoles": {
+    "quality-worker": {
+      "capabilities": ["data-batch-lifecycle", "quality-snapshot-calculation"],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "businessHttp": false,
+      "minimumReplicas": 2,
+      "statelessTakeover": "database-cas-and-outbox-fencing",
+      "requiredEnvironment": [
+        "SCHOLARSENSE_INGESTION_QUALITY_QUALITY_WORKER_ENABLED",
+        "SCHOLARSENSE_INGESTION_QUALITY_QUALITY_WORKER_DATASOURCE_URL",
+        "SCHOLARSENSE_INGESTION_QUALITY_QUALITY_WORKER_DATASOURCE_USERNAME",
+        "SCHOLARSENSE_INGESTION_QUALITY_QUALITY_WORKER_DATASOURCE_PASSWORD",
+        "SCHOLARSENSE_INGESTION_QUALITY_CONTRACT_ROOT",
+        "SCHOLARSENSE_INGESTION_QUALITY_DATA_BATCH_AUTHORIZATION_REF",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_AUTHORIZATION_REF",
+        "SCHOLARSENSE_INGESTION_QUALITY_QUALITY_SNAPSHOT_ID_PROVIDER_REF",
+        "SCHOLARSENSE_INGESTION_QUALITY_TRUSTED_TIME_PROVIDER_REF",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_MTLS_CERT_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_MTLS_KEY_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_TRUST_BUNDLE_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_AUDIENCE",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_CAPABILITIES"
+      ],
+      "activation": {
+        "featureValue": "true",
+        "requiredProviderPorts": [
+          "DataBatchAuthorizationPort",
+          "DataBatchWorkloadAuthorizationPort",
+          "QualitySnapshotIdPort",
+          "TrustedTimeSource"
+        ],
+        "providerEvidence": "target-managed-config-and-mtls",
+        "failureMode": "startup-fail-closed"
+      }
+    }
+  },
+  "databaseStartupGate": {
+    "productionJdbcParameters": {
+      "sslmode": "verify-full",
+      "channelBinding": "require"
+    },
+    "serverVersionQuery": "select current_setting('server_version_num')",
+    "requiredServerVersionNum": "180004",
+    "identityQuery": "select current_user, session_user",
+    "sessionIdentityInvariant": "session_user=current_user=SCHOLARSENSE_INGESTION_QUALITY_QUALITY_WORKER_DATASOURCE_USERNAME",
+    "expectedIdentitySource": "SCHOLARSENSE_INGESTION_QUALITY_QUALITY_WORKER_DATASOURCE_USERNAME",
+    "loginRoleAttributes": {
+      "LOGIN": true,
+      "INHERIT": true,
+      "SUPERUSER": false,
+      "CREATEROLE": false,
+      "CREATEDB": false,
+      "REPLICATION": false,
+      "BYPASSRLS": false
+    },
+    "groupRoleAttributes": {
+      "LOGIN": false,
+      "SUPERUSER": false,
+      "CREATEROLE": false,
+      "CREATEDB": false,
+      "REPLICATION": false,
+      "BYPASSRLS": false
+    },
+    "roleActivation": "inherited-membership",
+    "setRoleAllowed": false,
+    "membershipGrantOptions": {"inherit": true, "set": false},
+    "distinctWorkloadLogins": [
+      "web-api",
+      "quality-worker",
+      "audit-relay-worker",
+      "retention-executor",
+      "consumer-registry-authority"
+    ],
+    "workloadRoleBindings": {
+      "quality-worker": {
+        "requiredGroupRole": "scholarsense_ingestion_quality_quality_worker",
+        "forbiddenGroupRoles": [
+          "scholarsense_ingestion_quality_online",
+          "scholarsense_ingestion_quality_relay",
+          "scholarsense_ingestion_quality_retention_executor",
+          "scholarsense_ingestion_quality_consumer_registry_authority"
+        ]
+      }
+    },
+    "effectivePrivilegeVerification": "exact-table-column-and-function-matrix",
+    "failureMode": "startup-fail-closed"
+  },
+  "ownerBindingsExtension": {
+    "objectClass": "QUALITY_SNAPSHOT",
+    "bindingLookupClass": "SOURCE",
+    "bindingKey": "persisted-snapshot-source-id",
+    "authorizationTokenDigest": "sha256(sourceId)",
+    "scopeAnchors": ["owned-source", "assessed-snapshot"],
+    "missingDuplicateOrUnknown": "authorization-dependency-unavailable"
+  },
+  "providerBoundaries": {
+    "humanObjectAuthorization": {
+      "referenceEnvironment": "SCHOLARSENSE_INGESTION_QUALITY_DATA_BATCH_AUTHORIZATION_REF",
+      "cacheDecisionAuthority": false,
+      "failureMode": "fail-closed"
+    },
+    "workloadAuthorization": {
+      "referenceEnvironment": "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_AUTHORIZATION_REF",
+      "captureAndCommitRevalidationRequired": true,
+      "revocationAware": true,
+      "mtlsRequired": true,
+      "failureMode": "fail-closed"
+    },
+    "snapshotIdentity": {
+      "referenceEnvironment": "SCHOLARSENSE_INGESTION_QUALITY_QUALITY_SNAPSHOT_ID_PROVIDER_REF",
+      "requiredOrdering": "uuid-v7-compatible-time-order",
+      "failureMode": "fail-closed"
+    },
+    "trustedTime": {
+      "referenceEnvironment": "SCHOLARSENSE_INGESTION_QUALITY_TRUSTED_TIME_PROVIDER_REF",
+      "sourceBindingEnvironment": "SCHOLARSENSE_CLOCK_SOURCE_REF",
+      "maximumSkewMs": 100,
+      "failureMode": "fail-closed"
+    }
+  },
+  "secrets": {
+    "committedCredentialsAllowed": false,
+    "committedPrivateKeysAllowed": false,
+    "jdbcCredentialsInUrlAllowed": false,
+    "workloadKeyLocation": "absolute-protected-regular-non-symlink-mounted-file"
+  },
+  "unactivatedBoundaries": {
+    "candidateConsumer": "not-installed",
+    "clueConsumer": "not-installed",
+    "productionDurationEvidence": "not-collected",
+    "runtimeEvidenceClaim": "none"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "fixtureVersion": "QUALITY-SNAPSHOT-DELETION-ORDERING-1.0.0",
+  "eventType": "scholarsense.ingestion-quality.quality-snapshot.deletion-result.v1",
+  "route": "consumerId|producer|aggregateType|aggregateId",
+  "cases": [
+    {
+      "caseId": "next-contiguous",
+      "currentWatermark": 0,
+      "incomingVersion": 1,
+      "samePayload": true,
+      "expectedDecision": "APPLIED"
+    },
+    {
+      "caseId": "duplicate-same-payload",
+      "currentWatermark": 1,
+      "incomingVersion": 1,
+      "samePayload": true,
+      "expectedDecision": "DUPLICATE"
+    },
+    {
+      "caseId": "same-id-different-payload",
+      "currentWatermark": 1,
+      "incomingVersion": 1,
+      "samePayload": false,
+      "expectedDecision": "CONFLICT"
+    },
+    {
+      "caseId": "old-version",
+      "currentWatermark": 3,
+      "incomingVersion": 2,
+      "samePayload": true,
+      "expectedDecision": "OLD_IGNORED"
+    },
+    {
+      "caseId": "version-gap",
+      "currentWatermark": 1,
+      "incomingVersion": 3,
+      "samePayload": true,
+      "expectedDecision": "GAP_BACKFILL_REQUIRED"
+    }
+  ],
+  "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"
+}
