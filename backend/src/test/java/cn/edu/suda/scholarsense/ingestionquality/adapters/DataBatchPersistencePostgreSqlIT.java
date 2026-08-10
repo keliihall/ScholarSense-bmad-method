@@ -500,8 +500,8 @@ class DataBatchPersistencePostgreSqlIT {
                 "same-same receive must replay the completed result");
         assertDatabaseFailure("INGESTION_QUALITY_IDEMPOTENCY_MISMATCH",
                 () -> receive(worker, receiveScope, digest('3')));
-        assertEquals(1, count(jdbc, "iq_data_batch"));
-        assertEquals(1, count(jdbc, "iq_batch_idempotency"));
+        assertEquals(1, countForBatch(jdbc, "iq_data_batch"));
+        assertEquals(1, countForBatch(jdbc, "iq_batch_idempotency"));
         assertAuditEvidenceTrace(jdbc, "data-batch.receive", RECEIVE_TRACE);
 
         assertTrue(Boolean.TRUE.equals(worker.queryForObject("""
@@ -578,7 +578,7 @@ class DataBatchPersistencePostgreSqlIT {
         UUID failedEvent = uuid("019fe510-0000-7000-8000-000000000011");
         assertThrows(DataAccessException.class, () -> evaluate(worker, failedSnapshot,
                 failedEvent, failedEvaluationScope, digest('9'), malformedMetrics));
-        assertEquals(0, count(jdbc, "iq_quality_snapshot"));
+        assertEquals(0, countForBatch(jdbc, "iq_quality_snapshot"));
         assertEquals(0, countByScope(jdbc, failedEvaluationScope));
         assertEquals(0, jdbc.queryForObject("""
                 select count(*) from ingestion_quality.iq_batch_quality_outbox
@@ -605,9 +605,9 @@ class DataBatchPersistencePostgreSqlIT {
                         "8".repeat(64), digest('c'),
                         DataBatchPostgreSqlEvidenceFixtures.PASSING_CARD.metricsJson()));
         assertEquals("quality-passed", status(jdbc));
-        assertEquals(1, count(jdbc, "iq_quality_snapshot"));
+        assertEquals(1, countForBatch(jdbc, "iq_quality_snapshot"));
         assertEquals(EXPECTED_MEASUREMENT_COUNT,
-                count(jdbc, "iq_quality_snapshot_metric"));
+                countForSnapshot(jdbc, "iq_quality_snapshot_metric"));
         assertEquals(EVALUATE_TRACE, jdbc.queryForObject("""
                 select trace_id from ingestion_quality.iq_quality_snapshot
                  where snapshot_id=?
@@ -743,8 +743,9 @@ class DataBatchPersistencePostgreSqlIT {
         assertEquals("blocked", retention.queryForObject(
                 retentionSql(), String.class,
                 retentionArguments(SNAPSHOT_ID, notDueResult, notDueAuthority)));
-        assertEquals(1, count(jdbc, "iq_quality_snapshot"));
-        assertEquals(EXPECTED_MEASUREMENT_COUNT, count(jdbc, "iq_quality_snapshot_metric"));
+        assertEquals(1, countForBatch(jdbc, "iq_quality_snapshot"));
+        assertEquals(EXPECTED_MEASUREMENT_COUNT,
+                countForSnapshot(jdbc, "iq_quality_snapshot_metric"));
         Map<String, Object> notDue = jdbc.queryForMap("""
                 select result, blocker_code, occurred_at,
                        convert_from(payload_utf8, 'UTF8')::jsonb
@@ -1003,9 +1004,16 @@ class DataBatchPersistencePostgreSqlIT {
                 """, String.class, BATCH_ID);
     }
 
-    private static int count(JdbcTemplate jdbc, String table) {
+    private static int countForBatch(JdbcTemplate jdbc, String table) {
         return jdbc.queryForObject(
-                "select count(*) from ingestion_quality." + table, Integer.class);
+                "select count(*) from ingestion_quality." + table + " where batch_id=?",
+                Integer.class, BATCH_ID);
+    }
+
+    private static int countForSnapshot(JdbcTemplate jdbc, String table) {
+        return jdbc.queryForObject(
+                "select count(*) from ingestion_quality." + table + " where snapshot_id=?",
+                Integer.class, SNAPSHOT_ID);
     }
 
     private static int countByScope(JdbcTemplate jdbc, String scope) {

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -93,6 +94,11 @@ class BatchQualityOutboxTransitionPostgreSqlIT {
             new WorkloadLogin(ONLINE_ROLE, ONLINE_LOGIN),
             new WorkloadLogin(RETENTION_ROLE, RETENTION_LOGIN),
             new WorkloadLogin(AUTHORITY_ROLE, AUTHORITY_LOGIN));
+
+    @AfterEach
+    void clearOwnedOutboxFixtures() {
+        clearFencedFixtures(admin());
+    }
 
     @Test
     void illegalDeliveryStateShapesAreRejectedByTheDatabaseTrigger() {
@@ -419,7 +425,7 @@ class BatchQualityOutboxTransitionPostgreSqlIT {
         ensureWorkloadLogins(jdbc);
         JdbcTemplate relay = workload(RELAY_LOGIN);
         UUID deliveredEvent = event(80);
-        seedPendingAt(jdbc, deliveredEvent, Instant.parse("1900-01-01T00:00:00Z"));
+        seedClaimPriority(jdbc, deliveredEvent);
 
         Instant firstClaimBefore = databaseNow(jdbc);
         OutboxClaim firstClaim = claimNext(relay);
@@ -447,7 +453,7 @@ class BatchQualityOutboxTransitionPostgreSqlIT {
         assertState(state(jdbc, deliveredEvent), "delivered", 2L, false, true, null);
 
         UUID failedEvent = event(81);
-        seedPendingAt(jdbc, failedEvent, Instant.parse("1900-01-02T00:00:00Z"));
+        seedClaimPriority(jdbc, failedEvent);
         OutboxClaim failedClaim = claimNext(relay);
         assertEquals(failedEvent, failedClaim.eventId());
         assertEquals(1L, failedClaim.attempts());
@@ -463,7 +469,7 @@ class BatchQualityOutboxTransitionPostgreSqlIT {
         ensureWorkloadLogins(jdbc);
         JdbcTemplate relay = workload(RELAY_LOGIN);
         UUID eventId = event(90);
-        seedPendingAt(jdbc, eventId, Instant.parse("1899-01-01T00:00:00Z"));
+        seedClaimPriority(jdbc, eventId);
 
         OutboxClaim claimantA = claimNext(relay);
         assertEquals(eventId, claimantA.eventId());
@@ -491,7 +497,7 @@ class BatchQualityOutboxTransitionPostgreSqlIT {
         ensureWorkloadLogins(jdbc);
         JdbcTemplate relay = workload(RELAY_LOGIN);
         UUID exhaustedEvent = event(100);
-        seedPendingAt(jdbc, exhaustedEvent, Instant.parse("1898-01-01T00:00:00Z"));
+        seedClaimPriority(jdbc, exhaustedEvent);
         OutboxClaim initialClaim = claimNext(relay);
         assertEquals(exhaustedEvent, initialClaim.eventId());
         forceLiveAttemptForExhaustion(jdbc, exhaustedEvent, MAX_ATTEMPTS);
@@ -504,7 +510,7 @@ class BatchQualityOutboxTransitionPostgreSqlIT {
         assertFalse(fail(relay, exhaustedEvent, MAX_ATTEMPTS));
 
         UUID crashedAtLimit = event(102);
-        seedPendingAt(jdbc, crashedAtLimit, Instant.parse("1897-01-01T00:00:00Z"));
+        seedClaimPriority(jdbc, crashedAtLimit);
         OutboxClaim crashClaim = claimNext(relay);
         assertEquals(crashedAtLimit, crashClaim.eventId());
         forceExpiredAttemptForExhaustion(jdbc, crashedAtLimit, MAX_ATTEMPTS);
@@ -516,7 +522,7 @@ class BatchQualityOutboxTransitionPostgreSqlIT {
                 "failed", MAX_ATTEMPTS, false, false, EXHAUSTED_ERROR);
 
         UUID boundedEvent = event(101);
-        seedPendingAt(jdbc, boundedEvent, Instant.parse("1898-01-02T00:00:00Z"));
+        seedClaimPriority(jdbc, boundedEvent);
         OutboxClaim boundedClaim = claimNext(relay);
         assertEquals(boundedEvent, boundedClaim.eventId());
         DeliveryState databaseClaim = state(jdbc, boundedEvent);
@@ -611,17 +617,15 @@ class BatchQualityOutboxTransitionPostgreSqlIT {
                 """, eventId, eventId, EVENT_TYPE, SCHEMA_VERSION, PAYLOAD, PAYLOAD_DIGEST));
     }
 
-    private static void seedPendingAt(
-            JdbcTemplate jdbc, UUID eventId, Instant availableAt) {
+    private static void seedClaimPriority(JdbcTemplate jdbc, UUID eventId) {
         assertEquals(1, jdbc.update("""
                 insert into ingestion_quality.iq_batch_quality_outbox
                   (event_id, aggregate_id, aggregate_version, event_type, schema_version,
                    payload_utf8, payload_digest, status, attempts, available_at,
                    claimed_until, delivered_at, last_error_code, created_at)
-                values (?, ?, 1, ?, ?, ?, ?, 'pending', 0, ?,
+                values (?, ?, 1, ?, ?, ?, ?, 'pending', 0, '-infinity'::timestamptz,
                         null, null, null, statement_timestamp())
-                """, eventId, eventId, EVENT_TYPE, SCHEMA_VERSION, PAYLOAD, PAYLOAD_DIGEST,
-                Timestamp.from(availableAt)));
+                """, eventId, eventId, EVENT_TYPE, SCHEMA_VERSION, PAYLOAD, PAYLOAD_DIGEST));
     }
 
     private static void clearFencedFixtures(JdbcTemplate jdbc) {
@@ -745,7 +749,7 @@ class BatchQualityOutboxTransitionPostgreSqlIT {
             JdbcTemplate jdbc, UUID eventId) {
         mutateControlStateWithoutTrigger(jdbc, """
                 update ingestion_quality.iq_batch_quality_outbox
-                   set available_at=statement_timestamp() - interval '1 second'
+                   set available_at='-infinity'::timestamptz
                  where event_id=?
                 """, eventId, null);
     }

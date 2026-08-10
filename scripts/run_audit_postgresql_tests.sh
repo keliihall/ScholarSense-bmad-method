@@ -214,6 +214,7 @@ fi
 if [[ -n "${IDENTITY_SANDBOX_ENDPOINT:-}" ]]; then
   "$ROOT/_bmad/scripts/with_pab_toolchain.sh" mvn -q -f "$ROOT/backend/pom.xml" \
     "-Dtest=$POSTGRES_TESTS" \
+    -Dsurefire.runOrder=alphabetical \
     -Dscholarsense.audit.pg.url="jdbc:postgresql://127.0.0.1:$PORT/scholarsense_audit_clean" \
     -Dscholarsense.audit.pg.upgrade-url="jdbc:postgresql://127.0.0.1:$PORT/scholarsense_audit_upgrade" \
     -Dscholarsense.audit.pg.user="$USER_NAME" \
@@ -223,6 +224,7 @@ if [[ -n "${IDENTITY_SANDBOX_ENDPOINT:-}" ]]; then
 else
   "$ROOT/_bmad/scripts/with_pab_toolchain.sh" mvn -q -f "$ROOT/backend/pom.xml" \
     "-Dtest=$POSTGRES_TESTS" \
+    -Dsurefire.runOrder=alphabetical \
     -Dscholarsense.audit.pg.url="jdbc:postgresql://127.0.0.1:$PORT/scholarsense_audit_clean" \
     -Dscholarsense.audit.pg.upgrade-url="jdbc:postgresql://127.0.0.1:$PORT/scholarsense_audit_upgrade" \
     -Dscholarsense.audit.pg.user="$USER_NAME" test
