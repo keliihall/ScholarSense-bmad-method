@@ -4,5 +4,6 @@ public enum ProjectionObjectClass {
     AUDIT_SEARCH_RECORD,
     SUBJECT_MAPPING_EXCEPTION,
     TRANSFER_ORDER,
+    QUALITY_SNAPSHOT,
     UNKNOWN
 }

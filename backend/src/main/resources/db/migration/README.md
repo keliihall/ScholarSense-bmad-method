@@ -44,3 +44,29 @@ V000013 adds ingestion-quality historical-window, request-level orchestration an
 mapping-recompute state. The latter two migrations communicate only through immutable event payloads
 and identifiers: neither migration creates a cross-schema foreign key, query, grant, or shared
 transaction.
+V000014 adds ingestion-quality data batches, strict-byte fact and measurement staging, immutable
+quality snapshots, passed-only atomic visibility, compound owner-local command functions, and a
+separate consumer-registry-authority/retention-executor capability pair. Its bounded receiving-stage
+operands keep final evaluation short; normalized-fact count/schema are accumulated on the batch
+without seal/publish rescans, and
+impact scopes are staged as exact source-applicable embedded QMDP metric IDs and frozen at seal.
+Production watermark staging accepts only a lowercase source/date binding with a real calendar
+date or an opaque lowercase SHA-256 value; the private owner validators reject free text, student
+plaintext, U+0000, and cross-source metric IDs without changing generic QSHM Unicode semantics.
+This version deliberately does not enable a durable quality-evaluation job. Database-clock
+idempotency supports exact 90-day expiry and lazy reclamation, while locked direct-predecessor
+validation makes correction lineages append-only and fork-free. A fifth, mutually exclusive
+authority workload can only call the strict typed
+three-argument evidence ingest; the retention workload can only find a fair bounded due candidate
+and invoke the seven-argument owner materializer by IDs, scope, and an independent trace. The owner
+validates and one-way consumes production authority, serializes one stable same-scope execution,
+and emits only canonical `QUALITY-SNAPSHOT-DELETION-RESULT-1.1.0` result/outbox bytes.
+The same boundary validates the shared typed canonical local-audit envelope and digest, freezes the
+exact approved 17-field QMDP/QSHM evidence, projects the embedded digest-verified QMDP policy into
+the source-specific formula order, recomputes every metric and the complete QSHM content hash, and
+accepts only the exact canonical PIC quality-assessed payload. Audit or business-outbox failures
+therefore roll back snapshot, metrics, impacts, batch CAS, audit, outbox, and idempotency together.
+The business relay keeps read-only outbox visibility and uses four owner routines for a fixed
+five-minute claim plus attempt-fenced release/deliver/fail transitions; database-owned bounded
+backoff and an eight-attempt terminal ceiling prevent caller-forged schedules, errors, or attempt
+numbers.

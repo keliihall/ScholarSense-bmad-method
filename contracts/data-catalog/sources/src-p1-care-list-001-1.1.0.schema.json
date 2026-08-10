@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/data-catalog/sources/src-p1-care-list-001-1.1.0.schema.json",
+  "title": "Governed care-list fact successor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["listFactId", "evidenceRef", "category", "purpose", "effectiveFrom", "effectiveTo", "approvalVersion", "state", "sourceVersion"],
+  "properties": {
+    "listFactId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "evidenceRef": {"type": "string"},
+    "category": {"type": "string"},
+    "purpose": {"type": "string"},
+    "effectiveFrom": {"type": "string", "format": "date-time"},
+    "effectiveTo": {"type": "string", "format": "date-time"},
+    "approvalVersion": {"type": "string"},
+    "state": {"enum": ["approved", "revoked", "expired", "corrected"]},
+    "sourceVersion": {"type": "integer", "minimum": 1}
+  }
+}

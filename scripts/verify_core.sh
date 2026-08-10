@@ -51,6 +51,10 @@ echo "[verify-core] audit and standard-library regression"
   "$TOOLCHAIN" python3 -B scripts/check_audit_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_ledger_contracts.py .
   "$TOOLCHAIN" python3 -B scripts/check_audit_retention_contracts.py .
+  "$TOOLCHAIN" python3 -B scripts/check_ingestion_batch_contracts.py .
+  "$TOOLCHAIN" python3 -B scripts/check_quality_snapshot_deletion_result_1_1.py .
+  "$TOOLCHAIN" python3 -B scripts/check_quality_snapshot_hash_contracts.py .
+  "$TOOLCHAIN" python3 -B scripts/check_story_2_3_task0_readiness.py .
   if [[ "$MODE" == "--review" ]]; then
     "$TOOLCHAIN" python3 -B scripts/check_identity_runtime_evidence.py . --review
     "$TOOLCHAIN" python3 -B scripts/check_host_deployment.py . --review

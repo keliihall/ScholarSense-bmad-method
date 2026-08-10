@@ -73,6 +73,7 @@ class DataSourceCatalogPostgreSqlIT {
     private static final String TRACE = "00112233445566778899aabbccddeeff";
     private static final String ONLINE_LOGIN = "scholarsense_iq_online_test_login";
     private static final String RELAY_LOGIN = "scholarsense_iq_relay_test_login";
+    private static final String RETENTION_LOGIN = "scholarsense_iq_retention_test_login";
     private static final CatalogActorContext ACTOR =
             new CatalogActorContext("session-r6", "owner-r6", "192.0.2.10");
     private static final TimeSourceProfile TIME_PROFILE = new TimeSourceProfile(
@@ -120,7 +121,7 @@ class DataSourceCatalogPostgreSqlIT {
     @Test
     void exactServerMigrationAndLeastPrivilegeRolesExist() {
         assertEquals("180004", jdbc.queryForObject("select current_setting('server_version_num')", String.class));
-        assertEquals(19, jdbc.queryForObject("""
+        assertEquals(33, jdbc.queryForObject("""
                 select count(*) from information_schema.tables
                  where table_schema='ingestion_quality' and table_type='BASE TABLE'
                 """, Integer.class));
@@ -173,7 +174,9 @@ class DataSourceCatalogPostgreSqlIT {
                   'ingestion_quality.iq_data_source_catalog','expires_at','INSERT')
                 """, Boolean.class)));
         assertFalse(retentionFunctionPrivilege("scholarsense_ingestion_quality_online"));
-        assertTrue(retentionFunctionPrivilege("scholarsense_ingestion_quality_relay"));
+        assertFalse(retentionFunctionPrivilege("scholarsense_ingestion_quality_relay"));
+        assertTrue(retentionFunctionPrivilege(
+                "scholarsense_ingestion_quality_retention_executor"));
         assertEquals(Set.of(),
                 updateColumns("iq_data_source_catalog", "scholarsense_ingestion_quality_online"));
         assertEquals(Set.of(),
@@ -1052,6 +1055,7 @@ class DataSourceCatalogPostgreSqlIT {
         });
         JdbcTemplate onlineJdbc = new JdbcTemplate(workloadDataSource(ONLINE_LOGIN));
         JdbcTemplate relayJdbc = new JdbcTemplate(workloadDataSource(RELAY_LOGIN));
+        JdbcTemplate retentionJdbc = new JdbcTemplate(workloadDataSource(RETENTION_LOGIN));
         assertThrows(DataAccessException.class, () -> onlineJdbc.update("""
                 update ingestion_quality.iq_data_source_catalog set legal_hold=true
                  where catalog_id=?
@@ -1071,7 +1075,7 @@ class DataSourceCatalogPostgreSqlIT {
                 "select ingestion_quality.iq_cleanup_expired(?)", Long.class,
                 Timestamp.from(cutoff.plusSeconds(86_400))));
         JdbcCatalogRetentionCleanup cleanup = new JdbcCatalogRetentionCleanup(
-                relayJdbc, () -> new TrustedTime(cutoff, retentionProfile));
+                retentionJdbc, () -> new TrustedTime(cutoff, retentionProfile));
 
         assertEquals(0, cleanup.cleanupExpired());
         assertEquals(17, jdbc.queryForObject("""
@@ -1339,6 +1343,11 @@ class DataSourceCatalogPostgreSqlIT {
                          where rolname='scholarsense_iq_relay_test_login') then
                         create role scholarsense_iq_relay_test_login login inherit;
                     end if;
+                    if not exists (
+                        select 1 from pg_catalog.pg_roles
+                         where rolname='scholarsense_iq_retention_test_login') then
+                        create role scholarsense_iq_retention_test_login login inherit;
+                    end if;
                 end
                 $role_test$;
                 alter role scholarsense_iq_online_test_login
@@ -1347,15 +1356,23 @@ class DataSourceCatalogPostgreSqlIT {
                 alter role scholarsense_iq_relay_test_login
                     login inherit nosuperuser nocreatedb nocreaterole
                     noreplication nobypassrls;
+                alter role scholarsense_iq_retention_test_login
+                    login inherit nosuperuser nocreatedb nocreaterole
+                    noreplication nobypassrls;
                 revoke scholarsense_ingestion_quality_online,
-                       scholarsense_ingestion_quality_relay
+                       scholarsense_ingestion_quality_relay,
+                       scholarsense_ingestion_quality_retention_executor
                     from scholarsense_iq_online_test_login,
-                         scholarsense_iq_relay_test_login;
+                         scholarsense_iq_relay_test_login,
+                         scholarsense_iq_retention_test_login;
                 grant scholarsense_ingestion_quality_online
                     to scholarsense_iq_online_test_login
                     with inherit true, set false;
                 grant scholarsense_ingestion_quality_relay
                     to scholarsense_iq_relay_test_login
+                    with inherit true, set false;
+                grant scholarsense_ingestion_quality_retention_executor
+                    to scholarsense_iq_retention_test_login
                     with inherit true, set false;
                 """);
     }

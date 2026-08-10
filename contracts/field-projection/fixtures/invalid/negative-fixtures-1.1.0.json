@@ -1,0 +1,151 @@
+{
+  "version": "FIELD-PROJECTION-NEGATIVE-FIXTURES-1.1.0",
+  "cases": [
+    {
+      "caseId": "unknown-successor-schema-version",
+      "expectedCode": "FIELD_PROJECTION_SUCCESSOR_FIXTURE_SCHEMA_VERSION_INVALID",
+      "document": {
+        "schemaVersion": "FIELD-PROJECTION-FIXTURE-9.9.9",
+        "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.1.0",
+        "authorizationOracle": {
+          "version": "RFP-FIXTURE-1.0.0",
+          "path": "contracts/authorization/rfp-fixture-1.0.0.json",
+          "sha256": "0f9ae9174dc67efaf4a2629fc0df68180b4a7ad7fc281629bd058202e3ba98e9"
+        },
+        "scenarios": []
+      }
+    },
+    {
+      "caseId": "unknown-successor-policy-version",
+      "expectedCode": "FIELD_PROJECTION_SUCCESSOR_FIXTURE_POLICY_VERSION_INVALID",
+      "document": {
+        "schemaVersion": "FIELD-PROJECTION-FIXTURE-1.1.0",
+        "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-9.9.9",
+        "authorizationOracle": {
+          "version": "RFP-FIXTURE-1.0.0",
+          "path": "contracts/authorization/rfp-fixture-1.0.0.json",
+          "sha256": "0f9ae9174dc67efaf4a2629fc0df68180b4a7ad7fc281629bd058202e3ba98e9"
+        },
+        "scenarios": []
+      }
+    },
+    {
+      "caseId": "authorization-oracle-digest-drift",
+      "expectedCode": "FIELD_PROJECTION_SUCCESSOR_FIXTURE_AUTHORIZATION_ORACLE_INVALID",
+      "document": {
+        "schemaVersion": "FIELD-PROJECTION-FIXTURE-1.1.0",
+        "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.1.0",
+        "authorizationOracle": {
+          "version": "RFP-FIXTURE-1.0.0",
+          "path": "contracts/authorization/rfp-fixture-1.0.0.json",
+          "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "scenarios": []
+      }
+    },
+    {
+      "caseId": "authorization-oracle-outcome-drift",
+      "expectedCode": "FIELD_PROJECTION_SUCCESSOR_FIXTURE_AUTHORIZATION_OUTCOME_INVALID",
+      "document": {
+        "schemaVersion": "FIELD-PROJECTION-FIXTURE-1.1.0",
+        "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.1.0",
+        "authorizationOracle": {
+          "version": "RFP-FIXTURE-1.0.0",
+          "path": "contracts/authorization/rfp-fixture-1.0.0.json",
+          "sha256": "0f9ae9174dc67efaf4a2629fc0df68180b4a7ad7fc281629bd058202e3ba98e9"
+        },
+        "scenarios": [{
+          "scenarioId": "bad-oracle-outcome",
+          "authorizationOracleScenarioId": "R6-DQ-B",
+          "roles": ["R6"],
+          "objectClass": "QualitySnapshot",
+          "objectToken": "DQ-B",
+          "purpose": "data-quality.read",
+          "serverNow": "2026-08-09T12:00:00Z",
+          "authorizationOutcome": "ALLOW",
+          "ownedSource": false,
+          "assessedSnapshot": true,
+          "values": {}
+        }]
+      }
+    },
+    {
+      "caseId": "quality-snapshot-value-type-drift",
+      "expectedCode": "FIELD_PROJECTION_SUCCESSOR_FIXTURE_VALUE_TYPE_INVALID",
+      "document": {
+        "schemaVersion": "FIELD-PROJECTION-FIXTURE-1.1.0",
+        "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.1.0",
+        "authorizationOracle": {
+          "version": "RFP-FIXTURE-1.0.0",
+          "path": "contracts/authorization/rfp-fixture-1.0.0.json",
+          "sha256": "0f9ae9174dc67efaf4a2629fc0df68180b4a7ad7fc281629bd058202e3ba98e9"
+        },
+        "scenarios": [{
+          "scenarioId": "bad-value-type",
+          "authorizationOracleScenarioId": "R6-DQ-A",
+          "roles": ["R6"],
+          "objectClass": "QualitySnapshot",
+          "objectToken": "DQ-A",
+          "purpose": "data-quality.read",
+          "serverNow": "2026-08-09T12:00:00Z",
+          "authorizationOutcome": "ALLOW",
+          "ownedSource": true,
+          "assessedSnapshot": true,
+          "values": {"aggregateVersion": "one"}
+        }]
+      }
+    },
+    {
+      "caseId": "repeated-leaf-requires-array",
+      "expectedCode": "FIELD_PROJECTION_SUCCESSOR_FIXTURE_VALUE_TYPE_INVALID",
+      "document": {
+        "schemaVersion": "FIELD-PROJECTION-FIXTURE-1.1.0",
+        "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.1.0",
+        "authorizationOracle": {
+          "version": "RFP-FIXTURE-1.0.0",
+          "path": "contracts/authorization/rfp-fixture-1.0.0.json",
+          "sha256": "0f9ae9174dc67efaf4a2629fc0df68180b4a7ad7fc281629bd058202e3ba98e9"
+        },
+        "scenarios": [{
+          "scenarioId": "bad-array-cardinality",
+          "authorizationOracleScenarioId": "R6-DQ-A",
+          "roles": ["R6"],
+          "objectClass": "QualitySnapshot",
+          "objectToken": "DQ-A",
+          "purpose": "data-quality.read",
+          "serverNow": "2026-08-09T12:00:00Z",
+          "authorizationOutcome": "ALLOW",
+          "ownedSource": true,
+          "assessedSnapshot": true,
+          "values": {"metricResults[].metricId": "not-an-array"}
+        }]
+      }
+    },
+    {
+      "caseId": "unapproved-batch-object",
+      "expectedCode": "FIELD_PROJECTION_SUCCESSOR_FIXTURE_OBJECT_INVALID",
+      "document": {
+        "schemaVersion": "FIELD-PROJECTION-FIXTURE-1.1.0",
+        "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.1.0",
+        "authorizationOracle": {
+          "version": "RFP-FIXTURE-1.0.0",
+          "path": "contracts/authorization/rfp-fixture-1.0.0.json",
+          "sha256": "0f9ae9174dc67efaf4a2629fc0df68180b4a7ad7fc281629bd058202e3ba98e9"
+        },
+        "scenarios": [{
+          "scenarioId": "unapproved-batch-object",
+          "authorizationOracleScenarioId": "R6-DQ-A",
+          "roles": ["R6"],
+          "objectClass": "DataBatch",
+          "objectToken": "DQ-A",
+          "purpose": "data-quality.read",
+          "serverNow": "2026-08-09T12:00:00Z",
+          "authorizationOutcome": "ALLOW",
+          "ownedSource": true,
+          "assessedSnapshot": true,
+          "values": {}
+        }]
+      }
+    }
+  ]
+}

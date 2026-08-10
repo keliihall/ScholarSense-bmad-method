@@ -1,0 +1,126 @@
+{
+  "fixtureVersion": "TASK-0.4-NEGATIVE-FIXTURES-1.0.0",
+  "cases": [
+    {
+      "caseId": "illegal-failed-publish",
+      "targetArtifact": "batch-quality-lifecycle",
+      "mutation": "append-quality-failed-to-published-transition",
+      "expectedCode": "BATCH_LIFECYCLE_TRANSITION_INVALID"
+    },
+    {
+      "caseId": "reopen-batch",
+      "targetArtifact": "batch-quality-lifecycle",
+      "mutation": "set-reopenAllowed-true",
+      "expectedCode": "BATCH_LIFECYCLE_REOPEN_INVALID"
+    },
+    {
+      "caseId": "same-identity-different-digest",
+      "targetArtifact": "batch-quality-lifecycle",
+      "mutation": "reuse-identity-with-different-manifestDigest",
+      "expectedCode": "BATCH_LIFECYCLE_IDENTITY_CONFLICT"
+    },
+    {
+      "caseId": "correction-cross-lineage",
+      "targetArtifact": "batch-quality-lifecycle",
+      "mutation": "set-successor-lineageId-different-from-predecessor",
+      "expectedCode": "BATCH_LIFECYCLE_CORRECTION_CROSS_LINEAGE"
+    },
+    {
+      "caseId": "closed-observation-window",
+      "targetArtifact": "batch-quality-lifecycle",
+      "mutation": "replace-half-open-window-with-closed-window",
+      "expectedCode": "BATCH_LIFECYCLE_TIME_SEMANTICS_INVALID"
+    },
+    {
+      "caseId": "technical-error-becomes-quality-failed",
+      "targetArtifact": "batch-quality-lifecycle",
+      "mutation": "set-technicalErrorState-quality-failed",
+      "expectedCode": "BATCH_LIFECYCLE_TECHNICAL_ERROR_INVALID"
+    },
+    {
+      "caseId": "retention-starts-at-published",
+      "targetArtifact": "quality-snapshot-retention",
+      "mutation": "set-retentionStartField-publishedAt",
+      "expectedCode": "QUALITY_SNAPSHOT_RETENTION_START_INVALID"
+    },
+    {
+      "caseId": "retention-fixed-730-days",
+      "targetArtifact": "quality-snapshot-retention",
+      "mutation": "replace-P2Y-with-P730D",
+      "expectedCode": "QUALITY_SNAPSHOT_RETENTION_PERIOD_INVALID"
+    },
+    {
+      "caseId": "retention-anonymizes",
+      "targetArtifact": "quality-snapshot-retention",
+      "mutation": "replace-delete-with-anonymize",
+      "expectedCode": "QUALITY_SNAPSHOT_RETENTION_ACTION_INVALID"
+    },
+    {
+      "caseId": "completed-with-legal-hold",
+      "targetArtifact": "quality-snapshot-deletion-completed",
+      "mutation": "set-legalHold-matched",
+      "expectedCode": "DELETION_RESULT_COMPLETED_INVARIANT"
+    },
+    {
+      "caseId": "completed-with-watermark-gap",
+      "targetArtifact": "quality-snapshot-deletion-completed",
+      "mutation": "decrement-confirmedAggregateVersion",
+      "expectedCode": "DELETION_RESULT_COMPLETED_INVARIANT"
+    },
+    {
+      "caseId": "completed-without-evidence-copy",
+      "targetArtifact": "quality-snapshot-deletion-completed",
+      "mutation": "set-evidenceCopyAck-missing",
+      "expectedCode": "DELETION_RESULT_COMPLETED_INVARIANT"
+    },
+    {
+      "caseId": "blocked-after-delete",
+      "targetArtifact": "quality-snapshot-deletion-blocked",
+      "mutation": "mark-onlineSnapshot-deleted",
+      "expectedCode": "DELETION_RESULT_BLOCKED_INVARIANT"
+    },
+    {
+      "caseId": "partial-without-split",
+      "targetArtifact": "quality-snapshot-deletion-partial",
+      "mutation": "mark-every-owner-target-deleted",
+      "expectedCode": "DELETION_RESULT_PARTIAL_INVARIANT"
+    },
+    {
+      "caseId": "failed-after-commit",
+      "targetArtifact": "quality-snapshot-deletion-failed",
+      "mutation": "set-deletionCommittedAt",
+      "expectedCode": "DELETION_RESULT_FAILED_INVARIANT"
+    },
+    {
+      "caseId": "owner-result-forges-final-receipt",
+      "targetArtifact": "quality-snapshot-deletion-completed",
+      "mutation": "add-deletionReceiptId-and-final-receipt-claim",
+      "expectedCode": "DELETION_RESULT_FINAL_RECEIPT_BOUNDARY"
+    },
+    {
+      "caseId": "backup-due-drift",
+      "targetArtifact": "quality-snapshot-deletion-completed",
+      "mutation": "set-backupExpiryDueAt-after-P35D-maximum",
+      "expectedCode": "DELETION_RESULT_BACKUP_INVARIANT"
+    },
+    {
+      "caseId": "event-id-mismatch",
+      "targetArtifact": "quality-snapshot-deletion-completed",
+      "mutation": "replace-data-eventId",
+      "expectedCode": "DELETION_RESULT_ID_MISMATCH"
+    },
+    {
+      "caseId": "scope-digest-mismatch",
+      "targetArtifact": "quality-snapshot-deletion-completed",
+      "mutation": "replace-scopeDigest",
+      "expectedCode": "DELETION_RESULT_SCOPE_DIGEST_MISMATCH"
+    },
+    {
+      "caseId": "payload-over-64-kib",
+      "targetArtifact": "quality-snapshot-deletion-completed",
+      "mutation": "append-oversize-rawPayload",
+      "expectedCode": "DELETION_RESULT_PAYLOAD_TOO_LARGE"
+    }
+  ],
+  "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"
+}

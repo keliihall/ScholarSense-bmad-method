@@ -10,7 +10,9 @@ public record ApprovedFieldDescriptor(
         Optional<FieldMaskProfile> maskProfile,
         boolean globalHidden) {
     public ApprovedFieldDescriptor {
-        if (name == null || !name.matches("[A-Za-z][A-Za-z0-9]{1,63}")) {
+        if (name == null
+                || name.length() > 128
+                || !name.matches("[A-Za-z][A-Za-z0-9]*(?:\\[\\])?(?:\\.[A-Za-z][A-Za-z0-9]*(?:\\[\\])?)*")) {
             throw new IllegalArgumentException("FIELD_PROJECTION_FIELD_NAME_INVALID");
         }
         Objects.requireNonNull(fieldClass, "fieldClass");

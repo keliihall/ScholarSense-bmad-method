@@ -1,10 +1,8 @@
 package cn.edu.suda.scholarsense.ingestionquality.adapters;
 
 import cn.edu.suda.scholarsense.ingestionquality.adapters.inbound.CatalogAuditRelayScheduler;
-import cn.edu.suda.scholarsense.ingestionquality.adapters.inbound.CatalogRetentionScheduler;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcCatalogAuditBacklog;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcCatalogAuditRelayWork;
-import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcCatalogRetentionCleanup;
 import cn.edu.suda.scholarsense.ingestionquality.application.CatalogAuditRelayProcessor;
 import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
 import cn.edu.suda.scholarsense.shared.outbox.AuditLedgerIngressPort;
@@ -63,19 +61,5 @@ public class IngestionQualityAuditRelayConfiguration {
     CatalogAuditRelayScheduler dataSourceCatalogAuditRelayScheduler(
             CatalogAuditRelayProcessor processor) {
         return new CatalogAuditRelayScheduler(processor);
-    }
-
-    @Bean
-    JdbcCatalogRetentionCleanup dataSourceCatalogRetentionCleanup(
-            JdbcTemplate jdbc,
-            TrustedTimeSource time,
-            PostgreSqlConnectionProfile ingestionQualityRelayPostgreSqlConnectionProfile) {
-        return new JdbcCatalogRetentionCleanup(jdbc, time);
-    }
-
-    @Bean
-    CatalogRetentionScheduler dataSourceCatalogRetentionScheduler(
-            JdbcCatalogRetentionCleanup cleanup) {
-        return new CatalogRetentionScheduler(cleanup);
     }
 }

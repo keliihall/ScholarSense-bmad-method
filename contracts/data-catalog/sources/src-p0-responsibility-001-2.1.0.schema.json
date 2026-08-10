@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/data-catalog/sources/src-p0-responsibility-001-2.1.0.schema.json",
+  "title": "Responsibility authority v2.1 controlled reference",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["relationId", "responsibilityAuthorityContractVersion", "relationEvidenceRef", "sourceVersion", "sourceWatermark"],
+  "properties": {
+    "relationId": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "responsibilityAuthorityContractVersion": {"const": "RESPONSIBILITY-AUTHORITY-V2-2.1.0"},
+    "relationEvidenceRef": {"type": "string", "pattern": "^evidence-ref:[A-Za-z0-9._-]{8,160}$"},
+    "sourceVersion": {"type": "integer", "minimum": 1},
+    "sourceWatermark": {"type": "string"}
+  }
+}

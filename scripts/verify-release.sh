@@ -147,7 +147,7 @@ case "$MANIFEST_VERSION" in
       "$WORK_DIR/public-integration-target" "$PUBLIC_INTEGRATION_TARGET_EVIDENCE_URI"
     )
     ;;
-  RELEASE-MANIFEST-3.0.0|RELEASE-MANIFEST-4.0.0)
+  RELEASE-MANIFEST-3.0.0|RELEASE-MANIFEST-4.0.0|RELEASE-MANIFEST-5.0.0)
     if [[ "$target_count" != "2" ]]; then
       echo "VERIFIER_V3_TARGET_GRAPH_INVALID" >&2
       exit 1

@@ -15,7 +15,10 @@ import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.FrozenDataCat
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcCatalogAuditBacklog;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcCatalogStore;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcCatalogTransactionAdapter;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualitySnapshotQueryStore;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualitySnapshotReadAudit;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcSubjectWindowRecomputeStore;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.QualitySnapshotOwnerEvidenceProvider;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.SharedAuditPublicationGuard;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.TrustedTimeRecomputeIds;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.inbound.FrozenDataCatalogBootstrapRunner;
@@ -25,6 +28,7 @@ import cn.edu.suda.scholarsense.ingestionquality.application.DataSourceCatalogSe
 import cn.edu.suda.scholarsense.ingestionquality.application.FrozenDataCatalogPolicy;
 import cn.edu.suda.scholarsense.ingestionquality.application.MappingRecomputeIdPort;
 import cn.edu.suda.scholarsense.ingestionquality.application.MappingRecomputePlanner;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualitySnapshotQueryService;
 import cn.edu.suda.scholarsense.ingestionquality.application.SubjectRecomputeJobQueryService;
 import cn.edu.suda.scholarsense.ingestionquality.application.SubjectMappingCorrectionCoordinator;
 import cn.edu.suda.scholarsense.subjectregistry.api.SubjectMappingChangedConsumerPort;
@@ -68,11 +72,20 @@ public class IngestionQualityConfiguration {
     }
 
     @Bean
-    AuthorizationObjectEvidenceProvider dataSourceCatalogOwnerEvidenceProvider(
+    CatalogOwnerEvidenceProvider dataSourceCatalogOwnerEvidenceProvider(
             ObjectMapper json,
             @Value("${scholarsense.ingestion-quality.owner-bindings-path}") String path,
             @Value("${scholarsense.ingestion-quality.owner-bindings-digest}") String digest) {
         return CatalogOwnerEvidenceProvider.load(Path.of(path), digest, json);
+    }
+
+    @Bean
+    AuthorizationObjectEvidenceProvider qualitySnapshotOwnerEvidenceProvider(
+            JdbcTemplate jdbc,
+            CatalogOwnerEvidenceProvider dataSourceCatalogOwnerEvidenceProvider,
+            PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
+        return new QualitySnapshotOwnerEvidenceProvider(
+                jdbc, dataSourceCatalogOwnerEvidenceProvider);
     }
 
     @Bean
@@ -175,10 +188,41 @@ public class IngestionQualityConfiguration {
     }
 
     @Bean
+    JdbcQualitySnapshotQueryStore jdbcQualitySnapshotQueryStore(
+            JdbcTemplate jdbc,
+            PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
+        return new JdbcQualitySnapshotQueryStore(jdbc);
+    }
+
+    @Bean
+    JdbcQualitySnapshotReadAudit jdbcQualitySnapshotReadAudit(
+            JdbcTemplate jdbc,
+            ObjectMapper json,
+            AuditTokenizationPort tokenization,
+            TrustedTimeSource time,
+            PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
+        return new JdbcQualitySnapshotReadAudit(jdbc, json, tokenization, time);
+    }
+
+    @Bean
+    QualitySnapshotQueryService qualitySnapshotQueryService(
+            JdbcQualitySnapshotQueryStore snapshots,
+            CompositeAuthorizationPort authorization,
+            CompositeAuthorizationRecheckPort recheck,
+            JdbcQualitySnapshotReadAudit readAudit) {
+        return new QualitySnapshotQueryService(snapshots, authorization, recheck, readAudit);
+    }
+
+    @Bean
     AuthorizedShellCapabilityProvider dataSourceCatalogShellCapability() {
-        return () -> List.of(new AuthorizedShellCapability(
-                "data-source-catalogs", "数据源目录", "data-quality.catalogs",
-                AuthorizedShellCapabilityState.AVAILABLE, Set.of("R6-DATA-OWNER")));
+        return () -> List.of(
+                new AuthorizedShellCapability(
+                        "data-source-catalogs", "数据源目录", "data-quality.catalogs",
+                        AuthorizedShellCapabilityState.AVAILABLE, Set.of("R6-DATA-OWNER")),
+                new AuthorizedShellCapability(
+                        "quality-snapshots", "批次与质量快照",
+                        "data-quality.quality-snapshots",
+                        AuthorizedShellCapabilityState.AVAILABLE, Set.of("R6-DATA-OWNER")));
     }
 
     @Bean

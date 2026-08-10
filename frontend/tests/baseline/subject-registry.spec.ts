@@ -21,11 +21,9 @@ const r6Shell = {
   defaultSurface: { surfaceId: 'data-quality', title: '数据质量', routeName: 'shell.home', providerState: 'not-installed' },
   menuItems: [
     { id: 'subject-mapping-exceptions', label: '主体映射异常', routeName: 'data-quality.subject-mapping-exceptions', providerState: 'available' },
-    { id: 'subject-recompute-jobs', label: '主体重算作业', routeName: 'subject-registry.recompute-jobs', providerState: 'available' },
   ],
   entryCapabilities: [
     { id: 'subject-mapping-exceptions', state: 'available' },
-    { id: 'subject-recompute-jobs', state: 'available' },
   ],
   dependencyStatus: 'available',
 };
@@ -41,10 +39,14 @@ const job = {
 async function install(
   page: Page,
   options: Readonly<{ shell?: unknown; currentSession?: () => typeof session }> = {},
-): Promise<{ repairRequests: Array<{ body: Record<string, unknown>; idempotencyKey: string }> }> {
+): Promise<{
+  repairRequests: Array<{ body: Record<string, unknown>; idempotencyKey: string }>;
+  jobRequests: string[];
+}> {
   const currentSession = options.currentSession ?? (() => session);
   const shell = options.shell ?? r6Shell;
   const repairRequests: Array<{ body: Record<string, unknown>; idempotencyKey: string }> = [];
+  const jobRequests: string[] = [];
   await page.route(/\/api\/v1\/identity-sessions\/current$/, (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify(currentSession()),
   }));
@@ -79,13 +81,15 @@ async function install(
       traceId: '00112233445566778899aabbccddeeff',
     }) });
   });
-  await page.route(new RegExp(`/api/v1/subject-recompute-jobs/${jobId}$`), (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(job) }));
-  return { repairRequests };
+  await page.route(new RegExp(`/api/v1/subject-recompute-jobs/${jobId}$`), (route) => {
+    jobRequests.push(route.request().url());
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(job) });
+  });
+  return { repairRequests, jobRequests };
 }
 
-test('R6 repairs an owned exception, preserves a 409 draft and follows the detached job', async ({ page }, testInfo) => {
-  const { repairRequests } = await install(page);
+test('R6 repairs an owned exception but cannot enter the R7-only detached job', async ({ page }, testInfo) => {
+  const { repairRequests, jobRequests } = await install(page);
   await page.goto(`data-quality/subject-mapping-exceptions?exceptionId=${exceptionId}`);
 
   await expect(page.getByRole('heading', { name: '主体映射异常' })).toBeFocused();
@@ -105,10 +109,8 @@ test('R6 repairs an owned exception, preserves a 409 draft and follows the detac
   expect(repairRequests[0]?.idempotencyKey).not.toBe(repairRequests[1]?.idempotencyKey);
   expect(repairRequests[1]?.body.expectedAggregateVersion).toBe(2);
 
-  await page.getByRole('link', { name: `查看作业 ${jobId}` }).click();
-  await expect(page).toHaveURL(new RegExp(`subject-recompute-jobs\\?jobId=${jobId}`));
-  await expect(page.getByRole('heading', { name: '主体重算作业' })).toBeFocused();
-  await expect(page.getByText('运行中')).toBeVisible();
+  await expect(page.getByText('技术作业已转交平台运维')).toBeVisible();
+  await expect(page.getByRole('link', { name: new RegExp('查看作业') })).toHaveCount(0);
 
   const persisted = await page.evaluate(async () => ({
     local: localStorage.length, session: sessionStorage.length,
@@ -122,15 +124,23 @@ test('R6 repairs an owned exception, preserves a 409 draft and follows the detac
     await page.addScriptTag({ path: axePath });
     expect((await page.evaluate(async () => (await (window as any).axe.run()).violations))).toEqual([]);
     await page.evaluate(() => { document.documentElement.style.zoom = '2'; });
-    await expect(page.getByRole('heading', { name: '主体重算作业' })).toBeVisible();
+    await expect(page.getByText('技术作业已转交平台运维')).toBeVisible();
+    await page.evaluate(() => { document.documentElement.style.zoom = '1'; });
   }
+
+  await page.goto(`subject-recompute-jobs?jobId=${jobId}`);
+  await expect(page).toHaveURL(/\/recovery\?reason=unauthorized/);
+  expect(jobRequests).toHaveLength(0);
 });
 
 test('R7 sees only the technical job surface and cannot enter mapping exceptions', async ({ page }) => {
   const r7Shell = {
     ...r6Shell,
     defaultSurface: { surfaceId: 'technical-operations', title: '技术运行面板', routeName: 'shell.home', providerState: 'not-installed' },
-    menuItems: [r6Shell.menuItems[1]], entryCapabilities: [r6Shell.entryCapabilities[1]],
+    menuItems: [
+      { id: 'subject-recompute-jobs', label: '主体重算作业', routeName: 'subject-registry.recompute-jobs', providerState: 'available' },
+    ],
+    entryCapabilities: [{ id: 'subject-recompute-jobs', state: 'available' }],
   };
   await install(page, { shell: r7Shell });
 

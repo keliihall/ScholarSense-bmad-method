@@ -1,6 +1,7 @@
 package cn.edu.suda.scholarsense.ingestionquality.adapters;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -22,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.env.MapPropertySource;
@@ -73,7 +75,9 @@ class IngestionQualityAuditRelaySpringAssemblyTest {
             context.refresh();
 
             assertNotNull(context.getBean(CatalogAuditRelayScheduler.class));
-            assertNotNull(context.getBean(CatalogRetentionScheduler.class));
+            assertThrows(
+                    NoSuchBeanDefinitionException.class,
+                    () -> context.getBean(CatalogRetentionScheduler.class));
             assertNotNull(context.getBean(PostgreSqlConnectionProfile.class));
         }
     }
@@ -101,10 +105,24 @@ class IngestionQualityAuditRelaySpringAssemblyTest {
         when(principal.getBoolean(5)).thenReturn(false);
         when(principal.getBoolean(6)).thenReturn(false);
         when(principal.getBoolean(7)).thenReturn(false);
-        when(principal.getBoolean(8)).thenReturn(true);
-        when(principal.getBoolean(9)).thenReturn(true);
+        when(principal.getBoolean(8)).thenReturn(false);
+        when(principal.getBoolean(9)).thenReturn(false);
         when(principal.getBoolean(10)).thenReturn(false);
         when(principal.getBoolean(11)).thenReturn(true);
+        when(principal.getBoolean(12)).thenReturn(true);
+        when(principal.getBoolean(13)).thenReturn(false);
+        when(principal.getBoolean(14)).thenReturn(false);
+        when(principal.getBoolean(15)).thenReturn(false);
+        when(principal.getBoolean(16)).thenReturn(false);
+        when(principal.getBoolean(17)).thenReturn(false);
+        when(principal.getBoolean(18)).thenReturn(false);
+        when(principal.getBoolean(19)).thenReturn(false);
+        when(principal.getBoolean(20)).thenReturn(false);
+        when(principal.getBoolean(21)).thenReturn(false);
+        when(principal.getBoolean(22)).thenReturn(false);
+        when(principal.getBoolean(23)).thenReturn(true);
+        when(principal.getBoolean(24)).thenReturn(true);
+        when(principal.getBoolean(25)).thenReturn(true);
         when(matrix.next()).thenReturn(true, false);
         when(matrix.getBoolean(1)).thenReturn(true);
         return dataSource;

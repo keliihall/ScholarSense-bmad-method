@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/batch-quality/quality-snapshot-hash-profile.schema.json",
+  "title": "QualitySnapshot deterministic hash material profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "hashProfileVersion", "addendumId", "decisionId", "authorityRef",
+    "approvalRef", "approvedAt", "effectiveAt", "status", "domainTag",
+    "canonicalizationProfile", "algorithm", "digestPrefix", "includedTopLevelFields",
+    "excludedSnapshotFields", "metricResultFields", "metricOrdering",
+    "impactScopeOrdering", "nullableMaterialFields", "timeCanonicalization",
+    "stringEscaping", "operandClosure", "controlledInputs"
+  ],
+  "properties": {
+    "$schema": {"const": "quality-snapshot-hash-profile.schema.json"},
+    "hashProfileVersion": {"const": "QSHM-1.0.0"},
+    "addendumId": {"const": "DEC-019-QSHM-ADDENDUM"},
+    "decisionId": {"const": "DEC-019"},
+    "authorityRef": {"const": "AUTH-2026-08-09-001"},
+    "approvalRef": {"const": "AUTH-2026-08-09-001"},
+    "approvedAt": {"const": "2026-08-09T19:24:55+08:00"},
+    "effectiveAt": {"const": "2026-08-09T19:24:55+08:00"},
+    "status": {"const": "approved"},
+    "domainTag": {"const": "scholarsense.ingestion-quality.quality-snapshot.immutable-hash.v1"},
+    "canonicalizationProfile": {"const": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"},
+    "algorithm": {"const": "SHA-256"},
+    "digestPrefix": {"const": "sha256:"},
+    "includedTopLevelFields": {
+      "type": "array", "minItems": 26, "maxItems": 26, "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "excludedSnapshotFields": {
+      "type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "metricResultFields": {
+      "type": "array", "minItems": 14, "maxItems": 14, "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "metricOrdering": {
+      "type": "object", "additionalProperties": false,
+      "required": ["common", "sourceGates", "formulaCardinality"],
+      "properties": {
+        "common": {"const": "policy.commonMetrics[] filtered by source.applicableCommonMetricIds, preserving policy order"},
+        "sourceGates": {"const": "policy.sources[sourceId].sourceGates[], preserving policy order"},
+        "formulaCardinality": {"const": "exactly-once"}
+      }
+    },
+    "impactScopeOrdering": {
+      "type": "object", "additionalProperties": false,
+      "required": ["order", "duplicates", "empty"],
+      "properties": {
+        "order": {"const": "ascending-Unicode-code-point"},
+        "duplicates": {"const": "reject"},
+        "empty": {"const": "[]"}
+      }
+    },
+    "nullableMaterialFields": {
+      "type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true,
+      "items": {"type": "string"}
+    },
+    "timeCanonicalization": {
+      "type": "object", "additionalProperties": false,
+      "required": ["semanticType", "timezone", "precision", "format", "subMicrosecond"],
+      "properties": {
+        "semanticType": {"const": "Instant"},
+        "timezone": {"const": "UTC"},
+        "precision": {"const": "microsecond"},
+        "format": {"const": "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"},
+        "subMicrosecond": {"const": "reject"}
+      }
+    },
+    "stringEscaping": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "strategy", "quotationMark", "reverseSolidus", "backspace", "formFeed",
+        "lineFeed", "carriageReturn", "tab", "otherControls", "solidus",
+        "nonAscii", "unicodeScalarsOnly"
+      ],
+      "properties": {
+        "strategy": {"const": "minimal-json-escapes"},
+        "quotationMark": {"const": "\\\""},
+        "reverseSolidus": {"const": "\\\\"},
+        "backspace": {"const": "\\b"},
+        "formFeed": {"const": "\\f"},
+        "lineFeed": {"const": "\\n"},
+        "carriageReturn": {"const": "\\r"},
+        "tab": {"const": "\\t"},
+        "otherControls": {"const": "lowercase-\\u00xx"},
+        "solidus": {"const": "unescaped"},
+        "nonAscii": {"const": "direct-utf8"},
+        "unicodeScalarsOnly": {"const": true}
+      }
+    },
+    "operandClosure": {
+      "type": "object", "additionalProperties": false,
+      "required": ["independentField", "ratio", "count", "duration", "compositeAnd", "notApplicable"],
+      "properties": {
+        "independentField": {"const": false},
+        "ratio": {"const": "numerator/denominator"},
+        "count": {"const": "numerator/1"},
+        "duration": {"const": "integer-milliseconds/1"},
+        "compositeAnd": {"const": "passing-members/applicable-members"},
+        "notApplicable": {"const": "applicable=false,numerator=0,denominator=0"}
+      }
+    },
+    "controlledInputs": {
+      "type": "array", "minItems": 5, "maxItems": 5,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object", "additionalProperties": false,
+            "required": ["path", "rawSha256", "canonicalDigest"],
+            "properties": {
+              "path": {"type": "string", "minLength": 1},
+              "rawSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "canonicalDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+            }
+          },
+          {
+            "type": "object", "additionalProperties": false,
+            "required": ["path", "rawSha256"],
+            "properties": {
+              "path": {"type": "string", "minLength": 1},
+              "rawSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+            }
+          }
+        ]
+      }
+    }
+  }
+}

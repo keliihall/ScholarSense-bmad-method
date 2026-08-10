@@ -1,0 +1,45 @@
+{
+  "version": "CANDIDATE-CLUE-QUALITY-SNAPSHOT-HANDOFF-1.0.0",
+  "runtimeEvidenceClaim": "none",
+  "consumers": {
+    "Candidate": "not-installed",
+    "Clue": "not-installed"
+  },
+  "acceptedEventTypes": [
+    "scholarsense.ingestion-quality.data-batch.quality-assessed.v1",
+    "scholarsense.ingestion-quality.data-batch.published.v1"
+  ],
+  "identityAndOrdering": {
+    "idempotencyKey": ["source", "id"],
+    "aggregateKey": ["data.aggregateType", "data.aggregateId"],
+    "monotonicField": "data.aggregateVersion",
+    "duplicate": "ack-without-second-write",
+    "old": "ack-without-regression",
+    "gap": "pause-and-backfill",
+    "poison": "quarantine-without-cursor-advance",
+    "backfill": "resume-only-after-contiguous-commit"
+  },
+  "immutableEvidenceCopy": {
+    "requiredFields": [
+      "qualitySnapshot.snapshotId",
+      "qualitySnapshot.immutableHash",
+      "qualitySnapshot.manifestDigest",
+      "qualitySnapshot.watermark",
+      "qualitySnapshot.qualityMetricDecisionProfileVersion",
+      "qualitySnapshot.qualityMetricDecisionProfileDigest",
+      "qualitySnapshot.qualityGateVersion",
+      "qualitySnapshot.qualityGateDigest",
+      "qualitySnapshot.metricResults"
+    ],
+    "storageOwner": "future Candidate/Clue owner",
+    "lookupSemantics": "event-time immutable copy; never mutable latest lookup",
+    "retention": "evidence snapshot / three years after case closure"
+  },
+  "prohibitedInStory23": [
+    "RuleEvaluation production code or table",
+    "Candidate production code or table",
+    "Clue production code or table",
+    "QualityEligibility production code or table",
+    "quality-failed to eligibility/fuse/recovery decision"
+  ]
+}

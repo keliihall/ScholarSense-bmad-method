@@ -166,15 +166,16 @@ public final class CatalogOwnerEvidenceProvider implements AuthorizationObjectEv
             return AuthorizationObjectEvidence.unavailable();
         }
         Set<AuthorizationScopeEvidence> scopes = new HashSet<>();
-        binding.ownerAccountIds().forEach(account -> scopes.add(
-                new AuthorizationScopeEvidence(
-                        AuthorizationScopeAnchor.OWNED_SOURCE, account, null)));
-        binding.ownerOrganizationIds().forEach(organization -> scopes.add(
-                new AuthorizationScopeEvidence(
-                        AuthorizationScopeAnchor.OWNED_SOURCE, null, organization)));
         if ("JOB".equals(query.objectClass())) {
             scopes.add(new AuthorizationScopeEvidence(
                     AuthorizationScopeAnchor.TECHNICAL_OBJECT, null, null));
+        } else {
+            binding.ownerAccountIds().forEach(account -> scopes.add(
+                    new AuthorizationScopeEvidence(
+                            AuthorizationScopeAnchor.OWNED_SOURCE, account, null)));
+            binding.ownerOrganizationIds().forEach(organization -> scopes.add(
+                    new AuthorizationScopeEvidence(
+                            AuthorizationScopeAnchor.OWNED_SOURCE, null, organization)));
         }
         String purpose = "SUBJECT_MAPPING_EXCEPTION".equals(query.objectClass())
                 ? "SUBJECT_MAPPING_EXCEPTION_REPAIR" : query.actionId();

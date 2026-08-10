@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/batch-quality/quality-snapshot-hash-material.schema.json",
+  "title": "QualitySnapshot immutable hash canonical material",
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "uuidV7": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "instantMicros": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{6}Z$"},
+    "metricResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metricId", "formulaId", "formulaVersion", "result", "applicable",
+        "numerator", "denominator", "valueBasisPoints", "unit", "operator",
+        "thresholdNumerator", "thresholdDenominator", "boundary", "reasonCode"
+      ],
+      "properties": {
+        "metricId": {"type": "string", "minLength": 1},
+        "formulaId": {"type": "string", "pattern": "^QMDP-1\\.0\\.0/"},
+        "formulaVersion": {"const": "1.0.0"},
+        "result": {"enum": ["passed", "failed", "not-applicable"]},
+        "applicable": {"type": "boolean"},
+        "numerator": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+        "denominator": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+        "valueBasisPoints": {"type": ["integer", "null"], "minimum": 0, "maximum": 9007199254740991},
+        "unit": {"enum": ["basis-point", "count", "millisecond", "member-count"]},
+        "operator": {"enum": [">=", "<=", "="]},
+        "thresholdNumerator": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+        "thresholdDenominator": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "boundary": {"const": "inclusive"},
+        "reasonCode": {"type": "null"}
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "domainTag", "hashProfileVersion", "hashProfileDigest", "batchId", "sourceId",
+    "assessedBatchStatus", "overallResult", "observationWindow", "cutoffAt", "watermark",
+    "metricResults", "impactScopeCodes", "sourceOwnerRef", "approvalRef", "effectiveAt",
+    "retentionScheduleVersion", "qualityMetricDecisionProfileVersion",
+    "qualityMetricDecisionProfileDigest", "qualityGateVersion", "qualityGateDigest",
+    "canonicalizationProfile", "manifestDigest", "sourceSchemaVersion", "sourceSchemaDigest",
+    "lineageId", "supersedesSnapshotId"
+  ],
+  "properties": {
+    "domainTag": {"const": "scholarsense.ingestion-quality.quality-snapshot.immutable-hash.v1"},
+    "hashProfileVersion": {"const": "QSHM-1.0.0"},
+    "hashProfileDigest": {"$ref": "#/$defs/digest"},
+    "batchId": {"$ref": "#/$defs/uuidV7"},
+    "sourceId": {"type": "string", "pattern": "^SRC-P[01]-[A-Z-]+-[0-9]{3}$"},
+    "assessedBatchStatus": {"enum": ["quality-passed", "quality-failed"]},
+    "overallResult": {"enum": ["quality-passed", "quality-failed"]},
+    "observationWindow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["startAt", "endAt"],
+      "properties": {
+        "startAt": {"$ref": "#/$defs/instantMicros"},
+        "endAt": {"$ref": "#/$defs/instantMicros"}
+      }
+    },
+    "cutoffAt": {"$ref": "#/$defs/instantMicros"},
+    "watermark": {"type": "string", "minLength": 1, "maxLength": 512},
+    "metricResults": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/metricResult"}},
+    "impactScopeCodes": {
+      "type": "array", "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 64}
+    },
+    "sourceOwnerRef": {"type": "string", "minLength": 1, "maxLength": 256},
+    "approvalRef": {"const": "AUTH-2026-08-08-001"},
+    "effectiveAt": {"$ref": "#/$defs/instantMicros"},
+    "retentionScheduleVersion": {"const": "RS-1.0.0"},
+    "qualityMetricDecisionProfileVersion": {"const": "QMDP-1.0.0"},
+    "qualityMetricDecisionProfileDigest": {"$ref": "#/$defs/digest"},
+    "qualityGateVersion": {"const": "QG-1.0.0"},
+    "qualityGateDigest": {"$ref": "#/$defs/digest"},
+    "canonicalizationProfile": {"const": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"},
+    "manifestDigest": {"$ref": "#/$defs/digest"},
+    "sourceSchemaVersion": {"type": "string", "minLength": 1, "maxLength": 128},
+    "sourceSchemaDigest": {"$ref": "#/$defs/digest"},
+    "lineageId": {"$ref": "#/$defs/uuidV7"},
+    "supersedesSnapshotId": {"oneOf": [{"$ref": "#/$defs/uuidV7"}, {"type": "null"}]}
+  }
+}

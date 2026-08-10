@@ -1,0 +1,224 @@
+{
+  "schemaVersion": "FIELD-PROJECTION-1.1.0",
+  "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.1.0",
+  "status": "approved",
+  "unknownSemantics": "fail-closed",
+  "predecessor": {
+    "version": "FIELD-PROJECTION-POLICY-BINDING-1.0.0",
+    "path": "contracts/field-projection/field-projection-policy-binding-1.0.0.json",
+    "sha256": "5a0592296a43049bf745f9e826df65dc3f4b0479cea17fd822e98ac04d92f880"
+  },
+  "roleFieldPolicy": {
+    "version": "RFP-1.0.0",
+    "path": "contracts/authorization/role-field-policy-rfp-1.0.0.json",
+    "sha256": "84191d8b844b31ef91fb051d34d6731b80981d6d193e42b0f8d19f73caa9ed25"
+  },
+  "roleFieldPolicyFixture": {
+    "version": "RFP-FIXTURE-1.0.0",
+    "path": "contracts/authorization/rfp-fixture-1.0.0.json",
+    "sha256": "0f9ae9174dc67efaf4a2629fc0df68180b4a7ad7fc281629bd058202e3ba98e9"
+  },
+  "leafPathPolicy": {
+    "grammar": "closed-explicit-top-level-and-approved-array-leaf-paths",
+    "unknownField": "H/omit",
+    "unknownPath": "H/omit",
+    "pathSuperset": "H/omit",
+    "jsonPointer": "forbidden",
+    "recursiveObject": "forbidden",
+    "numericArrayIndex": "forbidden",
+    "serializationParity": ["pre-serialization", "post-serialization"]
+  },
+  "maskProfiles": {
+    "boolean": {"fixedValue": false, "lengthIndependent": true, "accessibleLabel": "已脱敏"},
+    "category": {"fixedValue": "[MASKED-CATEGORY]", "lengthIndependent": true, "accessibleLabel": "已脱敏"},
+    "code": {"fixedValue": "[MASKED-CODE]", "lengthIndependent": true, "accessibleLabel": "已脱敏"},
+    "identity": {"fixedValue": "[MASKED-IDENTITY]", "lengthIndependent": true, "accessibleLabel": "已脱敏"},
+    "narrative": {"fixedValue": "[MASKED-NARRATIVE]", "lengthIndependent": true, "accessibleLabel": "已脱敏"},
+    "technical": {"fixedValue": "[MASKED-TECHNICAL]", "lengthIndependent": true, "accessibleLabel": "已脱敏"},
+    "timestamp": {"fixedValue": "[MASKED-TIME]", "lengthIndependent": true, "accessibleLabel": "已脱敏"}
+  },
+  "fields": [
+    {"name": "recordId", "fieldClass": "B", "valueType": "string", "globalHidden": false},
+    {"name": "ledgerSequence", "fieldClass": "B", "valueType": "integer", "globalHidden": false},
+    {"name": "occurredAt", "fieldClass": "B", "valueType": "timestamp", "maskProfile": "timestamp", "globalHidden": false},
+    {"name": "outcome", "fieldClass": "B", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "factSchemaVersion", "fieldClass": "B", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "policyVersion", "fieldClass": "B", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "retentionScheduleVersion", "fieldClass": "B", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "actorDisplayRef", "fieldClass": "I", "valueType": "string", "maskProfile": "identity", "globalHidden": false},
+    {"name": "objectDisplayRef", "fieldClass": "I", "valueType": "string", "maskProfile": "identity", "globalHidden": false},
+    {"name": "businessActionCategory", "fieldClass": "G", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "businessObjectCategory", "fieldClass": "G", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "rolePackageSummary", "fieldClass": "G", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "projectionScope", "fieldClass": "G", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "producerModule", "fieldClass": "T", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "eventType", "fieldClass": "T", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "reasonCode", "fieldClass": "T", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "traceId", "fieldClass": "T", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "integrityStatus", "fieldClass": "T", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "archiveStatus", "fieldClass": "T", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "projectionStatus", "fieldClass": "T", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "sourceNetworkRecorded", "fieldClass": "T", "valueType": "boolean", "maskProfile": "boolean", "globalHidden": false},
+
+    {"name": "transferOrderId", "fieldClass": "B", "valueType": "string", "globalHidden": false},
+    {"name": "status", "fieldClass": "B", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "startAt", "fieldClass": "B", "valueType": "timestamp", "maskProfile": "timestamp", "globalHidden": false},
+    {"name": "endAt", "fieldClass": "B", "valueType": "timestamp", "maskProfile": "timestamp", "globalHidden": false},
+    {"name": "studentDisplayRef", "fieldClass": "I", "valueType": "string", "maskProfile": "identity", "globalHidden": false},
+    {"name": "studentContactPhone", "fieldClass": "C", "valueType": "string", "maskProfile": "identity", "globalHidden": false},
+    {"name": "studentContactEmail", "fieldClass": "C", "valueType": "string", "maskProfile": "identity", "globalHidden": false},
+    {"name": "referralReasonCode", "fieldClass": "S", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "requestedServiceCode", "fieldClass": "S", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "urgencyLevel", "fieldClass": "E", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "referralSummary", "fieldClass": "N", "valueType": "string", "maskProfile": "narrative", "globalHidden": false},
+    {"name": "supplementRequestText", "fieldClass": "N", "valueType": "string", "maskProfile": "narrative", "globalHidden": false},
+    {"name": "resultSummary", "fieldClass": "N", "valueType": "string", "maskProfile": "narrative", "globalHidden": false},
+    {"name": "departmentCategory", "fieldClass": "G", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "objectVersion", "fieldClass": "T", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "transferPolicyVersion", "fieldClass": "T", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "keyVersion", "fieldClass": "T", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+
+    {"name": "exceptionId", "fieldClass": "B", "valueType": "string", "globalHidden": false},
+    {"name": "subjectOfficialRef", "fieldClass": "I", "valueType": "string", "maskProfile": "identity", "globalHidden": false},
+    {"name": "exceptionCode", "fieldClass": "E", "valueType": "string", "maskProfile": "code", "globalHidden": false},
+    {"name": "sourceSystem", "fieldClass": "E", "valueType": "string", "maskProfile": "technical", "globalHidden": false},
+    {"name": "sourceOwner", "fieldClass": "G", "valueType": "string", "maskProfile": "category", "globalHidden": false},
+    {"name": "detectedAt", "fieldClass": "T", "valueType": "timestamp", "maskProfile": "timestamp", "globalHidden": false},
+
+    {"name": "diagnosisText", "fieldClass": "N", "valueType": "string", "globalHidden": true},
+    {"name": "counselingText", "fieldClass": "N", "valueType": "string", "globalHidden": true},
+    {"name": "evidenceBody", "fieldClass": "N", "valueType": "string", "globalHidden": true},
+    {"name": "networkContent", "fieldClass": "T", "valueType": "string", "globalHidden": true},
+    {"name": "thirdPartyContact", "fieldClass": "C", "valueType": "string", "globalHidden": true},
+    {"name": "keyValue", "fieldClass": "T", "valueType": "string", "globalHidden": true}
+  ],
+  "objectSchemas": [
+    {
+      "objectClass": "AuditSearchRecord",
+      "approvedPurposes": ["audit.search-business-metadata", "audit.search-technical-metadata"],
+      "fields": [
+        "recordId", "ledgerSequence", "occurredAt", "outcome", "factSchemaVersion",
+        "policyVersion", "retentionScheduleVersion", "actorDisplayRef", "objectDisplayRef",
+        "businessActionCategory", "businessObjectCategory", "rolePackageSummary", "projectionScope",
+        "producerModule", "eventType", "reasonCode", "traceId", "integrityStatus", "archiveStatus",
+        "projectionStatus", "sourceNetworkRecorded", "evidenceBody", "networkContent", "keyValue"
+      ]
+    },
+    {
+      "objectClass": "SubjectMappingException",
+      "approvedPurposes": ["subject-mapping-repair"],
+      "fields": [
+        "exceptionId", "status", "subjectOfficialRef", "exceptionCode", "sourceSystem",
+        "sourceOwner", "detectedAt", "evidenceBody", "keyValue"
+      ]
+    },
+    {
+      "objectClass": "TransferOrder",
+      "approvedPurposes": [
+        "transfer.read", "transfer.accept", "transfer.process", "transfer.request-supplement",
+        "transfer.fill-result", "transfer.close"
+      ],
+      "fields": [
+        "transferOrderId", "status", "startAt", "endAt", "studentDisplayRef",
+        "studentContactPhone", "studentContactEmail", "referralReasonCode", "requestedServiceCode",
+        "urgencyLevel", "referralSummary", "supplementRequestText", "resultSummary",
+        "departmentCategory", "objectVersion", "transferPolicyVersion", "keyVersion",
+        "diagnosisText", "counselingText", "evidenceBody", "networkContent", "thirdPartyContact", "keyValue"
+      ]
+    },
+    {
+      "objectClass": "QualitySnapshot",
+      "approvedPurposes": ["data-quality.read"],
+      "requiredScopeAnchor": "OWNED_SOURCE",
+      "fields": [
+        {"path": "snapshotId", "fieldClass": "B", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "batchId", "fieldClass": "B", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "sourceId", "fieldClass": "B", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "assessedBatchStatus", "fieldClass": "B", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "overallResult", "fieldClass": "B", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "observationWindow.startAt", "fieldClass": "B", "valueType": "timestamp", "nullable": false, "globalHidden": false},
+        {"path": "observationWindow.endAt", "fieldClass": "B", "valueType": "timestamp", "nullable": false, "globalHidden": false},
+        {"path": "cutoffAt", "fieldClass": "B", "valueType": "timestamp", "nullable": false, "globalHidden": false},
+        {"path": "evaluatedAt", "fieldClass": "B", "valueType": "timestamp", "nullable": false, "globalHidden": false},
+        {"path": "watermark", "fieldClass": "B", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].metricId", "fieldClass": "B", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].result", "fieldClass": "B", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].applicable", "fieldClass": "B", "valueType": "boolean", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].numerator", "fieldClass": "B", "valueType": "integer", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].denominator", "fieldClass": "B", "valueType": "integer", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].valueBasisPoints", "fieldClass": "B", "valueType": "integer", "nullable": true, "globalHidden": false},
+        {"path": "metricResults[].unit", "fieldClass": "B", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].operator", "fieldClass": "B", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].thresholdNumerator", "fieldClass": "B", "valueType": "integer", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].thresholdDenominator", "fieldClass": "B", "valueType": "integer", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].boundary", "fieldClass": "B", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].reasonCode", "fieldClass": "E", "valueType": "string", "nullable": true, "globalHidden": false},
+        {"path": "impactScopeCodes[]", "fieldClass": "E", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "sourceOwnerRef", "fieldClass": "G", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "approvalRef", "fieldClass": "G", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "effectiveAt", "fieldClass": "G", "valueType": "timestamp", "nullable": false, "globalHidden": false},
+        {"path": "retentionScheduleVersion", "fieldClass": "G", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "qualityMetricDecisionProfileVersion", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "qualityMetricDecisionProfileDigest", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "qualityGateVersion", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "qualityGateDigest", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].formulaId", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "metricResults[].formulaVersion", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "canonicalizationProfile", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "manifestDigest", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "sourceSchemaVersion", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "sourceSchemaDigest", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "immutableHash", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "traceId", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "lineageId", "fieldClass": "T", "valueType": "string", "nullable": false, "globalHidden": false},
+        {"path": "supersedesSnapshotId", "fieldClass": "T", "valueType": "string", "nullable": true, "globalHidden": false},
+        {"path": "aggregateVersion", "fieldClass": "T", "valueType": "integer", "nullable": false, "globalHidden": false}
+      ]
+    }
+  ],
+  "conditionalRules": {
+    "R2": {"individualReadRequiresCurrentWorkItem": true},
+    "R5": {
+      "objectClass": "TransferOrder",
+      "approvedPurposes": [
+        "transfer.read", "transfer.accept", "transfer.process", "transfer.request-supplement",
+        "transfer.fill-result", "transfer.close"
+      ],
+      "closedFieldUniverse": [
+        "studentContactPhone", "studentContactEmail", "referralReasonCode",
+        "requestedServiceCode", "referralSummary", "supplementRequestText", "resultSummary"
+      ],
+      "windowSemantics": "[startAt,endAt)",
+      "intersectionOrder": ["rfp", "object-schema", "field-allowlist", "purpose", "task-window", "base-authorization", "delegation"]
+    },
+    "R6": {
+      "objectClass": "SubjectMappingException",
+      "purpose": "subject-mapping-repair",
+      "requiresOwnedSource": true
+    },
+    "R6QualitySnapshot": {
+      "objectClass": "QualitySnapshot",
+      "purpose": "data-quality.read",
+      "requiresOwnedSource": true,
+      "requiresAssessedSnapshot": true,
+      "ownerResolution": "snapshot-to-current-persisted-source-owner",
+      "clearFieldClasses": ["B", "E", "G", "T"],
+      "hiddenFieldClasses": ["I", "C", "S", "N"]
+    },
+    "delegation": {"semantics": "intersection-only", "canExpand": false}
+  },
+  "globalHiddenFields": [
+    "diagnosisText", "counselingText", "evidenceBody", "networkContent", "thirdPartyContact", "keyValue"
+  ],
+  "projectionOrder": [
+    "current-composite-authorization", "approved-owner-catalog", "current-recheck",
+    "field-decision", "decrypt-clear-only", "safe-dto", "audit-commit", "serialize"
+  ],
+  "errors": [
+    {"condition": "denied-or-unknown", "status": 403, "code": "FIELD_PROJECTION_DENIED", "message": "请求的数据不可用"},
+    {"condition": "dependency-unavailable", "status": 503, "code": "FIELD_PROJECTION_DEPENDENCY_UNAVAILABLE", "message": "敏感数据服务暂不可用"},
+    {"condition": "decision-stale", "status": 409, "code": "FIELD_PROJECTION_DECISION_STALE", "message": "授权状态已变更"},
+    {"condition": "crypto-failed", "status": 503, "code": "FIELD_PROJECTION_CRYPTO_FAILED", "message": "敏感数据服务暂不可用"},
+    {"condition": "audit-commit-failed", "status": 503, "code": "FIELD_PROJECTION_AUDIT_COMMIT_FAILED", "message": "敏感数据服务暂不可用"}
+  ]
+}

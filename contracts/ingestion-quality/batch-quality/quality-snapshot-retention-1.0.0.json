@@ -1,0 +1,289 @@
+{
+  "$schema": "quality-snapshot-retention.schema.json",
+  "policyVersion": "QUALITY-SNAPSHOT-RETENTION-1.0.0",
+  "decisionId": "DEC-019",
+  "authorityRef": "AUTH-2026-08-08-001",
+  "effectiveAt": "2026-08-09T10:02:22+08:00",
+  "owner": "ingestion-quality",
+  "executor": "ingestion-quality-retention-executor",
+  "objectType": "QualitySnapshot",
+  "retentionScheduleVersion": "RS-1.0.0",
+  "retentionClass": "reporting-and-operational-snapshot",
+  "retentionStartField": "evaluatedAt",
+  "retentionPeriod": "P2Y",
+  "calendarArithmetic": "utc-calendar-plus-years-end-of-month-clamp",
+  "appliesToOverallResults": [
+    "quality-passed",
+    "quality-failed"
+  ],
+  "publishedAtAffectsRetention": false,
+  "expirationAction": "delete",
+  "anonymizationFallbackAllowed": false,
+  "ownerLocalTargets": [
+    "quality-snapshot-row",
+    "quality-snapshot-metric-rows",
+    "owner-read-models",
+    "owner-indexes",
+    "owner-caches",
+    "owner-objects"
+  ],
+  "derivedFrom": {
+    "consumedBaseline": "AUDIT-RETENTION-CONTRACT-LOCK-1.0.0",
+    "reusedPrimitives": [
+      "utc-calendar-plus-years-end-of-month-clamp",
+      "equal-due-eligible",
+      "targeted-half-open-legal-hold"
+    ],
+    "excludedSemantics": [
+      "audit-data-class",
+      "occurredAt-retention-anchor",
+      "RetentionExecution",
+      "deletion-receipt"
+    ]
+  },
+  "scopeDigestBinding": {
+    "algorithm": "sha256-canonical-json",
+    "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+    "materialFields": [
+      "objectType",
+      "snapshotId",
+      "sourceId",
+      "snapshotAggregateVersion",
+      "evaluatedAt",
+      "retentionDueAt",
+      "snapshotImmutableHash",
+      "retentionPolicyVersion",
+      "retentionScheduleVersion"
+    ],
+    "digestField": "scope.scopeDigest"
+  },
+  "consumerRegistryBinding": {
+    "exactMemberSetSource": "consumerRegistry.members=sorted-consumers-projection",
+    "memberSort": "consumerId-ascending",
+    "memberFields": [
+      "consumerId",
+      "registryMembership",
+      "lifecycleStatus"
+    ],
+    "registryDigestAlgorithm": "sha256-canonical-json",
+    "registryDigestMaterialFields": [
+      "registryVersion",
+      "members"
+    ],
+    "emptyMemberSetAllowed": true,
+    "consumerIdUnique": true,
+    "membershipLifecycleRules": {
+      "required-for-snapshot": [
+        "active",
+        "inactive"
+      ],
+      "unreleased-reference-holder": [
+        "active",
+        "inactive",
+        "retired"
+      ],
+      "planned-never-held-reference": [
+        "planned"
+      ]
+    },
+    "attestationBindingFields": [
+      "consumerId",
+      "registryVersion",
+      "registryDigest",
+      "scopeDigest",
+      "snapshotId",
+      "snapshotImmutableHash",
+      "requiredAggregateVersion"
+    ],
+    "conformanceEvidence": {
+      "provider": "quality-snapshot-consumer-registry-conformance-anchor",
+      "evidenceRefPrefix": "contract://quality-snapshot-retention/consumer-registry/",
+      "verificationStatus": "contract-conformance",
+      "runtimeEvidenceClaim": "none"
+    },
+    "productionAuthority": {
+      "conformanceAnchorAccepted": false,
+      "trustedPortOwnerTask": "Task 3",
+      "trustedPort": "consumer-registry-authority"
+    },
+    "conformanceAnchors": [
+      {
+        "conformanceAnchorId": "active-clue-care-consumer-set",
+        "registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0",
+        "members": [
+          {
+            "consumerId": "clue-care",
+            "registryMembership": "required-for-snapshot",
+            "lifecycleStatus": "active"
+          }
+        ],
+        "membersDigest": "sha256:c3cb72b301ee258c0b563c99be2504be6d9e3e58e0ce7beed5f2430d65fb9af5",
+        "registryDigest": "sha256:bb48cbb73b60c2490b8abc17bcd0955d2d2c28da3339ab697c3500690d7c2247"
+      },
+      {
+        "conformanceAnchorId": "inactive-legacy-holder-consumer-set",
+        "registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0",
+        "members": [
+          {
+            "consumerId": "legacy-clue-projection",
+            "registryMembership": "unreleased-reference-holder",
+            "lifecycleStatus": "inactive"
+          }
+        ],
+        "membersDigest": "sha256:9ebf1ec0f3317b9959fb9d183cb814bd5c624b9f62d34c4cd3b0d162f83e28e0",
+        "registryDigest": "sha256:7728b0a7cc6bb5e2c73d6c623ac7200e345ddba84f5e83ed517fdec97309afae"
+      },
+      {
+        "conformanceAnchorId": "empty-consumer-set",
+        "registryVersion": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0",
+        "members": [],
+        "membersDigest": "sha256:4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "registryDigest": "sha256:8857f8a20f859397609157dd8f84eaae9bd674f28b9ddad3025d92cb8ffe3c3b"
+      }
+    ]
+  },
+  "legalHoldScopeBinding": {
+    "checkedScopeDigestField": "guards.legalHold.checkedScopeDigest",
+    "mustEqualField": "scope.scopeDigest",
+    "clearStillBindsCurrentScope": true,
+    "matchedRequiresCurrentScopeAndExactCount": true
+  },
+  "eventChronology": {
+    "committedOrdering": "retentionDueAt<=guardChecks<=deletionCommittedAt<=occurredAt",
+    "noCommitOrdering": "retentionDueAt<=guardChecks<=occurredAt",
+    "guardCheckFields": [
+      "guards.trustedTime.observedAt",
+      "guards.legalHold.checkedAt",
+      "guards.consumerRegistry.checkedAt",
+      "guards.consumerWatermarksCheckedAt"
+    ],
+    "attestationUpperBound": "deletionCommittedAt-when-present-otherwise-occurredAt",
+    "availableCheckTimeRequired": true
+  },
+  "eligibility": {
+    "trustedTimeRequired": true,
+    "dueComparison": "trustedNow>=retentionDueAt",
+    "legalHoldWindow": "[startAt,endAt)",
+    "consumerDenominator": "required-for-snapshot-plus-unreleased-reference-holders",
+    "consumerRegistryVersionField": "guards.consumerRegistry.registryVersion",
+    "consumerRegistryDigestField": "guards.consumerRegistry.registryDigest",
+    "inactiveExitRule": "decommission-no-reference-attestation-required",
+    "plannedExclusionRule": "planned-and-never-held-reference",
+    "watermarkRule": "confirmedAggregateVersion>=requiredAggregateVersion",
+    "watermarkEqualitySatisfies": true,
+    "watermarkBlockingStates": [
+      "behind",
+      "missing",
+      "unknown",
+      "registry-unavailable"
+    ],
+    "watermarkDoesNotReplaceAttestation": true,
+    "evidenceCopyAckRequired": true,
+    "evidenceCopyAckSatisfyingValues": [
+      "copied",
+      "not-required"
+    ],
+    "notRequiredAttestationBinding": [
+      "snapshotId",
+      "snapshotImmutableHash",
+      "requiredAggregateVersion"
+    ],
+    "transportAckCountsAsEvidenceCopyAck": false,
+    "inboxAckCountsAsEvidenceCopyAck": false,
+    "dependencyUnavailableResult": "blocked"
+  },
+  "downstreamEvidence": {
+    "ownerModule": "clue-care",
+    "ownerStories": [
+      "3.4",
+      "3.5"
+    ],
+    "objectType": "EvidenceSnapshot",
+    "copyTriggers": [
+      "candidate-create",
+      "clue-create"
+    ],
+    "copyMode": "self-contained-minimum",
+    "ownerSnapshotReferenceMayBeSoleEvidence": false,
+    "retentionScheduleVersion": "RS-1.0.0",
+    "retentionAnchor": "owner-domain-case-closure",
+    "retentionPeriod": "P3Y",
+    "runtimeEvidenceClaim": "none"
+  },
+  "ownerResult": {
+    "eventType": "scholarsense.ingestion-quality.quality-snapshot.deletion-result.v1",
+    "payloadContractVersion": "PIC-1.0.0",
+    "outcomes": [
+      "completed",
+      "blocked",
+      "partial",
+      "failed"
+    ],
+    "wireSizeLimitBytes": 65536,
+    "wireEncoding": "UTF-8",
+    "wireMeasurement": "received-raw-utf8-bytes-before-json-parse",
+    "byteOrderMarkAllowed": false,
+    "wireJsonParser": "strict-duplicate-key-rejecting",
+    "wirePrettyJsonAllowed": true,
+    "wireCanonicalByteEqualityRequired": false,
+    "blockedCompletionRule": "direct-successor-same-aggregate",
+    "idempotencyIdentity": "eventId",
+    "sameIdentitySamePayload": "duplicate",
+    "sameIdentityDifferentPayload": "conflict",
+    "lineageRootRule": "aggregateVersion=1-and-supersedesResultId=null",
+    "lineageSuccessorRule": "aggregateVersion=predecessor.aggregateVersion+1-and-supersedesResultId=predecessor.eventId",
+    "lineageScopeRule": "same-aggregate-and-same-scope",
+    "lineageChronologyRule": "successor-evidence-at-or-after-predecessor-occurredAt",
+    "lineageForkAllowed": false,
+    "completedSupersessionAllowed": false,
+    "ownerResultIsFinalReceipt": false,
+    "databaseTransactionDigestBinding": {
+      "semantics": "contract-binding-only",
+      "algorithm": "sha256-canonical-json",
+      "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+      "materialFields": [
+        "executionId",
+        "scopeDigest",
+        "result",
+        "deletionCommittedAt",
+        "transactionId",
+        "onlineSnapshot",
+        "onlineMetrics"
+      ],
+      "targetMaterialFields": [
+        "status",
+        "selectedCount",
+        "deletedCount",
+        "remainingCount",
+        "evidenceDigest",
+        "errorCode"
+      ],
+      "digestFields": [
+        "ownerLocalResults.onlineSnapshot.transactionEvidenceDigest",
+        "ownerLocalResults.onlineMetrics.transactionEvidenceDigest"
+      ],
+      "databaseCommitProof": false,
+      "runtimeEvidenceClaim": "none",
+      "productionAtomicityEvidenceTasks": [
+        "Task 3",
+        "Task 7"
+      ]
+    }
+  },
+  "backup": {
+    "policyVersion": "DRP-1.0.0",
+    "maximumRetentionPeriod": "P35D",
+    "maximumRetentionDays": 35,
+    "dueWindow": "deletionCommittedAt<=backupExpiryDueAt<=deletionCommittedAt+P35D",
+    "partialBackupExpiryDueAtRequired": true,
+    "physicalDeletionClaim": "none"
+  },
+  "auditHandoff": {
+    "targetOwner": "audit-operations",
+    "inputKind": "owner-local-deletion-result",
+    "finalReceiptOwner": "audit-operations",
+    "conformanceReceiptSatisfiesProduction": false
+  },
+  "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+  "runtimeEvidenceClaim": "none"
+}

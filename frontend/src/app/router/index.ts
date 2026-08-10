@@ -155,6 +155,7 @@ function protectedTarget(routeName: unknown): ReauthenticationTarget | undefined
   if (routeName === 'shell-home') return 'shell.home';
   if (routeName === 'audit-search') return 'audit.search';
   if (routeName === 'data-quality-catalogs') return 'data-quality.catalogs';
+  if (routeName === 'data-quality-quality-snapshots') return 'data-quality.quality-snapshots';
   if (routeName === 'subject-mapping-exceptions') return 'data-quality.subject-mapping-exceptions';
   if (routeName === 'subject-recompute-jobs') return 'subject-registry.recompute-jobs';
   return undefined;

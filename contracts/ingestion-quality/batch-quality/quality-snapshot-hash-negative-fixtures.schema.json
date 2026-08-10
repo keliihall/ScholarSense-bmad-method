@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/batch-quality/quality-snapshot-hash-negative-fixtures.schema.json",
+  "title": "QualitySnapshot hash negative mutations",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "fixtureVersion", "baseCaseId", "cases"],
+  "properties": {
+    "$schema": {"const": "../../quality-snapshot-hash-negative-fixtures.schema.json"},
+    "fixtureVersion": {"const": "QSHM-NEGATIVE-1.0.0"},
+    "baseCaseId": {"const": "root-policy-order-golden"},
+    "cases": {
+      "type": "array", "minItems": 16,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["caseId", "mutation", "expectedCode"],
+        "properties": {
+          "caseId": {"type": "string", "pattern": "^[a-z][a-z0-9-]{2,99}$"},
+          "mutation": {"type": "string", "minLength": 1},
+          "expectedCode": {"type": "string", "pattern": "^QSHM_[A-Z0-9_]+$"}
+        }
+      }
+    }
+  }
+}

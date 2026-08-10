@@ -83,7 +83,7 @@ class DataSourceCatalogServiceTest {
         assertEquals(CATALOG_ID, store.current().orElseThrow().catalogId());
         assertEquals(1, store.publishWrites);
         assertTrue(actions.contains(new ActionPair(
-                "session-r6", "data-quality.repair", "data-quality.reconcile")));
+                "session-r6", "data-quality.repair", "data-quality.read")));
         assertEquals(1, store.audits.size(), "idempotent replay must not append another audit fact");
         assertEquals(sha256("idem-key-001"), store.audits.getFirst().idempotencyKeyDigest());
 

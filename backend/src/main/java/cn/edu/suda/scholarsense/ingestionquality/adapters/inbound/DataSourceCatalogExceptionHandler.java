@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-@RestControllerAdvice(assignableTypes = DataSourceCatalogController.class)
+@RestControllerAdvice(assignableTypes = {
+        DataSourceCatalogController.class,
+        QualitySnapshotController.class})
 public final class DataSourceCatalogExceptionHandler {
     @ExceptionHandler(IngestionQualityApplicationException.class)
     ResponseEntity<ErrorEnvelope> application(

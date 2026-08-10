@@ -1,0 +1,232 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/field-projection/field-projection-1.1.schema.json",
+  "title": "ScholarSense field projection policy binding 1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "policyBindingVersion", "status", "unknownSemantics",
+    "predecessor", "roleFieldPolicy", "roleFieldPolicyFixture", "leafPathPolicy",
+    "maskProfiles", "fields", "objectSchemas", "conditionalRules",
+    "globalHiddenFields", "projectionOrder", "errors"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "FIELD-PROJECTION-1.1.0"},
+    "policyBindingVersion": {"const": "FIELD-PROJECTION-POLICY-BINDING-1.1.0"},
+    "status": {"const": "approved"},
+    "unknownSemantics": {"const": "fail-closed"},
+    "predecessor": {"$ref": "#/$defs/predecessorReference"},
+    "roleFieldPolicy": {"$ref": "#/$defs/policyDigestReference"},
+    "roleFieldPolicyFixture": {"$ref": "#/$defs/fixtureDigestReference"},
+    "leafPathPolicy": {"$ref": "#/$defs/leafPathPolicy"},
+    "maskProfiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boolean", "category", "code", "identity", "narrative", "technical", "timestamp"],
+      "properties": {
+        "boolean": {"$ref": "#/$defs/maskProfile"},
+        "category": {"$ref": "#/$defs/maskProfile"},
+        "code": {"$ref": "#/$defs/maskProfile"},
+        "identity": {"$ref": "#/$defs/maskProfile"},
+        "narrative": {"$ref": "#/$defs/maskProfile"},
+        "technical": {"$ref": "#/$defs/maskProfile"},
+        "timestamp": {"$ref": "#/$defs/maskProfile"}
+      }
+    },
+    "fields": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/globalField"}
+    },
+    "objectSchemas": {
+      "type": "array", "minItems": 4, "maxItems": 4, "uniqueItems": true,
+      "items": {
+        "oneOf": [
+          {"$ref": "#/$defs/legacyObjectSchema"},
+          {"$ref": "#/$defs/qualitySnapshotObjectSchema"}
+        ]
+      }
+    },
+    "conditionalRules": {
+      "type": "object", "additionalProperties": false,
+      "required": ["R2", "R5", "R6", "R6QualitySnapshot", "delegation"],
+      "properties": {
+        "R2": {
+          "type": "object", "additionalProperties": false,
+          "required": ["individualReadRequiresCurrentWorkItem"],
+          "properties": {"individualReadRequiresCurrentWorkItem": {"const": true}}
+        },
+        "R5": {
+          "type": "object", "additionalProperties": false,
+          "required": ["objectClass", "approvedPurposes", "closedFieldUniverse", "windowSemantics", "intersectionOrder"],
+          "properties": {
+            "objectClass": {"const": "TransferOrder"},
+            "approvedPurposes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "closedFieldUniverse": {"type": "array", "minItems": 7, "maxItems": 7, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "windowSemantics": {"const": "[startAt,endAt)"},
+            "intersectionOrder": {"type": "array", "minItems": 5, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+          }
+        },
+        "R6": {
+          "type": "object", "additionalProperties": false,
+          "required": ["objectClass", "purpose", "requiresOwnedSource"],
+          "properties": {
+            "objectClass": {"const": "SubjectMappingException"},
+            "purpose": {"const": "subject-mapping-repair"},
+            "requiresOwnedSource": {"const": true}
+          }
+        },
+        "R6QualitySnapshot": {"$ref": "#/$defs/r6QualitySnapshotRule"},
+        "delegation": {
+          "type": "object", "additionalProperties": false,
+          "required": ["semantics", "canExpand"],
+          "properties": {
+            "semantics": {"const": "intersection-only"},
+            "canExpand": {"const": false}
+          }
+        }
+      }
+    },
+    "globalHiddenFields": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "projectionOrder": {
+      "const": [
+        "current-composite-authorization", "approved-owner-catalog", "current-recheck",
+        "field-decision", "decrypt-clear-only", "safe-dto", "audit-commit", "serialize"
+      ]
+    },
+    "errors": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/error"}
+    }
+  },
+  "$defs": {
+    "predecessorReference": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "path", "sha256"],
+      "properties": {
+        "version": {"const": "FIELD-PROJECTION-POLICY-BINDING-1.0.0"},
+        "path": {"const": "contracts/field-projection/field-projection-policy-binding-1.0.0.json"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "policyDigestReference": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "path", "sha256"],
+      "properties": {
+        "version": {"const": "RFP-1.0.0"},
+        "path": {"const": "contracts/authorization/role-field-policy-rfp-1.0.0.json"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "fixtureDigestReference": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "path", "sha256"],
+      "properties": {
+        "version": {"const": "RFP-FIXTURE-1.0.0"},
+        "path": {"const": "contracts/authorization/rfp-fixture-1.0.0.json"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "leafPathPolicy": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "grammar", "unknownField", "unknownPath", "pathSuperset", "jsonPointer",
+        "recursiveObject", "numericArrayIndex", "serializationParity"
+      ],
+      "properties": {
+        "grammar": {"const": "closed-explicit-top-level-and-approved-array-leaf-paths"},
+        "unknownField": {"const": "H/omit"},
+        "unknownPath": {"const": "H/omit"},
+        "pathSuperset": {"const": "H/omit"},
+        "jsonPointer": {"const": "forbidden"},
+        "recursiveObject": {"const": "forbidden"},
+        "numericArrayIndex": {"const": "forbidden"},
+        "serializationParity": {"const": ["pre-serialization", "post-serialization"]}
+      }
+    },
+    "maskProfile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fixedValue", "lengthIndependent", "accessibleLabel"],
+      "properties": {
+        "fixedValue": {"type": ["string", "boolean", "integer"]},
+        "lengthIndependent": {"const": true},
+        "accessibleLabel": {"const": "已脱敏"}
+      }
+    },
+    "globalField": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "fieldClass", "valueType", "globalHidden"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]*$"},
+        "fieldClass": {"enum": ["B", "I", "C", "S", "E", "N", "G", "T"]},
+        "valueType": {"enum": ["string", "integer", "boolean", "timestamp"]},
+        "maskProfile": {"type": "string", "minLength": 1},
+        "globalHidden": {"type": "boolean"}
+      }
+    },
+    "scopedLeafField": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "fieldClass", "valueType", "nullable", "globalHidden"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^(?:[A-Za-z][A-Za-z0-9]*|observationWindow\\.(?:startAt|endAt)|metricResults\\[\\]\\.[A-Za-z][A-Za-z0-9]*|impactScopeCodes\\[\\])$"
+        },
+        "fieldClass": {"enum": ["B", "I", "C", "S", "E", "N", "G", "T"]},
+        "valueType": {"enum": ["string", "integer", "boolean", "timestamp"]},
+        "nullable": {"type": "boolean"},
+        "globalHidden": {"const": false}
+      }
+    },
+    "legacyObjectSchema": {
+      "type": "object", "additionalProperties": false,
+      "required": ["objectClass", "approvedPurposes", "fields"],
+      "properties": {
+        "objectClass": {"enum": ["AuditSearchRecord", "SubjectMappingException", "TransferOrder"]},
+        "approvedPurposes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "fields": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "qualitySnapshotObjectSchema": {
+      "type": "object", "additionalProperties": false,
+      "required": ["objectClass", "approvedPurposes", "requiredScopeAnchor", "fields"],
+      "properties": {
+        "objectClass": {"const": "QualitySnapshot"},
+        "approvedPurposes": {"const": ["data-quality.read"]},
+        "requiredScopeAnchor": {"const": "OWNED_SOURCE"},
+        "fields": {
+          "type": "array", "minItems": 42, "maxItems": 42, "uniqueItems": true,
+          "items": {"$ref": "#/$defs/scopedLeafField"}
+        }
+      }
+    },
+    "r6QualitySnapshotRule": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "objectClass", "purpose", "requiresOwnedSource", "requiresAssessedSnapshot",
+        "ownerResolution", "clearFieldClasses", "hiddenFieldClasses"
+      ],
+      "properties": {
+        "objectClass": {"const": "QualitySnapshot"},
+        "purpose": {"const": "data-quality.read"},
+        "requiresOwnedSource": {"const": true},
+        "requiresAssessedSnapshot": {"const": true},
+        "ownerResolution": {"const": "snapshot-to-current-persisted-source-owner"},
+        "clearFieldClasses": {"const": ["B", "E", "G", "T"]},
+        "hiddenFieldClasses": {"const": ["I", "C", "S", "N"]}
+      }
+    },
+    "error": {
+      "type": "object", "additionalProperties": false,
+      "required": ["condition", "status", "code", "message"],
+      "properties": {
+        "condition": {"type": "string", "minLength": 1},
+        "status": {"enum": [403, 409, 503]},
+        "code": {"type": "string", "pattern": "^FIELD_PROJECTION_[A-Z_]+$"},
+        "message": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

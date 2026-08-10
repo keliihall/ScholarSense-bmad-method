@@ -11,6 +11,7 @@ import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationScopeEvidence;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthoritativeIdentityContext;
 import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationOutcome;
 import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationRequest;
+import cn.edu.suda.scholarsense.identityaccess.api.FieldVisibility;
 import cn.edu.suda.scholarsense.identityaccess.api.IdentityFreshness;
 import cn.edu.suda.scholarsense.identityaccess.api.ResponsibilityScopeFreshness;
 import cn.edu.suda.scholarsense.identityaccess.api.ResponsibilityScopeValidity;
@@ -80,6 +81,68 @@ class CurrentEvidenceCompositeAuthorizationAdapterTest {
 
         assertEquals(CompositeAuthorizationOutcome.DENY, decision.outcome());
         assertEquals("EXPLICIT_BUSINESS_OBJECT_DENIED", decision.reasonCode());
+    }
+
+    @Test
+    void story23R6MatrixAllowsOnlyOwnedSnapshotReadAndOwnedSourceReconcile() {
+        AuthorizationScopeEvidence ownedSource = new AuthorizationScopeEvidence(
+                AuthorizationScopeAnchor.OWNED_SOURCE, ACCOUNT, null);
+        var owned = service(
+                identity("R6-DATA-OWNER"), null, availableEvidence(Set.of(ownedSource)), false);
+
+        var snapshot = owned.authorize(request(
+                "QUALITY_SNAPSHOT", "data-quality.read", 7));
+        assertEquals(CompositeAuthorizationOutcome.ALLOW, snapshot.outcome());
+        assertEquals(Set.of("OWNED_SOURCE"), snapshot.scopeAnchorSummary());
+        assertEquals(7, snapshot.objectVersion());
+        assertEquals(Map.of(
+                "B", FieldVisibility.CLEAR,
+                "I", FieldVisibility.HIDDEN,
+                "C", FieldVisibility.HIDDEN,
+                "S", FieldVisibility.HIDDEN,
+                "E", FieldVisibility.CLEAR,
+                "N", FieldVisibility.HIDDEN,
+                "G", FieldVisibility.CLEAR,
+                "T", FieldVisibility.CLEAR), snapshot.fieldProjectionSummary());
+
+        var reconcile = owned.authorize(request(
+                "SOURCE", "data-quality.reconcile", 7));
+        assertEquals(CompositeAuthorizationOutcome.ALLOW, reconcile.outcome());
+
+        var unowned = service(
+                identity("R6-DATA-OWNER"), null, availableEvidence(Set.of()), false)
+                .authorize(request("QUALITY_SNAPSHOT", "data-quality.read", 7));
+        assertEquals(CompositeAuthorizationOutcome.DENY, unowned.outcome());
+        assertEquals("SCOPE_NOT_PROVEN", unowned.reasonCode());
+
+        var dataBatch = owned.authorize(request("DATA_BATCH", "data-quality.read", 7));
+        assertEquals(CompositeAuthorizationOutcome.DENY, dataBatch.outcome());
+        assertEquals("OBJECT_CLASS_UNKNOWN", dataBatch.reasonCode());
+
+        var stale = owned.authorize(request("QUALITY_SNAPSHOT", "data-quality.read", 8));
+        assertEquals(CompositeAuthorizationOutcome.DENY, stale.outcome());
+        assertEquals("OBJECT_VERSION_STALE", stale.reasonCode());
+    }
+
+    @Test
+    void story23R7CannotReadBusinessSnapshotsButCanRetryTechnicalJobs() {
+        AuthorizationScopeEvidence ownedSource = new AuthorizationScopeEvidence(
+                AuthorizationScopeAnchor.OWNED_SOURCE, ACCOUNT, null);
+        var business = service(
+                identity("R7-PLATFORM-OPS"), null,
+                availableEvidence(Set.of(ownedSource)), false)
+                .authorize(request("QUALITY_SNAPSHOT", "data-quality.read", 7));
+        assertEquals(CompositeAuthorizationOutcome.DENY, business.outcome());
+        assertEquals("EXPLICIT_BUSINESS_OBJECT_DENIED", business.reasonCode());
+
+        AuthorizationScopeEvidence technical = new AuthorizationScopeEvidence(
+                AuthorizationScopeAnchor.TECHNICAL_OBJECT, null, null);
+        var retry = service(
+                identity("R7-PLATFORM-OPS"), null,
+                availableEvidence(Set.of(technical)), false)
+                .authorize(request("JOB", "platform.retry", 7));
+        assertEquals(CompositeAuthorizationOutcome.ALLOW, retry.outcome());
+        assertEquals(Set.of("TECHNICAL_OBJECT"), retry.scopeAnchorSummary());
     }
 
     @Test
@@ -313,6 +376,13 @@ class CurrentEvidenceCompositeAuthorizationAdapterTest {
                 Optional.of("b".repeat(64)),
                 Optional.of("lin_responsibility_case_a_000000000000"),
                 "0".repeat(32));
+    }
+
+    private static CompositeAuthorizationRequest request(
+            String objectClass, String action, long expectedObjectVersion) {
+        return new CompositeAuthorizationRequest(
+                "actor-pseudonym", objectClass, action, "a".repeat(64),
+                expectedObjectVersion, Optional.empty(), Optional.empty(), "0".repeat(32));
     }
 
     private static void assertDependencyUnavailable(

@@ -1,17 +1,19 @@
 ---
 title: 学林知微决策关闭登记
 status: closed
-version: 2.1.1
-updated: 2026-07-19-story-1.1d-applicability-alignment
+version: 2.3.0
+updated: 2026-08-09-story-2.3-qshm-addendum
 owner: Hei
 authorityRecordId: AUTH-2026-07-17-001
-implementationReadiness: ready
+supplementalAuthorityRecordId: AUTH-2026-08-08-001
+qualityHashAuthorityRecordId: AUTH-2026-08-09-001
+implementationReadiness: story-2.3-task-2-qshm-authorized
 runtimeEvidenceStatus: pending-story-execution
 ---
 
 # 决策关闭登记
 
-本表记录 DEC-001—DEC-018 的最终项目实现裁决。2026-07-17，项目总负责人 Hei 通过 `AUTH-2026-07-17-001` 委托并批准全部决策；详细数值、Responsible 角色、证据边界和运行验证 Story 以 [委托决策与实现准入基线](delegated-decision-baseline-2026-07-17.md) 为准。`closed` 表示实现所需参数、责任与失败语义已冻结，不表示沙箱、压测、灾备、删除或 canary 已实测通过；这些证据由对应 Story/DoD 生成，失败时禁止完成 Story 或发布。
+本表记录 DEC-001—DEC-019 的最终项目实现裁决。2026-07-17，项目总负责人 Hei 通过 `AUTH-2026-07-17-001` 委托并批准 DEC-001—DEC-018；2026-08-09 又通过 `AUTH-2026-08-08-001` 批准 DEC-019 及其 QMDP identity/authority mapping、source-key successor 与 materialization addenda，并通过独立的 `AUTH-2026-08-09-001` 批准 §4.9/QSHM-1.0.0 hash-material addendum 与删除独立 `rawCount`。详细数值、Responsible 角色、证据边界和运行验证 Story 分别以 [委托决策与实现准入基线](delegated-decision-baseline-2026-07-17.md)、[Story 2.3 QMDP Sprint Change Proposal](sprint-change-proposal-2026-08-08.md) 与 [Story 2.3 QSHM Sprint Change Proposal](sprint-change-proposal-2026-08-09.md) 为准。`closed` 表示实现所需参数、责任与失败语义已冻结，不表示沙箱、压测、灾备、删除、Java/PostgreSQL parity 或 canary 已实测通过；这些证据由对应 Story/DoD 生成，失败时禁止完成 Story 或发布。
 
 ## 后续作用域裁决
 
@@ -43,6 +45,7 @@ Story 1.1d 的 `CISB-1.0.0` 当前尚未批准：真实 repository/CI、artifact
 | DEC-016 | 证据/队列/校历/到访/关怀动作/专项日历投影/学业节点 | ES/QP/BC/WVP/CAC/SPM/ACN-1.0.0 | Hei / 2026-07-17 | 3.4、3.6—3.9、4.2—4.4c、4.8、5.3、6.1；G-06 | 3.7—3.9、4.2—4.4c、4.8、5.3、6.1 | closed |
 | DEC-017 | 性能/可用性 Profile | PP-1.0.0、AP-1.0.0 | Hei / 2026-07-17 | 性能 Story；G-01/G-05 | 1.1c、2.6a、2.8a、3.7、7.2c | closed |
 | DEC-018 | 智能发布阈值 | SGP-1.0.0 | Hei / 2026-07-17 | 8.1—8.4；G-09 | 8.1—8.4 | closed |
+| DEC-019 | 可执行质量口径、DCC-1.1.0 source-key successor、QualitySnapshot 投影/保留 handoff 与确定性 hash material | QMDP-1.0.0、DCC-1.1.0、FIELD-PROJECTION-POLICY-BINDING-1.1.0、QSHM-1.0.0 | Hei / 2026-08-09 | 2.3 及其下游 snapshot consumers；G-03/G-07 | 2.3、2.4、2.5、3.4、6.6 | closed |
 
 ## DEC-012 逐数据源责任登记
 

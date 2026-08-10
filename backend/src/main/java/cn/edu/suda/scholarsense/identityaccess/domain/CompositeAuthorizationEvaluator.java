@@ -102,7 +102,8 @@ public final class CompositeAuthorizationEvaluator {
             return deny(request, token, "HRAP_APPROVAL_REQUIRED");
         }
 
-        Map<FieldClass, Visibility> projection = mergeFields(applicableRoles, policy);
+        Map<FieldClass, Visibility> projection = mergeFields(
+                applicableRoles, request.objectClass(), policy);
         if (appliedDelegation.isPresent()) {
             Set<FieldClass> allowed = appliedDelegation.orElseThrow().allowedFieldClasses();
             for (FieldClass fieldClass : FieldClass.values()) {
@@ -134,11 +135,13 @@ public final class CompositeAuthorizationEvaluator {
     }
 
     private static Map<FieldClass, Visibility> mergeFields(
-            Set<RolePackage> roles, RoleFieldPolicyCatalog policy) {
+            Set<RolePackage> roles,
+            ObjectClass objectClass,
+            RoleFieldPolicyCatalog policy) {
         EnumMap<FieldClass, Visibility> result = new EnumMap<>(FieldClass.class);
         for (RolePackage role : roles) {
             for (Map.Entry<FieldClass, Visibility> entry
-                    : policy.fieldVisibility(role).entrySet()) {
+                    : policy.fieldVisibility(role, objectClass).entrySet()) {
                 result.merge(entry.getKey(), entry.getValue(), Visibility::strictest);
             }
         }

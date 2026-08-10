@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 class SubjectRegistryConfigurationTest {
     @Test
-    void contributesSeparateOwnerAndTechnicalAuthorizedShellEntries() {
+    void contributesOwnerMappingAndR7OnlyTechnicalJobShellEntries() {
         var capabilities = new SubjectRegistryConfiguration()
                 .subjectRegistryShellCapabilities().capabilities();
 
@@ -18,7 +18,7 @@ class SubjectRegistryConfigurationTest {
                 capabilities.stream().map(item -> item.routeName()).toList());
         assertEquals(Set.of("R6-DATA-OWNER"), capabilities.getFirst().authorizedRoleIds());
         assertEquals(
-                Set.of("R6-DATA-OWNER", "R7-PLATFORM-OPS"),
+                Set.of("R7-PLATFORM-OPS"),
                 capabilities.getLast().authorizedRoleIds());
     }
 }

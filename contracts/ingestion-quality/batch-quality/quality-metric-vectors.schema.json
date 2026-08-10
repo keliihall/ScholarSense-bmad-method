@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/batch-quality/quality-metric-vectors.schema.json",
+  "title": "Cross implementation quality metric vectors",
+  "$defs": {
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result", "valueBasisPoints", "reasonCode"],
+      "properties": {
+        "result": {"enum": ["passed", "failed", "not-applicable", "evaluation-error"]},
+        "valueBasisPoints": {"type": ["integer", "null"], "minimum": 0, "maximum": 9007199254740991},
+        "reasonCode": {"type": ["string", "null"]}
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["fixtureVersion", "profileVersion", "cases"],
+  "properties": {
+    "$schema": {"const": "../../quality-metric-vectors.schema.json"},
+    "fixtureVersion": {"const": "QMDP-VECTORS-1.0.0"},
+    "profileVersion": {"const": "QMDP-1.0.0"},
+    "cases": {
+      "type": "array",
+      "minItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["caseId", "metricId", "input", "expectedJava", "expectedSql"],
+        "properties": {
+          "caseId": {"type": "string", "pattern": "^[a-z][a-z0-9-]{2,99}$"},
+          "metricId": {"type": "string"},
+          "sourceId": {"type": "string", "pattern": "^SRC-P[01]-[A-Z-]+-[0-9]{3}$"},
+          "gateId": {"type": "string", "pattern": "^[a-z][a-z0-9-]{2,79}$"},
+          "input": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["applicable", "numerator", "denominator"],
+            "properties": {
+              "applicable": {"type": "boolean"},
+              "numerator": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+              "denominator": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+              "observedAt": {"type": "string", "format": "date-time"},
+              "cutoffAt": {"type": "string", "format": "date-time"},
+              "timezone": {"const": "Asia/Shanghai"}
+            }
+          },
+          "expectedJava": {"$ref": "#/$defs/expected"},
+          "expectedSql": {"$ref": "#/$defs/expected"}
+        }
+      }
+    }
+  }
+}

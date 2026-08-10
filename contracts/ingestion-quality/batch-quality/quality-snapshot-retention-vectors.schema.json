@@ -1,0 +1,355 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/batch-quality/quality-snapshot-retention-vectors.schema.json",
+  "title": "QualitySnapshot retention decision vectors",
+  "$defs": {
+    "uuidV7": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "dependencyState": {
+      "enum": ["available", "unavailable"]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "objectType",
+        "snapshotId",
+        "sourceId",
+        "snapshotAggregateVersion",
+        "evaluatedAt",
+        "retentionDueAt",
+        "snapshotImmutableHash",
+        "scopeDigest"
+      ],
+      "properties": {
+        "objectType": {"const": "QualitySnapshot"},
+        "snapshotId": {"$ref": "#/$defs/uuidV7"},
+        "sourceId": {
+          "type": "string",
+          "pattern": "^SRC-P[01]-[A-Z-]+-[0-9]{3}$"
+        },
+        "snapshotAggregateVersion": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "evaluatedAt": {"type": "string", "format": "date-time"},
+        "retentionDueAt": {"type": "string", "format": "date-time"},
+        "snapshotImmutableHash": {"$ref": "#/$defs/digest"},
+        "scopeDigest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "registryMember": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumerId", "registryMembership", "lifecycleStatus"],
+      "properties": {
+        "consumerId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{2,79}$"
+        },
+        "registryMembership": {
+          "enum": [
+            "required-for-snapshot",
+            "unreleased-reference-holder",
+            "planned-never-held-reference"
+          ]
+        },
+        "lifecycleStatus": {
+          "enum": ["active", "inactive", "planned", "retired"]
+        }
+      }
+    },
+    "authorityEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "evidenceRef",
+        "scopeDigest",
+        "registryVersion",
+        "registryDigest",
+        "membersDigest",
+        "checkedAt",
+        "verificationStatus",
+        "runtimeEvidenceClaim"
+      ],
+      "properties": {
+        "provider": {
+          "const": "quality-snapshot-consumer-registry-conformance-anchor"
+        },
+        "evidenceRef": {
+          "type": "string",
+          "pattern": "^contract://quality-snapshot-retention/consumer-registry/(active-clue-care-consumer-set|inactive-legacy-holder-consumer-set|empty-consumer-set)$"
+        },
+        "scopeDigest": {"$ref": "#/$defs/digest"},
+        "registryVersion": {
+          "const": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0"
+        },
+        "registryDigest": {"$ref": "#/$defs/digest"},
+        "membersDigest": {"$ref": "#/$defs/digest"},
+        "checkedAt": {"type": "string", "format": "date-time"},
+        "verificationStatus": {"const": "contract-conformance"},
+        "runtimeEvidenceClaim": {"const": "none"}
+      }
+    },
+    "consumerRegistry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "registryVersion",
+        "registryDigest",
+        "members",
+        "conformanceAnchorId",
+        "checkedAt",
+        "authorityEvidence"
+      ],
+      "properties": {
+        "status": {"$ref": "#/$defs/dependencyState"},
+        "registryVersion": {
+          "const": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0"
+        },
+        "registryDigest": {"$ref": "#/$defs/digest"},
+        "members": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/registryMember"}
+        },
+        "conformanceAnchorId": {
+          "type": ["string", "null"],
+          "enum": [
+            "active-clue-care-consumer-set",
+            "inactive-legacy-holder-consumer-set",
+            "empty-consumer-set",
+            null
+          ]
+        },
+        "checkedAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "authorityEvidence": {
+          "oneOf": [
+            {"$ref": "#/$defs/authorityEvidence"},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "legalHold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["holdId", "scopeDigest", "startAt", "endAt"],
+      "properties": {
+        "holdId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{2,79}$"
+        },
+        "scopeDigest": {"$ref": "#/$defs/digest"},
+        "startAt": {"type": "string", "format": "date-time"},
+        "endAt": {"type": "string", "format": "date-time"}
+      }
+    },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "snapshotId",
+        "snapshotImmutableHash",
+        "requiredAggregateVersion",
+        "consumerId",
+        "registryVersion",
+        "registryDigest",
+        "scopeDigest",
+        "attestedAt"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "evidence-copy",
+            "zero-dependency-no-reference",
+            "decommission-no-reference"
+          ]
+        },
+        "snapshotId": {"$ref": "#/$defs/uuidV7"},
+        "snapshotImmutableHash": {"$ref": "#/$defs/digest"},
+        "requiredAggregateVersion": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "consumerId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{2,79}$"
+        },
+        "registryVersion": {
+          "const": "QUALITY-SNAPSHOT-CONSUMER-REGISTRY-1.0.0"
+        },
+        "registryDigest": {"$ref": "#/$defs/digest"},
+        "scopeDigest": {"$ref": "#/$defs/digest"},
+        "attestedAt": {"type": "string", "format": "date-time"}
+      }
+    },
+    "consumer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "consumerId",
+        "registryMembership",
+        "lifecycleStatus",
+        "watermarkStatus",
+        "confirmedAggregateVersion",
+        "transportAck",
+        "inboxAck",
+        "evidenceCopyAck",
+        "attestation"
+      ],
+      "properties": {
+        "consumerId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{2,79}$"
+        },
+        "registryMembership": {
+          "enum": [
+            "required-for-snapshot",
+            "unreleased-reference-holder",
+            "planned-never-held-reference"
+          ]
+        },
+        "lifecycleStatus": {
+          "enum": ["active", "inactive", "planned", "retired"]
+        },
+        "watermarkStatus": {"enum": ["confirmed", "missing", "unknown"]},
+        "confirmedAggregateVersion": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "transportAck": {"enum": ["acked", "missing"]},
+        "inboxAck": {"enum": ["acked", "missing"]},
+        "evidenceCopyAck": {
+          "enum": ["copied", "not-required", "missing", "unavailable"]
+        },
+        "attestation": {
+          "oneOf": [
+            {"$ref": "#/$defs/attestation"},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retentionDueAt", "decision", "reasonCodes"],
+      "properties": {
+        "retentionDueAt": {"type": "string", "format": "date-time"},
+        "decision": {"enum": ["eligible", "blocked"]},
+        "reasonCodes": {
+          "type": "array",
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "RETENTION_NOT_DUE",
+              "LEGAL_HOLD_ACTIVE",
+              "CONSUMER_WATERMARK_BEHIND",
+              "CONSUMER_WATERMARK_MISSING",
+              "CONSUMER_WATERMARK_UNKNOWN",
+              "EVIDENCE_COPY_ACK_MISSING",
+              "TRUSTED_TIME_UNAVAILABLE",
+              "LEGAL_HOLD_DEPENDENCY_UNAVAILABLE",
+              "CONSUMER_WATERMARK_DEPENDENCY_UNAVAILABLE",
+              "CONSUMER_REGISTRY_UNAVAILABLE"
+            ]
+          }
+        }
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "caseId",
+        "overallResult",
+        "evaluatedAt",
+        "publishedAt",
+        "trustedNow",
+        "scope",
+        "consumerRegistry",
+        "dependencies",
+        "legalHolds",
+        "requiredAggregateVersion",
+        "consumers",
+        "expected"
+      ],
+      "properties": {
+        "caseId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{2,99}$"
+        },
+        "overallResult": {"enum": ["quality-passed", "quality-failed"]},
+        "evaluatedAt": {"type": "string", "format": "date-time"},
+        "publishedAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "trustedNow": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "scope": {"$ref": "#/$defs/scope"},
+        "consumerRegistry": {"$ref": "#/$defs/consumerRegistry"},
+        "dependencies": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["trustedTime", "legalHold", "consumerWatermarks"],
+          "properties": {
+            "trustedTime": {"$ref": "#/$defs/dependencyState"},
+            "legalHold": {"$ref": "#/$defs/dependencyState"},
+            "consumerWatermarks": {"$ref": "#/$defs/dependencyState"}
+          }
+        },
+        "legalHolds": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {"$ref": "#/$defs/legalHold"}
+        },
+        "requiredAggregateVersion": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "consumers": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {"$ref": "#/$defs/consumer"}
+        },
+        "expected": {"$ref": "#/$defs/expected"}
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "vectorVersion", "policyVersion", "cases"],
+  "properties": {
+    "$schema": {"const": "quality-snapshot-retention-vectors.schema.json"},
+    "vectorVersion": {"const": "QUALITY-SNAPSHOT-RETENTION-VECTORS-1.0.0"},
+    "policyVersion": {"const": "QUALITY-SNAPSHOT-RETENTION-1.0.0"},
+    "cases": {
+      "type": "array",
+      "minItems": 20,
+      "maxItems": 20,
+      "items": {"$ref": "#/$defs/case"}
+    }
+  }
+}

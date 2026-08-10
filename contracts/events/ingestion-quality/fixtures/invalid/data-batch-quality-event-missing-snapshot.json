@@ -1,0 +1,24 @@
+{
+  "data": {
+    "aggregateId": "019fe700-0000-7000-8000-000000000001",
+    "aggregateType": "data-batch",
+    "aggregateVersion": 3,
+    "causationId": "019fe700-0000-7000-8000-000000000010",
+    "contractVersion": "PIC-1.0.0",
+    "correlationId": "019fe700-0000-7000-8000-000000000011",
+    "eventId": "019fe700-0000-7000-8000-000000000012",
+    "occurredAt": "2026-08-10T00:00:00Z",
+    "producer": "ingestion-quality",
+    "runtimeEvidenceClaim": "none",
+    "schemaVersion": "DATA-BATCH-QUALITY-ASSESSED-1.0.0",
+    "traceId": "00112233445566778899aabbccddeeff"
+  },
+  "datacontenttype": "application/json",
+  "id": "019fe700-0000-7000-8000-000000000012",
+  "source": "urn:scholarsense:ingestion-quality",
+  "specversion": "1.0",
+  "subject": "data-batch/019fe700-0000-7000-8000-000000000001",
+  "time": "2026-08-10T00:00:00Z",
+  "traceparent": "00-00112233445566778899aabbccddeeff-0011223344556677-01",
+  "type": "scholarsense.ingestion-quality.data-batch.quality-assessed.v1"
+}

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/field-projection/field-projection-fixture-1.1.schema.json",
+  "title": "ScholarSense QualitySnapshot field projection conformance fixture",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "policyBindingVersion", "authorizationOracle", "scenarios"],
+  "properties": {
+    "schemaVersion": {"const": "FIELD-PROJECTION-FIXTURE-1.1.0"},
+    "policyBindingVersion": {"const": "FIELD-PROJECTION-POLICY-BINDING-1.1.0"},
+    "authorizationOracle": {"$ref": "#/$defs/authorizationOracle"},
+    "scenarios": {
+      "type": "array", "minItems": 3, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/scenario"}
+    }
+  },
+  "$defs": {
+    "authorizationOracle": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "path", "sha256"],
+      "properties": {
+        "version": {"const": "RFP-FIXTURE-1.0.0"},
+        "path": {"const": "contracts/authorization/rfp-fixture-1.0.0.json"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "scenario": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "scenarioId", "authorizationOracleScenarioId", "roles", "objectClass",
+        "objectToken", "purpose", "serverNow", "authorizationOutcome",
+        "ownedSource", "assessedSnapshot", "values"
+      ],
+      "properties": {
+        "scenarioId": {"type": "string", "minLength": 1},
+        "authorizationOracleScenarioId": {"enum": ["R6-DQ-A", "R6-DQ-B"]},
+        "roles": {"const": ["R6"]},
+        "objectClass": {"type": "string", "minLength": 1},
+        "objectToken": {"type": "string", "minLength": 1},
+        "purpose": {"type": "string", "minLength": 1},
+        "serverNow": {"type": "string", "format": "date-time"},
+        "authorizationOutcome": {"enum": ["ALLOW", "DENY"]},
+        "ownedSource": {"type": "boolean"},
+        "assessedSnapshot": {"type": "boolean"},
+        "values": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/leafValue"}
+        }
+      }
+    },
+    "leafValue": {
+      "oneOf": [
+        {"type": ["string", "integer", "boolean", "null"]},
+        {
+          "type": "array", "maxItems": 64,
+          "items": {"type": ["string", "integer", "boolean", "null"]}
+        }
+      ]
+    }
+  }
+}

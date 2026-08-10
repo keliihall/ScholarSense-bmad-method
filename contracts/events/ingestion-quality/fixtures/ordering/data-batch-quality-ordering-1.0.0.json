@@ -1,0 +1,14 @@
+{
+  "version": "DATA-BATCH-QUALITY-ORDERING-1.0.0",
+  "runtimeEvidenceClaim": "none",
+  "identity": "CloudEvent source+id",
+  "orderingKey": "data.aggregateId",
+  "monotonicField": "data.aggregateVersion",
+  "scenarios": [
+    {"case": "duplicate", "currentVersion": 3, "incomingVersion": 3, "sameEventId": true, "expectedAction": "acknowledge-noop", "cursorAdvances": false},
+    {"case": "old", "currentVersion": 4, "incomingVersion": 3, "sameEventId": false, "expectedAction": "acknowledge-old-noop", "cursorAdvances": false},
+    {"case": "gap", "currentVersion": 2, "incomingVersion": 4, "sameEventId": false, "expectedAction": "pause-and-backfill", "backfillVersion": 3, "cursorAdvances": false},
+    {"case": "poison", "currentVersion": 2, "incomingVersion": 3, "sameEventId": false, "expectedAction": "quarantine", "cursorAdvances": false},
+    {"case": "backfill", "currentVersion": 2, "incomingVersion": 3, "sameEventId": false, "expectedAction": "apply-and-resume", "cursorAdvances": true}
+  ]
+}

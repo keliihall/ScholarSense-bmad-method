@@ -53,6 +53,7 @@ class ContinuationServiceTest {
     @Test
     void acceptsSubjectRegistryRoutesWithoutSensitiveOpaqueContext() {
         for (String route : List.of(
+                "data-quality.quality-snapshots",
                 "data-quality.subject-mapping-exceptions",
                 "subject-registry.recompute-jobs")) {
             FakeContinuationRepository repository = new FakeContinuationRepository();

@@ -28,7 +28,21 @@ final class MigrationRules {
             "(?i)\\breferences\\s+(?:(" + IDENTIFIER + ")\\s*\\.\\s*)?(" + IDENTIFIER + ")");
     private static final Pattern TABLE_ALIAS = Pattern.compile(
             "(?i)\\b(?:from|join|update|into)\\s+(?:(?:" + IDENTIFIER + ")\\s*\\.\\s*)?"
-                    + IDENTIFIER + "\\s+(?:as\\s+)?(" + IDENTIFIER + ")");
+                    + IDENTIFIER + "\\s+(?:as\\s+)?(?=(" + IDENTIFIER + ")\\b)");
+    private static final Pattern FUNCTION_TABLE_ALIAS = Pattern.compile(
+            "(?is)\\b(?:from|join)\\s+(?:lateral\\s+)?"
+                    + "(?:(?:" + IDENTIFIER + ")\\s*\\.\\s*)?" + IDENTIFIER
+                    + "\\s*\\([^;]*?\\)\\s+(?:as\\s+)?(?=(" + IDENTIFIER + ")\\b)");
+    private static final Pattern CTE_ALIAS = Pattern.compile(
+            "(?i)(?:\\bwith\\s+(?:recursive\\s+)?|,)\\s*(" + IDENTIFIER
+                    + ")(?:\\s*\\([^)]*\\))?\\s+as\\s*\\(");
+    private static final Pattern DERIVED_TABLE_ALIAS = Pattern.compile(
+            "(?i)\\)\\s+(?:as\\s+)?(" + IDENTIFIER + ")\\s+on\\b");
+    private static final Pattern PLPGSQL_RECORD_VARIABLE = Pattern.compile(
+            "(?im)^\\s*(" + IDENTIFIER + ")\\s+(?:(?:" + IDENTIFIER
+                    + ")\\s*\\.\\s*)?" + IDENTIFIER + "%rowtype\\s*;");
+    private static final Pattern PLPGSQL_LOOP_RECORD = Pattern.compile(
+            "(?i)\\bfor\\s+(" + IDENTIFIER + ")\\s+in\\s+(?:select|execute)\\b");
     private static final Pattern ADDITIONAL_TABLE_REFERENCE = Pattern.compile(
             "(?i)(?:\\bcreate\\s+(?:unique\\s+)?index\\s+(?:concurrently\\s+)?"
                     + "(?:if\\s+not\\s+exists\\s+)?(?:" + IDENTIFIER + "\\s+)?on|"
@@ -56,7 +70,9 @@ final class MigrationRules {
             "(?is)^(?:table\\s+)?(.+)$");
     private static final Set<String> SQL_KEYWORDS = Set.of(
             "where", "join", "left", "right", "full", "inner", "outer", "cross", "on",
-            "group", "order", "limit", "offset", "returning", "set", "values", "union");
+            "group", "order", "limit", "offset", "returning", "set", "values", "union",
+            "or", "from", "select", "into", "update", "for", "lateral", "skip", "strict",
+            "with", "recursive");
 
     private MigrationRules() {}
 
@@ -165,14 +181,26 @@ final class MigrationRules {
         inspectPrivileges(code, expected, relative, violations);
         String parsedContent = privilegeStatementsRemoved(code);
         inspectQualifiedIdentifiers(parsedContent, expected, relative, violations);
+        Set<String> cteNames = new HashSet<>();
+        Matcher cte = CTE_ALIAS.matcher(parsedContent);
+        while (cte.find()) {
+            cteNames.add(identifier(cte.group(1)));
+        }
         Matcher table = TABLE_REFERENCE.matcher(parsedContent);
         while (table.find()) {
+            if (isDistinctFromOperand(parsedContent, table.start())
+                    || isFunctionCall(parsedContent, table.end())) {
+                continue;
+            }
             String schema = table.group(1) == null ? expected.schema() : identifier(table.group(1));
             if (schema.equals("pg_catalog") || schema.equals("information_schema")) {
                 continue;
             }
             String tableName = identifier(table.group(2));
             if (SQL_KEYWORDS.contains(tableName)) {
+                continue;
+            }
+            if (table.group(1) == null && cteNames.contains(tableName)) {
                 continue;
             }
             if (!tableName.startsWith(expected.tablePrefix())) {
@@ -336,6 +364,21 @@ final class MigrationRules {
 
     private static void inspectQualifiedIdentifiers(
             String content, Ownership expected, Path relative, List<String> violations) {
+        Set<String> plpgsqlRecords = new HashSet<>();
+        Matcher declaredRecord = PLPGSQL_RECORD_VARIABLE.matcher(content);
+        while (declaredRecord.find()) {
+            String record = identifier(declaredRecord.group(1));
+            if (record.startsWith(expected.tablePrefix())) {
+                plpgsqlRecords.add(record);
+            }
+        }
+        Matcher loopRecord = PLPGSQL_LOOP_RECORD.matcher(content);
+        while (loopRecord.find()) {
+            String record = identifier(loopRecord.group(1));
+            if (record.startsWith(expected.tablePrefix())) {
+                plpgsqlRecords.add(record);
+            }
+        }
         boolean triggerBody = false;
         int triggerBodyDelimiters = 0;
         for (String statement : sqlCodeOnly(content).split(";")) {
@@ -351,6 +394,24 @@ final class MigrationRules {
                     aliases.add(new ScopedAlias(aliasName, scopePath(statement, alias.start())));
                 }
             }
+            Matcher functionAlias = FUNCTION_TABLE_ALIAS.matcher(statement);
+            while (functionAlias.find()) {
+                String aliasName = identifier(functionAlias.group(1));
+                if (!SQL_KEYWORDS.contains(aliasName)) {
+                    aliases.add(new ScopedAlias(
+                            aliasName, scopePath(statement, functionAlias.start())));
+                }
+            }
+            Matcher cteAlias = CTE_ALIAS.matcher(statement);
+            while (cteAlias.find()) {
+                aliases.add(new ScopedAlias(
+                        identifier(cteAlias.group(1)), scopePath(statement, cteAlias.start())));
+            }
+            Matcher derivedAlias = DERIVED_TABLE_ALIAS.matcher(statement);
+            while (derivedAlias.find()) {
+                aliases.add(new ScopedAlias(
+                        identifier(derivedAlias.group(1)), scopePath(statement, derivedAlias.end())));
+            }
             Matcher qualified = QUALIFIED_IDENTIFIER.matcher(statement);
             while (qualified.find()) {
                 String schema = identifier(qualified.group(1));
@@ -361,6 +422,9 @@ final class MigrationRules {
                     continue;
                 }
                 if (triggerBody && (schema.equals("old") || schema.equals("new"))) {
+                    continue;
+                }
+                if (plpgsqlRecords.contains(schema)) {
                     continue;
                 }
                 if (!schema.equals(expected.schema())
@@ -388,6 +452,21 @@ final class MigrationRules {
             }
         }
         return count;
+    }
+
+    private static boolean isDistinctFromOperand(String content, int matchStart) {
+        int prefixStart = Math.max(0, matchStart - 32);
+        return content.substring(prefixStart, matchStart)
+                .toLowerCase(Locale.ROOT)
+                .matches("(?s).*\\bdistinct\\s+$");
+    }
+
+    private static boolean isFunctionCall(String content, int matchEnd) {
+        int cursor = matchEnd;
+        while (cursor < content.length() && Character.isWhitespace(content.charAt(cursor))) {
+            cursor++;
+        }
+        return cursor < content.length() && content.charAt(cursor) == '(';
     }
 
     private static boolean isScopePrefix(List<Integer> aliasScope, List<Integer> referenceScope) {

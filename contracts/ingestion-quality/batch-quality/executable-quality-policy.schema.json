@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/batch-quality/executable-quality-policy.schema.json",
+  "title": "Executable quality policy",
+  "$defs": {
+    "digestBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "version", "rawSha256", "canonicalDigest"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^contracts/[a-z0-9./-]+\\.json$"},
+        "version": {"type": "string", "minLength": 5},
+        "rawSha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "canonicalDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      }
+    },
+    "manifestFreshnessBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceOccurredAt", "scheduledDueAt", "receivedAt", "laneId"],
+      "properties": {
+        "sourceOccurredAt": {"const": "manifest.sourceOccurredAt"},
+        "scheduledDueAt": {"const": "manifest.scheduledDueAt"},
+        "receivedAt": {"const": "manifest.receivedAt"},
+        "laneId": {"const": "manifest.laneId"}
+      }
+    },
+    "freshnessRule": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "laterField", "earlierField", "maxDurationMilliseconds"],
+          "properties": {
+            "kind": {"const": "duration"},
+            "laterField": {"enum": ["record.receivedAt", "manifest.receivedAt"]},
+            "earlierField": {"enum": ["record.sourceUpdatedAt", "record.occurredAt", "record.heartbeatAt", "record.effectiveFrom", "record.effectiveAt", "record.correctionEffectiveAt", "manifest.sourceOccurredAt"]},
+            "maxDurationMilliseconds": {"type": "integer", "minimum": 1, "maximum": 2592000000}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "laterField", "earlierField", "dueLocalTime", "dayOffset"],
+          "properties": {
+            "kind": {"const": "local-cutoff"},
+            "laterField": {"const": "manifest.receivedAt"},
+            "earlierField": {"const": "manifest.scheduledDueAt"},
+            "dueLocalTime": {"type": "string", "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"},
+            "dayOffset": {"type": "integer", "minimum": 0, "maximum": 1}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "laterField", "earlierField", "minimumLeadMilliseconds"],
+          "properties": {
+            "kind": {"const": "advance-horizon"},
+            "laterField": {"const": "manifest.scheduledDueAt"},
+            "earlierField": {"const": "manifest.receivedAt"},
+            "minimumLeadMilliseconds": {"type": "integer", "minimum": 1, "maximum": 2592000000}
+          }
+        }
+      ]
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profileVersion",
+    "decisionId",
+    "authorityRef",
+    "approvalRef",
+    "approvedBy",
+    "approvedAt",
+    "effectiveAt",
+    "owner",
+    "evidenceRef",
+    "status",
+    "canonicalization",
+    "numericSemantics",
+    "windowSemantics",
+    "freshnessManifestBinding",
+    "controlledInputs",
+    "commonMetrics",
+    "sources",
+    "nonMetricConstraints",
+    "overallResult"
+  ],
+  "properties": {
+    "$schema": {"const": "executable-quality-policy.schema.json"},
+    "profileVersion": {"const": "QMDP-1.0.0"},
+    "decisionId": {"const": "DEC-019"},
+    "authorityRef": {"const": "AUTH-2026-08-08-001"},
+    "approvalRef": {"const": "AUTH-2026-08-08-001"},
+    "approvedBy": {"const": "Hei"},
+    "approvedAt": {"const": "2026-08-09T10:02:22+08:00"},
+    "effectiveAt": {"const": "2026-08-09T10:02:22+08:00"},
+    "owner": {"const": "Hei"},
+    "evidenceRef": {"const": "story://2.3/DEC-019/AUTH-2026-08-08-001"},
+    "status": {"const": "approved"},
+    "canonicalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "encoding", "objectKeyOrder", "duplicateKeys", "binaryFloat", "time", "digestAlgorithm", "digestPrefix"],
+      "properties": {
+        "profile": {"const": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"},
+        "encoding": {"const": "UTF-8"},
+        "objectKeyOrder": {"const": "lexicographic"},
+        "duplicateKeys": {"const": "reject"},
+        "binaryFloat": {"const": "forbidden"},
+        "time": {"const": "ISO-8601-offset"},
+        "digestAlgorithm": {"const": "sha256"},
+        "digestPrefix": {"const": "sha256:"}
+      }
+    },
+    "numericSemantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["representation", "basisPointScale", "valueScale", "roundingMode", "comparisonStage", "zeroDenominator"],
+      "properties": {
+        "representation": {"const": "non-negative-integer-rational"},
+        "basisPointScale": {"const": 10000},
+        "valueScale": {"const": 0},
+        "roundingMode": {"const": "HALF_UP"},
+        "comparisonStage": {"const": "pre-rounding-cross-multiply"},
+        "zeroDenominator": {"const": "evaluation-error/QUALITY_POLICY_ZERO_DENOMINATOR"}
+      }
+    },
+    "windowSemantics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["interval", "storageTimezone", "scheduleTimezone", "freshnessWindowHours", "cutoffBoundary"],
+      "properties": {
+        "interval": {"const": "[windowStartAt,windowEndAt)"},
+        "storageTimezone": {"const": "UTC"},
+        "scheduleTimezone": {"const": "Asia/Shanghai"},
+        "freshnessWindowHours": {"const": 720},
+        "cutoffBoundary": {"const": "inclusive"}
+      }
+    },
+    "freshnessManifestBinding": {"$ref": "#/$defs/manifestFreshnessBinding"},
+    "controlledInputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dataCatalog", "qualityGate"],
+      "properties": {
+        "dataCatalog": {"$ref": "#/$defs/digestBinding"},
+        "qualityGate": {"$ref": "#/$defs/digestBinding"}
+      }
+    },
+    "commonMetrics": {"type": "array", "minItems": 12, "maxItems": 12, "items": {"type": "object"}},
+    "sources": {
+      "type": "array",
+      "minItems": 17,
+      "maxItems": 17,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceId", "owner", "schemaBinding", "applicableCommonMetricIds", "sourceGates", "freshnessLanes"],
+        "properties": {
+          "sourceId": {"type": "string", "pattern": "^SRC-P[01]-[A-Z-]+-[0-9]{3}$"},
+          "owner": {"type": "string", "minLength": 2},
+          "schemaBinding": {"$ref": "#/$defs/digestBinding"},
+          "applicableCommonMetricIds": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 12,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "PRIMARY_KEY_COMPLETENESS_BP",
+                "P0_SUBJECT_MAPPING_BP",
+                "REQUIRED_FIELD_VALIDITY_BP",
+                "VALID_RECORD_RATE_BP",
+                "CORE_FIELD_COVERAGE_BP",
+                "FRESHNESS_WITHIN_SLO_BP",
+                "UNRESOLVED_INTERVAL_CONFLICT_COUNT",
+                "DUPLICATE_BUSINESS_KEY_COUNT",
+                "VERSION_REGRESSION_COUNT",
+                "SOURCE_CONTINUITY_GATE",
+                "SCHEMA_ALLOWLIST_COMPATIBILITY_BP",
+                "FORBIDDEN_FIELD_COUNT"
+              ]
+            }
+          },
+          "sourceGates": {"type": "array", "minItems": 1, "maxItems": 4, "items": {"type": "object"}},
+          "freshnessLanes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["laneId", "unit", "timezone", "inclusive", "allowNoActivity", "rule"],
+              "properties": {
+                "laneId": {"type": "string", "pattern": "^[a-z][a-z0-9-]{2,79}$"},
+                "unit": {"enum": ["record", "scheduled-partition", "authority-fact", "fault-fact", "sealed-batch", "calendar-projection"]},
+                "timezone": {"const": "Asia/Shanghai"},
+                "inclusive": {"const": true},
+                "allowNoActivity": {"const": false},
+                "rule": {"$ref": "#/$defs/freshnessRule"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "nonMetricConstraints": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["constraintId", "kind", "sourceId", "deniedConsumerPurpose"],
+        "properties": {
+          "constraintId": {"enum": ["not-econ-hit-evidence", "not-student-evaluation-feature"]},
+          "kind": {"const": "consumer-purpose-deny"},
+          "sourceId": {"enum": ["SRC-P1-AID-001", "SRC-P1-WORK-VISIT-001"]},
+          "deniedConsumerPurpose": {"enum": ["ECON-012-hit-evidence", "student-evaluation-feature"]}
+        }
+      }
+    },
+    "overallResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operator", "minimumApplicableHardGates", "evaluationErrorResult", "failedResult", "passedResult"],
+      "properties": {
+        "operator": {"const": "AND"},
+        "minimumApplicableHardGates": {"const": 1},
+        "evaluationErrorResult": {"const": "sealed/evaluation-error"},
+        "failedResult": {"const": "quality-failed"},
+        "passedResult": {"const": "quality-passed"}
+      }
+    }
+  }
+}
