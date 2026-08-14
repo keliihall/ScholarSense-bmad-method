@@ -32,9 +32,10 @@ class CurrentAuthorizedShellControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, max-age=0"))
                 .andExpect(header().string("Referrer-Policy", "no-referrer"))
-                .andExpect(jsonPath("$.schemaVersion").value("AUTHORIZED-SHELL-1.0.0"))
+                .andExpect(jsonPath("$.schemaVersion").value("AUTHORIZED-SHELL-1.1.0"))
                 .andExpect(jsonPath("$.defaultSurface.surfaceId").value("care-workbench"))
                 .andExpect(jsonPath("$.menuItems").isArray())
+                .andExpect(jsonPath("$.actionCapabilities").isArray())
                 .andExpect(jsonPath("$.roles").doesNotExist())
                 .andExpect(jsonPath("$.allowToken").doesNotExist());
     }

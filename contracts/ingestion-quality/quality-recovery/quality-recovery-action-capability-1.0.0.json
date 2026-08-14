@@ -1,0 +1,25 @@
+{
+  "contractVersion": "QUALITY-RECOVERY-ACTION-CAPABILITY-1.0.0",
+  "predecessor": {
+    "path": "contracts/authorization/authorized-shell.schema.json",
+    "sha256": "21abc5f4186c3f00e912136856b65f55bd6fbc4791126de9e7a6e810ceae1a82"
+  },
+  "successorSchema": "contracts/authorization/authorized-shell-1.1.0.schema.json",
+  "pageEntryCapability": "quality-snapshots",
+  "actionCapability": {
+    "actionType": "quality-fuse.recover",
+    "stateOwner": "identity-access-high-risk-runtime",
+    "availableRequires": [
+      "HRAP-runtime-installed", "recovery-sample-provider-installed",
+      "RECOVERY_TASK-owner-evidence-provider-installed",
+      "fused-to-recovering-seven-path-positive-runtime-closure"
+    ],
+    "missingOrFailedEvidence": "not-installed-or-unavailable-never-available"
+  },
+  "menuProjection": "action-capability-never-creates-a-menu-item-or-route",
+  "authorization": "capability-is-activation-evidence-never-object-authorization",
+  "actionRevocationEffect": "abort-and-delete-recovery-command-query-preview-token-and-draft-only",
+  "pageReadEffect": "quality-snapshot-eligibility-and-recovery-task-read-caches-remain-independent",
+  "narrowViewport": "zero-recovery-request-and-zero-object-dom",
+  "runtimeEvidenceClaim": "contract-only"
+}

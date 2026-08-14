@@ -1,0 +1,39 @@
+{
+  "baselineVersion": "QRBASE-1.0.0",
+  "repositoryHeadCommit": "017997ae83d12f048f8d192e371d44fa32233550",
+  "repositoryHeadTree": "18032ab582fcc6154b2784931b9693b570a93391",
+  "story24VerifiedCandidate": {
+    "commit": "19a0e6baefa426b8289e519ae3734fe84836e8fe",
+    "tree": "ac42cffe4490b21c3f23a6ab8f1b308095706d8b",
+    "verification": "_bmad-output/implementation-artifacts/2-4-verification.md"
+  },
+  "story25aReviewCloseoutCandidate": {
+    "commit": "b7257edc35ac0ae7e83674ae5ea9c0371e48c82f",
+    "tree": "db9206ec83945f424dc5a1c09b6d6d8c75493d45",
+    "reviewFindingsResolved": 17,
+    "verification": "_bmad-output/implementation-artifacts/2-5a-verification.md"
+  },
+  "finalPredecessorOverlayCandidate": {
+    "commit": "08b2f121e0922de8ae057e1c4987443804ae2b38",
+    "tree": "81e666ecff0547dde47e63d05268037775516196",
+    "parentCommit": "017997ae83d12f048f8d192e371d44fa32233550",
+    "changedPathCount": 192,
+    "pathRawSha256Aggregate": "62590075bcfe597b9a0268e1f062da8889ca8b55a67db40993b214700ffda04e",
+    "manifest": "contracts/ingestion-quality/quality-recovery/quality-recovery-predecessor-overlay-1.0.0.json",
+    "covers": "all-current-final-story-2.4-and-2.5a-repairs-before-story-2.5b-task-0",
+    "materialization": "temporary-index-only;user-branch-index-and-worktree-unchanged"
+  },
+  "predecessorDigests": {
+    "V000015": "sha256:21a66478ce29bf71838f4375c7162f5bbd390d5db60661981c5acfa03c419edb",
+    "V000016": "sha256:a720f004d30962b4b7bff2e8e734e1ee211f06866e8c3e02ec5c5d36b6eb791c",
+    "qualityEligibilityRecoveryCommand100": "sha256:698e09d14d233e6ed57485604783f98cd8e202eb428d48ef11cf946673ba3c55",
+    "qualityEligibilitiesOpenApi": "sha256:82762fd9d773d9d1248f392365bf63af10297c2a32496c9b02792786d685cd8a",
+    "qualityRecoveryTasksOpenApi": "sha256:586fec4e3357959b3c2ac136752d29525468e2dc956394181e66f9d091b0ed6e"
+  },
+  "releaseBaseline": {
+    "releaseManifest": 7,
+    "runtimeProfile": "ingestion-quality-runtime-4.0.0",
+    "rolesProfile": "ingestion-quality-roles-4.0.0"
+  },
+  "preservation": "old-temporary-candidates-are-verification-evidence-only;final-predecessor-is-the-complete-path-to-raw-sha-overlay-manifest;do-not-checkout-reset-or-reconstruct-from-HEAD"
+}

@@ -1,0 +1,136 @@
+{
+  "successorVersion": "AD-23-QUALITY-RECOVERY-1.0.0",
+  "authority": ["AD-1", "AD-2", "AD-3", "AD-5", "AD-16", "AD-23", "HRAP-1.0.0", "QRP-1.0.0"],
+  "ownership": {
+    "approvalReceiptTokenOwner": "identity-access",
+    "recoveryRequestEvidenceJobPreviewOwner": "ingestion-quality",
+    "qualityEligibilityFuseEpisodeRecoveryTaskOwner": "ingestion-quality",
+    "sampleComputationProviderOwner": "signal-evaluation",
+    "sampleJobOrchestratorOwner": "ingestion-quality",
+    "observationAndEligibilityOwnerStory": "2.5c"
+  },
+  "publicPorts": {
+    "highRiskApprovalPort": "identity-access/api/HighRiskApprovalPort",
+    "highRiskExecutionAuthorizationPort": "identity-access/api/HighRiskExecutionAuthorizationPort",
+    "recoverySampleRecomputeProviderPort": "signal-evaluation/api/RecoverySampleRecomputeProviderPort",
+    "recoverySampleOwnerPort": "ingestion-quality/application/RecoverySampleRecomputePort",
+    "recoverySampleAdapter": "ingestion-quality/adapters/outbound/SignalEvaluationRecoverySampleRecomputeAdapter",
+    "qualityEligibilityRecoveryCommandPort": "ingestion-quality/application/QualityEligibilityRecoveryCommandPort"
+  },
+  "authorizationContracts": {
+    "machinePolicy": "contracts/authorization/high-risk/high-risk-action-policy-1.0.0.json",
+    "runtimePolicy": "contracts/authorization/high-risk/high-risk-runtime-policy-1.0.0.json",
+    "approvalRequestSchema": "contracts/authorization/high-risk/high-risk-approval-request.schema.json",
+    "approvalReceiptSchema": "contracts/authorization/high-risk/high-risk-approval-receipt.schema.json",
+    "executionTokenSchema": "contracts/authorization/high-risk/high-risk-execution-token.schema.json",
+    "executionAuthorizationLeaseSchema": "contracts/authorization/high-risk/high-risk-execution-authorization-lease.schema.json"
+  },
+  "d4": {
+    "actionType": "quality-fuse.recover",
+    "level": "D4",
+    "states": ["pending", "approved", "rejected", "expired", "cancelled"],
+    "pendingMinutes": 240,
+    "executionTokenMinutes": 15,
+    "makerBinding": "current-data-owner",
+    "checkerBinding": "QRCOB-1.0.0/runtime-current-rule-version-business-owner-all-of",
+    "differentNaturalPersons": true,
+    "clientSuppliedApprovalEvidence": "forbidden",
+    "runtimeActivationGate": "story-2.5b-seven-path-tests-and-positive-runtime-closure"
+  },
+  "atomicExecution": {
+    "mode": "durable-cross-owner-execution-authorization-lease",
+    "databaseOwner": "identity-access",
+    "tokenConsumptionOwner": "identity-access",
+    "transactionCoordinator": "ingestion-quality",
+    "protocol": [
+      "identity-access-atomically-redeems-single-use-token-into-durable-bound-lease-and-execution-jti",
+      "same-idempotency-key-replays-the-same-lease-until-expiry-never-issues-a-second-lease",
+      "ingestion-quality-verifies-trusted-lease-and-current-owner-local-authorization-generation",
+      "ingestion-quality-atomically-consumes-unique-execution-jti-and-commits-fused-to-recovering-facts-audit-event-outbox-idempotency",
+      "committed-outbox-idempotently-finalizes-lease-as-executed-in-identity-access"
+    ],
+    "networkIoInsideTransaction": false,
+    "lateRollback": "lease-remains-reserved-and-the-same-execution-jti-remains-retryable-until-expiry",
+    "timeout": "caller-replays-same-idempotency-key-lease-and-execution-jti;local-commit-replay-returns-original-result",
+    "expiry": "reserved-lease-and-original-token-stay-consumed;fresh-execution-confirmation-required",
+    "compensation": "never-reactivate-token-or-lease;reconcile-from-ingestion-quality-outbox",
+    "sameTransactionAlternative": "not-selected-because-AD-1-forbids-cross-module-command-transaction"
+  },
+  "twoPhaseRecovery": {
+    "story25bTargetState": "recovering",
+    "story25cTargetState": "eligible",
+    "story25bTokenReusableAfterObservation": false,
+    "story25cRequiresCurrentApprovalEvidenceRecheck": true,
+    "story25cRequiresFreshExecutionConfirmation": true,
+    "latestActionableFinalDecisionOwner": "2.5c"
+  },
+  "sampleRecompute": {
+    "producer": "signal-evaluation",
+    "consumer": "ingestion-quality",
+    "interaction": "pure-bounded-computation-query-through-signal-evaluation-public-api;no-cross-module-command-or-shared-transaction",
+    "requestBinding": ["recoveryRequestId", "episodeId", "taskId", "ruleVersionsDigest", "memberSetDigest", "watermarksDigest", "qrpDigest", "selectionSeed"],
+    "resultFields": ["providerVersion", "selectionSeed", "populationCount", "selectedCount", "strataSummaryDigest", "expectedDigest", "actualDigest", "mismatchCount", "completedAt", "traceId"],
+    "providerNotInstalled": "durable-failure-remain-fused",
+    "providerUnavailable": "durable-retryable-failure-remain-fused",
+    "studentPlaintext": "forbidden",
+    "createsRuleEvaluationCandidateOrClue": false
+  },
+  "impactPreview": {
+    "authorizesExecution": false,
+    "immutableInputs": ["ruleVersionsDigest", "memberSetDigest", "watermarksDigest", "qrpDigest", "trustedServerNow", "observationDuration"],
+    "drift": "invalidate-and-require-explicit-repreview",
+    "finalActionabilityOwner": "2.5c"
+  },
+  "durableJob": {
+    "owner": "ingestion-quality",
+    "states": ["queued", "running", "succeeded", "failed", "cancelled"],
+    "lease": "monotonic-fencing-token",
+    "checkpoint": "current-fencing-token-required",
+    "externalIo": "outside-owner-transaction",
+    "result": "immutable-summary-only"
+  },
+  "recoveryFacts": {
+    "singleWriter": "ingestion-quality",
+    "finalTransitionPort": "QualityEligibilityRecoveryCommandPort",
+    "allowedTransition": "fused-to-recovering",
+    "taskStatusAfterTransition": "open",
+    "deliveryStateOrthogonal": true,
+    "forbiddenBusinessObjects": ["RuleEvaluation", "Candidate", "Clue"]
+  },
+  "databaseConcurrency": {
+    "commonScope": "sourceId",
+    "firstLock": "pg_advisory_xact_lock(hashtextextended('quality-eligibility:'||sourceId,0))",
+    "firstLockRequiredBefore": [
+      "idempotency-row-lock", "eligibility-row-lock", "episode-row-lock", "task-row-lock",
+      "request-row-lock", "approval-evidence-row-lock", "job-row-lock"
+    ],
+    "conflictingEntrances": {
+      "V15-iq-accept-quality-eligibility-event-v1": "already-acquires-common-source-lock-before-row-locks",
+      "V16-iq-accept-quality-eligibility-event-v2": "V17-forward-create-or-replace-must-acquire-common-source-lock-before-fuse-idempotency-row-lock",
+      "V17-quality-recovery-command": "must-acquire-common-source-lock-before-any-row-or-idempotency-lock"
+    },
+    "afterCommonLockOrder": [
+      "affected-rule-advisory-locks-sorted-by-ruleId-ruleVersion",
+      "active-episode", "open-recovery-task", "current-eligibilities-sorted-by-ruleId-ruleVersion",
+      "recovery-request", "approval-evidence", "validation-job"
+    ],
+    "doesNotReplace": ["aggregate-version-CAS", "lock-inside-reread", "deterministic-row-order"],
+    "predecessorBytes": "V15-and-V16-unchanged"
+  },
+  "retention": {
+    "identityAccess": {
+      "facts": ["approval-request", "approval-decision", "receipt", "token", "execution-authorization-lease", "lease-reconciliation"],
+      "evidence": "P2Y",
+      "idempotency": "P90D",
+      "legalHoldAware": true,
+      "cleanupOwner": "identity-access-retention-workload"
+    },
+    "ingestionQuality": {
+      "facts": ["recovery-request", "evidence-pack", "preview", "job", "checkpoint", "result", "execution-jti", "audit", "event", "outbox"],
+      "evidence": "P2Y",
+      "idempotency": "P90D",
+      "legalHoldAware": true,
+      "cleanupOwner": "ingestion-quality-retention-workload"
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "DEPENDENCY-ELIGIBILITY-PROJECTION-1.0.0",
+  "policyBindingVersion": "FIELD-PROJECTION-POLICY-BINDING-1.2.0",
+  "predecessor": {
+    "version": "FIELD-PROJECTION-POLICY-BINDING-1.1.0",
+    "path": "contracts/field-projection/field-projection-policy-binding-1.1.0.json",
+    "sha256": "9a7e8edb67ad6c7c010af74e57ce62f64a38662aaa16c049a81dc1e7c58842b4"
+  },
+  "roleFieldPolicy": {
+    "version": "RFP-1.0.0",
+    "path": "contracts/authorization/role-field-policy-rfp-1.0.0.json",
+    "sha256": "84191d8b844b31ef91fb051d34d6731b80981d6d193e42b0f8d19f73caa9ed25"
+  },
+  "objectClass": "Dependency",
+  "purpose": "data-quality.read",
+  "requiredScopeAnchor": "OWNED_SOURCE",
+  "authorization": {
+    "requiresEveryExposedMemberAuthorized": true,
+    "authorizationBeforeQueryAndSerialization": true,
+    "ownerResolution": "dependency-member-to-current-persisted-source-owner",
+    "partialMemberResult": "redacted-or-not-found-without-count-leak",
+    "notFoundOracle": "unknown-and-denied-indistinguishable",
+    "readAuditBeforeSensitiveResponse": true,
+    "providerOrAuditUnavailable": "fail-closed"
+  },
+  "fields": [
+    {"path":"eligibilityId","fieldClass":"B","valueType":"string"},
+    {"path":"ruleId","fieldClass":"B","valueType":"string"},
+    {"path":"ruleVersion","fieldClass":"B","valueType":"string"},
+    {"path":"status","fieldClass":"B","valueType":"string"},
+    {"path":"reasonCode","fieldClass":"E","valueType":"string"},
+    {"path":"operator","fieldClass":"B","valueType":"string"},
+    {"path":"threshold","fieldClass":"B","valueType":"integer"},
+    {"path":"members[].sourceId","fieldClass":"G","valueType":"string"},
+    {"path":"members[].sourceVersion","fieldClass":"T","valueType":"string"},
+    {"path":"members[].dependencyId","fieldClass":"G","valueType":"string"},
+    {"path":"members[].dependencyVersion","fieldClass":"T","valueType":"string"},
+    {"path":"members[].requirement","fieldClass":"B","valueType":"string"},
+    {"path":"members[].state","fieldClass":"B","valueType":"string"},
+    {"path":"members[].sourceWatermark","fieldClass":"T","valueType":"string"},
+    {"path":"members[].dependencyWatermark","fieldClass":"T","valueType":"string"},
+    {"path":"members[].snapshotId","fieldClass":"T","valueType":"string"},
+    {"path":"members[].snapshotImmutableHash","fieldClass":"T","valueType":"string"},
+    {"path":"failedMembers[]","fieldClass":"E","valueType":"string"},
+    {"path":"registryVersion","fieldClass":"T","valueType":"string"},
+    {"path":"aggregateVersion","fieldClass":"T","valueType":"integer"},
+    {"path":"effectiveAt","fieldClass":"G","valueType":"timestamp"},
+    {"path":"occurredAt","fieldClass":"G","valueType":"timestamp"}
+  ],
+  "hiddenFields": ["studentId", "studentRef", "rawRecord", "metricResults", "traceId"],
+  "projectionOrder": ["current-composite-authorization", "approved-owner-catalog", "all-member-authorization", "field-decision", "safe-dto", "audit-commit", "serialize"],
+  "runtimeEvidenceClaim": "none"
+}

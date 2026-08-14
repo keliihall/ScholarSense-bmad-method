@@ -344,6 +344,16 @@ public final class JdbcIdentitySyncRepository
                     timestamp(account.effectiveInterval().effectiveTo()), account.sourceVersion(),
                     batch.toWatermark(), nextAggregate, batch.mappingVersion(),
                     timestamp(appliedAt), batch.traceId(), timestamp(appliedAt));
+            if (account.naturalPersonPrincipalDigest() != null) {
+                jdbc.queryForObject(
+                        "select identity_access.ia_bind_account_natural_person(?, ?, ?, ?, ?)",
+                        Long.class,
+                        account.accountId(),
+                        account.naturalPersonPrincipalDigest(),
+                        account.naturalPersonAuthorityEvidenceDigest(),
+                        timestamp(account.effectiveInterval().effectiveFrom()),
+                        batch.traceId());
+            }
             jdbc.update("""
                     update identity_access.ia_authoritative_subject_binding_history
                        set is_current=false,

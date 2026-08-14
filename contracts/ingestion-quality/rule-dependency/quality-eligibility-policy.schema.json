@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/rule-dependency/quality-eligibility-policy.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["policyVersion", "statusValues", "businessKey", "aggregateVersion", "composition", "upstreamPairing", "immutableEvidence", "idempotency", "recoveryBoundary", "runtimeEvidenceClaim"],
+  "properties": {
+    "policyVersion": {"const": "QUALITY-ELIGIBILITY-POLICY-1.0.0"},
+    "statusValues": {"const": ["eligible", "fused", "recovering", "missing"]},
+    "businessKey": {"const": ["ruleId", "ruleVersion", "registryVersion"]},
+    "aggregateVersion": {"const": "owner-local-monotonic-per-business-key-starting-at-1"},
+    "composition": {"type": "object"},
+    "upstreamPairing": {"type": "object"},
+    "immutableEvidence": {"type": "object"},
+    "idempotency": {"type": "object"},
+    "recoveryBoundary": {"type": "object"},
+    "runtimeEvidenceClaim": {"const": "none"}
+  }
+}

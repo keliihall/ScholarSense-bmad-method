@@ -1,0 +1,37 @@
+{
+  "policyVersion": "QUALITY-ELIGIBILITY-ORDERING-1.0.0",
+  "runtimeEvidenceClaim": "none",
+  "sourceOrdering": {
+    "sequenceKey": ["sourceId", "sourceVersionOrdinal", "lineageRevision"],
+    "sourceVersionOrdinalSemantics": "provider-contract-versioned-positive-integer-carried-by-the-source-event",
+    "lineageRevisionSemantics": "owner-local-zero-for-lineage-root-then-derived-from-exact-direct-supersedesBatchId-chain-plus-one; not assumed on the Story-2.3 wire event",
+    "forbiddenOrderingFields": ["batchAggregateVersion", "eventId", "occurredAt", "watermark"],
+    "oldRule": "lower-sourceVersionOrdinal-or-non-current-lineage-is-no-op",
+    "gapRule": "greater-than-current-plus-one-pauses-cursor-and-requests-backfill",
+    "correctionRule": "same-sourceVersionOrdinal-requires-direct-lineage-successor-plus-one"
+  },
+  "batchPairing": {
+    "assessedFailedV3": "terminal-no-published-v4-expected",
+    "assessedPassedV3": "pending-until-exact-published-v4",
+    "publishedV4": "same-batch-and-snapshot-only",
+    "batchAggregateVersionScope": "within-one-data-batch-only"
+  },
+  "idempotency": {"eventKey": ["source", "eventId"], "sameKeySameBody": "duplicate-no-op", "sameKeyDifferentBody": "poison-conflict"},
+  "backfill": {
+    "requestKey": ["sourceId", "expectedSourceVersionOrdinal", "actualSourceVersionOrdinal", "cursorAggregateVersion"],
+    "requestResult": ["requested", "in-progress", "completed", "retention-expired", "unrecoverable"],
+    "retentionExpired": "pause-permanently-and-surface-controlled-diagnostic",
+    "unrecoverable": "pause-permanently-and-require-authorized-corrective-successor",
+    "cursorAdvanceAfterCompletion": "only-after-contiguous-replay-commits"
+  },
+  "transactionBoundary": ["inbox", "pendingPair", "dependencyCursor", "dependencyState", "quarantine", "backfill", "eligibilityCurrent", "eligibilityHistory", "localAudit", "outbox", "idempotency"],
+  "scenarios": [
+    {"case":"duplicate","expectedAction":"no-op","cursorAdvances":false,"businessStateChanges":false},
+    {"case":"old","expectedAction":"no-op","cursorAdvances":false,"businessStateChanges":false},
+    {"case":"gap","expectedAction":"pause-and-backfill","cursorAdvances":false,"businessStateChanges":false},
+    {"case":"poison","expectedAction":"quarantine-and-alert","cursorAdvances":false,"businessStateChanges":false},
+    {"case":"backfill","expectedAction":"contiguous-replay","cursorAdvances":true,"businessStateChanges":true},
+    {"case":"retention-expired","expectedAction":"pause-permanently","cursorAdvances":false,"businessStateChanges":false},
+    {"case":"unrecoverable","expectedAction":"authorized-corrective-successor-required","cursorAdvances":false,"businessStateChanges":false}
+  ]
+}

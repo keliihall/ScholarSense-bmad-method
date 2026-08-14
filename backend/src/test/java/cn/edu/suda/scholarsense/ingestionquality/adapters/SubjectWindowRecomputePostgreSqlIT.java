@@ -65,7 +65,7 @@ class SubjectWindowRecomputePostgreSqlIT {
     void schemaUsesOwnerTablesFunctionOnlyWritesAndDatabaseOverlapProtection() {
         assertEquals("180004", admin.queryForObject(
                 "select current_setting('server_version_num')", String.class));
-        assertEquals(33, admin.queryForObject("""
+        assertEquals(75, admin.queryForObject("""
                 select count(*) from information_schema.tables
                  where table_schema='ingestion_quality' and table_type='BASE TABLE'
                 """, Integer.class));

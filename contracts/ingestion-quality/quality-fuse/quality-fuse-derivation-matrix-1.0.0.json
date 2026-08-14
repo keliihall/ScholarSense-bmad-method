@@ -1,0 +1,33 @@
+{
+  "matrixVersion": "QFDM-1.0.0",
+  "authorities": [
+    {"id": "DEC-012", "decision": "quality-gate-per-source-owner"},
+    {"id": "DEC-019", "decision": "QMDP/QSHM-executable-evidence"},
+    {"id": "QG-1.0.0", "decision": "approved-quality-threshold-text"},
+    {"id": "QMDP-1.0.0", "decision": "formula-operator-threshold-and-boundary-owner"},
+    {"id": "QSHM-1.0.0", "decision": "immutable-snapshot-evidence-binding"},
+    {"id": "RC-1.0.0", "decision": "source-backed-rule-set"},
+    {"id": "RFP-1.0.0", "decision": "RecoveryTask-object-and-R6-owner-scope"},
+    {"id": "PIC-1.0.0", "decision": "predecessor-wire-delivery-semantics"}
+  ],
+  "owners": {
+    "eligibilityWriter": "ingestion-quality/Story-2.4",
+    "fuseEpisodeTaskPlanner": "ingestion-quality/Story-2.5a",
+    "recoveryCommand": "Story-2.5b",
+    "recoveryObservationClose": "Story-2.5c",
+    "ruleRuntimeApply": "Story-3.2",
+    "publicTaskFinalApply": "Story-5.5"
+  },
+  "legacyMappings": {
+    "Q1": {"meaning": "hard-gate-failed", "result": "verified-business-failure", "source": "QMDP-comparisonResult"},
+    "Q2": {"meaning": "hard-gate-passed", "result": "verified-business-pass", "source": "QMDP-comparisonResult"}
+  },
+  "unknownLegacyMapping": "reject/QUALITY_FUSE_UNKNOWN_GATE_MAPPING",
+  "hysteresis": {
+    "formulaOwner": "QMDP-1.0.0",
+    "latchOwner": "QFTP-1.0.0",
+    "automaticUnlock": false
+  },
+  "conflicts": [],
+  "unresolvedSemantics": []
+}

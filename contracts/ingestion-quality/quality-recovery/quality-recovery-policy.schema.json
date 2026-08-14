@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.local/contracts/ingestion-quality/quality-recovery/quality-recovery-policy.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "policyVersion", "authority", "sourceClassBinding", "sourceClasses",
+    "batchQualification", "backfill", "reconciliation", "sampling", "qualityGate",
+    "impactPreview", "failureFallback", "runtimeEvidenceClaim"
+  ],
+  "properties": {
+    "$schema": {"const": "quality-recovery-policy.schema.json"},
+    "policyVersion": {"const": "QRP-1.0.0"},
+    "authority": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["DEC-012", "G-03", "AD-5", "AD-23", "DCC-1.1.0", "QG-1.0.0", "RC-1.0.0"]
+      }
+    },
+    "sourceClassBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "source", "unknown"],
+      "properties": {
+        "owner": {"const": "ingestion-quality"},
+        "source": {"const": "approved-explicit-source-class-registry"},
+        "unknown": {"const": "reject"}
+      }
+    },
+    "sourceClasses": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["streaming", "dailyBatch"],
+      "properties": {
+        "streaming": {"$ref": "#/$defs/streamingClass"},
+        "dailyBatch": {"$ref": "#/$defs/dailyClass"}
+      }
+    },
+    "batchQualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["acceptedPair", "sequenceKey", "forbiddenOrderingFields", "inclusive"],
+      "properties": {
+        "acceptedPair": {"const": "assessed-passed-then-exact-published"},
+        "sequenceKey": {
+          "type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true,
+          "items": {"type": "string", "enum": ["sourceId", "sourceVersionOrdinal", "lineageRevision"]}
+        },
+        "forbiddenOrderingFields": {
+          "type": "array", "minItems": 4, "maxItems": 4, "uniqueItems": true,
+          "items": {"type": "string", "enum": ["eventId", "occurredAt", "watermark", "batchId"]}
+        },
+        "inclusive": {"const": true}
+      }
+    },
+    "backfill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lookbackDays", "startExpression", "trustedNowRequired"],
+      "properties": {
+        "lookbackDays": {"const": 90},
+        "startExpression": {"const": "max(lastKnownGoodWatermark,trustedNow-minus-P90D)"},
+        "trustedNowRequired": {"const": true}
+      }
+    },
+    "reconciliation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coverage", "expectedMismatchCount"],
+      "properties": {
+        "coverage": {"const": "full"},
+        "expectedMismatchCount": {"const": 0}
+      }
+    },
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit", "stratified", "minimumSubjectWindows", "allIfPopulationFewer", "expectedMismatchCount", "selectionSeedRequired"],
+      "properties": {
+        "unit": {"const": "subject-window"},
+        "stratified": {"const": true},
+        "minimumSubjectWindows": {"const": 100},
+        "allIfPopulationFewer": {"const": true},
+        "expectedMismatchCount": {"const": 0},
+        "selectionSeedRequired": {"const": true}
+      }
+    },
+    "qualityGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "exactDigestRequired", "thresholdComparison", "requiredDependencies"],
+      "properties": {
+        "version": {"const": "QG-1.0.0"},
+        "exactDigestRequired": {"const": true},
+        "thresholdComparison": {"const": "use-approved-inclusive-operator"},
+        "requiredDependencies": {"const": "all-current-required-members-eligible"}
+      }
+    },
+    "impactPreview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trustedMicrosecondTime", "categories", "finalActionabilityOwnerStory", "authorizesExecution"],
+      "properties": {
+        "trustedMicrosecondTime": {"const": true},
+        "categories": {
+          "type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true,
+          "items": {"type": "string", "enum": ["already-expired-history-only", "currently-potentially-actionable", "expected-to-expire-before-observation-completes"]}
+        },
+        "finalActionabilityOwnerStory": {"const": "2.5c"},
+        "authorizesExecution": {"const": false}
+      }
+    },
+    "failureFallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["qualificationFailure", "observationRelapseWithinHours", "createsBusinessObjects"],
+      "properties": {
+        "qualificationFailure": {"const": "remain-fused"},
+        "observationRelapseWithinHours": {"const": 24},
+        "createsBusinessObjects": {"const": false}
+      }
+    },
+    "runtimeEvidenceClaim": {"const": "contract-only"}
+  },
+  "$defs": {
+    "streamingClass": {
+      "type": "object", "additionalProperties": false,
+      "required": ["consecutivePassedBatches", "observationMinutes"],
+      "properties": {"consecutivePassedBatches": {"const": 3}, "observationMinutes": {"const": 60}}
+    },
+    "dailyClass": {
+      "type": "object", "additionalProperties": false,
+      "required": ["consecutivePassedBatches", "observationMinutes"],
+      "properties": {"consecutivePassedBatches": {"const": 2}, "observationMinutes": {"const": 1440}}
+    }
+  }
+}

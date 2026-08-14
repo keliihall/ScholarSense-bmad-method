@@ -1,0 +1,12 @@
+{
+  "fixtureVersion": "QUALITY-ELIGIBILITY-COMPOSITION-VECTORS-1.0.0",
+  "runtimeEvidenceClaim": "none",
+  "cases": [
+    {"caseId":"all-of-optional-does-not-mask-required","operator":"all-of","threshold":null,"members":[{"dependencyId":"DEP-SYNTH-REQ-001","requirement":"required","state":"eligible","versionContinuous":true},{"dependencyId":"DEP-SYNTH-OPT-001","requirement":"optional","state":"missing","versionContinuous":true}],"expectedStatus":"eligible","expectedReasonCode":"ALL_REQUIRED_ELIGIBLE"},
+    {"caseId":"any-of-boundary","operator":"any-of","threshold":null,"members":[{"dependencyId":"DEP-SYNTH-OPT-001","requirement":"optional","state":"eligible","versionContinuous":true},{"dependencyId":"DEP-SYNTH-OPT-002","requirement":"optional","state":"fused","versionContinuous":true}],"expectedStatus":"eligible","expectedReasonCode":"ALL_REQUIRED_ELIGIBLE"},
+    {"caseId":"threshold-exact-boundary","operator":"threshold","threshold":2,"members":[{"dependencyId":"DEP-SYNTH-OPT-001","requirement":"optional","state":"eligible","versionContinuous":true},{"dependencyId":"DEP-SYNTH-OPT-002","requirement":"optional","state":"eligible","versionContinuous":true},{"dependencyId":"DEP-SYNTH-OPT-003","requirement":"optional","state":"fused","versionContinuous":true}],"expectedStatus":"eligible","expectedReasonCode":"ALL_REQUIRED_ELIGIBLE"},
+    {"caseId":"required-fused-fails-closed","operator":"all-of","threshold":null,"members":[{"dependencyId":"DEP-SYNTH-REQ-001","requirement":"required","state":"fused","versionContinuous":true},{"dependencyId":"DEP-SYNTH-REQ-002","requirement":"required","state":"eligible","versionContinuous":true}],"expectedStatus":"fused","expectedReasonCode":"REQUIRED_MEMBER_FUSED"},
+    {"caseId":"required-recovering-fails-closed","operator":"all-of","threshold":null,"members":[{"dependencyId":"DEP-SYNTH-REQ-001","requirement":"required","state":"recovering","versionContinuous":true}],"expectedStatus":"recovering","expectedReasonCode":"REQUIRED_MEMBER_RECOVERING"},
+    {"caseId":"required-version-gap-fails-closed","operator":"all-of","threshold":null,"members":[{"dependencyId":"DEP-SYNTH-REQ-001","requirement":"required","state":"eligible","versionContinuous":false}],"expectedStatus":"fused","expectedReasonCode":"REQUIRED_MEMBER_VERSION_GAP"}
+  ]
+}

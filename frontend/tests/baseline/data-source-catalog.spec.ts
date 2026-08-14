@@ -27,10 +27,11 @@ const dependencyBindings = {
 const session = { authenticated: true, sessionPseudonym: 'sp_RWxQcW41M2dSeHVIZ0JpYw', sessionVersion: 7,
   expiresAt: '2099-08-04T13:00:00Z', warningAt: '2099-08-04T12:55:00Z', profileVersion: 'ISP-1.0.0' };
 const r6Shell = {
-  schemaVersion: 'AUTHORIZED-SHELL-1.0.0', policyVersion: 'RFP-1.0.0', fixtureVersion: 'RFP-FIXTURE-1.0.0',
+  schemaVersion: 'AUTHORIZED-SHELL-1.1.0', policyVersion: 'RFP-1.0.0', fixtureVersion: 'RFP-FIXTURE-1.0.0',
   evaluatedAt: '2026-08-04T12:00:00Z', defaultSurface: { surfaceId: 'data-quality', title: '数据质量', routeName: 'shell.home', providerState: 'not-installed' },
   menuItems: [{ id: 'data-source-catalogs', label: '数据源目录', routeName: 'data-quality.catalogs', providerState: 'available' }],
   entryCapabilities: [{ id: 'data-source-catalogs', state: 'available' }, { id: 'data-quality', state: 'not-installed' }],
+  actionCapabilities: [],
   dependencyStatus: 'available',
 };
 const summary = { catalogId, catalogReleaseId: null, contractVersion: 'DCC-1.0.0', status: 'INVALID', aggregateVersion: 2,

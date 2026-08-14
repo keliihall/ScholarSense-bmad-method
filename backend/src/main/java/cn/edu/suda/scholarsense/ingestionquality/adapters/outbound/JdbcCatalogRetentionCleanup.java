@@ -30,8 +30,16 @@ public final class JdbcCatalogRetentionCleanup implements CatalogRetentionCleanu
         }
         try {
             Long deleted = jdbc.queryForObject(
-                    "select ingestion_quality.iq_cleanup_expired(?)",
+                    """
+                    select ingestion_quality.iq_cleanup_expired(?)
+                         + ingestion_quality.iq_cleanup_quality_fuse_expired(?)
+                         + ingestion_quality.iq_cleanup_quality_eligibility_expired(?)
+                         + ingestion_quality.iq_cleanup_quality_recovery_expired(?)
+                    """,
                     Long.class,
+                    Timestamp.from(cutoff.instant()),
+                    Timestamp.from(cutoff.instant()),
+                    Timestamp.from(cutoff.instant()),
                     Timestamp.from(cutoff.instant()));
             if (deleted == null || deleted < 0) {
                 throw new IngestionQualityApplicationException(

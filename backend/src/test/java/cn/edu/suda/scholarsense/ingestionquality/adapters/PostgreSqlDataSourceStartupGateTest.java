@@ -132,7 +132,40 @@ class PostgreSqlDataSourceStartupGateTest {
                     "iq_append_quality_snapshot_read_audit(uuid, uuid, uuid, character varying, "
                             + "character varying, character varying, character varying, "
                             + "character varying, bigint, character, timestamp with time zone, "
-                            + "jsonb, character)"));
+                            + "jsonb, character)",
+                    "iq_find_quality_eligibility_ids(character varying, character varying, "
+                            + "timestamp with time zone, uuid, integer)",
+                    "iq_find_quality_eligibility_page(uuid[])",
+                    "iq_find_quality_eligibility_page_members(uuid[])",
+                    "iq_resolve_quality_eligibility_source(uuid)",
+                    "iq_append_quality_eligibility_read_audit(uuid, uuid, bigint, "
+                            + "character varying, character varying, character varying, "
+                            + "character varying, character varying, character, "
+                            + "timestamp with time zone, character)",
+                    "iq_find_quality_recovery_task_ids(character varying, character varying, "
+                            + "timestamp with time zone, uuid, integer)",
+                    "iq_find_quality_recovery_task_page(uuid[])",
+                    "iq_find_quality_recovery_task_page_rules(uuid[])",
+                    "iq_append_quality_recovery_task_read_audit(uuid, uuid, bigint, "
+                            + "character varying, character varying, character varying, "
+                            + "character, timestamp with time zone, character)",
+                    "iq_submit_quality_recovery_request(character, jsonb)",
+                    "iq_submit_quality_recovery_with_validation(character, jsonb, character, uuid)",
+                    "iq_submit_recovery_validation_job(character, jsonb)",
+                    "iq_resolve_quality_recovery_task_owner(character)",
+                    "iq_load_quality_recovery_command_context(uuid)",
+                    "iq_find_quality_recovery_request(uuid)",
+                    "iq_find_quality_recovery_idempotency(character, character, uuid)",
+                    "iq_store_quality_recovery_evidence(jsonb, jsonb, timestamp with time zone)",
+                    "iq_bind_quality_recovery_approval(character, character, jsonb, "
+                            + "timestamp with time zone)",
+                    "iq_build_quality_recovery_readiness_evidence(uuid, timestamp with time zone)",
+                    "iq_execute_quality_recovery(character, jsonb)",
+                    "iq_claim_quality_recovery_confirmations(integer, timestamp with time zone)",
+                    "iq_mark_quality_recovery_confirmation_delivered(uuid, character, "
+                            + "timestamp with time zone)",
+                    "iq_release_quality_recovery_confirmation(uuid, character, "
+                            + "character varying, timestamp with time zone)"));
 
     private static final Matrix QUALITY_WORKER_MATRIX = new Matrix(
             set(
@@ -199,7 +232,11 @@ class PostgreSqlDataSourceStartupGateTest {
                     "iq_claim_next_batch_quality_outbox()",
                     "iq_release_batch_quality_outbox(uuid, bigint)",
                     "iq_deliver_batch_quality_outbox(uuid, bigint)",
-                    "iq_fail_batch_quality_outbox(uuid, bigint)"));
+                    "iq_fail_batch_quality_outbox(uuid, bigint)",
+                    "iq_claim_next_quality_eligibility_outbox()",
+                    "iq_release_quality_eligibility_outbox(uuid, bigint)",
+                    "iq_deliver_quality_eligibility_outbox(uuid, bigint)",
+                    "iq_fail_quality_eligibility_outbox(uuid, bigint)"));
 
     private static final Matrix RETENTION_MATRIX = new Matrix(
             Set.of(),
@@ -208,15 +245,43 @@ class PostgreSqlDataSourceStartupGateTest {
                     "iq_cleanup_expired(timestamp with time zone)",
                     "iq_find_next_due_quality_snapshot_retention()",
                     "iq_execute_quality_snapshot_retention(uuid, uuid, uuid, character, character, "
-                            + "uuid, character)"));
+                            + "uuid, character)",
+                    "iq_cleanup_quality_eligibility_expired(timestamp with time zone)",
+                    "iq_cleanup_quality_fuse_expired(timestamp with time zone)",
+                    "iq_cleanup_quality_recovery_expired(timestamp with time zone)"));
 
     private static final Matrix CONSUMER_REGISTRY_AUTHORITY_MATRIX = new Matrix(
             Set.of(),
             Set.of(),
             set("iq_ingest_quality_snapshot_retention_authority(uuid, bytea, character)"));
 
+    private static final Matrix ELIGIBILITY_CONSUMER_MATRIX = new Matrix(
+            Set.of(),
+            Set.of(),
+            set(
+                    "iq_find_quality_snapshot_evidence(uuid, uuid, character)",
+                    "iq_find_quality_snapshot_evidence_v2(uuid, uuid, character)",
+                    "iq_load_quality_eligibility_processing_state(uuid, character varying)",
+                    "iq_load_quality_eligibility_processing_state_v2(uuid, character varying)",
+                    "iq_accept_quality_eligibility_event(uuid, character varying, bigint, "
+                            + "character, jsonb)",
+                    "iq_accept_quality_eligibility_event_v2(uuid, character varying, bigint, "
+                            + "character, jsonb)",
+                    "iq_append_quality_fuse_rejection_audit(uuid, bigint, character varying, "
+                            + "character)"));
+
+    private static final Matrix TASK_RELAY_MATRIX = new Matrix(
+            Set.of(),
+            Set.of(),
+                set(
+                    "iq_claim_next_quality_task_outbox()",
+                    "iq_authorize_quality_task_send(uuid, bigint, bigint)",
+                    "iq_mark_quality_task_delivery_retry(uuid, bigint, character varying)",
+                    "iq_complete_quality_task_delivery(uuid, bigint, character varying)",
+                    "iq_fail_quality_task_delivery(uuid, bigint, character varying)"));
+
     @Test
-    void fiveEntrypointsVerifyExactPrincipalAndPrivilegeContracts() throws Exception {
+    void sevenEntrypointsVerifyExactPrincipalAndPrivilegeContracts() throws Exception {
         for (Workload workload : Workload.values()) {
             String identity = workload.identity();
             Fixture fixture = fixture(Proof.exclusive(identity, workload));
@@ -380,7 +445,10 @@ class PostgreSqlDataSourceStartupGateTest {
                         "iq_cleanup_expired(timestamp with time zone)",
                         "iq_find_next_due_quality_snapshot_retention()",
                         "iq_execute_quality_snapshot_retention(uuid, uuid, uuid, character, "
-                                + "character, uuid, character)"),
+                                + "character, uuid, character)",
+                        "iq_cleanup_quality_eligibility_expired(timestamp with time zone)",
+                        "iq_cleanup_quality_fuse_expired(timestamp with time zone)",
+                        "iq_cleanup_quality_recovery_expired(timestamp with time zone)"),
                 RETENTION_MATRIX.functions());
         assertEquals(
                 set("iq_ingest_quality_snapshot_retention_authority(uuid, bytea, character)"),
@@ -463,12 +531,18 @@ class PostgreSqlDataSourceStartupGateTest {
         when(principal.getBoolean(17)).thenReturn(proof.authorityMember());
         when(principal.getBoolean(18)).thenReturn(proof.authorityUsage());
         when(principal.getBoolean(19)).thenReturn(proof.authoritySet());
-        when(principal.getBoolean(20)).thenReturn(proof.ownerMember());
-        when(principal.getBoolean(21)).thenReturn(proof.ownerUsage());
-        when(principal.getBoolean(22)).thenReturn(proof.ownerSet());
-        when(principal.getBoolean(23)).thenReturn(proof.restrictedGroups());
-        when(principal.getBoolean(24)).thenReturn(proof.membershipGraphExact());
-        when(principal.getBoolean(25)).thenReturn(proof.membershipGraphExact());
+        when(principal.getBoolean(20)).thenReturn(proof.eligibilityMember());
+        when(principal.getBoolean(21)).thenReturn(proof.eligibilityUsage());
+        when(principal.getBoolean(22)).thenReturn(proof.eligibilitySet());
+        when(principal.getBoolean(23)).thenReturn(proof.taskRelayMember());
+        when(principal.getBoolean(24)).thenReturn(proof.taskRelayUsage());
+        when(principal.getBoolean(25)).thenReturn(proof.taskRelaySet());
+        when(principal.getBoolean(26)).thenReturn(proof.ownerMember());
+        when(principal.getBoolean(27)).thenReturn(proof.ownerUsage());
+        when(principal.getBoolean(28)).thenReturn(proof.ownerSet());
+        when(principal.getBoolean(29)).thenReturn(proof.restrictedGroups());
+        when(principal.getBoolean(30)).thenReturn(proof.membershipGraphExact());
+        when(principal.getBoolean(31)).thenReturn(proof.membershipGraphExact());
         when(matrix.next()).thenReturn(true, false);
         when(matrix.getBoolean(1)).thenReturn(proof.matrixValid());
         return new Fixture(dataSource, queries);
@@ -561,7 +635,17 @@ class PostgreSqlDataSourceStartupGateTest {
                 "verifyConsumerRegistryAuthority",
                 "scholarsense_ingestion_quality_consumer_registry_authority",
                 "scholarsense_consumer_registry_authority_prod",
-                CONSUMER_REGISTRY_AUTHORITY_MATRIX);
+                CONSUMER_REGISTRY_AUTHORITY_MATRIX),
+        ELIGIBILITY_CONSUMER(
+                "verifyEligibilityConsumer",
+                "scholarsense_ingestion_quality_eligibility_consumer",
+                "scholarsense_eligibility_consumer_prod",
+                ELIGIBILITY_CONSUMER_MATRIX),
+        TASK_RELAY(
+                "verifyTaskRelay",
+                "scholarsense_ingestion_quality_task_relay",
+                "scholarsense_task_relay_prod",
+                TASK_RELAY_MATRIX);
 
         private final String verifier;
         private final String groupRole;
@@ -612,6 +696,12 @@ class PostgreSqlDataSourceStartupGateTest {
             boolean authorityMember,
             boolean authorityUsage,
             boolean authoritySet,
+            boolean eligibilityMember,
+            boolean eligibilityUsage,
+            boolean eligibilitySet,
+            boolean taskRelayMember,
+            boolean taskRelayUsage,
+            boolean taskRelaySet,
             boolean ownerMember,
             boolean ownerUsage,
             boolean ownerSet,
@@ -621,6 +711,8 @@ class PostgreSqlDataSourceStartupGateTest {
         private static Proof exclusive(String identity, Workload workload) {
             Proof empty = new Proof(
                     identity, identity, "180004", true,
+                    false, false, false,
+                    false, false, false,
                     false, false, false,
                     false, false, false,
                     false, false, false,
@@ -639,6 +731,8 @@ class PostgreSqlDataSourceStartupGateTest {
                     relayMember, relayUsage, relaySet,
                     retentionMember, retentionUsage, retentionSet,
                     authorityMember, authorityUsage, authoritySet,
+                    eligibilityMember, eligibilityUsage, eligibilitySet,
+                    taskRelayMember, taskRelayUsage, taskRelaySet,
                     ownerMember, ownerUsage, ownerSet,
                     restrictedGroups, membershipGraphExact, matrixValid);
         }
@@ -651,6 +745,8 @@ class PostgreSqlDataSourceStartupGateTest {
                     relayMember, relayUsage, relaySet,
                     retentionMember, retentionUsage, retentionSet,
                     authorityMember, authorityUsage, authoritySet,
+                    eligibilityMember, eligibilityUsage, eligibilitySet,
+                    taskRelayMember, taskRelayUsage, taskRelaySet,
                     ownerMember, ownerUsage, ownerSet,
                     restrictedGroups, membershipGraphExact, matrixValid);
         }
@@ -663,6 +759,8 @@ class PostgreSqlDataSourceStartupGateTest {
                     relayMember, relayUsage, relaySet,
                     retentionMember, retentionUsage, retentionSet,
                     authorityMember, authorityUsage, authoritySet,
+                    eligibilityMember, eligibilityUsage, eligibilitySet,
+                    taskRelayMember, taskRelayUsage, taskRelaySet,
                     ownerMember, ownerUsage, ownerSet,
                     value, membershipGraphExact, matrixValid);
         }
@@ -675,6 +773,8 @@ class PostgreSqlDataSourceStartupGateTest {
                     relayMember, relayUsage, relaySet,
                     retentionMember, retentionUsage, retentionSet,
                     authorityMember, authorityUsage, authoritySet,
+                    eligibilityMember, eligibilityUsage, eligibilitySet,
+                    taskRelayMember, taskRelayUsage, taskRelaySet,
                     ownerMember, ownerUsage, ownerSet,
                     restrictedGroups, membershipGraphExact, value);
         }
@@ -687,6 +787,8 @@ class PostgreSqlDataSourceStartupGateTest {
                     relayMember, relayUsage, relaySet,
                     retentionMember, retentionUsage, retentionSet,
                     authorityMember, authorityUsage, authoritySet,
+                    eligibilityMember, eligibilityUsage, eligibilitySet,
+                    taskRelayMember, taskRelayUsage, taskRelaySet,
                     ownerMember, ownerUsage, ownerSet,
                     restrictedGroups, value, matrixValid);
         }
@@ -700,6 +802,8 @@ class PostgreSqlDataSourceStartupGateTest {
                     relayMember, relayUsage, relaySet,
                     retentionMember, retentionUsage, retentionSet,
                     authorityMember, authorityUsage, authoritySet,
+                    eligibilityMember, eligibilityUsage, eligibilitySet,
+                    taskRelayMember, taskRelayUsage, taskRelaySet,
                     member, usage, setCapability,
                     restrictedGroups, membershipGraphExact, matrixValid);
         }
@@ -714,6 +818,8 @@ class PostgreSqlDataSourceStartupGateTest {
                         relayMember, relayUsage, relaySet,
                         retentionMember, retentionUsage, retentionSet,
                         authorityMember, authorityUsage, authoritySet,
+                        eligibilityMember, eligibilityUsage, eligibilitySet,
+                        taskRelayMember, taskRelayUsage, taskRelaySet,
                         ownerMember, ownerUsage, ownerSet,
                         restrictedGroups, membershipGraphExact, matrixValid);
                 case QUALITY_WORKER -> new Proof(
@@ -723,6 +829,8 @@ class PostgreSqlDataSourceStartupGateTest {
                         relayMember, relayUsage, relaySet,
                         retentionMember, retentionUsage, retentionSet,
                         authorityMember, authorityUsage, authoritySet,
+                        eligibilityMember, eligibilityUsage, eligibilitySet,
+                        taskRelayMember, taskRelayUsage, taskRelaySet,
                         ownerMember, ownerUsage, ownerSet,
                         restrictedGroups, membershipGraphExact, matrixValid);
                 case RELAY -> new Proof(
@@ -732,6 +840,8 @@ class PostgreSqlDataSourceStartupGateTest {
                         member, usage, setCapability,
                         retentionMember, retentionUsage, retentionSet,
                         authorityMember, authorityUsage, authoritySet,
+                        eligibilityMember, eligibilityUsage, eligibilitySet,
+                        taskRelayMember, taskRelayUsage, taskRelaySet,
                         ownerMember, ownerUsage, ownerSet,
                         restrictedGroups, membershipGraphExact, matrixValid);
                 case RETENTION_EXECUTOR -> new Proof(
@@ -741,6 +851,8 @@ class PostgreSqlDataSourceStartupGateTest {
                         relayMember, relayUsage, relaySet,
                         member, usage, setCapability,
                         authorityMember, authorityUsage, authoritySet,
+                        eligibilityMember, eligibilityUsage, eligibilitySet,
+                        taskRelayMember, taskRelayUsage, taskRelaySet,
                         ownerMember, ownerUsage, ownerSet,
                         restrictedGroups, membershipGraphExact, matrixValid);
                 case CONSUMER_REGISTRY_AUTHORITY -> new Proof(
@@ -749,6 +861,30 @@ class PostgreSqlDataSourceStartupGateTest {
                         qualityMember, qualityUsage, qualitySet,
                         relayMember, relayUsage, relaySet,
                         retentionMember, retentionUsage, retentionSet,
+                        member, usage, setCapability,
+                        eligibilityMember, eligibilityUsage, eligibilitySet,
+                        taskRelayMember, taskRelayUsage, taskRelaySet,
+                        ownerMember, ownerUsage, ownerSet,
+                        restrictedGroups, membershipGraphExact, matrixValid);
+                case ELIGIBILITY_CONSUMER -> new Proof(
+                        currentUser, sessionUser, serverVersion, restrictedLogin,
+                        onlineMember, onlineUsage, onlineSet,
+                        qualityMember, qualityUsage, qualitySet,
+                        relayMember, relayUsage, relaySet,
+                        retentionMember, retentionUsage, retentionSet,
+                        authorityMember, authorityUsage, authoritySet,
+                        member, usage, setCapability,
+                        taskRelayMember, taskRelayUsage, taskRelaySet,
+                        ownerMember, ownerUsage, ownerSet,
+                        restrictedGroups, membershipGraphExact, matrixValid);
+                case TASK_RELAY -> new Proof(
+                        currentUser, sessionUser, serverVersion, restrictedLogin,
+                        onlineMember, onlineUsage, onlineSet,
+                        qualityMember, qualityUsage, qualitySet,
+                        relayMember, relayUsage, relaySet,
+                        retentionMember, retentionUsage, retentionSet,
+                        authorityMember, authorityUsage, authoritySet,
+                        eligibilityMember, eligibilityUsage, eligibilitySet,
                         member, usage, setCapability,
                         ownerMember, ownerUsage, ownerSet,
                         restrictedGroups, membershipGraphExact, matrixValid);

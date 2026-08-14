@@ -70,3 +70,10 @@ The business relay keeps read-only outbox visibility and uses four owner routine
 five-minute claim plus attempt-fenced release/deliver/fail transitions; database-owned bounded
 backoff and an eight-attempt terminal ceiling prevent caller-forged schedules, errors, or attempt
 numbers.
+
+V000015 adds the owner-local quality-eligibility projection and its strict ordered event consumer.
+V000016 preserves that surface and adds the prior-state fuse-latch persistence successor: one
+active source/dependency episode, one RecoveryTask/work-item identity per generation, immutable
+transition evidence, and an atomic public-task intent. A seventh mutually exclusive workload role
+advances only the independent task-delivery sidecar through lease-fenced owner routines; it has no
+business-state DML or eligibility-consumer capability.

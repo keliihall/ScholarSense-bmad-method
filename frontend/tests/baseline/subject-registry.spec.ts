@@ -16,7 +16,7 @@ const session = {
   profileVersion: 'ISP-1.0.0',
 };
 const r6Shell = {
-  schemaVersion: 'AUTHORIZED-SHELL-1.0.0', policyVersion: 'RFP-1.0.0',
+  schemaVersion: 'AUTHORIZED-SHELL-1.1.0', policyVersion: 'RFP-1.0.0',
   fixtureVersion: 'RFP-FIXTURE-1.0.0', evaluatedAt: '2026-08-04T12:00:00Z',
   defaultSurface: { surfaceId: 'data-quality', title: '数据质量', routeName: 'shell.home', providerState: 'not-installed' },
   menuItems: [
@@ -25,6 +25,7 @@ const r6Shell = {
   entryCapabilities: [
     { id: 'subject-mapping-exceptions', state: 'available' },
   ],
+  actionCapabilities: [],
   dependencyStatus: 'available',
 };
 const item = {

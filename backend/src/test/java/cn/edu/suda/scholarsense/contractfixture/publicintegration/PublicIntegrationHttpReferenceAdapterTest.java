@@ -21,8 +21,6 @@ import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.net.ssl.SSLSession;
@@ -163,24 +161,15 @@ class PublicIntegrationHttpReferenceAdapterTest {
     void providerAcceptThenLostResponseRetriesWithoutSecondEffect() throws Exception {
         Set<String> appliedEffects = ConcurrentHashMap.newKeySet();
         AtomicInteger sideEffects = new AtomicInteger();
-        CountDownLatch duplicateRequestObserved = new CountDownLatch(1);
         HttpsServer server = material.server(exchange -> {
             exchange.getRequestBody().readAllBytes();
             String effectKey = exchange.getRequestHeaders()
                     .getFirst("X-Provider-Effect-Key");
             if (appliedEffects.add(effectKey)) {
                 sideEffects.incrementAndGet();
-                try {
-                    if (!duplicateRequestObserved.await(5, TimeUnit.SECONDS)) {
-                        throw new IllegalStateException(
-                                "PIC_TEST_DUPLICATE_REQUEST_NOT_OBSERVED");
-                    }
-                } catch (InterruptedException interrupted) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException(interrupted);
-                }
-            } else {
-                duplicateRequestObserved.countDown();
+                // The provider committed the effect, but the response was lost.
+                exchange.close();
+                return;
             }
             byte[] response = receipt("idem-lost", "pe1.lost");
             exchange.getResponseHeaders().set("Content-Type", "application/json");
@@ -189,14 +178,15 @@ class PublicIntegrationHttpReferenceAdapterTest {
             exchange.close();
         });
         try {
-            var adapter = adapter(Duration.ofMillis(500));
+            var lostResponseAttempt = adapter(Duration.ofSeconds(2));
+            var replayAttempt = adapter(Duration.ofSeconds(5));
             var token = new PublicIntegrationHttpReferenceAdapter.WorkloadToken(
                     "jwt.synthetic", material.certificateThumbprint());
             assertEquals(PublicIntegrationHttpReferenceAdapter.Outcome.RETRYABLE,
-                    adapter.send(endpoint(server, "/provider/tasks"), BODY,
+                    lostResponseAttempt.send(endpoint(server, "/provider/tasks"), BODY,
                             "idem-lost", "pe1.lost", token).outcome());
             assertEquals(PublicIntegrationHttpReferenceAdapter.Outcome.CONFIRMED,
-                    adapter.send(endpoint(server, "/provider/tasks"), BODY,
+                    replayAttempt.send(endpoint(server, "/provider/tasks"), BODY,
                             "idem-lost", "pe1.lost", token).outcome());
             assertEquals(1, sideEffects.get());
         } finally {

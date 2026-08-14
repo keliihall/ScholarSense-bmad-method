@@ -1,0 +1,69 @@
+{
+  "registryVersion": "RULE-DEPENDENCY-REGISTRY-1.0.0",
+  "catalog": {"version": "DCC-1.1.0", "digest": "sha256:aeb19962071e2144a85bb2e07fd124eff0d69edf93f7202e821204616a60f219"},
+  "identitySeed": {"version": "DCC-DEPENDENCY-1.0.0", "digest": "sha256:7ed0ec4bd05c5078559a49ac01d1c8583f0db6f6056a22224fd01ebabcff4343"},
+  "ruleCatalog": {"version": "RC-1.0.0", "digest": "sha256:d4f2587e0bde7a37964bab7ce990560327e2e5960f68fba5b770f09b041fd21a"},
+  "qualityProfiles": {
+    "qmdp": {"version": "QMDP-1.0.0", "digest": "sha256:c574eda413a5d3f7e9e8406f117a91dee8a7874beb82c19166c06584f6051bc8"},
+    "qshm": {"version": "QSHM-1.0.0", "digest": "sha256:cf5837474ae3bd7e82ae05ae9d6a74ea60677566ff6ee59ee780ab5e60f518b2"}
+  },
+  "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+  "owner": "ingestion-quality",
+  "approvalRef": "AUTH-2026-07-17-001",
+  "effectiveAt": "2026-08-10T19:31:55+08:00",
+  "rules": [
+    {
+      "ruleId": "ACC-SAFE-001", "ruleVersion": "1.0.0", "composition": {"operator": "all-of", "threshold": null},
+      "members": [
+        {"sourceId":"SRC-P0-CAMPUS-ACCESS-001","sourceVersion":"CAMPUS-ACCESS-SLICE-1.0.0","dependencyId":"DEP-P0-CAMPUS-ACCESS-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-DORM-ACCESS-001","sourceVersion":"DORM-ACCESS-SLICE-1.0.0","dependencyId":"DEP-P0-DORM-ACCESS-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-ACCOMMODATION-001","sourceVersion":"ACCOMMODATION-SLICE-1.0.0","dependencyId":"DEP-P0-ACCOMMODATION-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-LEAVE-001","sourceVersion":"LEAVE-SLICE-1.0.0","dependencyId":"DEP-P0-LEAVE-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-CALENDAR-001","sourceVersion":"BC-1.0.0","dependencyId":"DEP-P0-CALENDAR-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-TIMETABLE-001","sourceVersion":"TIMETABLE-SLICE-1.0.0","dependencyId":"DEP-P0-TIMETABLE-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-DEVICE-001","sourceVersion":"DEVICE-SLICE-1.0.0","dependencyId":"DEP-P0-DEVICE-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"}
+      ]
+    },
+    {
+      "ruleId": "ACC-SAFE-002", "ruleVersion": "1.0.0", "composition": {"operator": "all-of", "threshold": null},
+      "members": [
+        {"sourceId":"SRC-P0-DORM-ACCESS-001","sourceVersion":"DORM-ACCESS-SLICE-1.0.0","dependencyId":"DEP-P0-DORM-ACCESS-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-ACCOMMODATION-001","sourceVersion":"ACCOMMODATION-SLICE-1.0.0","dependencyId":"DEP-P0-ACCOMMODATION-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-LEAVE-001","sourceVersion":"LEAVE-SLICE-1.0.0","dependencyId":"DEP-P0-LEAVE-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-CALENDAR-001","sourceVersion":"BC-1.0.0","dependencyId":"DEP-P0-CALENDAR-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-TIMETABLE-001","sourceVersion":"TIMETABLE-SLICE-1.0.0","dependencyId":"DEP-P0-TIMETABLE-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-DEVICE-001","sourceVersion":"DEVICE-SLICE-1.0.0","dependencyId":"DEP-P0-DEVICE-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"}
+      ]
+    },
+    {
+      "ruleId": "ECON-012", "ruleVersion": "1.0.0", "composition": {"operator": "all-of", "threshold": null},
+      "members": [
+        {"sourceId":"SRC-P0-CARD-001","sourceVersion":"CARD-SLICE-1.0.0","dependencyId":"DEP-P0-CONSUMPTION-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-LEAVE-001","sourceVersion":"LEAVE-SLICE-1.0.0","dependencyId":"DEP-P0-LEAVE-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-CALENDAR-001","sourceVersion":"BC-1.0.0","dependencyId":"DEP-P0-CALENDAR-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P1-OFFCAMPUS-001","sourceVersion":"OFFCAMPUS-SLICE-1.0.0","dependencyId":"DEP-P1-OFFCAMPUS-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"}
+      ]
+    },
+    {
+      "ruleId": "NIGHT-001", "ruleVersion": "1.0.0", "composition": {"operator": "all-of", "threshold": null},
+      "members": [
+        {"sourceId":"SRC-P1-NETWORK-001","sourceVersion":"NETWORK-AGGREGATE-1.0.0","dependencyId":"DEP-P1-NETWORK-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-LEAVE-001","sourceVersion":"LEAVE-SLICE-1.0.0","dependencyId":"DEP-P0-LEAVE-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-CALENDAR-001","sourceVersion":"BC-1.0.0","dependencyId":"DEP-P0-CALENDAR-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P1-OFFCAMPUS-001","sourceVersion":"OFFCAMPUS-SLICE-1.0.0","dependencyId":"DEP-P1-OFFCAMPUS-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"}
+      ]
+    },
+    {
+      "ruleId": "ACADEMIC-001", "ruleVersion": "1.0.0", "composition": {"operator": "all-of", "threshold": null},
+      "members": [
+        {"sourceId":"SRC-P1-ACADEMIC-001","sourceVersion":"ACADEMIC-NODE-1.0.0","dependencyId":"DEP-P1-ACADEMIC-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-TIMETABLE-001","sourceVersion":"TIMETABLE-SLICE-1.0.0","dependencyId":"DEP-P0-TIMETABLE-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"},
+        {"sourceId":"SRC-P0-CALENDAR-001","sourceVersion":"BC-1.0.0","dependencyId":"DEP-P0-CALENDAR-001","dependencyVersion":"1.0.0","requirement":"required","compositionGroup":"primary"}
+      ]
+    }
+  ],
+  "excludedSources": [
+    "SRC-P0-STUDENT-001", "SRC-P0-RESPONSIBILITY-001", "SRC-P1-CARE-LIST-001",
+    "SRC-P1-PSYCH-DEID-001", "SRC-P1-AID-001", "SRC-P1-WORK-VISIT-001"
+  ]
+}

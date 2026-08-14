@@ -1,0 +1,12 @@
+{
+  "fixtureVersion": "QFFX-1.0.0",
+  "cases": [
+    {"caseId": "eligible-fail-new", "prior": "eligible", "evaluated": "fused", "reason": "REQUIRED_MEMBER_FAILED", "applied": "fused", "episode": "start", "task": "create"},
+    {"caseId": "fused-pass-latched", "prior": "fused", "evaluated": "eligible", "reason": "ALL_REQUIRED_MEMBERS_ELIGIBLE", "applied": "fused", "episode": "preserve", "task": "preserve"},
+    {"caseId": "fused-fail-update", "prior": "fused", "evaluated": "fused", "reason": "COMPOSITION_THRESHOLD_FAILED", "applied": "fused", "episode": "update", "task": "update"},
+    {"caseId": "recovering-pass-latched", "prior": "recovering", "evaluated": "eligible", "reason": "ALL_REQUIRED_MEMBERS_ELIGIBLE", "applied": "recovering", "episode": "preserve", "task": "preserve"},
+    {"caseId": "recovering-fail-relapse", "prior": "recovering", "evaluated": "fused", "reason": "REQUIRED_MEMBER_FAILED", "applied": "fused", "episode": "update", "task": "update"},
+    {"caseId": "missing-fail-realtime", "provenance": "REALTIME_ASSESSMENT", "prior": "missing", "evaluated": "fused", "reason": "REQUIRED_MEMBER_FAILED", "applied": "fused", "episode": "start", "task": "create"},
+    {"caseId": "bootstrap-fused-no-task", "provenance": "BOOTSTRAP_MATERIALIZATION", "prior": "missing", "evaluated": "fused", "reason": "BOOTSTRAP_FUSED", "applied": "fused", "episode": "none", "task": "none"}
+  ]
+}

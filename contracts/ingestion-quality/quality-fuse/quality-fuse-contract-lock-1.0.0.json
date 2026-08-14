@@ -1,0 +1,45 @@
+{
+  "lockVersion": "QUALITY-FUSE-CONTRACT-LOCK-1.0.0",
+  "canonicalizationProfile": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+  "files": {
+    "contracts/events/ingestion-quality/fixtures/valid/quality-recovery-task-created-v1.json": "sha256:b9a934dc570906b56811eabba9ec37bfeed01e8ebd988aaa7b8063ac93197207",
+    "contracts/events/ingestion-quality/quality-fuse-task-event.schema.json": "sha256:ebff18051482a69e1462f09d83219df38373b796eae628db475544b85228e820",
+    "contracts/ingestion-quality/quality-fuse/fixtures/invalid/quality-fuse-negative-fixtures-1.0.0.json": "sha256:223b39af4aa7587c7df6aa7620b7f608b14a32aadb8c6628f9cd83a50ec69c6f",
+    "contracts/ingestion-quality/quality-fuse/fixtures/valid/quality-fuse-state-vectors-1.0.0.json": "sha256:c35a63dc4117b8b32919fc5424ebcca7ee8a5857a1cee4aebce010f64dfc4700",
+    "contracts/ingestion-quality/quality-fuse/quality-fuse-derivation-matrix-1.0.0.json": "sha256:75d7a191c3bf4cffd1e23b92a822420da7ecfa1864227817ae4432a0204e953f",
+    "contracts/ingestion-quality/quality-fuse/quality-fuse-policy-1.0.0.json": "sha256:9f179c2e287af90420cf64de1d5af9bb4149af9fa3807c5d727e32c48ca516b2",
+    "contracts/ingestion-quality/quality-fuse/quality-fuse-policy.schema.json": "sha256:a3302b996f5dda407c7e5c4e4c347db26077402671fe598b11417ee73a31a35d",
+    "contracts/ingestion-quality/quality-fuse/quality-fuse-retention-1.0.0.json": "sha256:533c68c8b18637861f71bb984d000542875f854270d8c86724d1fc907efb1a18",
+    "contracts/ingestion-quality/quality-fuse/quality-recovery-task-projection-1.0.0.json": "sha256:fd19af784ad78155a2fbdb187d79aa8963e052105f9ce4a95386d9541671eb98",
+    "contracts/ingestion-quality/quality-fuse/recovery-task-policy-1.0.0.json": "sha256:ffc0c56f76d3c452c0db6168912d1446e97bd18f08c3a51ac84ae1a9cf556cfa",
+    "contracts/ingestion-quality/quality-fuse/recovery-task.schema.json": "sha256:757a22a489812e745274147a6033caf0d823400c60e4076186fe16ac3df18138",
+    "contracts/openapi/quality-recovery-tasks.openapi.json": "sha256:586fec4e3357959b3c2ac136752d29525468e2dc956394181e66f9d091b0ed6e",
+    "contracts/public-integration/adapter-registry-1.1.0.json": "sha256:4d11817d6470836e36551d6b01b493833ae60aaaf4bc77f61e97b0b8ce2b4423",
+    "contracts/public-integration/pic-1.1.0.json": "sha256:82e070e3b355053f3750db3df927ba56863b2efc6f672b685d7373df064a8bc3"
+  },
+  "predecessors": {
+    "backend/src/main/resources/db/migration/ingestion-quality/V000015__ingestion-quality__quality_eligibility_v1.sql": "sha256:21a66478ce29bf71838f4375c7162f5bbd390d5db60661981c5acfa03c419edb",
+    "contracts/authorization/role-field-policy-rfp-1.0.0.json": "sha256:84191d8b844b31ef91fb051d34d6731b80981d6d193e42b0f8d19f73caa9ed25",
+    "contracts/field-projection/field-projection-policy-binding-1.1.0.json": "sha256:9a7e8edb67ad6c7c010af74e57ce62f64a38662aaa16c049a81dc1e7c58842b4",
+    "contracts/ingestion-quality/batch-quality/executable-quality-contract-lock-1.0.0.json": "sha256:b93d5547e6b28aa7281f736bd2440800eea590987d68ae8ab28ffd6a225cdb6f",
+    "contracts/ingestion-quality/batch-quality/quality-snapshot-hash-contract-lock-1.0.0.json": "sha256:95eeb36ad905079eabf3f83addb40c335e0d9c862c4c582a5981e21b2379dc82",
+    "contracts/ingestion-quality/rule-dependency/quality-eligibility-contract-lock-1.0.0.json": "sha256:f73831e00d71dc5d79c55aa874d9cfc1b3a0df5d8d4d1c1f0f3588256d1ccbd2",
+    "contracts/public-integration/adapter-registry-1.0.0.json": "sha256:969d8dc3a305f8ab99a165ad39351248375cfbf3ace55516a8696ba08491830b",
+    "contracts/public-integration/pic-1.0.0.json": "sha256:41eccf69ab2e510e681cf63d41607e02060dbb80d46a147e22c2349ac4e0ac0a",
+    "contracts/public-integration/public-integration-contract-lock-1.0.0.json": "sha256:4c1d7304f3aac6aa7eddeb9bd4a382bb640c38f00e86988d9e182421fa417db9"
+  },
+  "releasePredecessors": {
+    "contracts/release/release-manifest.schema.json": "sha256:9ee461f8772441366396cb181dd358d3df848aa834837ba19ff76d484a5b1f6e",
+    "contracts/release/release-manifest-2.schema.json": "sha256:a012807699695cab091808fc5fbb1f4ebe7db56aa8ce8789cec79f4f68c50aac",
+    "contracts/release/release-manifest-3.schema.json": "sha256:f5506bb2b535c404ab1f029fea1329d614a23a8ea9bd98a4d876707132428625",
+    "contracts/release/release-manifest-4.schema.json": "sha256:6483e1421c50363beca5aad5a469ca2734daedf2c84636c75fc143bd834cb094",
+    "contracts/release/release-manifest-5.schema.json": "sha256:1f48da71b67698a4a5250927ea462e53706ecf8f72a6c82aea90fff9502f8bb9",
+    "contracts/release/release-manifest-6.schema.json": "sha256:d49391835cb8e56c76a3d769f164a86ff38e1a95e2af826dd2e5ae42ccc855e5"
+  },
+  "runtimeEvidence": {
+    "ownerLocalFuseTaskOutbox": "conformance-only",
+    "publicTaskTargetActivation": "none",
+    "story32ConsumerActivation": "none",
+    "story55FinalApply": "none"
+  }
+}

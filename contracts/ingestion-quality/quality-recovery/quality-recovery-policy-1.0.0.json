@@ -1,0 +1,52 @@
+{
+  "$schema": "quality-recovery-policy.schema.json",
+  "policyVersion": "QRP-1.0.0",
+  "authority": ["DEC-012", "G-03", "AD-5", "AD-23", "DCC-1.1.0", "QG-1.0.0", "RC-1.0.0"],
+  "sourceClassBinding": {
+    "owner": "ingestion-quality",
+    "source": "approved-explicit-source-class-registry",
+    "unknown": "reject"
+  },
+  "sourceClasses": {
+    "streaming": {"consecutivePassedBatches": 3, "observationMinutes": 60},
+    "dailyBatch": {"consecutivePassedBatches": 2, "observationMinutes": 1440}
+  },
+  "batchQualification": {
+    "acceptedPair": "assessed-passed-then-exact-published",
+    "sequenceKey": ["sourceId", "sourceVersionOrdinal", "lineageRevision"],
+    "forbiddenOrderingFields": ["eventId", "occurredAt", "watermark", "batchId"],
+    "inclusive": true
+  },
+  "backfill": {
+    "lookbackDays": 90,
+    "startExpression": "max(lastKnownGoodWatermark,trustedNow-minus-P90D)",
+    "trustedNowRequired": true
+  },
+  "reconciliation": {"coverage": "full", "expectedMismatchCount": 0},
+  "sampling": {
+    "unit": "subject-window",
+    "stratified": true,
+    "minimumSubjectWindows": 100,
+    "allIfPopulationFewer": true,
+    "expectedMismatchCount": 0,
+    "selectionSeedRequired": true
+  },
+  "qualityGate": {
+    "version": "QG-1.0.0",
+    "exactDigestRequired": true,
+    "thresholdComparison": "use-approved-inclusive-operator",
+    "requiredDependencies": "all-current-required-members-eligible"
+  },
+  "impactPreview": {
+    "trustedMicrosecondTime": true,
+    "categories": ["already-expired-history-only", "currently-potentially-actionable", "expected-to-expire-before-observation-completes"],
+    "finalActionabilityOwnerStory": "2.5c",
+    "authorizesExecution": false
+  },
+  "failureFallback": {
+    "qualificationFailure": "remain-fused",
+    "observationRelapseWithinHours": 24,
+    "createsBusinessObjects": false
+  },
+  "runtimeEvidenceClaim": "contract-only"
+}

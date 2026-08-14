@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 
 export const authorizedShell = Object.freeze({
-  schemaVersion: 'AUTHORIZED-SHELL-1.0.0',
+  schemaVersion: 'AUTHORIZED-SHELL-1.1.0',
   policyVersion: 'RFP-1.0.0',
   fixtureVersion: 'RFP-FIXTURE-1.0.0',
   evaluatedAt: '2026-08-01T00:00:00Z',
@@ -26,6 +26,7 @@ export const authorizedShell = Object.freeze({
     Object.freeze({ id: 'audit-search', state: 'available' }),
     Object.freeze({ id: 'care-workbench', state: 'not-installed' }),
   ]),
+  actionCapabilities: Object.freeze([]),
   dependencyStatus: 'available',
 });
 

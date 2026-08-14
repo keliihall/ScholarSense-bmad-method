@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/authorization/high-risk/high-risk-contract-lock.schema.json",
+  "title": "High-risk authorization contract lock",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "lockVersion", "canonicalizationProfile", "files"],
+  "properties": {
+    "$schema": {"const": "high-risk-contract-lock.schema.json"},
+    "lockVersion": {"const": "HIGH-RISK-CONTRACT-LOCK-1.0.0"},
+    "canonicalizationProfile": {"const": "SCHOLARSENSE-RAW-BYTE-SHA256-1.0.0"},
+    "files": {
+      "type": "object",
+      "minProperties": 13,
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      },
+      "propertyNames": {
+        "pattern": "^contracts/authorization/high-risk/(?!high-risk-contract-lock-1\\.0\\.0\\.json$).+\\.json$"
+      }
+    }
+  }
+}

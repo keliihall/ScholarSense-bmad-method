@@ -1,0 +1,25 @@
+{
+  "version": "PIC-ADAPTER-REGISTRY-1.1.0",
+  "predecessor": {"path": "contracts/public-integration/adapter-registry-1.0.0.json", "sha256": "969d8dc3a305f8ab99a165ad39351248375cfbf3ace55516a8696ba08491830b"},
+  "contractVersion": "PIC-1.1.0",
+  "compatibility": "additive-minor",
+  "descriptors": [
+    {
+      "capability": "quality-recovery-task",
+      "channelId": "pic.quality-recovery-task.v1",
+      "contractMajor": 1,
+      "schemaVersions": ["1.0.0"],
+      "consumerSupportedSchemaVersions": ["1.0.0"],
+      "owner": "ingestion-quality",
+      "ownerStory": "2.5a",
+      "operations": ["create", "update"],
+      "events": ["scholarsense.ingestion-quality.quality-recovery-task.changed.v1"],
+      "orderingMode": "aggregate-stream",
+      "sideEffectMode": "target-activation-deferred",
+      "authorization": "pic.quality-recovery-task.write",
+      "failureRetry": "PIC-RETRY-1.0.0",
+      "reconciliation": "PIC-RECONCILIATION-1.0.0",
+      "runtimeEvidenceClaim": "none"
+    }
+  ]
+}

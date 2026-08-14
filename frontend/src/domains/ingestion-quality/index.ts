@@ -36,6 +36,51 @@ export type {
   QualitySnapshotIdentityGeneration,
   QualitySnapshotPage,
 } from './internal/quality-snapshots';
+export {
+  QualityEligibilityClient,
+  QualityEligibilityMemoryState,
+  clearQualityEligibilityIdentityBoundary,
+  qualityEligibilityQueryOptions,
+  qualityEligibilityStatusText,
+  shouldClearQualityEligibilityQueryCache,
+} from './internal/rule-quality-eligibilities';
+export {
+  QualityRecoveryTaskClient,
+  QualityRecoveryTaskMemoryState,
+  clearQualityRecoveryTaskIdentityBoundary,
+  qualityRecoveryTaskDeliveryText,
+  qualityRecoveryTaskQueryOptions,
+} from './internal/quality-recovery-tasks';
+export {
+  QualityFuseRecoveryClient,
+  QualityFuseRecoveryFailure,
+  QualityFuseRecoveryMemory,
+  qualityFuseRecoveryQueryOptions,
+} from './internal/quality-fuse-recovery';
+export type {
+  QualityFuseRecoveryExecution,
+  QualityFuseRecoveryRequest,
+  QualityFuseRecoveryStatus,
+} from './internal/quality-fuse-recovery';
+export type {
+  QualityRecoveryTask,
+  QualityRecoveryTaskClearReason,
+  QualityRecoveryTaskCursor,
+  QualityRecoveryTaskFilters,
+  QualityRecoveryTaskIdentityGeneration,
+  QualityRecoveryTaskPage,
+  QualityTaskDeliveryStatus,
+} from './internal/quality-recovery-tasks';
+export type {
+  QualityEligibility,
+  QualityEligibilityClearReason,
+  QualityEligibilityCursor,
+  QualityEligibilityFilters,
+  QualityEligibilityIdentityGeneration,
+  QualityEligibilityMember,
+  QualityEligibilityPage,
+  QualityEligibilityStatus,
+} from './internal/rule-quality-eligibilities';
 export type {
   CatalogPublicationCommand,
   CatalogDetail,

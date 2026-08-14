@@ -11,6 +11,7 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 class DataSourceCatalogExceptionHandlerTest {
     @Test
@@ -36,6 +37,15 @@ class DataSourceCatalogExceptionHandlerTest {
                         || type == ArithmeticException.class);
 
         assertFalse(catchesIllegalArgument);
+    }
+
+    @Test
+    void productionAdviceIncludesTheRecoveryTaskController() {
+        RestControllerAdvice advice = DataSourceCatalogExceptionHandler.class
+                .getAnnotation(RestControllerAdvice.class);
+
+        assertEquals(true, Arrays.asList(advice.assignableTypes())
+                .contains(QualityRecoveryTaskController.class));
     }
 
     private static HttpServletRequest request() {

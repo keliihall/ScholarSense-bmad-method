@@ -1,0 +1,47 @@
+{
+  "contractVersion": "RECOVERY-SAMPLE-RECOMPUTE-PROVIDER-1.0.0",
+  "publicPort": "signal-evaluation/api/RecoverySampleRecomputeProviderPort",
+  "ownerInternalPort": "ingestion-quality/application/RecoverySampleRecomputePort",
+  "ownerAdapter": "ingestion-quality/adapters/outbound/SignalEvaluationRecoverySampleRecomputeAdapter",
+  "producer": "signal-evaluation",
+  "consumer": "ingestion-quality",
+  "interaction": "pure-bounded-computation-query-no-cross-module-command-or-shared-transaction",
+  "availability": ["available", "unavailable", "not-installed"],
+  "workloadAudience": "ingestion-quality-recovery-worker",
+  "requestFields": [
+    "providerVersion", "recoveryRequestId", "episodeId", "taskId", "ruleVersionsDigest",
+    "memberSetDigest", "watermarksDigest", "qualityRecoveryPolicyVersion",
+    "qualityRecoveryPolicyDigest", "opaqueSubjectWindowSelectionRef", "selectionSeed",
+    "requestedSampleCount", "requestDigest", "traceId"
+  ],
+  "resultFields": [
+    "providerVersion", "selectionSeed", "populationCount", "selectedCount",
+    "strataSummaryDigest", "expectedDigest", "actualDigest", "mismatchCount",
+    "completedAt", "traceId"
+  ],
+  "privacy": {
+    "studentPlaintext": "forbidden",
+    "rawFailureRows": "forbidden",
+    "freeText": "forbidden",
+    "opaqueSelectionResolution": "provider-side-only"
+  },
+  "bounds": {
+    "timeoutMillis": 30000,
+    "maximumSelectedSubjectWindows": 10000,
+    "maximumStrata": 128,
+    "maximumWireBytes": 65536
+  },
+  "idempotency": {
+    "key": ["providerVersion", "requestDigest"],
+    "sameKeySameDigest": "return-same-immutable-result",
+    "sameKeyDifferentBody": "reject",
+    "deterministicSelectionSeed": true
+  },
+  "failure": {
+    "notInstalled": "durable-failure-remain-fused",
+    "unavailable": "durable-retryable-failure-remain-fused",
+    "unknownVersionOrDigest": "fail-closed"
+  },
+  "forbiddenSideEffects": ["RuleEvaluation", "Candidate", "Clue"],
+  "runtimeEvidenceClaim": "contract-only"
+}

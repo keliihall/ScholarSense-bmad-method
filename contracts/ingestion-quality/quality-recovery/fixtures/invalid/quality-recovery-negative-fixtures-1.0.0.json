@@ -1,0 +1,17 @@
+{
+  "fixtureVersion": "QRNFX-1.0.0",
+  "cases": [
+    {"caseId": "unknown-policy-version", "mutation": "QRP-9.9.9", "expected": "fail-closed"},
+    {"caseId": "unknown-policy-digest", "mutation": "unregistered-digest", "expected": "fail-closed"},
+    {"caseId": "unknown-source-class", "mutation": "near-real-time", "expected": "fail-closed"},
+    {"caseId": "unknown-sample-provider", "mutation": "provider-not-installed", "expected": "durable-failure-remain-fused"},
+    {"caseId": "unknown-sample-summary-version", "mutation": "summary-v99", "expected": "fail-closed"},
+    {"caseId": "unknown-action-type", "mutation": "quality-fuse.fast-recover", "expected": "D0-deny"},
+    {"caseId": "maker-equals-checker", "mutation": "same-natural-person", "expected": "deny"},
+    {"caseId": "token-reuse", "mutation": "same-execution-jti-second-command", "expected": "return-original-or-deny-no-second-transition"},
+    {"caseId": "preview-drift", "mutation": "watermark-changed", "expected": "409-repreview"},
+    {"caseId": "transport-order", "mutation": "sort-by-occurredAt", "expected": "fail-closed"},
+    {"caseId": "sample-pii", "mutation": "include-studentRef", "expected": "reject"},
+    {"caseId": "bootstrap-rule", "mutation": "no-active-episode-or-task", "expected": "remain-fused"}
+  ]
+}

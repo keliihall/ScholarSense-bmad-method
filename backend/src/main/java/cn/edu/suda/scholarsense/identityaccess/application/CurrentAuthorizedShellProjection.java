@@ -11,9 +11,11 @@ public record CurrentAuthorizedShellProjection(
         AuthorizedShellSurface defaultSurface,
         List<AuthorizedShellMenuItem> menuItems,
         List<AuthorizedShellEntryCapability> entryCapabilities,
+        List<AuthorizedShellActionEntryCapability> actionCapabilities,
         String dependencyStatus) {
     public CurrentAuthorizedShellProjection {
         menuItems = List.copyOf(menuItems);
         entryCapabilities = List.copyOf(entryCapabilities);
+        actionCapabilities = List.copyOf(actionCapabilities);
     }
 }

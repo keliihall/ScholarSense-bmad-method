@@ -1,0 +1,19 @@
+{
+  "matrixVersion": "QRDM-1.0.0",
+  "authorities": [
+    {"id": "DEC-012/QRP-1.0.0", "owns": ["source-class-thresholds", "batch-counts", "observation-duration", "backfill", "reconciliation", "sampling", "fallback"]},
+    {"id": "HRAP-1.0.0/AD-23", "owns": ["D4-lifecycle", "maker-checker-separation", "4h-pending", "15m-token", "execution-recheck"]},
+    {"id": "RFP-1.0.0", "owns": ["R6-owned-source-request-permission", "R7-technical-only"]},
+    {"id": "RC-1.0.0/RuleVersion", "owns": ["rule-version-members", "latestActionableAt"]},
+    {"id": "Story-2.5a/QFTP-QFRTP", "owns": ["active-fuse-episode", "open-recovery-task", "latch"]},
+    {"id": "Story-2.5b", "owns": ["evidence-qualification", "preview", "D4-plan", "fused-to-recovering"]},
+    {"id": "Story-2.5c", "owns": ["observation", "recoveryCompletedAt-final-window-decision", "recovering-to-eligible", "close-or-relapse"]}
+  ],
+  "conflictResolutions": [
+    {"conflict": "QRP prose says D4 after observation while Story 2.5b canonical enters recovering after D4", "resolution": "2.5b D4 execution confirmation enters recovering; 2.5c revalidates persisted approval evidence and requires a fresh execution confirmation before eligible"},
+    {"conflict": "preview mentions actionable windows before recoveryCompletedAt exists", "resolution": "2.5b preview is non-authorizing classification using trustedNow plus observationDuration; 2.5c makes the final <= latestActionableAt decision using actual recoveryCompletedAt"},
+    {"conflict": "RFP request permission could be mistaken for D4 approval", "resolution": "RFP only proves maker request eligibility; identity-access HRAP receipt independently proves checker approval"},
+    {"conflict": "cross-owner token and recovery transaction could partially commit", "resolution": "identity-access atomically redeems the token into one durable bound execution-authorization lease and executionJti; ingestion-quality atomically consumes that JTI in its owner transaction, confirms through outbox, never reactivates an expired or cancelled token/lease, and reconciles a revocation race back to fused before any downstream business consumption"}
+  ],
+  "unresolvedSemantics": []
+}

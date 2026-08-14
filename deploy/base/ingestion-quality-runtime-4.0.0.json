@@ -1,0 +1,173 @@
+{
+  "version": "INGESTION-QUALITY-RUNTIME-4.0.0",
+  "status": "deployment-input-required",
+  "runtimeEvidenceClaim": "none",
+  "predecessor": {
+    "path": "ingestion-quality-runtime-3.0.0.json",
+    "rawSha256": "cdfa4a0ff993ecb8c8a6380fcbe319a21b2b960b74711ef3d57bb41a0e8263a5",
+    "mutationAllowed": false
+  },
+  "sameArtifactRoles": {
+    "web-api": {
+      "capabilities": [
+        "quality-eligibility-read",
+        "quality-eligibility-read-audit",
+        "quality-recovery-task-read",
+        "quality-recovery-task-read-audit"
+      ],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "businessHttp": true,
+      "minimumReplicas": 2,
+      "activation": {
+        "requiredProviderPorts": [
+          "CompositeAuthorizationPort",
+          "CompositeAuthorizationRecheckPort",
+          "QualityRecoveryTaskReadAuditPort"
+        ],
+        "providerEvidence": "target-managed-source-ownership-authorization-and-audit",
+        "failureMode": "startup-fail-closed"
+      }
+    },
+    "eligibility-consumer": {
+      "capabilities": [
+        "quality-eligibility-composition",
+        "quality-fuse-latch",
+        "quality-recovery-task-outbox"
+      ],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "businessHttp": false,
+      "minimumReplicas": 2,
+      "statelessTakeover": "database-cas-inbox-rule-episode-task-and-outbox-fencing",
+      "requiredEnvironment": [
+        "SCHOLARSENSE_INGESTION_QUALITY_ELIGIBILITY_CONSUMER_ENABLED",
+        "SCHOLARSENSE_INGESTION_QUALITY_ELIGIBILITY_CONSUMER_DATASOURCE_URL",
+        "SCHOLARSENSE_INGESTION_QUALITY_ELIGIBILITY_CONSUMER_DATASOURCE_USERNAME",
+        "SCHOLARSENSE_INGESTION_QUALITY_ELIGIBILITY_CONSUMER_DATASOURCE_PASSWORD",
+        "SCHOLARSENSE_INGESTION_QUALITY_CONTRACT_ROOT",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_AUTHORIZATION_REF",
+        "SCHOLARSENSE_INGESTION_QUALITY_TRUSTED_TIME_PROVIDER_REF",
+        "SCHOLARSENSE_INGESTION_QUALITY_QUALITY_EVENT_SUBSCRIPTION_REF",
+        "SCHOLARSENSE_INGESTION_QUALITY_BACKFILL_PROVIDER_REF",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_MTLS_CERT_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_MTLS_KEY_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_TRUST_BUNDLE_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_AUDIENCE",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_CAPABILITIES",
+        "SCHOLARSENSE_INGESTION_QUALITY_FUSE_WORK_ITEM_HMAC_KEY_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_FUSE_WORK_ITEM_HMAC_KEY_VERSION"
+      ],
+      "activation": {
+        "requiredProviderPorts": [
+          "QualityEligibilityEventTransactionPort",
+          "DataBatchWorkloadAuthorizationPort",
+          "TrustedTimeSource",
+          "QualityFuseWorkItemKeyPort"
+        ],
+        "providerEvidence": "target-managed-subscription-authorization-time-and-mtls",
+        "failureMode": "startup-fail-closed"
+      }
+    },
+    "audit-relay-worker": {
+      "capabilities": ["quality-eligibility-outbox-relay"],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "businessHttp": false,
+      "minimumReplicas": 2,
+      "activation": {
+        "requiredProviderPorts": ["QualityEligibilityEventPublisherPort"],
+        "providerEvidence": "target-managed-broker-and-mtls",
+        "failureMode": "startup-fail-closed"
+      }
+    },
+    "retention-executor": {
+      "capabilities": ["quality-eligibility-retention", "quality-task-read-audit-retention"],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "businessHttp": false,
+      "minimumReplicas": 1,
+      "activation": {
+        "requiredProviderPorts": ["TrustedTimeSource", "RetentionAuthorizationPort"],
+        "providerEvidence": "target-managed-time-and-retention-capability",
+        "failureMode": "startup-fail-closed"
+      }
+    },
+    "quality-task-relay": {
+      "capabilities": ["quality-recovery-task-outbox-relay"],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "businessHttp": false,
+      "minimumReplicas": 2,
+      "statelessTakeover": "database-lease-generation-fencing-and-eight-attempt-ceiling",
+      "requiredEnvironment": [
+        "SCHOLARSENSE_INGESTION_QUALITY_TASK_RELAY_ENABLED",
+        "SCHOLARSENSE_INGESTION_QUALITY_TASK_RELAY_DATASOURCE_URL",
+        "SCHOLARSENSE_INGESTION_QUALITY_TASK_RELAY_DATASOURCE_USERNAME",
+        "SCHOLARSENSE_INGESTION_QUALITY_TASK_RELAY_DATASOURCE_PASSWORD"
+      ],
+      "activation": {
+        "status": "target-activation-deferred",
+        "requiredProviderPorts": ["QualityTaskTargetPort"],
+        "providerEvidence": "target-managed-pic-1.1.0-quality-task-route-and-receipts",
+        "failureMode": "startup-fail-closed"
+      }
+    }
+  },
+  "databaseStartupGate": {
+    "productionJdbcParameters": {"sslmode": "verify-full", "channelBinding": "require"},
+    "requiredServerVersionNum": "180004",
+    "sessionIdentityInvariant": "session_user=current_user=role-specific-datasource-username",
+    "exclusivePhysicalLogin": true,
+    "distinctWorkloadLogins": [
+      "web-api",
+      "quality-worker",
+      "audit-relay-worker",
+      "retention-executor",
+      "consumer-registry-authority",
+      "eligibility-consumer",
+      "quality-task-relay"
+    ],
+    "workloadRoleBindings": {
+      "web-api": {"requiredGroupRole": "scholarsense_ingestion_quality_online"},
+      "quality-worker": {"requiredGroupRole": "scholarsense_ingestion_quality_quality_worker"},
+      "audit-relay-worker": {"requiredGroupRole": "scholarsense_ingestion_quality_relay"},
+      "retention-executor": {"requiredGroupRole": "scholarsense_ingestion_quality_retention_executor"},
+      "consumer-registry-authority": {"requiredGroupRole": "scholarsense_ingestion_quality_consumer_registry_authority"},
+      "eligibility-consumer": {"requiredGroupRole": "scholarsense_ingestion_quality_eligibility_consumer"},
+      "quality-task-relay": {
+        "expectedIdentitySource": "SCHOLARSENSE_INGESTION_QUALITY_TASK_RELAY_DATASOURCE_USERNAME",
+        "requiredGroupRole": "scholarsense_ingestion_quality_task_relay",
+        "forbiddenGroupRoles": [
+          "scholarsense_ingestion_quality_online",
+          "scholarsense_ingestion_quality_quality_worker",
+          "scholarsense_ingestion_quality_relay",
+          "scholarsense_ingestion_quality_retention_executor",
+          "scholarsense_ingestion_quality_consumer_registry_authority",
+          "scholarsense_ingestion_quality_eligibility_consumer"
+        ]
+      }
+    },
+    "effectivePrivilegeVerification": "exact-table-column-and-function-matrix",
+    "failureMode": "startup-fail-closed"
+  },
+  "ownerBindingsExtension": {
+    "objectClass": "RecoveryTask",
+    "purpose": "data-quality.read",
+    "scopeAnchor": "OWNED_SOURCE",
+    "currentIdentityGeneration": true,
+    "readAuditBeforeResponse": true,
+    "partialResult": "authorized-source-slice-without-count-page-or-not-found-leak"
+  },
+  "deliverySemantics": {
+    "businessTaskState": "independent",
+    "taskDeliveryState": "pending-retrying-confirmed-failed",
+    "confirmedMeaning": "target-confirmed-transport-only",
+    "receiptChangesQualityOrTaskState": false,
+    "maximumPayloadBytes": 65536,
+    "maximumAttempts": 8
+  },
+  "unactivatedBoundaries": {
+    "publicTaskTargetActivation": "target-input-required",
+    "story32ConsumerActivation": "not-installed",
+    "story55FinalPublicApply": "not-installed",
+    "recoveryWorkflowStory25b25c": "not-installed",
+    "productionDurationEvidence": "not-collected",
+    "runtimeEvidenceClaim": "none"
+  }
+}

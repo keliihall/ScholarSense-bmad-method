@@ -1,0 +1,25 @@
+{
+  "version": "PIC-1.1.0",
+  "predecessor": {"path": "contracts/public-integration/pic-1.0.0.json", "sha256": "41eccf69ab2e510e681cf63d41607e02060dbb80d46a147e22c2349ac4e0ac0a"},
+  "compatibility": "additive-minor",
+  "wire": {
+    "openapi": "3.1.2",
+    "cloudEvents": "1.0.2",
+    "jsonSchema": "2020-12",
+    "canonicalJson": "SCHOLARSENSE-CANONICAL-JSON-1.0.0",
+    "maximumIdentityEncodedBodyBytes": 65536,
+    "batchSupported": false,
+    "partialSuccessSupported": false
+  },
+  "qualityTask": {
+    "producer": "ingestion-quality",
+    "channelId": "pic.quality-recovery-task.v1",
+    "eventType": "scholarsense.ingestion-quality.quality-recovery-task.changed.v1",
+    "operations": ["create", "update"],
+    "deliveryRecord": "producer-owned-TaskDelivery-sidecar",
+    "receipt": "target-confirmation-only",
+    "finalApplyOwnerStory": "5.5",
+    "targetActivation": "deferred",
+    "runtimeEvidenceClaim": "none"
+  }
+}

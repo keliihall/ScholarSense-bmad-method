@@ -18,7 +18,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice(assignableTypes = {
         DataSourceCatalogController.class,
-        QualitySnapshotController.class})
+        QualitySnapshotController.class,
+        QualityEligibilityController.class,
+        QualityRecoveryTaskController.class,
+        QualityFuseRecoveryController.class})
 public final class DataSourceCatalogExceptionHandler {
     @ExceptionHandler(IngestionQualityApplicationException.class)
     ResponseEntity<ErrorEnvelope> application(

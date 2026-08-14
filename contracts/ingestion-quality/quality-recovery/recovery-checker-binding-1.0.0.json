@@ -1,0 +1,25 @@
+{
+  "bindingVersion": "QRCOB-1.0.0",
+  "actionType": "quality-fuse.recover",
+  "authorityProvider": "rule-governance/api/RuleVersionBusinessOwnerBindingQueryPort",
+  "identityResolver": "identity-access/api/CurrentNaturalPersonBindingQueryPort",
+  "requestBinding": [
+    "sourceId", "dependencyId", "activeIncidentGeneration", "affectedRuleVersionsDigest",
+    "ruleVersionBusinessOwnerBindingVersion", "authorizationGeneration", "trustedAt"
+  ],
+  "resolution": {
+    "perRuleVersion": "exactly-one-active-accountable-business-owner-binding",
+    "multipleActiveNaturalPersonsForKey": "dependency-unavailable-fail-closed",
+    "missingBinding": "dependency-unavailable-fail-closed",
+    "inactiveOrExpiredBinding": "dependency-unavailable-fail-closed",
+    "providerUnavailable": "dependency-unavailable-fail-closed",
+    "humanReadableCatalogOwnerText": "never-an-authority",
+    "result": "sorted-distinct-current-natural-person-principal-digests"
+  },
+  "quorum": "all-distinct-business-owner-bindings",
+  "makerExclusion": "maker-principal-must-not-equal-any-required-checker-principal",
+  "emptyCheckerSet": "deny",
+  "bindingDrift": "expire-approval-token-and-lease;require-new-preview-and-request",
+  "clientVisibility": "counts-and-status-only-never-principal-or-binding-details",
+  "runtimeEvidenceClaim": "contract-only"
+}

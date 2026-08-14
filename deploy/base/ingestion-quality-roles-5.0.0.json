@@ -1,0 +1,69 @@
+{
+  "version": "INGESTION-QUALITY-ROLES-5.0.0",
+  "status": "installed-and-verified",
+  "runtimeEvidenceClaim": "story-2.5b-executable-closure",
+  "composition": {
+    "predecessorRolesPath": "ingestion-quality-roles-4.0.0.json",
+    "predecessorRolesRawSha256": "1a7e293255924aac4424a1971dbfe31568816714a76f61300b7f0df533862bcb",
+    "mutationAllowed": false,
+    "successorRuntimeProfile": "ingestion-quality-runtime-5.0.0.json"
+  },
+  "artifactContract": "same-backend-jar",
+  "roleOverrides": {
+    "web-api": {
+      "addCapabilityProfiles": ["ingestion-quality-runtime-5.0.0.json"],
+      "minimumReplicas": 2,
+      "businessHttp": true
+    },
+    "retention-executor": {
+      "addCapabilityProfiles": ["ingestion-quality-runtime-5.0.0.json"],
+      "minimumReplicas": 1,
+      "businessHttp": false
+    }
+  },
+  "roles": {
+    "recovery-validation-worker": {
+      "artifact": "backend/target/scholarsense-backend.jar",
+      "capabilityProfiles": [
+        "ingestion-quality-runtime-1.0.0.json",
+        "ingestion-quality-runtime-2.0.0.json",
+        "ingestion-quality-runtime-3.0.0.json",
+        "ingestion-quality-runtime-4.0.0.json",
+        "ingestion-quality-runtime-5.0.0.json"
+      ],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "activationStatus": "installed-and-verified",
+      "minimumReplicas": 2,
+      "businessHttp": false,
+      "requiredEnvironment": [
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_ENABLED",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_URL",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_USERNAME",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_PASSWORD",
+        "SCHOLARSENSE_SIGNAL_EVALUATION_RECOVERY_ENABLED"
+      ],
+      "environment": {
+        "SCHOLARSENSE_ROLE": "worker",
+        "SCHOLARSENSE_IDENTITY_ENABLED": "false",
+        "SCHOLARSENSE_IDENTITY_SYNC_ENABLED": "false",
+        "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "false",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_ENABLED": "true"
+      },
+      "probe": {
+        "type": "process-and-startup-gate",
+        "startupGate": "PostgreSqlDataSourceStartupGate.verifyRecoveryWorker"
+      }
+    }
+  },
+  "activationPolicy": {
+    "requiredTargetInputs": [
+      "eighth-dedicated-database-login",
+      "identity-access-hrap-signing-key",
+      "signal-evaluation-recovery-provider",
+      "quality-recovery-contract-root"
+    ],
+    "partialActivationAllowed": false,
+    "fallbackProviderAllowed": false,
+    "runtimeEvidenceClaim": "story-2.5b-executable-closure"
+  }
+}

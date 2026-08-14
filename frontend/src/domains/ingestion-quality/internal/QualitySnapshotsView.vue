@@ -6,6 +6,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { useQueryClient } from '@tanstack/vue-query';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import VChart from 'vue-echarts';
+import QualityFuseRecoveryPanel from './QualityFuseRecoveryPanel.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthorizedShellState, useIdentityState } from '../../identity-access';
 import {
@@ -30,11 +31,41 @@ import type {
   QualitySnapshotIdentityGeneration,
   QualitySnapshotPage,
 } from './quality-snapshots';
+import {
+  QualityEligibilityClient,
+  QualityEligibilityMemoryState,
+  clearQualityEligibilityIdentityBoundary,
+  qualityEligibilityQueryOptions,
+  qualityEligibilityStatusText,
+  shouldClearQualityEligibilityQueryCache,
+} from './rule-quality-eligibilities';
+import {
+  QualityRecoveryTaskClient,
+  QualityRecoveryTaskMemoryState,
+  clearQualityRecoveryTaskIdentityBoundary,
+  qualityRecoveryTaskDeliveryText,
+  qualityRecoveryTaskQueryOptions,
+} from './quality-recovery-tasks';
+import type {
+  QualityRecoveryTask,
+  QualityRecoveryTaskFilters,
+  QualityRecoveryTaskPage,
+  QualityTaskDeliveryStatus,
+} from './quality-recovery-tasks';
+import type {
+  QualityEligibility,
+  QualityEligibilityFilters,
+  QualityEligibilityPage,
+  QualityEligibilityStatus,
+} from './rule-quality-eligibilities';
 
 use([LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
 
 type PageState = 'loading' | 'results' | 'empty' | 'filter-empty' | 'forbidden'
   | 'error' | 'degraded' | 'offline' | 'narrow';
+type EligibilityState = 'loading' | 'results' | 'empty' | 'filter-empty'
+  | 'forbidden' | 'error' | 'degraded';
+type TaskState = EligibilityState | 'scope-required';
 const route = useRoute();
 const router = useRouter();
 const queryClient = useQueryClient();
@@ -42,21 +73,39 @@ const identity = useIdentityState();
 const authorization = useAuthorizedShellState();
 const client = new QualitySnapshotClient();
 const memory = new QualitySnapshotMemoryState();
+const eligibilityClient = new QualityEligibilityClient();
+const eligibilityMemory = new QualityEligibilityMemoryState();
+const recoveryTaskClient = new QualityRecoveryTaskClient();
+const recoveryTaskMemory = new QualityRecoveryTaskMemoryState();
 const active = ref<AbortController>();
+const eligibilityActive = ref<AbortController>();
+const recoveryTaskActive = ref<AbortController>();
 const response = ref<QualitySnapshotPage>();
 const detail = ref<QualitySnapshot>();
+const eligibilityResponse = ref<QualityEligibilityPage>();
+const eligibilityDetail = ref<QualityEligibility>();
+const recoveryTaskResponse = ref<QualityRecoveryTaskPage>();
+const recoveryTaskDetail = ref<QualityRecoveryTask>();
 const metricDetail = ref<QualityMetricResult>();
 const state = ref<PageState>('loading');
+const eligibilityState = ref<EligibilityState>('loading');
+const recoveryTaskState = ref<TaskState>('loading');
 const sourceFilter = ref(query('sourceId'));
 const resultFilter = ref(query('overallResult'));
 const fromFilter = ref(query('evaluatedFrom'));
 const toFilter = ref(query('evaluatedTo'));
 const sortDirection = ref(query('sortDirection') === 'asc' ? 'asc' : 'desc');
+const eligibilityStatusFilter = ref(query('eligibilityStatus'));
+const eligibilityRuleFilter = ref(query('eligibilityRuleId'));
+const recoveryTaskSourceFilter = ref(query('taskSourceId'));
+const recoveryTaskStatusFilter = ref(query('taskStatus'));
 const selectedTrendKey = ref('');
 const narrow = ref(false);
 const online = ref(true);
 let media: MediaQueryList | undefined;
 let activeRequestKey: string | undefined;
+let activeEligibilityRequestKey: string | undefined;
+let activeRecoveryTaskRequestKey: string | undefined;
 
 const capabilitySignature = computed(() => {
   const capability = authorization.current?.entryCapabilities
@@ -65,6 +114,14 @@ const capabilitySignature = computed(() => {
     .find((item) => item.routeName === 'data-quality.quality-snapshots');
   return `${capability?.state ?? 'missing'}|${menu?.providerState ?? 'missing'}`;
 });
+const recoveryActionSignature = computed(() => authorization.current?.actionCapabilities
+  .find((item) => item.actionType === 'quality-fuse.recover')?.state ?? 'missing');
+const recoveryActionAvailable = computed(() => recoveryActionSignature.value === 'available');
+const recoveryIdentityGeneration = computed(() => [
+  identity.session?.sessionPseudonym ?? 'missing',
+  identity.session?.sessionVersion ?? 'missing',
+  authorization.current?.policyVersion ?? 'missing', recoveryActionSignature.value,
+].join('|'));
 const trends = computed(() => buildQualityMetricTrends(response.value?.items ?? []));
 const selectedTrend = computed<QualityMetricTrend | undefined>(() =>
   trends.value.find((item) => trendKey(item) === selectedTrendKey.value) ?? trends.value[0]);
@@ -129,6 +186,31 @@ function filters(): QualitySnapshotFilters {
     size: 20,
   };
 }
+function eligibilityFilters(): QualityEligibilityFilters {
+  const status = query('eligibilityStatus');
+  return {
+    ...(['eligible', 'fused', 'recovering', 'missing'].includes(status)
+      ? { status: status as QualityEligibilityStatus } : {}),
+    ...(query('eligibilityRuleId') ? { ruleId: query('eligibilityRuleId') } : {}),
+    ...(query('afterEligibilityOccurredAt')
+      ? { afterOccurredAt: query('afterEligibilityOccurredAt') } : {}),
+    ...(query('afterEligibilityId')
+      ? { afterEligibilityId: query('afterEligibilityId') } : {}),
+    size: 20,
+  };
+}
+function recoveryTaskFilters(): QualityRecoveryTaskFilters | undefined {
+  const requestedSourceId = query('taskSourceId');
+  if (!requestedSourceId) return undefined;
+  return {
+    sourceId: requestedSourceId,
+    ...(query('taskStatus') === 'open' ? { status: 'open' as const } : {}),
+    ...(query('afterTaskOccurredAt')
+      ? { afterOccurredAt: query('afterTaskOccurredAt') } : {}),
+    ...(query('afterTaskId') ? { afterTaskId: query('afterTaskId') } : {}),
+    size: 20,
+  };
+}
 async function load(): Promise<void> {
   if (narrow.value) { clear('refresh'); state.value = 'narrow'; return; }
   if (!online.value) { clear('refresh'); state.value = 'offline'; return; }
@@ -138,6 +220,8 @@ async function load(): Promise<void> {
   const requestKey = JSON.stringify({ ...requested, ...requestedFilters });
   if (active.value !== undefined && activeRequestKey === requestKey) return;
   clear('refresh');
+  void loadEligibilities(requested);
+  void loadRecoveryTasks(requested);
   const controller = new AbortController();
   active.value = controller;
   activeRequestKey = requestKey;
@@ -170,7 +254,7 @@ async function load(): Promise<void> {
       : authorization.status === 'degraded' ? 'degraded' : 'results';
   } catch (failure) {
     if (!current(controller, requested)) return;
-    clear('refresh');
+    clearSnapshot('refresh');
     state.value = failure instanceof Error && failure.message === 'INGESTION_QUALITY_FORBIDDEN'
       ? 'forbidden' : 'error';
   } finally {
@@ -180,10 +264,122 @@ async function load(): Promise<void> {
     }
   }
 }
+async function loadRecoveryTasks(requested: QualitySnapshotIdentityGeneration): Promise<void> {
+  const requestedFilters = recoveryTaskFilters();
+  if (requestedFilters === undefined) {
+    clearRecoveryTasks('refresh');
+    recoveryTaskState.value = 'scope-required';
+    return;
+  }
+  const requestKey = JSON.stringify({ ...requested, ...requestedFilters });
+  if (recoveryTaskActive.value !== undefined
+      && activeRecoveryTaskRequestKey === requestKey) return;
+  clearRecoveryTasks('refresh');
+  const controller = new AbortController();
+  recoveryTaskActive.value = controller;
+  activeRecoveryTaskRequestKey = requestKey;
+  recoveryTaskState.value = 'loading';
+  try {
+    const page = await queryClient.fetchQuery(qualityRecoveryTaskQueryOptions({
+      ...requested,
+      sourceId: requestedFilters.sourceId,
+      status: requestedFilters.status ?? '',
+      afterOccurredAt: requestedFilters.afterOccurredAt ?? '',
+      afterTaskId: requestedFilters.afterTaskId ?? '',
+    }, () => recoveryTaskClient.list(requestedFilters, controller.signal)));
+    if (!recoveryTaskCurrent(controller, requested)) return;
+    recoveryTaskResponse.value = page;
+    recoveryTaskMemory.acceptPage(page);
+    const selectedId = query('taskId') || page.items[0]?.taskId;
+    if (selectedId !== undefined) {
+      const selected = await recoveryTaskClient.detail(selectedId, controller.signal);
+      if (!recoveryTaskCurrent(controller, requested)) return;
+      recoveryTaskDetail.value = selected;
+      recoveryTaskMemory.acceptDetail(selected);
+    }
+    recoveryTaskState.value = page.items.length === 0
+      ? recoveryTaskHasFilters(requestedFilters) ? 'filter-empty' : 'empty'
+      : authorization.status === 'degraded' ? 'degraded' : 'results';
+  } catch (failure) {
+    if (!recoveryTaskCurrent(controller, requested)) return;
+    recoveryTaskResponse.value = undefined;
+    recoveryTaskDetail.value = undefined;
+    recoveryTaskMemory.clear('refresh');
+    recoveryTaskState.value = failure instanceof Error
+      && failure.message === 'INGESTION_QUALITY_FORBIDDEN' ? 'forbidden' : 'error';
+  } finally {
+    if (recoveryTaskActive.value === controller) {
+      recoveryTaskActive.value = undefined;
+      activeRecoveryTaskRequestKey = undefined;
+    }
+  }
+}
+async function refreshEligibilityAfterRecovery(): Promise<void> {
+  const requested = generation();
+  if (requested !== undefined) await loadEligibilities(requested);
+}
+async function loadEligibilities(requested: QualitySnapshotIdentityGeneration): Promise<void> {
+  const requestedFilters = eligibilityFilters();
+  const requestKey = JSON.stringify({ ...requested, ...requestedFilters });
+  if (eligibilityActive.value !== undefined && activeEligibilityRequestKey === requestKey) return;
+  clearEligibility('refresh');
+  const controller = new AbortController();
+  eligibilityActive.value = controller;
+  activeEligibilityRequestKey = requestKey;
+  eligibilityState.value = 'loading';
+  try {
+    const page = await queryClient.fetchQuery(qualityEligibilityQueryOptions({
+      ...requested,
+      status: requestedFilters.status ?? '',
+      ruleId: requestedFilters.ruleId ?? '',
+      afterOccurredAt: requestedFilters.afterOccurredAt ?? '',
+      afterEligibilityId: requestedFilters.afterEligibilityId ?? '',
+    }, () => eligibilityClient.list(requestedFilters, controller.signal)));
+    if (!eligibilityCurrent(controller, requested)) return;
+    eligibilityResponse.value = page;
+    eligibilityMemory.acceptPage(page);
+    const selectedId = query('eligibilityId') || page.items[0]?.eligibilityId;
+    if (selectedId !== undefined) {
+      const selected = await eligibilityClient.detail(selectedId, controller.signal);
+      if (!eligibilityCurrent(controller, requested)) return;
+      eligibilityDetail.value = selected;
+      eligibilityMemory.acceptDetail(selected);
+    }
+    eligibilityState.value = page.items.length === 0
+      ? eligibilityHasFilters(requestedFilters) ? 'filter-empty' : 'empty'
+      : authorization.status === 'degraded' ? 'degraded' : 'results';
+  } catch (failure) {
+    if (!eligibilityCurrent(controller, requested)) return;
+    eligibilityResponse.value = undefined;
+    eligibilityDetail.value = undefined;
+    eligibilityMemory.clear('refresh');
+    eligibilityState.value = failure instanceof Error
+      && failure.message === 'INGESTION_QUALITY_FORBIDDEN' ? 'forbidden' : 'error';
+  } finally {
+    if (eligibilityActive.value === controller) {
+      eligibilityActive.value = undefined;
+      activeEligibilityRequestKey = undefined;
+    }
+  }
+}
 function current(
   controller: AbortController, requested: QualitySnapshotIdentityGeneration,
 ): boolean {
   return active.value === controller && !controller.signal.aborted
+    && !narrow.value && online.value
+    && sameQualitySnapshotIdentityGeneration(requested, generation());
+}
+function eligibilityCurrent(
+  controller: AbortController, requested: QualitySnapshotIdentityGeneration,
+): boolean {
+  return eligibilityActive.value === controller && !controller.signal.aborted
+    && !narrow.value && online.value
+    && sameQualitySnapshotIdentityGeneration(requested, generation());
+}
+function recoveryTaskCurrent(
+  controller: AbortController, requested: QualitySnapshotIdentityGeneration,
+): boolean {
+  return recoveryTaskActive.value === controller && !controller.signal.aborted
     && !narrow.value && online.value
     && sameQualitySnapshotIdentityGeneration(requested, generation());
 }
@@ -195,6 +391,8 @@ async function applyFilters(): Promise<void> {
     ...(toFilter.value.trim() ? { evaluatedTo: toFilter.value.trim() } : {}),
     sortField: 'evaluatedAt',
     sortDirection: sortDirection.value,
+    ...eligibilityRouteQuery(),
+    ...recoveryTaskRouteQuery(),
   };
   if (sameRouteQuery(target)) await load();
   else await router.replace({ query: target });
@@ -205,9 +403,96 @@ async function resetFilters(): Promise<void> {
   fromFilter.value = '';
   toFilter.value = '';
   sortDirection.value = 'desc';
-  const target = { sortField: 'evaluatedAt', sortDirection: 'desc' };
+  const target = {
+    sortField: 'evaluatedAt', sortDirection: 'desc', ...eligibilityRouteQuery(),
+    ...recoveryTaskRouteQuery(),
+  };
   if (sameRouteQuery(target)) await load();
   else await router.replace({ query: target });
+}
+async function applyEligibilityFilters(): Promise<void> {
+  const target = routeStringsExcept([
+    'eligibilityStatus', 'eligibilityRuleId', 'eligibilityId',
+    'afterEligibilityOccurredAt', 'afterEligibilityId',
+  ]);
+  if (eligibilityStatusFilter.value) {
+    target.eligibilityStatus = eligibilityStatusFilter.value;
+  }
+  if (eligibilityRuleFilter.value.trim()) {
+    target.eligibilityRuleId = eligibilityRuleFilter.value.trim();
+  }
+  if (sameRouteQuery(target)) {
+    const requested = generation();
+    if (requested !== undefined) await loadEligibilities(requested);
+  } else await router.replace({ query: target });
+}
+async function resetEligibilityFilters(): Promise<void> {
+  eligibilityStatusFilter.value = '';
+  eligibilityRuleFilter.value = '';
+  const target = routeStringsExcept([
+    'eligibilityStatus', 'eligibilityRuleId', 'eligibilityId',
+    'afterEligibilityOccurredAt', 'afterEligibilityId',
+  ]);
+  if (sameRouteQuery(target)) {
+    const requested = generation();
+    if (requested !== undefined) await loadEligibilities(requested);
+  } else await router.replace({ query: target });
+}
+async function nextEligibilityPage(): Promise<void> {
+  const cursor = eligibilityResponse.value?.nextCursor;
+  if (cursor === null || cursor === undefined) return;
+  await router.push({ query: {
+    ...routeStringsExcept(['eligibilityId', 'afterEligibilityOccurredAt', 'afterEligibilityId']),
+    afterEligibilityOccurredAt: cursor.occurredAt,
+    afterEligibilityId: cursor.eligibilityId,
+  } });
+}
+async function selectEligibility(value: QualityEligibility): Promise<void> {
+  await router.replace({ query: { ...route.query, eligibilityId: value.eligibilityId } });
+}
+async function retryEligibility(): Promise<void> {
+  const requested = generation();
+  if (requested !== undefined) await loadEligibilities(requested);
+}
+async function applyRecoveryTaskFilters(): Promise<void> {
+  const target = routeStringsExcept([
+    'taskSourceId', 'taskStatus', 'taskId', 'afterTaskOccurredAt', 'afterTaskId',
+  ]);
+  if (recoveryTaskSourceFilter.value.trim()) {
+    target.taskSourceId = recoveryTaskSourceFilter.value.trim();
+  }
+  if (recoveryTaskStatusFilter.value === 'open') target.taskStatus = 'open';
+  if (sameRouteQuery(target)) {
+    const requested = generation();
+    if (requested !== undefined) await loadRecoveryTasks(requested);
+  } else await router.replace({ query: target });
+}
+async function resetRecoveryTaskFilters(): Promise<void> {
+  recoveryTaskSourceFilter.value = '';
+  recoveryTaskStatusFilter.value = '';
+  const target = routeStringsExcept([
+    'taskSourceId', 'taskStatus', 'taskId', 'afterTaskOccurredAt', 'afterTaskId',
+  ]);
+  if (sameRouteQuery(target)) {
+    const requested = generation();
+    if (requested !== undefined) await loadRecoveryTasks(requested);
+  } else await router.replace({ query: target });
+}
+async function nextRecoveryTaskPage(): Promise<void> {
+  const cursor = recoveryTaskResponse.value?.nextCursor;
+  if (cursor === null || cursor === undefined) return;
+  await router.push({ query: {
+    ...routeStringsExcept(['taskId', 'afterTaskOccurredAt', 'afterTaskId']),
+    afterTaskOccurredAt: cursor.occurredAt,
+    afterTaskId: cursor.taskId,
+  } });
+}
+async function selectRecoveryTask(value: QualityRecoveryTask): Promise<void> {
+  await router.replace({ query: { ...route.query, taskId: value.taskId } });
+}
+async function retryRecoveryTasks(): Promise<void> {
+  const requested = generation();
+  if (requested !== undefined) await loadRecoveryTasks(requested);
 }
 async function nextPage(): Promise<void> {
   const cursor = response.value?.nextCursor;
@@ -235,7 +520,7 @@ async function drillMetric(value: QualityMetricResult): Promise<void> {
     if (current(controller, requested)) metricDetail.value = metric;
   } catch {
     if (current(controller, requested)) {
-      clear('refresh');
+      clearSnapshot('refresh');
       state.value = 'error';
     }
   } finally {
@@ -243,12 +528,40 @@ async function drillMetric(value: QualityMetricResult): Promise<void> {
   }
 }
 function clear(reason: QualitySnapshotClearReason): void {
+  clearSnapshot(reason);
+  clearEligibility(reason);
+  clearRecoveryTasks(reason);
+}
+function clearSnapshot(reason: QualitySnapshotClearReason): void {
   clearQualitySnapshotIdentityBoundary(active, response, detail, memory, reason);
   activeRequestKey = undefined;
   metricDetail.value = undefined;
   selectedTrendKey.value = '';
   if (shouldClearQualitySnapshotQueryCache(reason)) {
     queryClient.removeQueries({ queryKey: ['ingestion-quality', 'quality-snapshots'], exact: false });
+  }
+}
+function clearEligibility(reason: QualitySnapshotClearReason): void {
+  clearQualityEligibilityIdentityBoundary(
+    eligibilityActive, eligibilityResponse, eligibilityDetail, eligibilityMemory, reason,
+  );
+  activeEligibilityRequestKey = undefined;
+  if (shouldClearQualityEligibilityQueryCache(reason)) {
+    queryClient.removeQueries({
+      queryKey: ['ingestion-quality', 'quality-eligibilities'], exact: false,
+    });
+  }
+}
+function clearRecoveryTasks(reason: QualitySnapshotClearReason): void {
+  clearQualityRecoveryTaskIdentityBoundary(
+    recoveryTaskActive, recoveryTaskResponse, recoveryTaskDetail,
+    recoveryTaskMemory, reason,
+  );
+  activeRecoveryTaskRequestKey = undefined;
+  if (shouldClearQualitySnapshotQueryCache(reason)) {
+    queryClient.removeQueries({
+      queryKey: ['ingestion-quality', 'quality-recovery-tasks'], exact: false,
+    });
   }
 }
 function clearBoundary(reason: QualitySnapshotClearReason): void {
@@ -287,10 +600,48 @@ function baseFilterQuery() {
     ...(query('evaluatedTo') ? { evaluatedTo: query('evaluatedTo') } : {}),
     sortField: 'evaluatedAt',
     sortDirection: query('sortDirection') === 'asc' ? 'asc' : 'desc',
+    ...eligibilityRouteQuery(),
+    ...recoveryTaskRouteQuery(),
   };
+}
+function eligibilityRouteQuery() {
+  return {
+    ...(query('eligibilityStatus')
+      ? { eligibilityStatus: query('eligibilityStatus') } : {}),
+    ...(query('eligibilityRuleId')
+      ? { eligibilityRuleId: query('eligibilityRuleId') } : {}),
+    ...(query('eligibilityId') ? { eligibilityId: query('eligibilityId') } : {}),
+    ...(query('afterEligibilityOccurredAt')
+      ? { afterEligibilityOccurredAt: query('afterEligibilityOccurredAt') } : {}),
+    ...(query('afterEligibilityId')
+      ? { afterEligibilityId: query('afterEligibilityId') } : {}),
+  };
+}
+function recoveryTaskRouteQuery() {
+  return {
+    ...(query('taskSourceId') ? { taskSourceId: query('taskSourceId') } : {}),
+    ...(query('taskStatus') ? { taskStatus: query('taskStatus') } : {}),
+    ...(query('taskId') ? { taskId: query('taskId') } : {}),
+    ...(query('afterTaskOccurredAt')
+      ? { afterTaskOccurredAt: query('afterTaskOccurredAt') } : {}),
+    ...(query('afterTaskId') ? { afterTaskId: query('afterTaskId') } : {}),
+  };
+}
+function routeStringsExcept(excluded: readonly string[]): Record<string, string> {
+  const target: Record<string, string> = {};
+  for (const [key, value] of Object.entries(route.query)) {
+    if (!excluded.includes(key) && typeof value === 'string') target[key] = value;
+  }
+  return target;
 }
 function hasFilters(value: QualitySnapshotFilters): boolean {
   return Boolean(value.sourceId || value.overallResult || value.evaluatedFrom || value.evaluatedTo);
+}
+function eligibilityHasFilters(value: QualityEligibilityFilters): boolean {
+  return Boolean(value.status || value.ruleId);
+}
+function recoveryTaskHasFilters(value: QualityRecoveryTaskFilters): boolean {
+  return Boolean(value.status);
 }
 function trendKey(value: QualityMetricTrend): string {
   return `${value.metricId}:${value.formulaId}:${value.formulaVersion}`;
@@ -303,6 +654,23 @@ function resultText(value: QualityMetricResult['result'] | QualitySnapshot['over
     passed: '通过', failed: '未通过', 'not-applicable': '不适用',
     'quality-passed': '质量通过', 'quality-failed': '质量未通过',
   })[value];
+}
+function operatorText(value: QualityEligibility['operator'], threshold: number | null): string {
+  if (value === 'all-of') return 'All-of（全部满足）';
+  if (value === 'any-of') return 'Any-of（至少一个满足）';
+  return `Threshold（至少 ${threshold ?? '—'} 个满足）`;
+}
+function requirementText(value: QualityEligibility['members'][number]['requirement']): string {
+  return value === 'required' ? '必需' : '可选';
+}
+function eligibilityStatusClass(value: QualityEligibilityStatus): string {
+  return `eligibility-status eligibility-${value}`;
+}
+function deliveryStatusClass(value: QualityTaskDeliveryStatus): string {
+  return `task-delivery-status task-delivery-${value}`;
+}
+function deliveryStatusIcon(value: QualityTaskDeliveryStatus): string {
+  return ({ pending: '○', retrying: '↻', confirmed: '✓', failed: '!' })[value];
 }
 function localTime(value: string): string { return new Date(value).toLocaleString('zh-CN'); }
 function displayValue(value: QualityMetricResult): string {
@@ -320,6 +688,10 @@ watch(() => route.query, () => {
   fromFilter.value = query('evaluatedFrom');
   toFilter.value = query('evaluatedTo');
   sortDirection.value = query('sortDirection') === 'asc' ? 'asc' : 'desc';
+  eligibilityStatusFilter.value = query('eligibilityStatus');
+  eligibilityRuleFilter.value = query('eligibilityRuleId');
+  recoveryTaskSourceFilter.value = query('taskSourceId');
+  recoveryTaskStatusFilter.value = query('taskStatus');
   void load();
 });
 watch(() => [identity.session?.sessionPseudonym, identity.session?.sessionVersion] as const,
@@ -329,7 +701,8 @@ watch(() => [identity.session?.sessionPseudonym, identity.session?.sessionVersio
         : next[0] !== previous[0] ? 'account-switch' : 'session-invalid');
     }
   });
-watch(() => [authorization.status, authorization.current?.policyVersion, capabilitySignature.value] as const,
+watch(() => [authorization.status, authorization.current?.policyVersion,
+  capabilitySignature.value, recoveryActionSignature.value] as const,
   (next, previous) => {
     if (previous?.some((item) => item !== undefined) && next.join('|') !== previous.join('|')) {
       clearBoundary('authorization-revoked');
@@ -456,13 +829,226 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
-        <section class="quality-pending" aria-labelledby="quality-pending-heading">
-          <h3 id="quality-pending-heading">后续能力边界</h3>
-          <p><strong>依赖资格与组合树：</strong>pending-story-execution/not-available（Story 2.4）</p>
-          <p><strong>熔断、恢复观察与 eligible：</strong>pending-story-execution/not-available（Story 2.5）</p>
-          <p>此处不返回空依赖数组、假 eligible 或恢复动作。</p>
+        <section class="quality-eligibilities" aria-labelledby="quality-eligibilities-heading">
+          <h3 id="quality-eligibilities-heading">规则依赖资格与组合树</h3>
+          <p>这是独立的 QualityEligibility 事实，不等同于上方“质量通过”快照；单个来源可用也不代表整条规则可用。</p>
+
+          <form class="quality-eligibility-filter" aria-label="规则依赖资格筛选"
+            @submit.prevent="applyEligibilityFilters">
+            <label>资格状态
+              <select v-model="eligibilityStatusFilter">
+                <option value="">全部</option><option value="eligible">Eligible</option>
+                <option value="fused">Fused</option><option value="recovering">Recovering</option>
+                <option value="missing">Missing</option>
+              </select>
+            </label>
+            <label>Rule ID
+              <input v-model="eligibilityRuleFilter" placeholder="ACC-SAFE-001" autocomplete="off">
+            </label>
+            <div class="quality-filter-actions">
+              <button type="submit">应用资格筛选</button>
+              <button type="button" @click="resetEligibilityFilters">清除资格筛选</button>
+            </div>
+          </form>
+
+          <section class="state-panel quality-eligibility-state" role="status"
+            aria-live="polite" aria-atomic="true">
+            <h4>资格读取状态</h4>
+            <p v-if="eligibilityState === 'loading'">正在逐一验证全部依赖成员的当前 owner 权限并读取组合事实…</p>
+            <p v-else-if="eligibilityState === 'empty'">当前授权范围内还没有已发布的规则依赖资格事实；请等待上游快照完成评估与发布。</p>
+            <p v-else-if="eligibilityState === 'filter-empty'">资格筛选没有匹配事实；不会返回空成员树或把无数据显示为 Missing。</p>
+            <p v-else-if="eligibilityState === 'forbidden'">组合事实不存在，或至少一个暴露成员不在当前 owned-source 范围内。</p>
+            <p v-else-if="eligibilityState === 'error'">资格存储、逐成员授权、重检或读取审计暂时不可用；技术错误没有显示为 Fused。</p>
+            <p v-else-if="eligibilityState === 'degraded'">已安全加载组合事实；其他授权能力暂时不可用。</p>
+            <p v-else>已加载全部成员均获授权的当前组合事实。</p>
+            <button v-if="eligibilityState === 'error'" type="button" @click="retryEligibility">重试资格读取</button>
+            <button v-else-if="eligibilityState === 'filter-empty'" type="button"
+              @click="resetEligibilityFilters">清除资格筛选</button>
+          </section>
+
+          <template v-if="eligibilityResponse && eligibilityResponse.items.length
+            && eligibilityDetail && ['results', 'degraded'].includes(eligibilityState)">
+            <div class="quality-eligibility-list" aria-label="当前规则依赖资格">
+              <button v-for="item in eligibilityResponse.items" :key="item.eligibilityId"
+                type="button" :aria-current="eligibilityDetail.eligibilityId === item.eligibilityId
+                  ? 'page' : undefined" @click="selectEligibility(item)">
+                <strong>{{ item.ruleId }} @ {{ item.ruleVersion }}</strong>
+                <span :class="eligibilityStatusClass(item.status)">
+                  {{ qualityEligibilityStatusText(item.status) }}
+                </span>
+                <span>更新 {{ localTime(item.occurredAt) }}</span>
+              </button>
+            </div>
+            <nav class="quality-pagination" aria-label="规则依赖资格分页">
+              <button type="button" :disabled="!route.query.afterEligibilityId"
+                @click="router.back()">返回资格上一游标</button>
+              <span>本页 {{ eligibilityResponse.items.length }} 条资格事实</span>
+              <button type="button" :disabled="!eligibilityResponse.hasMore"
+                @click="nextEligibilityPage">资格下一页</button>
+            </nav>
+
+            <article class="quality-composition" aria-labelledby="quality-composition-heading">
+              <header>
+                <div>
+                  <h4 id="quality-composition-heading">
+                    {{ eligibilityDetail.ruleId }} @ {{ eligibilityDetail.ruleVersion }}
+                  </h4>
+                  <p>{{ operatorText(eligibilityDetail.operator, eligibilityDetail.threshold) }}</p>
+                </div>
+                <strong :class="eligibilityStatusClass(eligibilityDetail.status)">
+                  {{ qualityEligibilityStatusText(eligibilityDetail.status) }}
+                </strong>
+              </header>
+              <dl>
+                <div><dt>稳定原因</dt><dd>{{ eligibilityDetail.reasonCode }}</dd></div>
+                <div><dt>Registry</dt><dd>{{ eligibilityDetail.registryVersion }}</dd></div>
+                <div><dt>事实版本</dt><dd>{{ eligibilityDetail.aggregateVersion }}</dd></div>
+                <div><dt>生效时间</dt><dd>{{ localTime(eligibilityDetail.effectiveAt) }}</dd></div>
+                <div><dt>更新时间</dt><dd>{{ localTime(eligibilityDetail.occurredAt) }}</dd></div>
+                <div><dt>Eligibility ID</dt><dd class="technical-id">{{ eligibilityDetail.eligibilityId }}</dd></div>
+              </dl>
+              <div class="quality-failed-members">
+                <h5>未满足成员</h5>
+                <p v-if="eligibilityDetail.failedMembers.length === 0">无；全部必需成员当前均可用。</p>
+                <ul v-else><li v-for="member in eligibilityDetail.failedMembers" :key="member">{{ member }}</li></ul>
+              </div>
+              <div class="quality-table-wrap" tabindex="0" aria-label="规则依赖成员组合，可横向查看">
+                <table>
+                  <caption>{{ eligibilityDetail.ruleId }} 的 {{ eligibilityDetail.members.length }} 个组合成员</caption>
+                  <thead><tr>
+                    <th scope="col">Source → Dependency</th><th scope="col">版本</th>
+                    <th scope="col">要求</th><th scope="col">成员状态</th>
+                    <th scope="col">连续</th><th scope="col">水位</th><th scope="col">快照引用</th>
+                  </tr></thead>
+                  <tbody><tr v-for="member in eligibilityDetail.members" :key="member.dependencyId">
+                    <td><strong>{{ member.sourceId }}</strong><br>→ {{ member.dependencyId }}</td>
+                    <td>source {{ member.sourceVersion }}<br>dependency {{ member.dependencyVersion }}</td>
+                    <td>{{ requirementText(member.requirement) }}</td>
+                    <td><span :class="eligibilityStatusClass(member.state)">
+                      {{ qualityEligibilityStatusText(member.state) }}
+                    </span></td>
+                    <td>{{ member.versionContinuous ? '连续' : '不连续（失败关闭）' }}</td>
+                    <td class="watermark">source: {{ member.sourceWatermark }}<br>
+                      dependency: {{ member.dependencyWatermark }}</td>
+                    <td class="technical-id">{{ member.snapshotId ?? '无快照（Missing）' }}<br>
+                      <span class="digest">{{ member.snapshotImmutableHash ?? '无不可变摘要' }}</span></td>
+                  </tr></tbody>
+                </table>
+              </div>
+            </article>
+          </template>
         </section>
       </template>
+
+        <section class="quality-recovery-tasks" aria-labelledby="quality-recovery-tasks-heading">
+          <h3 id="quality-recovery-tasks-heading">质量异常任务与投递状态</h3>
+          <p>RecoveryTask 是独立的业务任务；TaskDelivery 只说明外部投递，不表示任务受理、质量修复或解除熔断。</p>
+
+          <form class="quality-recovery-task-filter" aria-label="质量异常任务筛选"
+            @submit.prevent="applyRecoveryTaskFilters">
+            <label>任务 Source ID
+              <input v-model="recoveryTaskSourceFilter"
+                placeholder="SRC-P0-CAMPUS-ACCESS-001" autocomplete="off" required>
+            </label>
+            <label>任务状态
+              <select v-model="recoveryTaskStatusFilter">
+                <option value="">全部</option><option value="open">Open（待处置）</option>
+              </select>
+            </label>
+            <div class="quality-filter-actions">
+              <button type="submit">应用任务筛选</button>
+              <button type="button" @click="resetRecoveryTaskFilters">清除任务筛选</button>
+            </div>
+          </form>
+
+          <section class="state-panel quality-recovery-task-state" role="status"
+            aria-live="polite" aria-atomic="true">
+            <h4>任务读取状态</h4>
+            <p v-if="recoveryTaskState === 'loading'">正在重检当前 source owner 权限并读取质量任务…</p>
+            <p v-else-if="recoveryTaskState === 'scope-required'">请输入一个任务 Source ID 作为 owner 授权范围；不会执行无范围的全局查询。</p>
+            <p v-else-if="recoveryTaskState === 'empty'">当前授权来源还没有质量异常任务；请继续查看质量资格事实。</p>
+            <p v-else-if="recoveryTaskState === 'filter-empty'">任务筛选没有匹配项；请清除筛选后重试。</p>
+            <p v-else-if="recoveryTaskState === 'forbidden'">任务不存在或不属于当前 source owner；未暴露总数、分页或详情。</p>
+            <p v-else-if="recoveryTaskState === 'error'">任务存储、当前授权重检或读取审计暂时不可用；旧任务已清除。</p>
+            <p v-else-if="recoveryTaskState === 'degraded'">已加载当前 source-owned 任务分片；其他授权能力暂时不可用。</p>
+            <p v-else>已加载当前 source-owned 质量异常任务。</p>
+            <button v-if="recoveryTaskState === 'error'" type="button"
+              @click="retryRecoveryTasks">重试任务读取</button>
+            <button v-else-if="recoveryTaskState === 'filter-empty'" type="button"
+              @click="resetRecoveryTaskFilters">清除任务筛选</button>
+          </section>
+
+          <template v-if="recoveryTaskResponse && recoveryTaskResponse.items.length
+            && recoveryTaskDetail && ['results', 'degraded'].includes(recoveryTaskState)">
+            <div class="quality-recovery-task-list" aria-label="当前质量异常任务">
+              <button v-for="item in recoveryTaskResponse.items" :key="item.taskId"
+                type="button" :aria-current="recoveryTaskDetail.taskId === item.taskId
+                  ? 'page' : undefined" @click="selectRecoveryTask(item)">
+                <strong>{{ item.sourceId }}</strong>
+                <span>{{ item.dependencyId }}</span>
+                <span>Open · {{ item.priority }} · 截止 {{ localTime(item.dueAt) }}</span>
+                <span :class="deliveryStatusClass(item.taskDelivery.status)">
+                  <span aria-hidden="true">{{ deliveryStatusIcon(item.taskDelivery.status) }}</span>
+                  {{ qualityRecoveryTaskDeliveryText(item.taskDelivery.status) }}
+                </span>
+              </button>
+            </div>
+            <nav class="quality-pagination" aria-label="质量异常任务分页">
+              <button type="button" :disabled="!route.query.afterTaskId"
+                @click="router.back()">返回任务上一游标</button>
+              <span>本页 {{ recoveryTaskResponse.items.length }} 条 source-owned 任务</span>
+              <button type="button" :disabled="!recoveryTaskResponse.hasMore"
+                @click="nextRecoveryTaskPage">任务下一页</button>
+            </nav>
+
+            <article class="quality-recovery-task-detail"
+              aria-labelledby="quality-recovery-task-detail-heading">
+              <header>
+                <div>
+                  <h4 id="quality-recovery-task-detail-heading">门禁数据连续性未达门槛，相关规则已暂停产出</h4>
+                  <p>{{ recoveryTaskDetail.sourceId }} → {{ recoveryTaskDetail.dependencyId }}</p>
+                </div>
+                <strong class="task-business-status">Open（待处置）</strong>
+              </header>
+              <dl>
+                <div><dt>责任归属</dt><dd>{{ recoveryTaskDetail.ownerRef }}</dd></div>
+                <div><dt>优先级 / 截止</dt><dd>{{ recoveryTaskDetail.priority }} / {{ localTime(recoveryTaskDetail.dueAt) }}</dd></div>
+                <div><dt>熔断 episode</dt><dd>第 {{ recoveryTaskDetail.episodeGeneration }} 代</dd></div>
+                <div><dt>触发原因</dt><dd>{{ recoveryTaskDetail.trigger.reasonCode }}</dd></div>
+                <div><dt>水位</dt><dd class="watermark">{{ recoveryTaskDetail.watermark }}</dd></div>
+                <div><dt>QG / QMDP / QSHM</dt><dd>{{ recoveryTaskDetail.currentEvidence.qualityGateVersion }} / {{ recoveryTaskDetail.currentEvidence.qmdpVersion }} / {{ recoveryTaskDetail.currentEvidence.qshmVersion }}</dd></div>
+                <div><dt>Task ID</dt><dd class="technical-id">{{ recoveryTaskDetail.taskId }}</dd></div>
+                <div><dt>Episode ID</dt><dd class="technical-id">{{ recoveryTaskDetail.episodeId }}</dd></div>
+              </dl>
+              <section class="quality-affected-rules" aria-labelledby="quality-affected-rules-heading">
+                <h5 id="quality-affected-rules-heading">受影响规则范围</h5>
+                <ul><li v-for="rule in recoveryTaskDetail.affectedRules"
+                  :key="`${rule.ruleId}@${rule.ruleVersion}`">
+                  {{ rule.ruleId }} @ {{ rule.ruleVersion }}
+                </li></ul>
+              </section>
+              <section class="quality-task-delivery" aria-labelledby="quality-task-delivery-heading">
+                <h5 id="quality-task-delivery-heading">独立 TaskDelivery</h5>
+                <p :class="deliveryStatusClass(recoveryTaskDetail.taskDelivery.status)">
+                  <span aria-hidden="true">{{ deliveryStatusIcon(recoveryTaskDetail.taskDelivery.status) }}</span>
+                  {{ qualityRecoveryTaskDeliveryText(recoveryTaskDetail.taskDelivery.status) }}
+                </p>
+                <p>目标 {{ recoveryTaskDetail.taskDelivery.target }}；尝试 {{ recoveryTaskDetail.taskDelivery.attempt }} 次<span v-if="recoveryTaskDetail.taskDelivery.nextAttemptAt">；下次 {{ localTime(recoveryTaskDetail.taskDelivery.nextAttemptAt) }}</span>。</p>
+              </section>
+              <QualityFuseRecoveryPanel :task="recoveryTaskDetail"
+                :available="recoveryActionAvailable"
+                :identity-generation="recoveryIdentityGeneration"
+                :online="online" :narrow="narrow"
+                @completed="refreshEligibilityAfterRecovery" />
+            </article>
+          </template>
+        </section>
+
+        <section class="quality-pending" aria-labelledby="quality-pending-heading">
+          <h3 id="quality-pending-heading">后续恢复能力边界</h3>
+          <p><strong>解除熔断与 Eligible：</strong>not-available（Story 2.5c）</p>
+          <p>仅在独立 action capability 可用时显示 Fused → Recovering；本页不提供手工 pass、fuse、eligible 或 close 动作。</p>
+        </section>
     </template>
   </section>
 </template>

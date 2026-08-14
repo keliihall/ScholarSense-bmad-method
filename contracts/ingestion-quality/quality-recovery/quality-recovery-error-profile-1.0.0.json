@@ -1,0 +1,29 @@
+{
+  "profileVersion": "QUALITY-RECOVERY-ERROR-PROFILE-1.0.0",
+  "responseFields": ["code", "message", "traceId", "fieldErrors", "currentVersion", "retryable"],
+  "controlledCodes": [
+    "INGESTION_QUALITY_RECOVERY_REQUEST_INVALID",
+    "INGESTION_QUALITY_RECOVERY_NOT_FOUND",
+    "INGESTION_QUALITY_RECOVERY_VERSION_CONFLICT",
+    "INGESTION_QUALITY_RECOVERY_EVIDENCE_MISSING",
+    "INGESTION_QUALITY_RECOVERY_APPROVAL_INVALID",
+    "INGESTION_QUALITY_RECOVERY_DEPENDENCY_UNAVAILABLE",
+    "INGESTION_QUALITY_RECOVERY_PROVIDER_NOT_INSTALLED"
+  ],
+  "httpMapping": {
+    "INGESTION_QUALITY_RECOVERY_REQUEST_INVALID": 400,
+    "INGESTION_QUALITY_RECOVERY_NOT_FOUND": 404,
+    "INGESTION_QUALITY_RECOVERY_VERSION_CONFLICT": 409,
+    "INGESTION_QUALITY_RECOVERY_EVIDENCE_MISSING": 422,
+    "INGESTION_QUALITY_RECOVERY_APPROVAL_INVALID": 404,
+    "INGESTION_QUALITY_RECOVERY_DEPENDENCY_UNAVAILABLE": 503,
+    "INGESTION_QUALITY_RECOVERY_PROVIDER_NOT_INSTALLED": 503
+  },
+  "externalBodyHandling": "discard-never-reflect",
+  "freeText": "forbidden",
+  "concealment": "authorization-denial-equals-object-not-found",
+  "headers": {"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"},
+  "fieldErrors": "controlled-field-code-only-no-rejected-value",
+  "currentVersion": "only-after-current-object-authorization-and-field-projection",
+  "telemetry": "codes-counts-traceId-only-no-object-or-approval-details"
+}

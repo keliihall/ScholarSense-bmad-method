@@ -1,0 +1,39 @@
+{
+  "specversion": "1.0",
+  "id": "01916f10-7b0d-7abc-8def-0123456789ab",
+  "source": "scholarsense/ingestion-quality",
+  "type": "scholarsense.ingestion-quality.quality-recovery-task.changed.v1",
+  "subject": "quality-recovery-task/01916f10-7b0d-7abc-8def-0123456789ac",
+  "time": "2026-08-11T08:00:00Z",
+  "datacontenttype": "application/json",
+  "data": {
+    "eventId": "01916f10-7b0d-7abc-8def-0123456789ab",
+    "taskId": "01916f10-7b0d-7abc-8def-0123456789ac",
+    "episodeId": "01916f10-7b0d-7abc-8def-0123456789ad",
+    "workItemKey": "qf:opaque-episode-0001",
+    "operation": "create",
+    "routeSequence": 1,
+    "sourceAggregateVersion": 1,
+    "contractVersion": "PIC-1.1.0",
+    "task": {
+      "taskId": "01916f10-7b0d-7abc-8def-0123456789ac",
+      "workItemKey": "qf:opaque-episode-0001",
+      "episodeId": "01916f10-7b0d-7abc-8def-0123456789ad",
+      "episodeGeneration": 1,
+      "sourceId": "SRC-P0-CAMPUS-ACCESS-001",
+      "dependencyId": "DEP-P0-CAMPUS-ACCESS-001",
+      "trigger": {"batchId": "01916f10-7b0d-7abc-8def-0123456789ae", "snapshotId": "01916f10-7b0d-7abc-8def-0123456789af", "reasonCode": "REQUIRED_MEMBER_FAILED"},
+      "affectedRules": ["ACC-SAFE-001@1.0.0"],
+      "ownerRef": "source-owner:SRC-P0-CAMPUS-ACCESS-001",
+      "priority": "P1",
+      "dueAt": "2026-08-12T08:00:00Z",
+      "status": "open",
+      "currentEvidence": {"qualityGateVersion": "QG-1.0.0", "qmdpVersion": "QMDP-1.0.0", "qshmVersion": "QSHM-1.0.0"},
+      "watermark": "source-version:42",
+      "aggregateVersion": 1,
+      "createdAt": "2026-08-11T08:00:00Z",
+      "updatedAt": "2026-08-11T08:00:00Z"
+    },
+    "runtimeEvidenceClaim": "none"
+  }
+}

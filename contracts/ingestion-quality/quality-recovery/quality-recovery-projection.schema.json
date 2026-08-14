@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/quality-recovery/quality-recovery-projection.schema.json",
+  "title": "Authorized quality recovery command projection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "recoveryRequestId", "taskId", "episodeId", "sourceId",
+    "dependencyId", "generation", "status", "readiness", "validationState",
+    "approvalState", "previewCategories", "aggregateVersion", "updatedAt"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "QUALITY-RECOVERY-PROJECTION-1.0.0"},
+    "recoveryRequestId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "taskId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "episodeId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "sourceId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/sourceId"},
+    "dependencyId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/dependencyId"},
+    "generation": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "status": {"enum": ["fused", "recovering"]},
+    "readiness": {"enum": ["validating", "not-ready", "ready-for-d4"]},
+    "validationState": {"enum": ["queued", "running", "succeeded", "failed", "cancelled"]},
+    "approvalState": {"enum": ["not-requested", "pending", "approved", "rejected", "expired", "cancelled"]},
+    "previewCategories": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["historyOnlyCount", "potentiallyActionableCount", "expiresBeforeObservationCount"],
+      "properties": {
+        "historyOnlyCount": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "potentiallyActionableCount": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "expiresBeforeObservationCount": {"type": "integer", "minimum": 0, "maximum": 10000}
+      }
+    },
+    "aggregateVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "updatedAt": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/instantMicros"}
+  },
+  "x-privacyAllowlist": [
+    "recoveryRequestId", "taskId", "episodeId", "sourceId", "dependencyId", "generation",
+    "status", "readiness", "validationState", "approvalState", "previewCategories",
+    "aggregateVersion", "updatedAt"
+  ],
+  "x-forbidden": ["studentRef", "subjectRef", "makerPrincipal", "checkerPrincipal", "receipt", "token", "lease", "freeText"]
+}

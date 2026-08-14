@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/quality-recovery/quality-recovery-validation-checkpoint.schema.json",
+  "title": "Fenced quality recovery validation checkpoint",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "checkpointId", "jobId", "jobVersion", "recoveryRequestId", "targetState", "leaseGeneration", "checkpointOrdinal", "phase", "cursorDigest", "partialSummaryDigest", "processedCount", "mismatchCount", "checkpointedAt", "traceId", "runtimeEvidenceClaim"],
+  "properties": {
+    "schemaVersion": {"const": "QUALITY-RECOVERY-VALIDATION-CHECKPOINT-1.0.0"},
+    "checkpointId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "jobId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "jobVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "recoveryRequestId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "targetState": {"const": "recovering"},
+    "leaseGeneration": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "checkpointOrdinal": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "phase": {"enum": ["backfill", "full-reconciliation", "sample-recompute"]},
+    "cursorDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "partialSummaryDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "processedCount": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "mismatchCount": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+    "checkpointedAt": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/instantMicros"},
+    "traceId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/traceId"},
+    "runtimeEvidenceClaim": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/runtimeEvidenceClaim"}
+  },
+  "x-privacy": "digests-and-counts-only-no-subject-window-identifiers-raw-rows-or-free-text"
+}

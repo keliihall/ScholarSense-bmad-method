@@ -87,6 +87,9 @@ APPROVED_SYNTHETIC_CREDENTIALS = {
     "frontend/tests/baseline/subject-registry.spec.ts": (
         "token: 'abcdefghijklmnopqrstuvwxyzABCDEF'",
     ),
+    "frontend/tests/baseline/quality-snapshots.spec.ts": (
+        "token: 'abcdefghijklmnopqrstuvwxyzABCDEF'",
+    ),
 }
 APPROVED_PERSISTENCE_READS = {
     "frontend/tests/baseline/identity-shell.spec.ts": (
