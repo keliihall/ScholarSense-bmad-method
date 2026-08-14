@@ -1,0 +1,21 @@
+{
+  "$schema": "high-risk-contract-lock.schema.json",
+  "lockVersion": "HIGH-RISK-CONTRACT-LOCK-1.0.0",
+  "canonicalizationProfile": "SCHOLARSENSE-RAW-BYTE-SHA256-1.0.0",
+  "files": {
+    "contracts/authorization/high-risk/fixtures/invalid/high-risk-negative-fixtures-1.0.0.json": "sha256:e732c904affbde6dae6d6aaeb9bef85104a2a43c25f39cb2b98682c5fd83e666",
+    "contracts/authorization/high-risk/fixtures/valid/high-risk-approval-receipt.json": "sha256:dd97ef91601ea21b1b8962b24a575dae3bb40d574b9734322ae1b0173a65b7bd",
+    "contracts/authorization/high-risk/fixtures/valid/high-risk-approval-request.json": "sha256:4c671deaaa4cedac83882f62e211f80d156389dc79f29d5aa99731bed8fc7c35",
+    "contracts/authorization/high-risk/fixtures/valid/high-risk-execution-authorization-lease.json": "sha256:0871fd15542d9f84d1cb76103cb5852c276dda1b6fdc2030cc351dabd4671b11",
+    "contracts/authorization/high-risk/fixtures/valid/high-risk-execution-token.json": "sha256:10d7344ccc8d49b369d7677fc84e1df6deb93e0fdd063044753a80332b5031cc",
+    "contracts/authorization/high-risk/fixtures/valid/high-risk-lifecycle-vectors-1.0.0.json": "sha256:5d04b913674705439737c80a5b6e7c1aadcb1eb9064822e4ab24deea50876f0e",
+    "contracts/authorization/high-risk/high-risk-action-policy-1.0.0.json": "sha256:1db5201136807c3bcf8fa62186414b7c79c062f595920012edd0001c77804900",
+    "contracts/authorization/high-risk/high-risk-approval-receipt.schema.json": "sha256:7aec9f0f5fe915711e442637c4640c9e0c8566cbfea8bac22d22dd8144cdcd5b",
+    "contracts/authorization/high-risk/high-risk-approval-request.schema.json": "sha256:48af0aaf3910276a6c2da923e85910e5083fd1bc92460ca0c8eb83db1a1fa560",
+    "contracts/authorization/high-risk/high-risk-contract-lock.schema.json": "sha256:eb96bf0bb99c30b31c75fca730d188e5ddc03bedcec88c2f019c39880af4d537",
+    "contracts/authorization/high-risk/high-risk-execution-authorization-lease.schema.json": "sha256:49b543a803ec82198f707808a81d5b7876f662408c7ac0a6736770dddcf6b3d3",
+    "contracts/authorization/high-risk/high-risk-execution-token.schema.json": "sha256:6d49ced54f7ba3041b61f6aead60a03457700e2329c690648a16c6b6a026a101",
+    "contracts/authorization/high-risk/high-risk-lifecycle-vectors.schema.json": "sha256:4a8593d3d208865005e4d266235f9e85e1430073bc23aac9628c1db221199529",
+    "contracts/authorization/high-risk/high-risk-runtime-policy-1.0.0.json": "sha256:b4b99e458b48014e65b0a1b829e04e84d78ad95d184a00ee99987555fe3b7213"
+  }
+}

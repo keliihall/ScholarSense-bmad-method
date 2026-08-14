@@ -1,0 +1,25 @@
+{
+  "fixtureVersion": "QRFX-1.0.0",
+  "cases": [
+    {"caseId": "streaming-2-fails", "input": {"sourceClass": "streaming", "consecutivePassedBatches": 2}, "expected": {"qualified": false}},
+    {"caseId": "streaming-3-passes", "input": {"sourceClass": "streaming", "consecutivePassedBatches": 3}, "expected": {"qualified": true}},
+    {"caseId": "streaming-4-passes", "input": {"sourceClass": "streaming", "consecutivePassedBatches": 4}, "expected": {"qualified": true}},
+    {"caseId": "daily-1-fails", "input": {"sourceClass": "dailyBatch", "consecutivePassedBatches": 1}, "expected": {"qualified": false}},
+    {"caseId": "daily-2-passes", "input": {"sourceClass": "dailyBatch", "consecutivePassedBatches": 2}, "expected": {"qualified": true}},
+    {"caseId": "daily-3-passes", "input": {"sourceClass": "dailyBatch", "consecutivePassedBatches": 3}, "expected": {"qualified": true}},
+    {"caseId": "population-99-all-passes", "input": {"populationCount": 99, "selectedCount": 99, "mismatchCount": 0}, "expected": {"qualified": true}},
+    {"caseId": "population-101-selected-99-fails", "input": {"populationCount": 101, "selectedCount": 99, "mismatchCount": 0}, "expected": {"qualified": false}},
+    {"caseId": "population-101-selected-100-passes", "input": {"populationCount": 101, "selectedCount": 100, "mismatchCount": 0}, "expected": {"qualified": true}},
+    {"caseId": "sample-mismatch-1-fails", "input": {"populationCount": 100, "selectedCount": 100, "mismatchCount": 1}, "expected": {"qualified": false}},
+    {"caseId": "backfill-lkg-later", "input": {"lastKnownGoodWatermark": "2026-07-01T00:00:00.000000Z", "trustedNowMinus90Days": "2026-05-14T00:00:00.000000Z"}, "expected": {"backfillStart": "2026-07-01T00:00:00.000000Z"}},
+    {"caseId": "backfill-lookback-later", "input": {"lastKnownGoodWatermark": "2026-01-01T00:00:00.000000Z", "trustedNowMinus90Days": "2026-05-14T00:00:00.000000Z"}, "expected": {"backfillStart": "2026-05-14T00:00:00.000000Z"}},
+    {"caseId": "quality-threshold-minus-one-fails", "input": {"actualScaled": 9998, "thresholdScaled": 9999, "operator": ">="}, "expected": {"qualified": false}},
+    {"caseId": "quality-threshold-equal-passes", "input": {"actualScaled": 9999, "thresholdScaled": 9999, "operator": ">="}, "expected": {"qualified": true}},
+    {"caseId": "quality-threshold-plus-one-passes", "input": {"actualScaled": 10000, "thresholdScaled": 9999, "operator": ">="}, "expected": {"qualified": true}},
+    {"caseId": "preview-already-expired", "input": {"trustedNow": "2026-08-12T00:00:00.000000Z", "latestActionableAt": "2026-08-11T23:59:59.999999Z", "observationMinutes": 60}, "expected": {"category": "already-expired-history-only"}},
+    {"caseId": "preview-current-and-survives-observation", "input": {"trustedNow": "2026-08-12T00:00:00.000000Z", "latestActionableAt": "2026-08-12T01:00:00.000000Z", "observationMinutes": 60}, "expected": {"category": "currently-potentially-actionable"}},
+    {"caseId": "preview-expires-before-observation", "input": {"trustedNow": "2026-08-12T00:00:00.000000Z", "latestActionableAt": "2026-08-12T00:59:59.999999Z", "observationMinutes": 60}, "expected": {"category": "expected-to-expire-before-observation-completes"}},
+    {"caseId": "story25c-completed-equal-actionable", "input": {"recoveryCompletedAt": "2026-08-12T01:00:00.000000Z", "latestActionableAt": "2026-08-12T01:00:00.000000Z"}, "expected": {"ownerStory": "2.5c", "finalActionability": "actionable"}},
+    {"caseId": "story25c-completed-plus-1us-history-only", "input": {"recoveryCompletedAt": "2026-08-12T01:00:00.000001Z", "latestActionableAt": "2026-08-12T01:00:00.000000Z"}, "expected": {"ownerStory": "2.5c", "finalActionability": "history-only"}}
+  ]
+}

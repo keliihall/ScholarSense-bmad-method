@@ -1,0 +1,308 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "ScholarSense quality recovery tasks",
+    "version": "1.0.0",
+    "description": "Read-only R6 owned-source RecoveryTask projection. The business task remains open independently of delivery state, and every read is authorization-rechecked and audit-bound."
+  },
+  "servers": [{"url": "/api/v1"}],
+  "security": [{"sessionCookie": []}],
+  "paths": {
+    "/quality-recovery-tasks": {
+      "get": {
+        "operationId": "listQualityRecoveryTasks",
+        "summary": "List recovery tasks for one authorized source",
+        "description": "sourceId is a mandatory owner-scope anchor. afterOccurredAt and afterTaskId must be supplied together or both omitted.",
+        "x-cross-field-constraints": [
+          {
+            "fields": ["afterOccurredAt", "afterTaskId"],
+            "rule": "all-or-none",
+            "failureCode": "INGESTION_QUALITY_REQUEST_INVALID"
+          }
+        ],
+        "parameters": [
+          {"$ref": "#/components/parameters/SourceId"},
+          {"$ref": "#/components/parameters/Status"},
+          {"$ref": "#/components/parameters/AfterOccurredAt"},
+          {"$ref": "#/components/parameters/AfterTaskId"},
+          {"$ref": "#/components/parameters/PageSize"}
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized and audit-bound task page",
+            "headers": {
+              "Cache-Control": {"schema": {"const": "no-store"}},
+              "Referrer-Policy": {"schema": {"const": "no-referrer"}}
+            },
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/QualityRecoveryTaskPage"}
+              }
+            }
+          },
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "404": {"$ref": "#/components/responses/Concealed"},
+          "503": {"$ref": "#/components/responses/Unavailable"}
+        }
+      }
+    },
+    "/quality-recovery-tasks/{taskId}": {
+      "get": {
+        "operationId": "getQualityRecoveryTask",
+        "summary": "Read one fully authorized recovery task",
+        "parameters": [{"$ref": "#/components/parameters/TaskId"}],
+        "responses": {
+          "200": {
+            "description": "Authorized and audit-bound task detail",
+            "headers": {
+              "Cache-Control": {"schema": {"const": "no-store"}},
+              "Referrer-Policy": {"schema": {"const": "no-referrer"}}
+            },
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/QualityRecoveryTask"}
+              }
+            }
+          },
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "404": {"$ref": "#/components/responses/Concealed"},
+          "503": {"$ref": "#/components/responses/Unavailable"}
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {"type": "apiKey", "in": "cookie", "name": "JSESSIONID"}
+    },
+    "parameters": {
+      "TaskId": {
+        "name": "taskId",
+        "in": "path",
+        "required": true,
+        "schema": {"$ref": "#/components/schemas/UuidV7"}
+      },
+      "SourceId": {
+        "name": "sourceId",
+        "in": "query",
+        "required": true,
+        "schema": {"$ref": "#/components/schemas/SourceId"}
+      },
+      "Status": {
+        "name": "status",
+        "in": "query",
+        "required": false,
+        "schema": {"type": "string", "const": "open"}
+      },
+      "AfterOccurredAt": {
+        "name": "afterOccurredAt",
+        "in": "query",
+        "required": false,
+        "schema": {"$ref": "#/components/schemas/OffsetTimestamp"}
+      },
+      "AfterTaskId": {
+        "name": "afterTaskId",
+        "in": "query",
+        "required": false,
+        "schema": {"$ref": "#/components/schemas/UuidV7"}
+      },
+      "PageSize": {
+        "name": "size",
+        "in": "query",
+        "required": false,
+        "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20}
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Malformed request or incomplete cursor pair",
+        "headers": {"Cache-Control": {"schema": {"const": "no-store"}}},
+        "content": {
+          "application/json": {"schema": {"$ref": "#/components/schemas/Error"}}
+        }
+      },
+      "Concealed": {
+        "description": "Absent, unauthenticated, unauthorized, and authorization-revoked tasks are indistinguishable",
+        "headers": {"Cache-Control": {"schema": {"const": "no-store"}}},
+        "content": {
+          "application/json": {"schema": {"$ref": "#/components/schemas/Error"}}
+        }
+      },
+      "Unavailable": {
+        "description": "Identity, authorization, recheck, audit, or storage dependency unavailable",
+        "headers": {"Cache-Control": {"schema": {"const": "no-store"}}},
+        "content": {
+          "application/json": {"schema": {"$ref": "#/components/schemas/Error"}}
+        }
+      }
+    },
+    "schemas": {
+      "UuidV7": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      },
+      "OffsetTimestamp": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,9})?(?:Z|[+-][0-9]{2}:[0-9]{2})$"
+      },
+      "SourceId": {
+        "type": "string",
+        "pattern": "^SRC-P[01]-[A-Z0-9-]+-[0-9]{3}$"
+      },
+      "DependencyId": {
+        "type": "string",
+        "pattern": "^DEP-P[01]-[A-Z0-9-]+-[0-9]{3}$"
+      },
+      "SafeInteger": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "RuleVersion": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ruleId", "ruleVersion"],
+        "properties": {
+          "ruleId": {"type": "string", "pattern": "^[A-Z][A-Z0-9-]{2,63}$"},
+          "ruleVersion": {"type": "string", "pattern": "^[0-9A-Za-z][0-9A-Za-z._+-]{0,63}$"}
+        }
+      },
+      "RecoveryTaskTrigger": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["batchId", "snapshotId", "reasonCode"],
+        "properties": {
+          "batchId": {"$ref": "#/components/schemas/UuidV7"},
+          "snapshotId": {"$ref": "#/components/schemas/UuidV7"},
+          "reasonCode": {
+            "type": "string",
+            "enum": ["REQUIRED_MEMBER_FUSED", "THRESHOLD_UNSATISFIED", "RECOVERY_RELAPSED"]
+          }
+        }
+      },
+      "CurrentEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["qualityGateVersion", "qmdpVersion", "qshmVersion"],
+        "properties": {
+          "qualityGateVersion": {"const": "QG-1.0.0"},
+          "qmdpVersion": {"const": "QMDP-1.0.0"},
+          "qshmVersion": {"const": "QSHM-1.0.0"}
+        }
+      },
+      "TaskDelivery": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["target", "status", "attempt", "nextAttemptAt"],
+        "properties": {
+          "target": {"const": "public-task-platform"},
+          "status": {"type": "string", "enum": ["pending", "retrying", "confirmed", "failed"]},
+          "attempt": {"$ref": "#/components/schemas/SafeInteger"},
+          "nextAttemptAt": {
+            "oneOf": [
+              {"$ref": "#/components/schemas/OffsetTimestamp"},
+              {"type": "null"}
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"status": {"const": "retrying"}}, "required": ["status"]},
+            "then": {"properties": {"nextAttemptAt": {"$ref": "#/components/schemas/OffsetTimestamp"}}},
+            "else": {"properties": {"nextAttemptAt": {"type": "null"}}}
+          }
+        ]
+      },
+      "QualityRecoveryTask": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "taskId", "episodeId", "episodeGeneration", "sourceId", "dependencyId",
+          "affectedRules", "ownerRef", "priority", "dueAt", "status", "watermark",
+          "trigger", "currentEvidence", "taskDelivery"
+        ],
+        "properties": {
+          "taskId": {"$ref": "#/components/schemas/UuidV7"},
+          "episodeId": {"$ref": "#/components/schemas/UuidV7"},
+          "episodeGeneration": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+          "sourceId": {"$ref": "#/components/schemas/SourceId"},
+          "dependencyId": {"$ref": "#/components/schemas/DependencyId"},
+          "affectedRules": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {"$ref": "#/components/schemas/RuleVersion"}
+          },
+          "ownerRef": {"type": "string", "minLength": 1, "maxLength": 256},
+          "priority": {"type": "string", "enum": ["P0", "P1", "P2"]},
+          "dueAt": {"$ref": "#/components/schemas/OffsetTimestamp"},
+          "status": {"const": "open"},
+          "watermark": {"type": "string", "minLength": 1, "maxLength": 512},
+          "trigger": {"$ref": "#/components/schemas/RecoveryTaskTrigger"},
+          "currentEvidence": {"$ref": "#/components/schemas/CurrentEvidence"},
+          "taskDelivery": {"$ref": "#/components/schemas/TaskDelivery"}
+        }
+      },
+      "Cursor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["occurredAt", "taskId"],
+        "properties": {
+          "occurredAt": {"$ref": "#/components/schemas/OffsetTimestamp"},
+          "taskId": {"$ref": "#/components/schemas/UuidV7"}
+        }
+      },
+      "QualityRecoveryTaskPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items", "size", "hasMore", "nextCursor"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {"$ref": "#/components/schemas/QualityRecoveryTask"}
+          },
+          "size": {"type": "integer", "minimum": 1, "maximum": 100},
+          "hasMore": {"type": "boolean"},
+          "nextCursor": {
+            "oneOf": [
+              {"$ref": "#/components/schemas/Cursor"},
+              {"type": "null"}
+            ]
+          }
+        }
+      },
+      "FieldError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "code"],
+        "properties": {
+          "field": {"type": "string"},
+          "code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"}
+        }
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "traceId", "currentVersion", "fieldErrors"],
+        "properties": {
+          "code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"},
+          "traceId": {"type": "string", "pattern": "^(?!0{32})[0-9a-f]{32}$"},
+          "currentVersion": {
+            "oneOf": [
+              {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+              {"type": "null"}
+            ]
+          },
+          "fieldErrors": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/FieldError"}
+          }
+        }
+      }
+    }
+  }
+}

@@ -51,6 +51,12 @@ derivedFrom:
 
 Story 1.5 runtime companion（2026-07-23）：FR-8 的授权搜索/字段投影/归档与 retention conformance 由本 Story 提供；`conformanceVerified=true`。生产权威角色尚待 Story 1.6/1.7，因此 `productionAuthorizationEnabled=false`，RFP fixture 不得激活生产搜索。独立生产 WORM adapter 与真实跨域 `DeletionReceipt` 仍分别等待基础设施绑定和 Story 6.6；当前证据只允许 `scopeType=audit-domain`、`nonProductionEvidence=true`。
 
+Story 2.4 contributor companion（2026-08-10）：FR-9 仅贡献 RuleVersion 依赖 registry、稳定 source/dependency identity 复用与 R6 只读组合投影；FR-12/NFR-10 仅贡献 owner-local `eligible|fused|recovering|missing` 事实、required all-of 负路径、严格 v3/v4 事件配对、gap/backfill/poison、事务 outbox 与未激活下游 handoff。Story 2.4 不关闭熔断任务、恢复审批、真实 RuleEvaluation/Candidate/Clue 阻断或生产持续时长；这些仍由 2.5a-c、3.2 及最终 owner 验收，未接线 runtime 均为 `runtimeEvidenceClaim=none`。
+
+Story 2.5a contributor companion（2026-08-11）：只为 FR-12 贡献 owner-local 质量熔断锁存、唯一 episode/RecoveryTask 与冻结 handoff，只为 FR-4/FR-59 贡献 PIC 1.1.0 质量任务 intent、独立 TaskDelivery/receipt 语义和 source-owned 只读投影，只为 BR-5 贡献 governance/runtime/quality/business-task/delivery 六类状态正交，只为 NFR-10 贡献 owner-local 熔断负路径、回放/CAS/并发与冻结交接证据。合同 mutation、Java/MVC/JDBC、PostgreSQL 18.4、前端/无障碍和两次 clean release replay 已通过；这仍是 contributor 证据，不关闭 FR owner Story。公共任务 target 激活、2.5b/2.5c 恢复、3.2 真实 RuleEvaluation/Candidate/Clue 阻断、5.5 final public apply 与生产持续时长均继续 deferred/`runtimeEvidenceClaim=none`。
+
+Story 2.5b contributor companion（2026-08-13）：为 FR-12/BR-10 落地 QRP-1.0.0 evidence pack、可接管 durable validation、signal-evaluation 真实分层 sample provider、identity-access-owned D4 receipt/15m durable execution lease、runtime checker/natural-person binding、`quality-fuse.recover` action capability 与 ingestion-quality 单写入者 `fused -> recovering` 原子提交。正向 PostgreSQL 18.4 证据以真实 request/job/sample/D4/lease/closed owner function 写入 recovering、audit/outbox/local execution-jti，并通过 1058 Java、187 PG、584+145 Python、两次 112 Vitest/177 Playwright 与 clean release replay；不把 2.5c observation/eligible、3.2 consumer、5.5 final apply 或 production-duration 记为已完成。
+
 Story 1.1d 的规划准入与完成平台分离：当前基线足以开始 U1 本地可复现构建合同；真实 Git/CI、digest-addressed store、attestation/signing、受保护环境、正式 Web runner 与 promotion endpoint 必须由 `CISB-1.0.0` 以实际值另行冻结。CISB 未完成时，U2—U4 与整体 `review/done` 保持不可验收，不得把 planning `ready` 解读为已有运行平台。
 
 Story 1.6c runtime companion（2026-07-31）：FR-2 planning owner 仍为 1.6c；1.6c 只计算当前发布版本适用、required 且 active 的真实消费者，并以 `AC-1.6c-HAPPY` 与 `AC-1.6c-DOWNSTREAM-ACTIVATION` 验收。task/transfer/export/mobile 等 `planned/not-installed` 消费者必须保存 `runtimeEvidenceClaim=none`，不得由 fixture、transport ack 或 producer-observed ack 伪推进。1.7、3.9b、3.14c、5.5、7.2c 在各自 owner Story 激活真实消费者或 surface verification 时，必须完成回放、业务 apply、自有 watermark 与 reconciliation；contributor 列不形成 1.6c 的前向执行依赖。
@@ -97,15 +103,15 @@ Story 1.8 runtime companion（2026-08-03）：Story 1.8 的原 v3 隔离候选�
 | FR-1 | §6.1 | unified-shell/会话恢复 | AD-8/12/17/28 | 1.2 / AC-1.2-HAPPY | 1.1c,1.1d | G-02/G-05 | full / ready |
 | FR-2 | §6.1 | 身份/撤权状态 | AD-2/8/17/24/25 | 1.6c（planning owner）/ AC-1.6c-HAPPY + AC-1.6c-DOWNSTREAM-ACTIVATION | 1.6a,1.6b,1.7；下游激活证据：3.9b,3.14c,5.5,7.2c | G-02；future consumer 未激活时 `runtimeEvidenceClaim=none` | planning full / runtime staged |
 | FR-3 | §6.1 | 角色化首页 | AD-8/11/17 | 1.7 / AC-1.7-HAPPY | 1.6a,1.6b,1.6c | G-01/G-02/G-05；RFP matrix/WORKITEM-A/fixture | full / ready |
-| FR-4 | §6.1 | 公共待办深链 | AD-7/13/20/24 | 5.5 / AC-5.5-* | 1.9,2.5a,2.5c,3.4,3.9d,3.12,5.1,5.2d | G-04 | full / ready |
+| FR-4 | §6.1 | 公共待办深链 | AD-7/13/20/24 | 5.5 / AC-5.5-* | 1.9,2.5a（owner-local quality-task/PIC intent contributor passed）,2.5c,3.4,3.9d,3.12,5.1,5.2d | G-04；`2-5a-verification.md` | full / ready |
 | FR-5 | §6.2 | 无权限/对象范围 | AD-8/12 | 1.7 / AC-1.7-HAPPY | 1.8 | G-02；RFP scope/action oracle | full / ready |
 | FR-6 | §6.2 | sensitive-field/导出 | AD-9/10/13/27 | 3.14c / AC-3.14c-* | 1.8 / AC-1.8-HAPPY（在线 committed-candidate companion passed，不构成 full closure）；3.14a,3.14b | G-02/G-07/DEC-004；RFP C/M/H + R5 星号字段封闭全集 oracle；1.8 verification | full / ready |
 | FR-7 | §6.2 | 任务期授权 | AD-8/9/10/13/23/27 | 3.14c / AC-3.14c-* | 1.8 / AC-1.8-HAPPY（任务期 committed-candidate companion passed，不构成 full closure）；3.14a,3.14b | G-02/G-07/DEC-004；purpose/fieldAllowlist/[start,end)；1.8 verification | full / ready |
 | FR-8 | §6.2 | 审计检索 | AD-3/10/16/24/27 | 1.5 / AC-1.5-HAPPY | 1.3,1.4,3.14c | G-07 | full / ready |
-| FR-9 | §6.3 | 数据源目录 | AD-4/5/13 | 2.1 / AC-2.1-HAPPY | 2.4 | G-03/DEC-012 | full / ready |
+| FR-9 | §6.3 | 数据源目录 | AD-4/5/13 | 2.1 / AC-2.1-HAPPY | 2.4（registry/eligibility contributor passed） | G-03/DEC-012；Story 2.4 contract/domain/PG/UI evidence | full / ready |
 | FR-10 | §6.3 | 标识异常 | AD-4/25 | 2.2 / AC-2.2-HAPPY | 2.1 | G-03 | full / ready |
 | FR-11 | §6.3 | data-quality-panel | AD-5/11/16/22 | 2.3 / AC-2.3-HAPPY | 2.1 | G-03 | full / ready |
-| FR-12 | §6.3 | 熔断/恢复 | AD-5/6/13/23/25 | 3.2 / AC-3.2-HAPPY | 2.4,2.5a,2.5b,2.5c | G-03/G-06/DEC-004 | full / ready |
+| FR-12 | §6.3 | 熔断/恢复 | AD-5/6/13/23/25 | 3.2 / AC-3.2-HAPPY | 2.4（eligibility fact phase passed）,2.5a（owner-local latch/task contributor passed）,2.5b（D4 evidence + fused→recovering contributor passed）,2.5c | G-03/G-06/DEC-004；2.5b positive closure=`story-2.5b-executable-closure`；2.5c/3.2/5.5/production-duration 仍 `none`；`2-5b-verification.md` | full / ready |
 | FR-13 | §6.3 | 数据批次/重算 | AD-4/5/13/25 | 2.2 / AC-2.2-HAPPY（FR-13 runtime staged：本 Story 关闭数据侧窗口/重算与 consumer conformance；3.4/3.5/3.14c 负责真实 owner apply） | 2.3 | G-03；`SUBJECT-DEFERRED-CONSUMERS-1.0.0`，未激活 owner `runtimeEvidenceClaim=none` | planning full / runtime staged |
 | FR-14 | §6.4 | rule-lifecycle-panel | AD-3/6/13 | 3.1a / AC-3.1a-HAPPY | 3.1b | G-06 | full / ready |
 | FR-15 | §6.4 | 三类规则状态 | AD-3/6/23 | 3.1c / AC-3.1c-* | 3.1a,3.1b | G-06/DEC-004 | full / ready |
@@ -152,7 +158,7 @@ Story 1.8 runtime companion（2026-08-03）：Story 1.8 的原 v3 隔离候选�
 | FR-56 | §6.14 | 工作纪实 | AD-2/4/9/11/21 | 4.8 / AC-4.8-HAPPY | 2.1,1.8 | G-03/G-06 | full / ready |
 | FR-57 | §6.15 | 学业关怀 | AD-4/6/11/18 | 4.3 / AC-4.3-* | 2.1,3.5,4.1a | G-03/G-06；ACADEMIC/TIMETABLE/CALENDAR required + ACN/sealed/更正 | full / ready |
 | FR-58 | §6.16 | 跨类别合证 | AD-4/6/19/23 | 4.7 / AC-4.7-* | 4.2,4.3,4.4b | G-06/DEC-004 | full / ready |
-| FR-59 | §6.17 | 任务/结果回写 | AD-7/8/9/20/24 | 5.5 / AC-5.5-* | 1.9,2.5a,2.5c,3.4,3.9d,3.12,5.2d | G-04 | full / ready |
+| FR-59 | §6.17 | 任务/结果回写 | AD-7/8/9/20/24 | 5.5 / AC-5.5-* | 1.9,2.5a（TaskDelivery/receipt contributor passed）,2.5c,3.4,3.9d,3.12,5.2d | G-04；`2-5a-verification.md` | full / ready |
 | FR-60 | §6.17 | 报表/运营发布 | AD-7/9/11/21/24 | 6.4 / AC-6.4-* | 5.5,6.3b | G-04/G-07 | full / ready |
 | FR-61 | §6.17 | governance-action | AD-3/10/11/21/23/24 | 6.2 / AC-6.2-* | 6.1,5.5 | G-04/DEC-004 | full / ready |
 | FR-62 | §6.17 | delegation-grant | AD-2/3/8/19/20/24 | 3.9c / AC-3.9c-* | 1.7,1.8,3.9b | G-01/G-02/DEC-004 | full / ready |
@@ -165,7 +171,7 @@ Story 1.8 runtime companion（2026-08-03）：Story 1.8 的原 v3 隔离候选�
 | BR-2 | Candidate 前置门 | AD-5/19 | 3.4 / AC-3.4-* | G-03/G-04/G-06 |
 | BR-3 | Candidate/Clue 状态 | AD-3/19 | 3.5,3.9d | G-06 |
 | BR-4 | action-form/移动核实 | AD-3/18/19 | 3.8,3.9a,3.9d,5.3,7.2a | G-05/G-06；CAC |
-| BR-5 | 质量/规则/业务状态 | AD-6/19/20 | 2.5a,3.1c,3.9d | G-03/G-06 |
+| BR-5 | 质量/规则/业务状态 | AD-6/19/20 | 2.5a,3.1c,3.9d | G-03/G-06；2.5a owner-local 六类状态正交 contributor passed；`2-5a-verification.md` |
 | BR-6 | transfer/delivery | AD-7/20/24 | 5.2d,5.3 | G-04 |
 | BR-7 | 责任转移/delegation | AD-2/8/19/20 | 3.9b,3.9c | G-02/DEC-004 |
 | BR-8 | 公共任务 | AD-7/20/24 | 5.5 / AC-5.5-* | G-04 |
@@ -189,7 +195,7 @@ Story 1.8 runtime companion（2026-08-03）：Story 1.8 的原 v3 隔离候选�
 | NFR-7 | 2.7a / AC-2.7a-HAPPY | state-panel | AD-1/5/13—16/18 | G-03/G-04/G-08 |
 | NFR-8 | 2.7c / AC-2.7c-HAPPY；1.1d contributor | retry/reconcile；发布提升幂等/对账/回退 | AD-3/7/13/15/23/24 | G-04/G-06/G-09 |
 | NFR-9 | 2.3 / AC-2.3-HAPPY | quality panel | AD-5/22 | G-03 |
-| NFR-10 | 3.2 / AC-3.2-HAPPY | fuse negative test | AD-5/6 | G-03/G-06 |
+| NFR-10 | 3.2 / AC-3.2-HAPPY；2.4 contributor（required all-of/fused/gap negative paths passed）；2.5a contributor（latch/task/CAS/concurrency/freeze handoff passed） | fuse negative test；生产阻断/持续时长待 3.2 | AD-5/6 | G-03/G-06；2.5a target/consumer runtime claim none；`2-5a-verification.md` |
 | NFR-11 | 3.4 / AC-3.4-* | evidence quality snapshot | AD-4/19 | G-03/G-06 |
 | NFR-12 | 6.6 / AC-6.6-* | 全数据类 retention/legal hold/watermark/DeletionReceipt/backup expiry | AD-10/13/27 | G-07 |
 | NFR-13 | 1.8 / AC-1.8-HAPPY（final-owner runtime evidence closed）；1.1d contributor | sensitive-field/key evidence；CI/store/signing identity 边界 | AD-9/10/15/27 | G-01/G-07；`1-8-verification.md` |

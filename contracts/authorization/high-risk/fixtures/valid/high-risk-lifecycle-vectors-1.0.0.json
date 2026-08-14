@@ -1,0 +1,383 @@
+{
+  "$schema": "high-risk-lifecycle-vectors.schema.json",
+  "vectorVersion": "HIGH-RISK-LIFECYCLE-VECTORS-1.0.0",
+  "policyVersion": "HRAP-1.0.0",
+  "runtimePolicyVersion": "HRAP-RUNTIME-1.0.0",
+  "cases": [
+    {
+      "caseId": "distinct-maker-checker-approved-before-four-hours",
+      "phase": "approval",
+      "description": "A runtime-bound business owner distinct from the current data owner approves inside the pending interval.",
+      "approvalInput": {
+        "requestStatus": "pending",
+        "makerPrincipalDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decisionActorPrincipalDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "requiredCheckerPrincipalDigests": ["sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
+        "requestedAt": "2026-08-12T08:00:00Z",
+        "expiresAt": "2026-08-12T12:00:00Z",
+        "trustedNow": "2026-08-12T11:59:59.999999Z",
+        "idempotencyKey": "hrap-approval-case-0001",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "executionInput": null,
+      "expected": {"decision": "approve", "approvalStatus": "approved", "leaseState": null, "ownerState": "fused", "tokenConsumed": false, "sameExecutionJti": false, "reasonCode": "APPROVED", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "maker-equals-checker-denied",
+      "phase": "approval",
+      "description": "Natural-person separation is enforced even when the account is present in the checker binding set.",
+      "approvalInput": {
+        "requestStatus": "pending",
+        "makerPrincipalDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decisionActorPrincipalDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "requiredCheckerPrincipalDigests": ["sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
+        "requestedAt": "2026-08-12T08:00:00Z",
+        "expiresAt": "2026-08-12T12:00:00Z",
+        "trustedNow": "2026-08-12T09:00:00Z",
+        "idempotencyKey": "hrap-approval-case-0002",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "executionInput": null,
+      "expected": {"decision": "reject", "approvalStatus": "pending", "leaseState": null, "ownerState": "fused", "tokenConsumed": false, "sameExecutionJti": false, "reasonCode": "MAKER_CHECKER_CONFLICT", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "approval-exact-four-hour-expiry",
+      "phase": "approval",
+      "description": "The four-hour pending interval is half-open: trustedNow equal to expiresAt expires the request.",
+      "approvalInput": {
+        "requestStatus": "pending",
+        "makerPrincipalDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decisionActorPrincipalDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "requiredCheckerPrincipalDigests": ["sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
+        "requestedAt": "2026-08-12T08:00:00Z",
+        "expiresAt": "2026-08-12T12:00:00Z",
+        "trustedNow": "2026-08-12T12:00:00Z",
+        "idempotencyKey": "hrap-approval-case-0003",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "executionInput": null,
+      "expected": {"decision": "expire", "approvalStatus": "expired", "leaseState": null, "ownerState": "fused", "tokenConsumed": false, "sameExecutionJti": false, "reasonCode": "APPROVAL_EXPIRED", "requiresFreshRequest": true, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "approval-same-key-same-digest-replay",
+      "phase": "approval",
+      "description": "An identical approval request replay returns the immutable original result.",
+      "approvalInput": {
+        "requestStatus": "approved",
+        "makerPrincipalDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decisionActorPrincipalDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "requiredCheckerPrincipalDigests": ["sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
+        "requestedAt": "2026-08-12T08:00:00Z",
+        "expiresAt": "2026-08-12T12:00:00Z",
+        "trustedNow": "2026-08-12T10:00:00Z",
+        "idempotencyKey": "hrap-approval-case-0001",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "executionInput": null,
+      "expected": {"decision": "replay-original", "approvalStatus": "approved", "leaseState": null, "ownerState": "fused", "tokenConsumed": false, "sameExecutionJti": false, "reasonCode": "IDEMPOTENT_REPLAY", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "approval-same-key-different-digest-conflict",
+      "phase": "approval",
+      "description": "An approval request cannot overwrite the original request under the same business key.",
+      "approvalInput": {
+        "requestStatus": "approved",
+        "makerPrincipalDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "decisionActorPrincipalDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "requiredCheckerPrincipalDigests": ["sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
+        "requestedAt": "2026-08-12T08:00:00Z",
+        "expiresAt": "2026-08-12T12:00:00Z",
+        "trustedNow": "2026-08-12T10:00:00Z",
+        "idempotencyKey": "hrap-approval-case-0001",
+        "requestDigest": "sha256:7676767676767676767676767676767676767676767676767676767676767676"
+      },
+      "executionInput": null,
+      "expected": {"decision": "conflict", "approvalStatus": "approved", "leaseState": null, "ownerState": "fused", "tokenConsumed": false, "sameExecutionJti": false, "reasonCode": "IDEMPOTENCY_CONFLICT", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "token-before-fifteen-minute-expiry-issues-lease",
+      "phase": "execution",
+      "description": "A trusted, unused token just inside the half-open fifteen-minute interval becomes one durable lease.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "issued",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0001",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:14:59.999999Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": null,
+        "confirmedAt": null,
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "issue-lease", "approvalStatus": null, "leaseState": "issued", "ownerState": "fused", "tokenConsumed": true, "sameExecutionJti": true, "reasonCode": "EXECUTION_AUTHORIZED", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "token-exact-fifteen-minute-expiry-denied",
+      "phase": "execution",
+      "description": "trustedNow equal to authorizedUntil is outside the token interval and cannot reserve or commit.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "expired",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0002",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:15:00Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": null,
+        "confirmedAt": null,
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "expire", "approvalStatus": null, "leaseState": "expired", "ownerState": "fused", "tokenConsumed": true, "sameExecutionJti": true, "reasonCode": "EXECUTION_EXPIRED", "requiresFreshRequest": true, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "execution-same-key-same-digest-replays-original-lease",
+      "phase": "execution",
+      "description": "The token remains single-use while a retry receives the original lease and execution JTI.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "reserved",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0001",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:05:00Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": null,
+        "confirmedAt": null,
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "replay-original", "approvalStatus": null, "leaseState": "reserved", "ownerState": "fused", "tokenConsumed": true, "sameExecutionJti": true, "reasonCode": "IDEMPOTENT_REPLAY", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "execution-same-key-different-digest-conflict",
+      "phase": "execution",
+      "description": "A replay with different canonical material cannot obtain another lease or execution JTI.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "reserved",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0001",
+        "requestDigest": "sha256:7676767676767676767676767676767676767676767676767676767676767676",
+        "trustedNow": "2026-08-12T10:05:00Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": null,
+        "confirmedAt": null,
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "conflict", "approvalStatus": null, "leaseState": "reserved", "ownerState": "fused", "tokenConsumed": true, "sameExecutionJti": true, "reasonCode": "IDEMPOTENCY_CONFLICT", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "token-reuse-under-new-key-denied",
+      "phase": "execution",
+      "description": "Changing the idempotency key cannot make a consumed token or execution JTI usable again.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "executed",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0003",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:10:00Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": "2026-08-12T10:09:00Z",
+        "confirmedAt": "2026-08-12T10:09:01Z",
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "reject", "approvalStatus": null, "leaseState": "executed", "ownerState": "recovering", "tokenConsumed": true, "sameExecutionJti": true, "reasonCode": "EXECUTION_ALREADY_USED", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "untrusted-issuer-denied",
+      "phase": "execution",
+      "description": "A structurally valid token from an untrusted issuer fails closed before owner commit.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "issued",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0004",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:05:00Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": null,
+        "confirmedAt": null,
+        "bindings": {"issuer": "recovery-client", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "reject", "approvalStatus": null, "leaseState": "issued", "ownerState": "fused", "tokenConsumed": false, "sameExecutionJti": false, "reasonCode": "TRUST_BINDING_INVALID", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "wrong-audience-denied",
+      "phase": "execution",
+      "description": "Audience is a mandatory trust binding and cannot name another module.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "issued",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0005",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:05:00Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": null,
+        "confirmedAt": null,
+        "bindings": {"issuer": "identity-access", "audience": "signal-evaluation", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "reject", "approvalStatus": null, "leaseState": "issued", "ownerState": "fused", "tokenConsumed": false, "sameExecutionJti": false, "reasonCode": "TRUST_BINDING_INVALID", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "unknown-key-or-bad-signature-denied",
+      "phase": "execution",
+      "description": "Unknown key versions and failed signature verification are indistinguishable fail-closed trust failures.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "issued",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0006",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:05:00Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": null,
+        "confirmedAt": null,
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "unknown-key", "signatureVerified": false, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "reject", "approvalStatus": null, "leaseState": "issued", "ownerState": "fused", "tokenConsumed": false, "sameExecutionJti": false, "reasonCode": "TRUST_BINDING_INVALID", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "owner-commit-one-microsecond-before-expiry",
+      "phase": "reconciliation",
+      "description": "Owner commit time, not confirmation arrival time, controls the half-open authorization boundary.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "reserved",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0007",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:14:59.999999Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": "2026-08-12T10:14:59.999999Z",
+        "confirmedAt": "2026-08-12T10:14:59.999999Z",
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "finalize-executed", "approvalStatus": null, "leaseState": "executed", "ownerState": "recovering", "tokenConsumed": true, "sameExecutionJti": true, "reasonCode": "OWNER_COMMIT_CONFIRMED", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "owner-commit-exact-expiry-rejected",
+      "phase": "reconciliation",
+      "description": "An owner commit exactly at authorizedUntil is too late and cannot establish recovering.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "expired",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0008",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:15:00Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": "2026-08-12T10:15:00Z",
+        "confirmedAt": "2026-08-12T10:15:00Z",
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "reject", "approvalStatus": null, "leaseState": "expired", "ownerState": "fused", "tokenConsumed": true, "sameExecutionJti": true, "reasonCode": "OWNER_COMMIT_TOO_LATE", "requiresFreshRequest": true, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "late-confirmation-finalizes-pre-expiry-owner-commit",
+      "phase": "reconciliation",
+      "description": "A confirmation received after expiry finalizes execution when durable owner evidence proves a pre-expiry commit.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "reserved",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0009",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:15:00.000001Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": "2026-08-12T10:14:59.999999Z",
+        "confirmedAt": "2026-08-12T10:15:00.000001Z",
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "finalize-executed", "approvalStatus": null, "leaseState": "executed", "ownerState": "recovering", "tokenConsumed": true, "sameExecutionJti": true, "reasonCode": "OWNER_COMMIT_CONFIRMED", "requiresFreshRequest": false, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "preview-drift-before-owner-commit-denied",
+      "phase": "invalidation",
+      "description": "Preview drift before the owner commit denies execution and requires an explicit new preview and request.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "reserved",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0010",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:10:00Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": null,
+        "confirmedAt": null,
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4545454545454545454545454545454545454545454545454545454545454545", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "reject", "approvalStatus": null, "leaseState": "cancelled", "ownerState": "fused", "tokenConsumed": true, "sameExecutionJti": true, "reasonCode": "BINDING_DRIFT", "requiresFreshRequest": true, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "authorization-generation-drift-before-owner-commit-denied",
+      "phase": "invalidation",
+      "description": "A revoke race visible before owner commit cancels the lease and never partially advances state.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "reserved",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0011",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:10:00Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": null,
+        "confirmedAt": null,
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 12, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "reject", "approvalStatus": null, "leaseState": "cancelled", "ownerState": "fused", "tokenConsumed": true, "sameExecutionJti": true, "reasonCode": "BINDING_DRIFT", "requiresFreshRequest": true, "publishInvalidationEvidence": false}
+    },
+    {
+      "caseId": "checker-binding-drift-after-owner-commit-compensates",
+      "phase": "invalidation",
+      "description": "Invalidation discovered after the owner commit but before downstream consumption compensates recovering back to fused.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "executed",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0012",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:14:00Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": "2026-08-12T10:13:59Z",
+        "confirmedAt": "2026-08-12T10:14:00Z",
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "compensate-to-fused", "approvalStatus": null, "leaseState": "executed", "ownerState": "fused", "tokenConsumed": true, "sameExecutionJti": true, "reasonCode": "AUTHORIZATION_INVALIDATED_AFTER_COMMIT", "requiresFreshRequest": true, "publishInvalidationEvidence": true}
+    },
+    {
+      "caseId": "policy-drift-after-owner-commit-compensation-replay",
+      "phase": "invalidation",
+      "description": "Compensation is idempotent; policy drift never reactivates the consumed token or execution lease.",
+      "approvalInput": null,
+      "executionInput": {
+        "leaseState": "executed",
+        "tokenJti": "019d2c7d-4000-7000-8000-000000000203",
+        "executionJti": "019d2c7d-4000-7000-8000-000000000205",
+        "idempotencyKey": "hrap-execution-case-0012",
+        "requestDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "trustedNow": "2026-08-12T10:14:01Z",
+        "authorizedUntil": "2026-08-12T10:15:00Z",
+        "ownerCommittedAt": "2026-08-12T10:13:59Z",
+        "confirmedAt": "2026-08-12T10:14:00Z",
+        "bindings": {"issuer": "identity-access", "audience": "ingestion-quality", "keyVersion": "hrap-signing-2026-08", "signatureVerified": true, "actionType": "quality-fuse.recover", "objectVersion": 7, "approvalVersion": 1, "authorizationGeneration": 11, "policyDigest": "sha256:2323232323232323232323232323232323232323232323232323232323232323", "matrixDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "roleFieldPolicyDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "checkerSetDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "scopeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", "impactScopeDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "previewDigest": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "authenticationStateDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666"}
+      },
+      "expected": {"decision": "replay-original", "approvalStatus": null, "leaseState": "executed", "ownerState": "fused", "tokenConsumed": true, "sameExecutionJti": true, "reasonCode": "IDEMPOTENT_REPLAY", "requiresFreshRequest": true, "publishInvalidationEvidence": true}
+    }
+  ]
+}

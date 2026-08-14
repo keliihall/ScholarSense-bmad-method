@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/authorization/authorized-shell-1.1.0.schema.json",
+  "title": "Current authorized shell response v1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "policyVersion", "fixtureVersion", "evaluatedAt",
+    "defaultSurface", "menuItems", "entryCapabilities", "actionCapabilities",
+    "dependencyStatus"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "AUTHORIZED-SHELL-1.1.0"},
+    "policyVersion": {"const": "RFP-1.0.0"},
+    "fixtureVersion": {"const": "RFP-FIXTURE-1.0.0"},
+    "evaluatedAt": {"type": "string", "format": "date-time"},
+    "defaultSurface": {"$ref": "#/$defs/surface"},
+    "menuItems": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/menuItem"}},
+    "entryCapabilities": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/entryCapability"}},
+    "actionCapabilities": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/actionCapability"}},
+    "dependencyStatus": {"enum": ["available", "unavailable"]}
+  },
+  "$defs": {
+    "surface": {
+      "type": "object", "additionalProperties": false,
+      "required": ["surfaceId", "title", "routeName", "providerState"],
+      "properties": {
+        "surfaceId": {"type": "string", "pattern": "^[a-z][a-z0-9-]+$"},
+        "title": {"type": "string", "minLength": 1},
+        "routeName": {"const": "shell.home"},
+        "providerState": {"enum": ["available", "not-installed", "unavailable"]}
+      }
+    },
+    "menuItem": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "label", "routeName", "providerState"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]+$"},
+        "label": {"type": "string", "minLength": 1},
+        "routeName": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"},
+        "providerState": {"enum": ["available", "unavailable"]}
+      }
+    },
+    "entryCapability": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "state"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"},
+        "state": {"enum": ["available", "not-installed", "unavailable"]}
+      }
+    },
+    "actionCapability": {
+      "type": "object", "additionalProperties": false,
+      "required": ["actionType", "state"],
+      "properties": {
+        "actionType": {"const": "quality-fuse.recover"},
+        "state": {"enum": ["available", "not-installed", "unavailable"]}
+      }
+    }
+  }
+}

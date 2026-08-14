@@ -1,0 +1,70 @@
+{
+  "$schema": "quality-fuse-policy.schema.json",
+  "policyVersion": "QFTP-1.0.0",
+  "authority": ["DEC-012", "DEC-019", "DCC-1.1.0", "QG-1.0.0", "QMDP-1.0.0", "QSHM-1.0.0", "RC-1.0.0"],
+  "singleWriter": "ingestion-quality",
+  "provenance": {
+    "realtime": "REALTIME_ASSESSMENT",
+    "bootstrap": "BOOTSTRAP_MATERIALIZATION",
+    "bootstrapRequiresExplicitImportOrMigration": true,
+    "absenceOfPriorFactDoesNotImplyBootstrap": true
+  },
+  "upstream": {
+    "acceptedDecision": "Story-2.4 QualityEligibility owner-local decision",
+    "requiredBinding": [
+      "eligibilityId", "businessKey", "aggregateVersion", "ruleId", "ruleVersion",
+      "memberSetDigest", "registryVersion", "registryDigest", "dccVersion", "dccDigest",
+      "ruleCatalogVersion", "ruleCatalogDigest", "batchId", "sourceId", "sourceVersion",
+      "dependencyId", "dependencyVersion", "snapshotId", "snapshotHash",
+      "qualityGateVersion", "qualityGateDigest", "qmdpVersion", "qmdpDigest",
+      "qshmVersion", "qshmDigest", "lineageId", "watermark", "effectiveAt", "reasonCode"
+    ],
+    "lookup": "exact-self-contained-evidence-never-latest",
+    "gap": "pause-and-backfill",
+    "poison": "quarantine-without-business-transition"
+  },
+  "triggerReasons": {
+    "business": ["REQUIRED_MEMBER_FAILED", "COMPOSITION_THRESHOLD_FAILED"],
+    "technical": [],
+    "nonTriggering": [
+      "BOOTSTRAP_FUSED", "REQUIRED_MEMBER_MISSING", "MEMBER_VERSION_GAP", "EVENT_VERSION_GAP",
+      "BACKFILL_PENDING", "POISON_EVENT", "DIGEST_MISMATCH", "SIGNATURE_MISMATCH",
+      "CONTRACT_UNKNOWN", "TECHNICAL_DEPENDENCY_UNAVAILABLE"
+    ],
+    "requires": ["batch-sealed", "assessment-complete", "exact-assessed-published-pair", "approved-profile-digests"]
+  },
+  "transitions": [
+    {"caseId": "eligible-pass", "priorState": "eligible", "evaluatedState": "eligible", "appliedState": "eligible", "episodeAction": "none", "taskAction": "none"},
+    {"caseId": "eligible-fail", "priorState": "eligible", "evaluatedState": "fused", "appliedState": "fused", "episodeAction": "start", "taskAction": "create"},
+    {"caseId": "fused-pass", "priorState": "fused", "evaluatedState": "eligible", "appliedState": "fused", "episodeAction": "preserve", "taskAction": "preserve"},
+    {"caseId": "fused-fail", "priorState": "fused", "evaluatedState": "fused", "appliedState": "fused", "episodeAction": "update", "taskAction": "update"},
+    {"caseId": "recovering-pass", "priorState": "recovering", "evaluatedState": "eligible", "appliedState": "recovering", "episodeAction": "preserve", "taskAction": "preserve"},
+    {"caseId": "recovering-fail", "priorState": "recovering", "evaluatedState": "fused", "appliedState": "fused", "episodeAction": "update", "taskAction": "update"},
+    {"caseId": "missing-pass", "priorState": "missing", "evaluatedState": "eligible", "appliedState": "eligible", "episodeAction": "none", "taskAction": "none"},
+    {"caseId": "missing-fail-realtime", "provenance": "REALTIME_ASSESSMENT", "priorState": "missing", "evaluatedState": "fused", "appliedState": "fused", "episodeAction": "start", "taskAction": "create"},
+    {"caseId": "bootstrap-fused", "provenance": "BOOTSTRAP_MATERIALIZATION", "priorState": "missing", "evaluatedState": "fused", "appliedState": "fused", "episodeAction": "none", "taskAction": "none", "reasonCode": "BOOTSTRAP_FUSED"}
+  ],
+  "episode": {
+    "activeKey": ["sourceId", "dependencyId", "generation"],
+    "start": "first-verified-business-failure-without-active-episode",
+    "update": "verified-failure-within-active-generation",
+    "closeOwnerStory": "2.5c",
+    "reopen": "allocate-generation-plus-one-after-terminal-close"
+  },
+  "qualityProfiles": {
+    "gateVersion": "QG-1.0.0",
+    "metricDecisionProfileVersion": "QMDP-1.0.0",
+    "snapshotHashProfileVersion": "QSHM-1.0.0",
+    "legacyMappings": ["Q1", "Q2"],
+    "unknownMapping": "reject",
+    "formulaEvaluationOwner": "Story-2.3",
+    "story25aBehavior": "consume-comparison-result-never-recalculate"
+  },
+  "downstreamHandoffs": {
+    "signalEvaluationConsumerOwnerStory": "3.2",
+    "publicTaskFinalApplyOwnerStory": "5.5",
+    "recoveryCommandOwnerStory": "2.5b",
+    "observationAndCloseOwnerStory": "2.5c"
+  },
+  "runtimeEvidenceClaim": "owner-local-conformance"
+}

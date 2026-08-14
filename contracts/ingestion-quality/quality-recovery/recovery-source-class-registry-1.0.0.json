@@ -1,0 +1,33 @@
+{
+  "registryVersion": "QRSCR-1.0.0",
+  "authority": "DEC-012/QRP-1.0.0 requires an explicit data-owner-approved executable successor",
+  "status": "approved",
+  "activation": "exact-approved-bindings-only;unknown-or-digest-drift-deny",
+  "classificationRule": "explicit-owner-approved-binding-never-derived-from-frequency-slo-ui-or-default",
+  "proposalBasis": "explicit-user-data-owner-approval-in-bmad-dev-story;DCC-updateFrequency-is-not-approval-evidence",
+  "bindingCanonicalization": "sort-by-sourceId-utf8-ascending;sourceId+U+001F+sourceClass+U+000A;sha256-raw-bytes",
+  "proposedBindingSetDigest": "sha256:dfa05c804f27a4c92edb3c6ed7253c3bdb3fa7d3c6d77be7121a44c716b7aed5",
+  "approval": {
+    "approvalRef": "AUTH-2026-08-12-QRSCR-001",
+    "approvedBy": "Hei",
+    "approvedAt": "2026-08-12T19:12:19+08:00",
+    "effectiveAt": "2026-08-12T19:12:19+08:00",
+    "approvedBindingSetDigest": "sha256:dfa05c804f27a4c92edb3c6ed7253c3bdb3fa7d3c6d77be7121a44c716b7aed5"
+  },
+  "sources": [
+    {"sourceId": "SRC-P0-ACCOMMODATION-001", "sourceClass": "streaming", "approvalRef": "AUTH-2026-08-12-QRSCR-001", "approvedBy": "Hei", "effectiveAt": "2026-08-12T19:12:19+08:00"},
+    {"sourceId": "SRC-P0-CARD-001", "sourceClass": "streaming", "approvalRef": "AUTH-2026-08-12-QRSCR-001", "approvedBy": "Hei", "effectiveAt": "2026-08-12T19:12:19+08:00"},
+    {"sourceId": "SRC-P0-CAMPUS-ACCESS-001", "sourceClass": "streaming", "approvalRef": "AUTH-2026-08-12-QRSCR-001", "approvedBy": "Hei", "effectiveAt": "2026-08-12T19:12:19+08:00"},
+    {"sourceId": "SRC-P0-DORM-ACCESS-001", "sourceClass": "streaming", "approvalRef": "AUTH-2026-08-12-QRSCR-001", "approvedBy": "Hei", "effectiveAt": "2026-08-12T19:12:19+08:00"},
+    {"sourceId": "SRC-P0-DEVICE-001", "sourceClass": "streaming", "approvalRef": "AUTH-2026-08-12-QRSCR-001", "approvedBy": "Hei", "effectiveAt": "2026-08-12T19:12:19+08:00"},
+    {"sourceId": "SRC-P0-LEAVE-001", "sourceClass": "streaming", "approvalRef": "AUTH-2026-08-12-QRSCR-001", "approvedBy": "Hei", "effectiveAt": "2026-08-12T19:12:19+08:00"},
+    {"sourceId": "SRC-P0-CALENDAR-001", "sourceClass": "streaming", "approvalRef": "AUTH-2026-08-12-QRSCR-001", "approvedBy": "Hei", "effectiveAt": "2026-08-12T19:12:19+08:00"},
+    {"sourceId": "SRC-P0-TIMETABLE-001", "sourceClass": "streaming", "approvalRef": "AUTH-2026-08-12-QRSCR-001", "approvedBy": "Hei", "effectiveAt": "2026-08-12T19:12:19+08:00"},
+    {"sourceId": "SRC-P1-OFFCAMPUS-001", "sourceClass": "streaming", "approvalRef": "AUTH-2026-08-12-QRSCR-001", "approvedBy": "Hei", "effectiveAt": "2026-08-12T19:12:19+08:00"},
+    {"sourceId": "SRC-P1-NETWORK-001", "sourceClass": "dailyBatch", "approvalRef": "AUTH-2026-08-12-QRSCR-001", "approvedBy": "Hei", "effectiveAt": "2026-08-12T19:12:19+08:00"},
+    {"sourceId": "SRC-P1-ACADEMIC-001", "sourceClass": "dailyBatch", "approvalRef": "AUTH-2026-08-12-QRSCR-001", "approvedBy": "Hei", "effectiveAt": "2026-08-12T19:12:19+08:00"}
+  ],
+  "unknownSource": "reject",
+  "duplicateSource": "reject",
+  "runtimeEvidenceClaim": "contract-only"
+}

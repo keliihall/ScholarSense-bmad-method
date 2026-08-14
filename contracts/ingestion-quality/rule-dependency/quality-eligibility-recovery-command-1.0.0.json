@@ -1,0 +1,17 @@
+{
+  "contractVersion": "QUALITY-ELIGIBILITY-RECOVERY-COMMAND-1.0.0",
+  "ownerPort": "ingestion-quality/quality-eligibility-recovery-command-v1",
+  "ownerModule": "ingestion-quality",
+  "runtimeOwnerStory": "2.5",
+  "story24RuntimeActivation": "not-installed",
+  "command": {
+    "requiredFields": ["eligibilityId", "expectedAggregateVersion", "idempotencyKey", "reasonCode", "traceId"],
+    "allowedTransition": "fused-to-recovering",
+    "sameKeySameBody": "return-original-result",
+    "sameKeyDifferentBody": "conflict-409",
+    "staleExpectedAggregateVersion": "conflict-409",
+    "reasonCode": "RECOVERY_COMMAND_ACCEPTED"
+  },
+  "forbiddenSideEffects": ["activate-recovery-runtime", "freeze-rule-output", "publish-rule-evaluation", "create-candidate", "create-clue"],
+  "runtimeEvidenceClaim": "none"
+}

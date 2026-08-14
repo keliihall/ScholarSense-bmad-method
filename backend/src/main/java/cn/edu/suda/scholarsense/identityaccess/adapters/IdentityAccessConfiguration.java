@@ -68,6 +68,7 @@ import cn.edu.suda.scholarsense.identityaccess.api.AuthoritativeIdentityContextQ
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapability;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityProvider;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityState;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellActionCapabilityProvider;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationObjectEvidenceQueryPort;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationObjectEvidenceProvider;
 import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationPort;
@@ -228,6 +229,7 @@ public class IdentityAccessConfiguration {
             JdbcIdentityAccessStore sessions,
             AuthoritativeIdentityContextQueryPort contexts,
             List<AuthorizedShellCapabilityProvider> providers,
+            List<AuthorizedShellActionCapabilityProvider> actionProviders,
             TrustedTimeSource trustedTime,
             AuthorizationAuditPort audit,
             JdbcSensitiveReadTransactionAdapter transactions) {
@@ -235,6 +237,7 @@ public class IdentityAccessConfiguration {
                 sessions,
                 contexts,
                 providers,
+                actionProviders,
                 trustedTime,
                 RoleFieldPolicyCatalog.approved(),
                 audit,

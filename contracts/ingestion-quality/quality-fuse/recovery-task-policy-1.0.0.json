@@ -1,0 +1,42 @@
+{
+  "policyVersion": "QFRTP-1.0.0",
+  "objectClass": "RecoveryTask",
+  "purpose": "data-quality.read",
+  "owner": "ingestion-quality",
+  "cardinality": {
+    "key": ["sourceId", "dependencyId", "activeIncidentGeneration"],
+    "maximumActiveTasksPerKey": 1,
+    "affectedRuleVersions": "union-of-current-source-owner-visible-rules"
+  },
+  "identity": {
+    "episodeBusinessKey": ["sourceId", "dependencyId", "generation"],
+    "fuseBusinessKey": ["batchId", "dependencyVersion", "episodeBusinessKey"],
+    "idempotencyKey": ["fuseBusinessKey", "commandBodyDigest"],
+    "workItemKey": "opaque-deterministic-HMAC-of-episodeBusinessKey",
+    "hmacDomain": "scholarsense\\0quality-fuse\\0work-item-key\\0v1",
+    "keyProvider": "deployment-protected-secret-provider",
+    "keyVersion": "pinned-at-episode-creation",
+    "rotation": "new-key-affects-new-episodes-only;retain-old-key-through-episode-and-retention-end",
+    "sameKeyDifferentDigest": "409/QUALITY_FUSE_IDEMPOTENCY_CONFLICT"
+  },
+  "assignment": {
+    "source": "authoritative-current-source-owner",
+    "crossOwner": "forbidden",
+    "partialProjection": "authorized-owner-slice-without-count-leak"
+  },
+  "lifecycle": {
+    "newEpisode": "create-open-task",
+    "activeEpisodeFailure": "update-original-task-and-preserve-workItemKey",
+    "passWhileFused": "preserve-open-task",
+    "closeOwnerStory": "2.5c",
+    "closedThenFailed": "allocate-new-generation-and-new-task"
+  },
+  "delivery": {
+    "sidecar": "TaskDelivery",
+    "states": ["pending", "retrying", "confirmed", "failed"],
+    "confirmedMeans": "target-confirmed-delivery-only",
+    "doesNotMutate": ["RecoveryTask.status", "QualityEligibility.status"]
+  },
+  "retention": "QFRET-1.0.0",
+  "runtimeEvidenceClaim": "owner-local-conformance"
+}

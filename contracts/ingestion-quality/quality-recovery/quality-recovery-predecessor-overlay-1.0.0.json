@@ -1,0 +1,972 @@
+{
+  "manifestVersion": "QRPREDECESSOR-OVERLAY-1.0.0",
+  "parentCommit": "017997ae83d12f048f8d192e371d44fa32233550",
+  "candidateCommit": "08b2f121e0922de8ae057e1c4987443804ae2b38",
+  "candidateTree": "81e666ecff0547dde47e63d05268037775516196",
+  "scope": "complete-final-story-2.4-and-2.5a-repaired-worktree-overlay-before-story-2.5b-task-0",
+  "materialization": "temporary-index-commit-without-changing-user-branch-index-or-worktree",
+  "pathCount": 192,
+  "pathRawSha256Aggregate": "62590075bcfe597b9a0268e1f062da8889ca8b55a67db40993b214700ffda04e",
+  "files": [
+    {
+      "path": ".github/workflows/release.yml",
+      "blobSha1": "b2dc43404cbf0af80d586dfc682f97a785f249d9",
+      "rawSha256": "a961d41a8a7842807ac7dd405c5139ad6df808ef40c84d535f8f55f7c310ffbf"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/2-4-verification.md",
+      "blobSha1": "ebd0a3a530e6aaeb6074776f59323bd074ade197",
+      "rawSha256": "955137549e97e3f18a5ba4cb5d1244437c54499415c9aa11b61d9fc9a9dd601e"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/2-4-登记规则依赖并发布质量可用性事实.md",
+      "blobSha1": "e225f3f0f003e332d065b0535e45712136b262b8",
+      "rawSha256": "1f08def7a5f161ebd84522290c105b36e6063f4b8af3368ae21bd913592bbc35"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/2-5a-verification.md",
+      "blobSha1": "70bc19f409f98af184d4db97b148df768cffad5e",
+      "rawSha256": "80a4425fde81a8bc3737ec72d72edef1a6dac25cb00026513f6b8ae386d3b6b6"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/2-5a-判定质量熔断并冻结新产出.md",
+      "blobSha1": "ecf325bf69e6fc1c8e7988843f8b4525299fa54e",
+      "rawSha256": "06b13a0affb2183d9a77f4326069323e65d0adaffb652585cdacbac8abcb0f55"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/deferred-work.md",
+      "blobSha1": "f407710cdad66ad8b4967d16e7ad7a7e3d7c7c91",
+      "rawSha256": "d1b67f46aee5181e39aa02f7f33efa615658410944bee3391a779ba31f59fb1b"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/requirements-traceability.md",
+      "blobSha1": "a46f08a17d600191776fc7f423281d2942b01926",
+      "rawSha256": "1c4f2e0aebd1085952bda4e992856264616c8510380dc2ebaeb8297a916cd51c"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/IngestionQualityConfiguration.java",
+      "blobSha1": "9b6af7dda32aa167042bb9f6a193e216bb879b4f",
+      "rawSha256": "fa3cd784e5036c7e33954825882122493d5eed23933ca3217a4dda95d2a302f7"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/IngestionQualityEligibilityConsumerConfiguration.java",
+      "blobSha1": "dbf2e1f9cc96c9ff5ae600c32e4313c5ed0281cf",
+      "rawSha256": "2bb9c85a61d5d52ada6d5a2f11a6d13bc058f628b061d1d70e7a8f2a28f2225a"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/IngestionQualityTaskRelayConfiguration.java",
+      "blobSha1": "73f22c78fdb9d6de05d5d329a13e6f52b5448168",
+      "rawSha256": "60e489ed78e82020d78baf372b7ed2ac160d88c3d6321e9810a36b9945ef7dbb"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/PostgreSqlDataSourceStartupGate.java",
+      "blobSha1": "7888e66f72fff44a5bdf59e50d6db6ee32bd8707",
+      "rawSha256": "33f61a328a7254016c6719c1ad6ae86403a3935bca71bb5de4baa2e5f48b344f"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/inbound/DataSourceCatalogExceptionHandler.java",
+      "blobSha1": "f202281d28cfeef4f8ee381da0c144bf44c13999",
+      "rawSha256": "25e5cbdc66bb6d9c722e47688ee395505dbf032431b06745821b4652aa78e604"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/inbound/QualityEligibilityController.java",
+      "blobSha1": "f92baabb5a36b4f37b1e1f3ccdb86577a16931aa",
+      "rawSha256": "ad74141e61dc4d79bc3c40d62f8db0b96584938916bb7f0178d6dda34274baf8"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/inbound/QualityRecoveryTaskController.java",
+      "blobSha1": "e096b4bfa281a5d563169272ec898edfc28a62ee",
+      "rawSha256": "5986fbaa28ba190853a4ab79212dcd2331131f40a75e2407136c79e9ade41c41"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/inbound/QualityTaskRelayScheduler.java",
+      "blobSha1": "4413a31d201a97ee3e42d23ccfb58530abe598a2",
+      "rawSha256": "4312c5a64ba7db52bdd5f5842960c189d7b84d80bcd0d3cbedbac31f4a4520de"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/inbound/StrictDataBatchQualityEventDecoder.java",
+      "blobSha1": "396ba8498d3c30ee8df76dcce7ce671f6895a16f",
+      "rawSha256": "f904f683c2288e53185bc51cb5dd2041d14e3da165572148bc0b9339acdf1087"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/DeferredQualityTaskTargetAdapter.java",
+      "blobSha1": "7f13e9a273d186b5ef254c40d18da71d887b1f85",
+      "rawSha256": "f28b530af5e9484ac8754857c177d733402aa1ce29dd48a7c44c8feb61d20ea1"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/FrozenRuleDependencyRegistryLoader.java",
+      "blobSha1": "f39fd376b361a97a72f3bf480e9784c4e41f6d34",
+      "rawSha256": "e35b08c1bfe74d598bd0d073cc454db5ec41c93d14b44214ce4a55906156ded0"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/HmacQualityFuseWorkItemKeyProvider.java",
+      "blobSha1": "fe89d2dee13db52bbc87438903063af9d00d3453",
+      "rawSha256": "e7b781cc29033cc80d458b246554c169bca58cbdeda7f8cdb58f63fa80366edf"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/JdbcCatalogRetentionCleanup.java",
+      "blobSha1": "d91036ab29ca212826edde3cd55c1e67c801b67f",
+      "rawSha256": "fe1e75ac98388e0beb9e1c04f08ddfe01c9720fa9b4f523822fdd7d5ee9e2490"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/JdbcQualityEligibilityEventTransactionAdapter.java",
+      "blobSha1": "2161043665e8e92cbd7a803df3730abb77e8e2a5",
+      "rawSha256": "fcf1587181c4876dedc5bcedf2287b0ac1fe9777f7eed0baca7155c5581aca60"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/JdbcQualityEligibilityQueryStore.java",
+      "blobSha1": "c34f67b5674500216ffa2956d4eddc2d877cc9ce",
+      "rawSha256": "e3666532ac095551eadfde584c108cda2129d4787341c3a939a0842bc3e8972a"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/JdbcQualityEligibilityReadAudit.java",
+      "blobSha1": "893d3cfc60a316361d8f7f960b92607e7f23041b",
+      "rawSha256": "1f87df2504142626ecceb8bc39957c111be7c8ec81e32a0d31abe1e497f1d05f"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/JdbcQualityEligibilitySnapshotLookupStore.java",
+      "blobSha1": "aad36daf975c10eec2e48253bf378a8368285283",
+      "rawSha256": "948de23e16b2365878ed2f79ba121046a82c43e15061f04535ddc5154cbecdde"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/JdbcQualityRecoveryTaskQueryStore.java",
+      "blobSha1": "d4c0539ac6a8a2d227c834d9071fe03aaa5ac7ab",
+      "rawSha256": "aa6faf665897365d0210ee40feac5d11e58de6913b23d97da60ed4143d75df53"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/JdbcQualityRecoveryTaskReadAudit.java",
+      "blobSha1": "c98da6c732c5a4091c700da087a6b57073145601",
+      "rawSha256": "03ccaad0e056ada6392db9d5de232d820c07e2ce946e883bdbcabf659ab1f1a9"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/JdbcQualityTaskRelayWork.java",
+      "blobSha1": "64ebad28c8bb85cb313d7b9cde4bf06a911ddfb8",
+      "rawSha256": "9331da0c7fae53ab2323e62a74deda7875b2062ff81b03a53434c205a5074991"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/PendingQualityPair.java",
+      "blobSha1": "fbabce7ed0bc44213ab0e6c2bb1bbf8363c750b6",
+      "rawSha256": "f6f615a36dfc42ff5adb93cb4ee8c0f671990f6d894579d23033e7ab47f79e9c"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityBackfillRequest.java",
+      "blobSha1": "ea4b7b2c71449a93409dc7bc00bbf6fce32213b4",
+      "rawSha256": "4c8ad834054a704810c866de841a05780ec6666c7cf522f425bd34c791f29962"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityCurrentState.java",
+      "blobSha1": "84e52e222099ff8dd94ae64cb300ad744a133ec6",
+      "rawSha256": "a2552286ffbe6c35a9db5da8668d23ba378812d145ad5eea2cfb6b40d0119692"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityCursor.java",
+      "blobSha1": "8bcf7a8264966dc21331c341acc3bb7e4c7cfc9c",
+      "rawSha256": "43dfd2641b02aa7323c676d715a4915088fc003e12a5861dce2669abf3812a4b"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityCursorStage.java",
+      "blobSha1": "3ddaf691b52410d5a086693bd98f4452849732bd",
+      "rawSha256": "1fa555270fa7ce5596000df8024acfacbcdeed86ef8e6c9a85aed82bf9122f11"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityEventConsumer.java",
+      "blobSha1": "df5d1c9a300dac307949ae787eff5684fda227ad",
+      "rawSha256": "3f1518b4be5151be3c769f44ee60f906cf29f0d00e152af034687ef653f53bcf"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityEventTransactionPort.java",
+      "blobSha1": "77075f432aff3226b7ff4e229f4076c9c92ce314",
+      "rawSha256": "e2a6b08766445c73805da5b4a398e86a0d883d6c91a588a5f3a16ed1bb9e41a8"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityInboxEntry.java",
+      "blobSha1": "3a80c8cb215c91a0fffdcd918157f9a000b2a604",
+      "rawSha256": "67c44c36fed19ad0c577263af4bbc3fd40ca32d4a0da9320396268a2ed599266"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityMutation.java",
+      "blobSha1": "03360208c97d83011d4303fee06f631669d7a437",
+      "rawSha256": "6abcf431808c0539becdcffd716d8614b4880dc9b49b9200ab38cf6a5b8b9d59"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityProcessingOutcome.java",
+      "blobSha1": "7a01803fa915ee0a28117dc80e5cae0ac9127ac3",
+      "rawSha256": "135a2477b955b18ac8cdda636b20690e5ef120d2f5bd3d474799693cd2281fe9"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityProcessingState.java",
+      "blobSha1": "fbb5d7b0c98f43f16ef5976a897de8a5ce5c60e7",
+      "rawSha256": "8c6ff2f3b212cdd5684df280137ee675a7273d9c63892d44dfe339978e6e126f"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityQuarantine.java",
+      "blobSha1": "f2dcdc4d33677856c7177a51a4737dcc8480ea2e",
+      "rawSha256": "87b3feeed43f5ef69e57d60d5f1bd754d29e4ab1362492ce0ee3c8226f9de750"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityQueryCriteria.java",
+      "blobSha1": "3fbc92b308c5a7e83b03f33db114de89c4a71f31",
+      "rawSha256": "bcf62794aa330fe09b38ac7268021c2cddcee874c4b37a443ebd09d6cc21ddb1"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityQueryPort.java",
+      "blobSha1": "670d3adb2a766b8ce573b7b3dc39fa6c3b24d1fe",
+      "rawSha256": "cbc48bc8b0be6e1439fd39dbd195b53b3b697c741fc175fca0cb58d279ecba46"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityQueryService.java",
+      "blobSha1": "5d62f60466560eebfb1b132e2d89bbc250c35b8b",
+      "rawSha256": "46b655597427b36884e30f8fdabaf938e8675cb7ceff7906107f410c448f3fa4"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityReadAuditPort.java",
+      "blobSha1": "1b8bd120de094a1da604bc9e7326ff2b8d1e99e0",
+      "rawSha256": "1f8421b40d5226f39f0331aa05a691652b7baffc92b37032b2f6e3702e1cb0da"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityRecoveryCommand.java",
+      "blobSha1": "1407c00761366ec0031c48d3216ea2b1d6044e51",
+      "rawSha256": "7e05cdb975ad0962217b07107486fc7bc174c59b78384bd5a2b77927d083608f"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityRecoveryCommandPort.java",
+      "blobSha1": "c4cf2f14b34c1428bae61f6d0c10bc548d653292",
+      "rawSha256": "932e4d5c19e77d41a4cabb3710faa59a28e965bce5ac5731ff4f5c46068d3148"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilitySnapshotEvidence.java",
+      "blobSha1": "c28a01d6c15494777f7c500f980a209e7576d33d",
+      "rawSha256": "cf58f6b682f05a9e7282d2bfbf8c4fad6dc95d380c4f2b8106bf204d5caa44ad"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilitySnapshotLookupPort.java",
+      "blobSha1": "f7ba5fb3e5b527509556a58b9bc56e144d64000f",
+      "rawSha256": "176e8c26f7660496522745b7e0fb7596b9bf3448a2cb29b75daf07e63886d9da"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityView.java",
+      "blobSha1": "d8b602a172657a39b8cbafc0158375506b66b672",
+      "rawSha256": "8b5e628d1e2da4bb2abad960117db35eed40bfbd7f9f9c0394be0cbeb5f0a60c"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityFuseEligibilityEvidence.java",
+      "blobSha1": "ad572244a0843698dbda6529234359b0c39ba7dc",
+      "rawSha256": "cd04792562b65b655359b08c8f1234825e4138d678573355fda2c8a9b4476de7"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityFuseEpisodeState.java",
+      "blobSha1": "cdfa37a8ea68b4d61004eb649bcfef9084b336f8",
+      "rawSha256": "f5abc478cfb43ee3f5349894e0c2be1958fc0f4b7b91896f357044abc5d8d7be"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityFuseFormulaBoundaryEvidence.java",
+      "blobSha1": "c6da08287d547f5d2630e9ea23c596e1fa130a71",
+      "rawSha256": "0f55f93fa215df81c40abccd9c0591680d12dc0747df1c2fa311c6be02c1a57e"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityFuseIdentifiers.java",
+      "blobSha1": "cfad1452851bd36c3eba12a38d061c59003d5cf6",
+      "rawSha256": "de08202f2c3c4bc76d19dd72eb81ca8a7307720bdfe8acda9005015fda32f38b"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityFuseMemberEvidence.java",
+      "blobSha1": "7ccf30f5f083242aa41ddbe328cc0a98b794eafb",
+      "rawSha256": "d97913bf735ae1ee871781de3fe72d273d13abbb0c3499dcbc68ce98cbc22ba0"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityFuseTaskPlan.java",
+      "blobSha1": "71aeafd22ab63930f12a963b1867a5e335e1680c",
+      "rawSha256": "002572f7d7611d2d2e919473ec5a485fef11ff4e13735bad627551037ed1fff4"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityFuseWorkItemIdentity.java",
+      "blobSha1": "563733fa3de077d708075090bd11a98e77406af3",
+      "rawSha256": "5fd976dbda870102fbed6cca25445428538af59040c22085dea59f75d419fd7a"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityFuseWorkItemKeyPort.java",
+      "blobSha1": "165a7152edcba62df5c5f6f81e9c9e7c72f9cf04",
+      "rawSha256": "d9e70c179acd703f2b871fa3968b29d4d4eb3e42b9c917e94b6ea0576d16343e"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityFuseWorkloadAuthorizationGuard.java",
+      "blobSha1": "b6507ba98d24c1cbb1f2f25d3bc912343f1e86f2",
+      "rawSha256": "da8c40cc250ae0235797b6ce0abb081979f8b6a9066bb9c972cce02f917dcf05"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityRecoveryTask.java",
+      "blobSha1": "d0a28c2b8fef9d06002b30e60e7d3ddfa17c709e",
+      "rawSha256": "c94779e6b85214d726f1ba83c7100964f1a7b1b34ddbf2e76f55dc0933f957b9"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityRecoveryTaskQueryCriteria.java",
+      "blobSha1": "81307f1b312a5be50ef238a33df80b4d11c04c70",
+      "rawSha256": "fab992822ec9fb3c3a06b11158e9689fc008ceebe7da50b5f0874e3ce6012901"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityRecoveryTaskQueryPort.java",
+      "blobSha1": "056becea24a74944f0ec852e84d094e3e6481df8",
+      "rawSha256": "3072a1ccba923927eb7e4769b3ae634e2dee661d8bd3ffc93b5f302617782cdf"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityRecoveryTaskQueryService.java",
+      "blobSha1": "c297e46dda9557f0ac87f276b74e0732d51af45d",
+      "rawSha256": "09dc59fa563791da5af8e0c63ba2f6c6c6e1d3fd60c9ac0daaed381947ea6e5b"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityRecoveryTaskReadAuditPort.java",
+      "blobSha1": "312f6534e87722b60df1973ae6b9c949e17a594c",
+      "rawSha256": "540c4d41117dd65df6996c7af738a9eb689ac8ae4b11d66cfcc89be613492c5a"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityRecoveryTaskView.java",
+      "blobSha1": "30e95e1bb8ca8fe85ad9d691610a9acab9c98e93",
+      "rawSha256": "0df8114046f6894039d70ba0e9b9f6cf767658e33a074ca85c7e5a34295ae7fe"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityTaskDeliveryProjection.java",
+      "blobSha1": "e3c2881d4d3ba2e838991b6b813b66171b097434",
+      "rawSha256": "24a59ffae2f223de74cea91ad0e4bc0e307e347075ddf737412b413403668d5e"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityTaskRelayClaim.java",
+      "blobSha1": "f7f2713a5f2ed4613edadb63c4ae24c1a68f0038",
+      "rawSha256": "4385741e738361c97325389715cc0a108e2d9751fe6125a57f3310ecd390bb3e"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityTaskRelayProcessor.java",
+      "blobSha1": "d544a9d3e92c0405be321a1b8f43fa0699db7f12",
+      "rawSha256": "398c33c0c5838a565391cf70780d52b7e01c2163deca989cafdce4dab837fd33"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityTaskRelayResult.java",
+      "blobSha1": "3b5d8c7922071cb36f7e55e239d5cd561db809ca",
+      "rawSha256": "cf06a9676a31fa2677aad4935937ed1bdcb4c6fbae8b24064640e60d70403b61"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityTaskRelayWorkPort.java",
+      "blobSha1": "4db39d246fe4bb05ad0839a08cf72853bb60ec46",
+      "rawSha256": "f73ca988101d8e912d748d87584bf8b3113032f9ebaf7575fc366d037d6db420"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityTaskTargetPort.java",
+      "blobSha1": "0ccec197a97ecfce9172d2553e0eadee58b483c2",
+      "rawSha256": "931cd6b7b0c58b8d323d8c8f02b821499cf0db0a639296bd47157cbe4c0d33f5"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityTaskTargetRequest.java",
+      "blobSha1": "2aa555a842ae2db8f845a0ae4b3d54251c229c61",
+      "rawSha256": "c5a705bb5806dfcd5423e87cb37b882dd160a1df924e2e75a694578fbad26286"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityTaskTargetResult.java",
+      "blobSha1": "21b54778ace9d6d0a9f38cad7dc6d3ee4ab0dc59",
+      "rawSha256": "39f2adbb279117ab4f8b66d1af713bbc2984d67eb138c654ecdad02605e837a6"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/RuleEligibilityDecision.java",
+      "blobSha1": "295bf0998a4741c7fcf1a45cab044d0883d32037",
+      "rawSha256": "abe420f002070f02d6d840dfc4fd5c2a432d9009091a39035ffe69a067b1fef4"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/UpstreamQualityEvent.java",
+      "blobSha1": "96ec139982c76af2f5e0538f0a7259d7de3fd7a8",
+      "rawSha256": "cc1d5a4b5f505bfb65bc07b1bac2e3b41f6099c8fd48be84644c62308b4eb56c"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/application/UpstreamQualityEventKind.java",
+      "blobSha1": "4decd4b02b217650ad134b39e8dd62a19e339d8c",
+      "rawSha256": "ff0e3b25db4b8f041b006ffb23b82071a70753e43ac5b6d5a86832af01d315b0"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/DependencyQualityState.java",
+      "blobSha1": "97d8dc45985dc87b21e5d63baf6ef8f5df19ba0c",
+      "rawSha256": "4f7d060693140e0dda748b352d7632ccd4d34c04d019b24f44021819278eeaec"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/IngestionQualityErrorCode.java",
+      "blobSha1": "4c0b84cbab6bbe627d7bd68248c4ed14c00eb921",
+      "rawSha256": "b0b2c16413f405825aacf80d3ab9758aa08570d156219f7ab5bef9838fad7f59"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityEligibility.java",
+      "blobSha1": "cfb529166a0f6fdaf3eadb8340e0af4c6f68a2e2",
+      "rawSha256": "ac65592c6be767b5ea649d79adaffc72ef3d6cd216749130e4334cd9e8ce7f84"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityEligibilityDecision.java",
+      "blobSha1": "b66c569e52b97ee199d8c42d351627d47d047d1c",
+      "rawSha256": "a7dced417d3246b9264ec2cb0cb85d078505553f7cbf046fd8572c4729855cc6"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityEligibilityEvaluator.java",
+      "blobSha1": "6738dc0f6b9a233dca776bfcfcf95527920282d0",
+      "rawSha256": "b4d235b606f44969b384cb9f140ad0fcf3180b08b1a54ff14cf1290e60ccb259"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityEligibilityMemberEvidence.java",
+      "blobSha1": "dbee86a67498ffbed09a7512eebed15c567cac62",
+      "rawSha256": "79833923f1edb8e0004ace6bd2b5c3f99d2402a90b3344793c0bc9b7aaadf3c4"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityEligibilityReason.java",
+      "blobSha1": "4dccc1c8328c8e0c6a1b9e5b0db9744a7229d247",
+      "rawSha256": "dfd9195ed5cbfdf3dbca4096fcc9edf4ec67fa7eef59be1f57ce0133ff8ff6f2"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityEligibilityStatus.java",
+      "blobSha1": "8a437c7e3cf7fc044ab292775bcdf9710ac1ce6b",
+      "rawSha256": "bef7cecc9676e9f03eb973254d9b62df4ca9d3be5f6101d61ba649c457fb4514"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityFuseEpisodeAction.java",
+      "blobSha1": "aff15d03fe0137021cdfafcdb951fc6c1980d271",
+      "rawSha256": "e5d687eeefb3e6df4762d24192d508409e38745c072d0a927cc4105c0588cb37"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityFuseEvaluationProvenance.java",
+      "blobSha1": "a3b9e526d5c6adfc253d4af416a546798889e517",
+      "rawSha256": "d6039542db7dd46e475c002c5bb438a1f6d9625f1b490050fa9c9f7abd6a3e0e"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityFuseTaskAction.java",
+      "blobSha1": "7ab053aea678e3d3a576dd3ac9442d83f7b3031c",
+      "rawSha256": "ab3c594d9b4f23c7055fec664ede9ff93ed31cbbc170c4ade23feafc1d125a14"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityFuseTransition.java",
+      "blobSha1": "d8b4e91028c7becd0f28d2ffdfb36ab21928e22b",
+      "rawSha256": "2261bb8b17b5114c34c73208f49354c2616d6cad302b9abf2550b816b72ab44c"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityFuseTransitionPolicy.java",
+      "blobSha1": "09950306d606b2d907ee0f5de815104e5a63ad9f",
+      "rawSha256": "8dcdaa5757ea8fe0e24f0943934ba69ca4d40f80f6704f7f91b939fc0bd5a01b"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/RuleDependencyDefinition.java",
+      "blobSha1": "51defc1fd9efe85a4e60be4b46fa639e118d3ffa",
+      "rawSha256": "05345a3c9e07eb3add963539326b6e71d5b16a74620cab7cdea1fc29d0cbb362"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/RuleDependencyMember.java",
+      "blobSha1": "6770f97c9206a34db933c9d775e5285940d5d685",
+      "rawSha256": "6b8be92a65b236bf4f9c0239f838bd270d094bb2f0d608581ba9e2a9e560c311"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/RuleDependencyRegistry.java",
+      "blobSha1": "cd921a15eabf501a9c3d72edf11c8c5921a9ec9d",
+      "rawSha256": "454dd4e339e324cc0963286696715b66d6fd13bf610243b89ab5bcbe39d916db"
+    },
+    {
+      "path": "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/domain/RuleVersionIdentity.java",
+      "blobSha1": "9d8d522819109b0cf190063b2d2d36894dd299e3",
+      "rawSha256": "6c2f902e72247f038516ca97fa40142c235b84089af63d88cff254b9373d3145"
+    },
+    {
+      "path": "backend/src/main/resources/db/migration/README.md",
+      "blobSha1": "d0cad5fdb2ad92309549fa9bbaf2fd3ca46c0d9b",
+      "rawSha256": "60d824bb54a0f6a16e656a74d82668cbe345aa704de1d39641d354be37f71f69"
+    },
+    {
+      "path": "backend/src/main/resources/db/migration/ingestion-quality/README.md",
+      "blobSha1": "a6f4ffb7a50efbff839528ac2411b5b6e7ec9a74",
+      "rawSha256": "ce5bf50642a5ab1b8f8032808748036b952d0cdd5485fecc636a00872e6670b3"
+    },
+    {
+      "path": "backend/src/main/resources/db/migration/ingestion-quality/V000015__ingestion-quality__quality_eligibility_v1.sql",
+      "blobSha1": "c35c5e72d10719e0b2255b21429ec1b3ad8a7313",
+      "rawSha256": "21a66478ce29bf71838f4375c7162f5bbd390d5db60661981c5acfa03c419edb"
+    },
+    {
+      "path": "backend/src/main/resources/db/migration/ingestion-quality/V000016__ingestion-quality__quality_fuse_task_v1.sql",
+      "blobSha1": "7515fc0c0ce77453cc9b8655dc70667b387290e8",
+      "rawSha256": "a720f004d30962b4b7bff2e8e734e1ee211f06866e8c3e02ec5c5d36b6eb791c"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/architecture/MigrationRules.java",
+      "blobSha1": "aef5b2afa7d0629691e86e2b8dfca3c80ff935c2",
+      "rawSha256": "ba29fab6fb8e4d9f69876237e47f86638f0d46b76c24a8482e85610ca2a23ae8"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/DataSourceCatalogPostgreSqlIT.java",
+      "blobSha1": "d42a4e9a5a97b55ec07514de2913e583e6d6d6bc",
+      "rawSha256": "9f4dc653852df700d9553f3bf167312ca50224ae07be82d7dcf2844867b8d8ea"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/IngestionQualityAuditRelaySpringAssemblyTest.java",
+      "blobSha1": "d3389a69ad66e3671472e34b0949382aeab3bc4a",
+      "rawSha256": "48fc3fedcb5b082d4eaff6a79b6b84251bb817b985ec65f423bf93f73f2bf04a"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/IngestionQualityWorkloadActualLoginPostgreSqlIT.java",
+      "blobSha1": "98f5d9b9440bea761c35d193dd2937f06f76a85b",
+      "rawSha256": "7b0ee2f256bd36af072762f77f33cb0f44602da81234bd4d497aa2bca4f00440"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/PostgreSqlDataSourceStartupGateTest.java",
+      "blobSha1": "9ad15c24445d23587828123db1d9a8c434ce7254",
+      "rawSha256": "dc6303919b0cd60b44965cd6075fc587ab6250d6d6c95f554a472d0934bd9d66"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/QualityEligibilityPersistencePostgreSqlIT.java",
+      "blobSha1": "a67d1627cedb5ee57adf58f3b3908c2739e2118e",
+      "rawSha256": "694d13aa1ec4e1673ce3ecdd531dc4f72763d5594758b08b3fe3d1d9be94beae"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/SubjectWindowRecomputePostgreSqlIT.java",
+      "blobSha1": "b64ccf8b72fb4df0065693b303641fa5171e1f00",
+      "rawSha256": "6ac2a3b64a2d68de0bd97895696c8d8b8b739507a790a5fcb851455c16463b95"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/inbound/DataSourceCatalogExceptionHandlerTest.java",
+      "blobSha1": "37f54aa0f96829791c1cb6313a5613d977d7fd05",
+      "rawSha256": "87dfaf0d91fc4bdb52c70542bcdcd2440509a1f33448e7d3ae6ad7a8bf5b7722"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/inbound/QualityEligibilityControllerTest.java",
+      "blobSha1": "6a4a9cc0b2c3ebb2078695e8862e2aed66b82830",
+      "rawSha256": "284ea183fc53a004dd5e33eead6bce67d88cf8e5cafa39c011e8fb3080a270d1"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/inbound/QualityRecoveryTaskControllerTest.java",
+      "blobSha1": "4a29b69b11f16b3c90654b50d961f30d44e89bf7",
+      "rawSha256": "af11912fe5161b1988d466efdae2b4705bc2c3408859bfa022e4b2386af9756a"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/inbound/StrictDataBatchQualityEventDecoderTest.java",
+      "blobSha1": "e69f8c20ede40a8457477d88256dc5f2f1e15c29",
+      "rawSha256": "7191bcc5dcef66494e2cb83a36228f2c770cb935eebf138f60424ee233d6c8a8"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/FrozenRuleDependencyRegistryLoaderTest.java",
+      "blobSha1": "300b1b7675c2a4c142b0338ddf9b0535303d3b81",
+      "rawSha256": "62e221f989eac207287d2ead7d9b23034e4b584dd751d350cdd0170ed256e982"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/HmacQualityFuseWorkItemKeyProviderTest.java",
+      "blobSha1": "e321d99389be02d6af153b7c172c168975a1eb4b",
+      "rawSha256": "b38e301819ace6a5439b98a03f91dcf9437a571a70912b3f65206f05e6b8d4e9"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/JdbcCatalogRetentionCleanupTest.java",
+      "blobSha1": "c4b4d9da49b91a28aa57185aaee2fbb615557e3a",
+      "rawSha256": "441ce4c58b18c516f8893338cd812326b19f79a0cb67edd1d018f89f878fe42c"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/Story24QualityEligibilityJdbcBoundaryContractTest.java",
+      "blobSha1": "a5f1c5f0d63ed629cce6b8af7a2a5902e665e3b1",
+      "rawSha256": "0dd362038af9eefaee37213372d8051250c09c6b9b8c0007716704e94cc41daa"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/Story25QualityRecoveryTaskJdbcBoundaryContractTest.java",
+      "blobSha1": "7267b529eaa4c9ad4fcde1872065d88112c48628",
+      "rawSha256": "a3eec40fc73c0dcbc144b07ee15ff81498969c017d2543984aa709a84ee4d373"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityEventConsumerTest.java",
+      "blobSha1": "696e013c10d2c4dac0401027cd4f0534a96aa79a",
+      "rawSha256": "f88d30e1e82002baa7ffd903ac690be29bcec326ef07a7e77da53948e0d262bf"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityQueryServiceTest.java",
+      "blobSha1": "fef3ce6a53a4606da3597382556a9925540f8f67",
+      "rawSha256": "b2174d7ac7ce769cc7bd1a5284cfbd1bc6e085d32106581b1a33a6edc5968438"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityEligibilityTestRegistry.java",
+      "blobSha1": "fd027a233bab87e46b979dbebdf8c31cb35c2d68",
+      "rawSha256": "43fa1a4b50753697c58dfafcc2bd4e7700a3e7e2012fa8f65e020ad7cb845c41"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityFuseIdentifiersTest.java",
+      "blobSha1": "043acd8d4457133f1c8988c618041870f5c87b80",
+      "rawSha256": "3b33d3ca0327de8b189ef6c365c355ae3fff177b5a76f15a0cd6c1eb9e7cd79d"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityFuseWorkloadAuthorizationGuardTest.java",
+      "blobSha1": "ce86a6cd04ec254cee6430950cb3581b36403ee4",
+      "rawSha256": "6068ed7992deccf28770abdbb81b8f265875ab89ae1f59181d4ee1b478905cda"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityRecoveryTaskQueryServiceTest.java",
+      "blobSha1": "7d8750bdab64dfcd2497d05d9b49315bb5738d5b",
+      "rawSha256": "7b1f75d029c3259c1870b9b6d45784ec3baf33321905ddc1a1597b01be9f3b9b"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/application/QualityTaskRelayProcessorTest.java",
+      "blobSha1": "e107e6b9a4313b3c7e926eb66ac59bddcc3c59a0",
+      "rawSha256": "ac9911805fa8da77eedf61ee4920eee723cd48b088d18cfacd00bec32ed120f2"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityEligibilityEvaluatorTest.java",
+      "blobSha1": "0ecc143e4fb18e8c8e458ed301246542e04e9ab1",
+      "rawSha256": "5d96a5a63e8f84f5ccbd8d7aa6be37001f12b766f4adf47e935302e1b6c5d9a9"
+    },
+    {
+      "path": "backend/src/test/java/cn/edu/suda/scholarsense/ingestionquality/domain/QualityFuseTransitionPolicyTest.java",
+      "blobSha1": "4cedd1e0adc939e6572c6640582065d715e5d80b",
+      "rawSha256": "d5752c20c20071275e566e8c95640cdd4991a493bb48f75e6982ddcda34ea827"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/invalid/quality-eligibility-negative-fixtures-1.0.0.json",
+      "blobSha1": "7d46d628b045450b275271c9355406e2d2221acb",
+      "rawSha256": "42c3cc07b8e93b44b5b7cd684463f9677ca86fb04bc0172c13ae29f8e4d10da2"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/ordering/quality-eligibility-ordering-1.0.0.json",
+      "blobSha1": "f55ed537ff9062d7cb3a96bf8393739f6861597f",
+      "rawSha256": "92486c52389f95d9ea45feb00d4f2d3564735b3a8abc6c3e80a4e10c91360ad4"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/valid/quality-eligibility-changed-v1.json",
+      "blobSha1": "c3a4b575a205a658792506020f6edfb99d7fc6bb",
+      "rawSha256": "775bcd9aee54019ad3ffbdb0501442679325d5d1ccfbe2eab690b634ec8682a1"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/fixtures/valid/quality-recovery-task-created-v1.json",
+      "blobSha1": "744a3d6694204cf797feb763615f433f12bd27f6",
+      "rawSha256": "b9a934dc570906b56811eabba9ec37bfeed01e8ebd988aaa7b8063ac93197207"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/quality-eligibility-consumer-handoff-1.0.0.json",
+      "blobSha1": "bc19750dd0ee5b063b34a03dbe706e3c486e630f",
+      "rawSha256": "42b9ec6f6b49afb79c8d57f960e9219de2b6aa56f203a684a210488ace5267d9"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/quality-eligibility-event.schema.json",
+      "blobSha1": "365af25f41da42ae973b929850dbafe15a196149",
+      "rawSha256": "e327c3087e99f5ec94a7e4fd81876957cbdec0892e84aee50aeafb51e0844ec5"
+    },
+    {
+      "path": "contracts/events/ingestion-quality/quality-fuse-task-event.schema.json",
+      "blobSha1": "407bde3ad136c817b339ef1abaa428b1d4e9c646",
+      "rawSha256": "ebff18051482a69e1462f09d83219df38373b796eae628db475544b85228e820"
+    },
+    {
+      "path": "contracts/ingestion-quality/quality-fuse/fixtures/invalid/quality-fuse-negative-fixtures-1.0.0.json",
+      "blobSha1": "52c50bc4154898d61ca8b8751a286b0698a7bf1d",
+      "rawSha256": "223b39af4aa7587c7df6aa7620b7f608b14a32aadb8c6628f9cd83a50ec69c6f"
+    },
+    {
+      "path": "contracts/ingestion-quality/quality-fuse/fixtures/valid/quality-fuse-state-vectors-1.0.0.json",
+      "blobSha1": "ba6372abc41828b9765f2c521df2a3c645ddc318",
+      "rawSha256": "c35a63dc4117b8b32919fc5424ebcca7ee8a5857a1cee4aebce010f64dfc4700"
+    },
+    {
+      "path": "contracts/ingestion-quality/quality-fuse/quality-fuse-contract-lock-1.0.0.json",
+      "blobSha1": "6acb85abb75eb387540bab573efa4113fa672f5e",
+      "rawSha256": "9390e30b8a07960ab1d1ac70c9a9f363aeddbb9e35876b0dc8f944e553a87e0b"
+    },
+    {
+      "path": "contracts/ingestion-quality/quality-fuse/quality-fuse-derivation-matrix-1.0.0.json",
+      "blobSha1": "82f9479fc04d421e602a257c5406175cef72d899",
+      "rawSha256": "75d7a191c3bf4cffd1e23b92a822420da7ecfa1864227817ae4432a0204e953f"
+    },
+    {
+      "path": "contracts/ingestion-quality/quality-fuse/quality-fuse-policy-1.0.0.json",
+      "blobSha1": "6a87eae98197ddacc3de660ff9a5b0733b94760f",
+      "rawSha256": "9f179c2e287af90420cf64de1d5af9bb4149af9fa3807c5d727e32c48ca516b2"
+    },
+    {
+      "path": "contracts/ingestion-quality/quality-fuse/quality-fuse-policy.schema.json",
+      "blobSha1": "57efd78d2a3669178f98347c5fcf6075c8015d9e",
+      "rawSha256": "a3302b996f5dda407c7e5c4e4c347db26077402671fe598b11417ee73a31a35d"
+    },
+    {
+      "path": "contracts/ingestion-quality/quality-fuse/quality-fuse-retention-1.0.0.json",
+      "blobSha1": "b860b3eaa272b555c9cc4438971710480f2a47d7",
+      "rawSha256": "533c68c8b18637861f71bb984d000542875f854270d8c86724d1fc907efb1a18"
+    },
+    {
+      "path": "contracts/ingestion-quality/quality-fuse/quality-recovery-task-projection-1.0.0.json",
+      "blobSha1": "29902ed989ed6046b701c7d1e3e317425d880501",
+      "rawSha256": "fd19af784ad78155a2fbdb187d79aa8963e052105f9ce4a95386d9541671eb98"
+    },
+    {
+      "path": "contracts/ingestion-quality/quality-fuse/recovery-task-policy-1.0.0.json",
+      "blobSha1": "ec5ae9e28f82d2b4c3e14bedddddead2b0b75642",
+      "rawSha256": "ffc0c56f76d3c452c0db6168912d1446e97bd18f08c3a51ac84ae1a9cf556cfa"
+    },
+    {
+      "path": "contracts/ingestion-quality/quality-fuse/recovery-task.schema.json",
+      "blobSha1": "72b7a893eda7ff1928a9b3a1bdc70782bfd671fd",
+      "rawSha256": "757a22a489812e745274147a6033caf0d823400c60e4076186fe16ac3df18138"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/dependency-eligibility-projection-1.0.0.json",
+      "blobSha1": "36d83e35e82186607d19062fc3192ce37eba99c1",
+      "rawSha256": "c339072dd9cf9999c62e81944a500167d03b8fa48c3ffa55a64325c6b9b2a1d0"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/derivation-matrix-1.0.0.json",
+      "blobSha1": "b0d606634f07c8c1ec13065fcdacfc27095f0d73",
+      "rawSha256": "592d7505c74ac60f4c8b242a6353a617d3cca92e0920a17779a87d67e9a5041a"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/fixtures/invalid/negative-fixtures-1.0.0.json",
+      "blobSha1": "bbcf4d510d03dd5d30d1e425ccf01c45caa20521",
+      "rawSha256": "10bc709d961b125aaf73249689825d159f186bdab9a21cb7575f86bbc88e1eba"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/fixtures/valid/synthetic-composition-vectors-1.0.0.json",
+      "blobSha1": "6d9dc8ecad9a173d9d010f8642e5e95f9ddac983",
+      "rawSha256": "8753d90bf516c4ecb2186a1e5b4d3efeb4be8ec241ec4b0bbab95e028dfa4a2f"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/ordering-backfill-1.0.0.json",
+      "blobSha1": "d13739f8832dfc958c31bf5cab201f8cb7dcba00",
+      "rawSha256": "c2e3b27d9ceb31bdce8d49108597da59de01343beaba8ccc26311d1389cc028a"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/quality-eligibility-contract-lock-1.0.0.json",
+      "blobSha1": "d0ebc4cfabdadd4541c20970a4fa383a43485b03",
+      "rawSha256": "f73831e00d71dc5d79c55aa874d9cfc1b3a0df5d8d4d1c1f0f3588256d1ccbd2"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/quality-eligibility-policy-1.0.0.json",
+      "blobSha1": "8c80f1cd6f0995135c16fe2a05839da19a16bdf4",
+      "rawSha256": "71b3723575245c14331304bba175213de0aca89f8942ae5c0514cebe3f6ff32b"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/quality-eligibility-policy.schema.json",
+      "blobSha1": "a96e1e9f1a8f0db7571052d834470719f8e2f521",
+      "rawSha256": "37cb7bc4b75ba55a4eb8d0a0ca046ec7f707c18611707fa1f76a25332938b226"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/quality-eligibility-recovery-command-1.0.0.json",
+      "blobSha1": "2a32d7334f0690dbcd70b54a78ae08393d726361",
+      "rawSha256": "698e09d14d233e6ed57485604783f98cd8e202eb428d48ef11cf946673ba3c55"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/quality-eligibility-retention-1.0.0.json",
+      "blobSha1": "02f8a95c6e5b09abb7ac992d7f81be19e979102e",
+      "rawSha256": "5a5a5931fef189534cc8a25603f4525dc4e27292d93888d6b5d5c92c1d81dda1"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/quality-eligibility.schema.json",
+      "blobSha1": "edc5f5567f79a80797b11f84a2f832efe2a066ec",
+      "rawSha256": "e0434fae0279576f53c1580629d489bb3e5babed33b0f161d587891579bdfb66"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/rule-dependency-registry-1.0.0.json",
+      "blobSha1": "3c4945c16bab1bfb061901d9b661884dcb4b7e28",
+      "rawSha256": "0c676d796dd65c1842ed041544c5f731d70f045708984415bd74bfd5ace25e61"
+    },
+    {
+      "path": "contracts/ingestion-quality/rule-dependency/rule-dependency-registry.schema.json",
+      "blobSha1": "567c444982ddf059226a00eaef89e77609fd2717",
+      "rawSha256": "5bfc1af97b40271485a45d348c312d593f99f1aae427d03f980f0cb7ee009b13"
+    },
+    {
+      "path": "contracts/openapi/quality-eligibilities.openapi.json",
+      "blobSha1": "32fa1d83ae64a3a270edb0ad2edf037fec64b8da",
+      "rawSha256": "82762fd9d773d9d1248f392365bf63af10297c2a32496c9b02792786d685cd8a"
+    },
+    {
+      "path": "contracts/openapi/quality-recovery-tasks.openapi.json",
+      "blobSha1": "40901c8326cf7a8c363544582f34954971f79d3c",
+      "rawSha256": "586fec4e3357959b3c2ac136752d29525468e2dc956394181e66f9d091b0ed6e"
+    },
+    {
+      "path": "contracts/public-integration/adapter-registry-1.1.0.json",
+      "blobSha1": "ca8fc27371b9a3e6114ed8405c374b70797fb8ae",
+      "rawSha256": "4d11817d6470836e36551d6b01b493833ae60aaaf4bc77f61e97b0b8ce2b4423"
+    },
+    {
+      "path": "contracts/public-integration/pic-1.1.0.json",
+      "blobSha1": "5fd978b86158a585cc4cbb886d83c322024b21a0",
+      "rawSha256": "82e070e3b355053f3750db3df927ba56863b2efc6f672b685d7373df064a8bc3"
+    },
+    {
+      "path": "contracts/release/evidence-index-6.schema.json",
+      "blobSha1": "63b24d74be8c96976ad5bbf192e031a31187f5d8",
+      "rawSha256": "ec808e03af39f80d17f2c458022b0c3d94a11e48d1051bb2afb66aefdff825fc"
+    },
+    {
+      "path": "contracts/release/evidence-index-7.schema.json",
+      "blobSha1": "95656a9d004d8bb4260aa2cac33ee44c4b08552d",
+      "rawSha256": "d784a37cba2f984944bdc8dc34e027922c5ae263f5bed1d2284baf64833894b1"
+    },
+    {
+      "path": "contracts/release/release-manifest-6.schema.json",
+      "blobSha1": "c4bc379e3df14900f937afb394e31e77a8a87ca6",
+      "rawSha256": "d49391835cb8e56c76a3d769f164a86ff38e1a95e2af826dd2e5ae42ccc855e5"
+    },
+    {
+      "path": "contracts/release/release-manifest-7.schema.json",
+      "blobSha1": "8326e751129692c480810cf5ca1dc68dddfb1835",
+      "rawSha256": "d4b5dd27df962500632bf1dc8e07414957a3d130ca1acecf134e016bd5f160ea"
+    },
+    {
+      "path": "deploy/base/README.md",
+      "blobSha1": "58a6731b67d3800cdbf41a083ee35cc34b03dbab",
+      "rawSha256": "fb90eaed5e2de0dd1168f8f97d7d96276bb7552dd033dd39663adecd9a042512"
+    },
+    {
+      "path": "deploy/base/ingestion-quality-roles-3.0.0.json",
+      "blobSha1": "2e619fe30429fac86f63e6737dc506d09deed63d",
+      "rawSha256": "01e670bbd03c6507d2344f705040fbff0a2fad4b5d784789fdadc00e78906cf8"
+    },
+    {
+      "path": "deploy/base/ingestion-quality-roles-4.0.0.json",
+      "blobSha1": "6067e657541e9ac2b3b17437478756cc7b36c216",
+      "rawSha256": "1a7e293255924aac4424a1971dbfe31568816714a76f61300b7f0df533862bcb"
+    },
+    {
+      "path": "deploy/base/ingestion-quality-runtime-3.0.0.json",
+      "blobSha1": "fd99d4aef5248e127e7f10500b6fbe3182168ff1",
+      "rawSha256": "cdfa4a0ff993ecb8c8a6380fcbe319a21b2b960b74711ef3d57bb41a0e8263a5"
+    },
+    {
+      "path": "deploy/base/ingestion-quality-runtime-4.0.0.json",
+      "blobSha1": "dac72e5a7bf7a9be3f33b6d4759994c426da216c",
+      "rawSha256": "a4a842f1befedd00ab3f97fa432267cb6141e18a3ccbcc6fb81131695acc4e1f"
+    },
+    {
+      "path": "frontend/src/app/theme/styles.css",
+      "blobSha1": "a17d47c39b0ab518d8d1465c975e1ef5f38a2bd6",
+      "rawSha256": "ea3cfb32fc459bf9d4abcf870bfb95f70a17e67d3ed428a2f03c4745addc32fd"
+    },
+    {
+      "path": "frontend/src/domains/ingestion-quality/index.ts",
+      "blobSha1": "6e4c574ec84102f4c943a1ece55c0c690db87f7d",
+      "rawSha256": "b69199653c9901804435bf13be20ad4a3fbc9ada94093da9fb8965b60cde72cc"
+    },
+    {
+      "path": "frontend/src/domains/ingestion-quality/internal/QualitySnapshotsView.vue",
+      "blobSha1": "38223efab8875de15e9e039f72f9761111ea6f1b",
+      "rawSha256": "b68b1af225a5481b2ef3d9e397800b04f4e0ffa697b62ddef3c221d5c08a9153"
+    },
+    {
+      "path": "frontend/src/domains/ingestion-quality/internal/quality-recovery-tasks.ts",
+      "blobSha1": "9cbb1e230f3e8659b81ecde76dab9821029894c7",
+      "rawSha256": "e3f9beaf5eda30880b20cf392a2e5f50db90d2c89991c16f7b85da09bcb5c9ac"
+    },
+    {
+      "path": "frontend/src/domains/ingestion-quality/internal/rule-quality-eligibilities.ts",
+      "blobSha1": "066511e3bce2e669f81a744e2def851fe8ab71b3",
+      "rawSha256": "db09f546d29fe3cc24e6679493728c5dcf505820daac9ebc16cd1ad9a14acc6c"
+    },
+    {
+      "path": "frontend/tests/baseline/quality-snapshots.spec.ts",
+      "blobSha1": "cdd9c97bdfc18d0dc676e38c09ed438c0d9b80c3",
+      "rawSha256": "1c9936b6507ec14db9760e7eaf2b093b2a52b62345012e27cf5f15022306a1e0"
+    },
+    {
+      "path": "frontend/tests/unit/quality-eligibilities.test.ts",
+      "blobSha1": "b0226ad464115fbda248716b773fa21fcea6ba19",
+      "rawSha256": "0f6e735f82a0926f86a24e7404aa68e9d09a1551cded0a143df10f59fbfcac0b"
+    },
+    {
+      "path": "frontend/tests/unit/quality-recovery-tasks.test.ts",
+      "blobSha1": "a7923af52c2b313e491019d845ef2d85fc373180",
+      "rawSha256": "6805753c7d9c5978efa26baa910f8e4b86d7388d1a58506589f637477eda86da"
+    },
+    {
+      "path": "release/README.md",
+      "blobSha1": "bb77ce72738f3a702391b8cc13cb668dc3331f05",
+      "rawSha256": "d39c14b89b71677dad45519b04d746f5c456ef4d2bf9ea9fe0d5db1dad96e67f"
+    },
+    {
+      "path": "release/assembly.py",
+      "blobSha1": "9596081af3fdd62bc40abeee02de607b96fdc919",
+      "rawSha256": "7bbb2929148d2766dd743c134f4595122592f0d7d725263502ede250f74e1ea1"
+    },
+    {
+      "path": "release/generate_manifests.py",
+      "blobSha1": "02b6f7d57566164a75052a3789c6e720771ed493",
+      "rawSha256": "67238d4ecd99c03281db97cbb4d94a64421e02da29828a0c8c2d9330f89be2d6"
+    },
+    {
+      "path": "release/manifests.py",
+      "blobSha1": "a46614c3d7410b101c79258127d8132d058b2b6d",
+      "rawSha256": "fef503b343294e2a6659594e8a6c89dabd8017b3ead9a37e69a30fbe8b92f9b7"
+    },
+    {
+      "path": "release/verifier.py",
+      "blobSha1": "e314b438465cbd260de2e9786bdb0b9269513112",
+      "rawSha256": "8939f8f63e18a276d570624a6c3817d005f8fb7769a8417cb2d3d35ffe53d76f"
+    },
+    {
+      "path": "scripts/assemble-release-manifest-input.py",
+      "blobSha1": "632b7168f0ed07fb6534218836dd0f97a0971cde",
+      "rawSha256": "e3c624b6f56ce54bfdac8fcab73ad65bfb9dc7e97b4f794ee27a5588fe652885"
+    },
+    {
+      "path": "scripts/check_ingestion_quality_eligibility_contracts.py",
+      "blobSha1": "9521c568dd1a3bfbc1fa720b2485635de00fbdf6",
+      "rawSha256": "65b548eda746255186434db725c332689684a0010e10d7b9e7cfb8820271bfa1"
+    },
+    {
+      "path": "scripts/check_ingestion_quality_eligibility_persistence.py",
+      "blobSha1": "300c30cc5751748f19e55f15a2b5be3da23368c2",
+      "rawSha256": "57d5a43bfeb88a271b56776c0f7253ce78b8cee20280584c98d2bb4a5ee6daf9"
+    },
+    {
+      "path": "scripts/check_ingestion_quality_fuse_contracts.py",
+      "blobSha1": "29d83e63ce0469f9f5ce013b31771bc29fdcdc61",
+      "rawSha256": "848ce40f8ed3708813a00302bf2b9ef2a92b0a7217460198647a4fa9f482eaae"
+    },
+    {
+      "path": "scripts/check_ingestion_quality_fuse_persistence.py",
+      "blobSha1": "4c21c4ca5058d7d00c2c9a4d9501c589187838e8",
+      "rawSha256": "304e8f0fa5b7b69598ebc0494e70093264a635c51db773c16c19101ea34a1e75"
+    },
+    {
+      "path": "scripts/check_release_manifests.py",
+      "blobSha1": "abf5d73c6fa10dc5a79744b8e78ae5bda4a9da15",
+      "rawSha256": "b27ceee47ad0e04524f6c16a3193742cfd8ff8ebed3c40c5cf5f7df3bf88009c"
+    },
+    {
+      "path": "scripts/run_audit_postgresql_tests.sh",
+      "blobSha1": "82df2f676664cf40156cc35756acc05f2d98e942",
+      "rawSha256": "0d0886ee8d7b76a6d16f43eb8bddb52aaf8020934db63f90c6e2a46417ce3dd4"
+    },
+    {
+      "path": "scripts/tests/test_ingestion_quality_eligibility_contracts.py",
+      "blobSha1": "cc37958ae14f9e5402f2711750391f2a22eac045",
+      "rawSha256": "83bd1822b96939b21104bdebeb6e8aac4419f1f96cbff6d776a5d3c624c9a907"
+    },
+    {
+      "path": "scripts/tests/test_ingestion_quality_eligibility_persistence.py",
+      "blobSha1": "85221d88a99bd35be42db76fe0e6f78af675cd99",
+      "rawSha256": "1e9873693b063b8f60529f6b48e004bb9a8019b8d9ed108d5b1c231f3992b23f"
+    },
+    {
+      "path": "scripts/tests/test_ingestion_quality_fuse_contracts.py",
+      "blobSha1": "72844fec736f44116ff0c1a1af3a42212d39c90c",
+      "rawSha256": "863209d97a922b666ddb4fc120e9988233a61f8ec3df7ba4e811ed122526bf45"
+    },
+    {
+      "path": "scripts/tests/test_ingestion_quality_fuse_persistence.py",
+      "blobSha1": "eda7c4314d05879690f50983c3020ec154367486",
+      "rawSha256": "a36c453e2d8f27158d5b90069907fd1fec010235b8d6e2db7e6f4652bd6fe796"
+    },
+    {
+      "path": "scripts/tests/test_quality_eligibility_api_contract.py",
+      "blobSha1": "ba7ba5f94b352de6ae36727731b2ae3f8b158016",
+      "rawSha256": "fa1af50e7e324137ae3f3ecf6837547cb0d9b95c572e9dfe5e878561366833b3"
+    },
+    {
+      "path": "scripts/tests/test_release_v6.py",
+      "blobSha1": "823aad055e3463d258f5addbaa3bbebec9e4cf80",
+      "rawSha256": "f5c21aa55c13ae73692f0e769f2270bc0b311ab42ff16a463411e263603ce221"
+    },
+    {
+      "path": "scripts/tests/test_release_v7.py",
+      "blobSha1": "4735a3ba9bffcd81989998f9b5e7821004f3c490",
+      "rawSha256": "b57f77e2317a9b561bdefc900bfdce2b17bf09a2b8690a9c3c2827b5db1ae262"
+    },
+    {
+      "path": "scripts/tests/test_release_workflows.py",
+      "blobSha1": "0ab9d35f35851b40bb111dfa47330835b6e4373e",
+      "rawSha256": "29cf602d8964db854a5aaddda0313e0f23090ec83d7d4fb3c5f1970ac80e0d15"
+    },
+    {
+      "path": "scripts/verify-release.sh",
+      "blobSha1": "4289dd26c91bf27d31a5d362e61300ad29add040",
+      "rawSha256": "995dcbd960f3dd21ad06940e38dff60eae0c30e8e06493362bd16b6aba8a2840"
+    }
+  ]
+}

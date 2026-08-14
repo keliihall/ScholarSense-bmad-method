@@ -33,7 +33,26 @@ class CurrentAuthorizedShellServiceTest {
             assertEquals("not-installed", projection.defaultSurface().providerState());
             assertEquals(List.of(), projection.menuItems());
             assertEquals(List.of(), projection.entryCapabilities());
+            assertEquals(List.of(), projection.actionCapabilities());
         });
+    }
+
+    @Test
+    void actionCapabilityIsR6OnlyAndNeverCreatesAMenuRoute() {
+        var projection = service.project(
+                Set.of(RolePackage.R6), List.of(),
+                List.of(new InstalledShellActionCapability(
+                        "quality-fuse.recover", ShellCapabilityState.AVAILABLE,
+                        Set.of(RolePackage.R6))), NOW);
+
+        assertEquals(List.of(), projection.menuItems());
+        assertEquals("quality-fuse.recover",
+                projection.actionCapabilities().getFirst().actionType());
+        assertEquals("available", projection.actionCapabilities().getFirst().state());
+        assertEquals(List.of(), service.project(Set.of(RolePackage.R7), List.of(),
+                List.of(new InstalledShellActionCapability(
+                        "quality-fuse.recover", ShellCapabilityState.AVAILABLE,
+                        Set.of(RolePackage.R6))), NOW).actionCapabilities());
     }
 
     @Test

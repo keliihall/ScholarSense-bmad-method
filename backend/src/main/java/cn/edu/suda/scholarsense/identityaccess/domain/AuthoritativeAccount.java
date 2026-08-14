@@ -12,6 +12,8 @@ public record AuthoritativeAccount(
         String externalRefDigest,
         String subjectBindingToken,
         List<String> subjectBindingReadTokens,
+        String naturalPersonPrincipalDigest,
+        String naturalPersonAuthorityEvidenceDigest,
         AuthoritativeStatus status,
         EffectiveInterval effectiveInterval,
         long sourceVersion,
@@ -32,10 +34,47 @@ public record AuthoritativeAccount(
                         != subjectBindingReadTokens.size()) {
             throw new IllegalArgumentException("IDENTITY_SUBJECT_BINDING_ROTATION_INVALID");
         }
+        if ((naturalPersonPrincipalDigest == null)
+                != (naturalPersonAuthorityEvidenceDigest == null)) {
+            throw new IllegalArgumentException(
+                    "IDENTITY_NATURAL_PERSON_AUTHORITY_EVIDENCE_INCOMPLETE");
+        }
+        if (naturalPersonPrincipalDigest != null) {
+            AuthorityValidation.digest(
+                    naturalPersonPrincipalDigest,
+                    "NATURAL_PERSON_PRINCIPAL");
+            AuthorityValidation.digest(
+                    naturalPersonAuthorityEvidenceDigest,
+                    "NATURAL_PERSON_AUTHORITY_EVIDENCE");
+        }
         Objects.requireNonNull(status, "status");
         Objects.requireNonNull(effectiveInterval, "effectiveInterval");
         AuthorityValidation.positive(sourceVersion, "SOURCE");
         AuthorityValidation.positive(aggregateVersion, "AGGREGATE");
+    }
+
+    public AuthoritativeAccount(
+            UUID accountId,
+            String sourceId,
+            String externalRefDigest,
+            String subjectBindingToken,
+            List<String> subjectBindingReadTokens,
+            AuthoritativeStatus status,
+            EffectiveInterval effectiveInterval,
+            long sourceVersion,
+            long aggregateVersion) {
+        this(
+                accountId,
+                sourceId,
+                externalRefDigest,
+                subjectBindingToken,
+                subjectBindingReadTokens,
+                null,
+                null,
+                status,
+                effectiveInterval,
+                sourceVersion,
+                aggregateVersion);
     }
 
     public AuthoritativeAccount(
@@ -53,6 +92,8 @@ public record AuthoritativeAccount(
                 externalRefDigest,
                 subjectBindingToken,
                 List.of(subjectBindingToken),
+                null,
+                null,
                 status,
                 effectiveInterval,
                 sourceVersion,

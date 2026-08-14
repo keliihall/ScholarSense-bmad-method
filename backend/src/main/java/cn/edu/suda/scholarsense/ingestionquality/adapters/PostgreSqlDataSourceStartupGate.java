@@ -88,6 +88,30 @@ public final class PostgreSqlDataSourceStartupGate {
                      'SET'),
                    pg_has_role(
                      current_user,
+                     'scholarsense_ingestion_quality_eligibility_consumer',
+                     'MEMBER'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_eligibility_consumer',
+                     'USAGE'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_eligibility_consumer',
+                     'SET'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_task_relay',
+                     'MEMBER'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_task_relay',
+                     'USAGE'),
+                   pg_has_role(
+                     current_user,
+                     'scholarsense_ingestion_quality_task_relay',
+                     'SET'),
+                   pg_has_role(
+                     current_user,
                      'scholarsense_ingestion_quality_batch_owner',
                      'MEMBER'),
                    pg_has_role(
@@ -107,6 +131,8 @@ public final class PostgreSqlDataSourceStartupGate {
                               'scholarsense_ingestion_quality_relay',
                               'scholarsense_ingestion_quality_retention_executor',
                               'scholarsense_ingestion_quality_consumer_registry_authority',
+                              'scholarsense_ingestion_quality_eligibility_consumer',
+                              'scholarsense_ingestion_quality_task_relay',
                               'scholarsense_ingestion_quality_batch_owner')
                         and (
                           controlled.rolcanlogin
@@ -248,7 +274,40 @@ public final class PostgreSqlDataSourceStartupGate {
                     "iq_append_quality_snapshot_read_audit(uuid, uuid, uuid, character varying, "
                             + "character varying, character varying, character varying, "
                             + "character varying, bigint, character, timestamp with time zone, "
-                            + "jsonb, character)"));
+                            + "jsonb, character)",
+                    "iq_find_quality_eligibility_ids(character varying, character varying, "
+                            + "timestamp with time zone, uuid, integer)",
+                    "iq_find_quality_eligibility_page(uuid[])",
+                    "iq_find_quality_eligibility_page_members(uuid[])",
+                    "iq_resolve_quality_eligibility_source(uuid)",
+                    "iq_append_quality_eligibility_read_audit(uuid, uuid, bigint, "
+                            + "character varying, character varying, character varying, "
+                            + "character varying, character varying, character, "
+                            + "timestamp with time zone, character)",
+                    "iq_find_quality_recovery_task_ids(character varying, character varying, "
+                            + "timestamp with time zone, uuid, integer)",
+                    "iq_find_quality_recovery_task_page(uuid[])",
+                    "iq_find_quality_recovery_task_page_rules(uuid[])",
+                    "iq_append_quality_recovery_task_read_audit(uuid, uuid, bigint, "
+                            + "character varying, character varying, character varying, "
+                            + "character, timestamp with time zone, character)",
+                    "iq_submit_quality_recovery_request(character, jsonb)",
+                    "iq_submit_quality_recovery_with_validation(character, jsonb, character, uuid)",
+                    "iq_submit_recovery_validation_job(character, jsonb)",
+                    "iq_resolve_quality_recovery_task_owner(character)",
+                    "iq_load_quality_recovery_command_context(uuid)",
+                    "iq_find_quality_recovery_request(uuid)",
+                    "iq_find_quality_recovery_idempotency(character, character, uuid)",
+                    "iq_store_quality_recovery_evidence(jsonb, jsonb, timestamp with time zone)",
+                    "iq_bind_quality_recovery_approval(character, character, jsonb, "
+                            + "timestamp with time zone)",
+                    "iq_build_quality_recovery_readiness_evidence(uuid, timestamp with time zone)",
+                    "iq_execute_quality_recovery(character, jsonb)",
+                    "iq_claim_quality_recovery_confirmations(integer, timestamp with time zone)",
+                    "iq_mark_quality_recovery_confirmation_delivered(uuid, character, "
+                            + "timestamp with time zone)",
+                    "iq_release_quality_recovery_confirmation(uuid, character, "
+                            + "character varying, timestamp with time zone)"));
     private static final String QUALITY_WORKER_PRIVILEGE_QUERY = privilegeQuery(
             List.of(
                     entry("iq_data_batch", "SELECT"),
@@ -313,7 +372,11 @@ public final class PostgreSqlDataSourceStartupGate {
                     "iq_claim_next_batch_quality_outbox()",
                     "iq_release_batch_quality_outbox(uuid, bigint)",
                     "iq_deliver_batch_quality_outbox(uuid, bigint)",
-                    "iq_fail_batch_quality_outbox(uuid, bigint)"));
+                    "iq_fail_batch_quality_outbox(uuid, bigint)",
+                    "iq_claim_next_quality_eligibility_outbox()",
+                    "iq_release_quality_eligibility_outbox(uuid, bigint)",
+                    "iq_deliver_quality_eligibility_outbox(uuid, bigint)",
+                    "iq_fail_quality_eligibility_outbox(uuid, bigint)"));
     private static final String RETENTION_PRIVILEGE_QUERY = privilegeQuery(
             List.of(),
             List.of(),
@@ -321,12 +384,38 @@ public final class PostgreSqlDataSourceStartupGate {
                     "iq_cleanup_expired(timestamp with time zone)",
                     "iq_find_next_due_quality_snapshot_retention()",
                     "iq_execute_quality_snapshot_retention(uuid, uuid, uuid, character, character, "
-                            + "uuid, character)"));
+                            + "uuid, character)",
+                    "iq_cleanup_quality_eligibility_expired(timestamp with time zone)",
+                    "iq_cleanup_quality_fuse_expired(timestamp with time zone)",
+                    "iq_cleanup_quality_recovery_expired(timestamp with time zone)"));
     private static final String CONSUMER_REGISTRY_AUTHORITY_PRIVILEGE_QUERY = privilegeQuery(
             List.of(),
             List.of(),
             List.of(
                     "iq_ingest_quality_snapshot_retention_authority(uuid, bytea, character)"));
+    private static final String ELIGIBILITY_CONSUMER_PRIVILEGE_QUERY = privilegeQuery(
+            List.of(),
+            List.of(),
+            List.of(
+                    "iq_find_quality_snapshot_evidence(uuid, uuid, character)",
+                    "iq_find_quality_snapshot_evidence_v2(uuid, uuid, character)",
+                    "iq_load_quality_eligibility_processing_state(uuid, character varying)",
+                    "iq_load_quality_eligibility_processing_state_v2(uuid, character varying)",
+                    "iq_accept_quality_eligibility_event(uuid, character varying, bigint, "
+                            + "character, jsonb)",
+                    "iq_accept_quality_eligibility_event_v2(uuid, character varying, bigint, "
+                            + "character, jsonb)",
+                    "iq_append_quality_fuse_rejection_audit(uuid, bigint, character varying, "
+                            + "character)"));
+    private static final String TASK_RELAY_PRIVILEGE_QUERY = privilegeQuery(
+            List.of(),
+            List.of(),
+                List.of(
+                    "iq_claim_next_quality_task_outbox()",
+                    "iq_authorize_quality_task_send(uuid, bigint, bigint)",
+                    "iq_mark_quality_task_delivery_retry(uuid, bigint, character varying)",
+                    "iq_complete_quality_task_delivery(uuid, bigint, character varying)",
+                    "iq_fail_quality_task_delivery(uuid, bigint, character varying)"));
 
     private PostgreSqlDataSourceStartupGate() {}
 
@@ -358,6 +447,78 @@ public final class PostgreSqlDataSourceStartupGate {
                 environment,
                 expectedWorkloadIdentity,
                 Workload.CONSUMER_REGISTRY_AUTHORITY);
+    }
+
+    public static PostgreSqlConnectionProfile verifyEligibilityConsumer(
+            DataSource dataSource, String environment, String expectedWorkloadIdentity) {
+        return verify(
+                dataSource, environment, expectedWorkloadIdentity,
+                Workload.ELIGIBILITY_CONSUMER);
+    }
+
+    public static PostgreSqlConnectionProfile verifyTaskRelay(
+            DataSource dataSource, String environment, String expectedWorkloadIdentity) {
+        return verify(dataSource, environment, expectedWorkloadIdentity, Workload.TASK_RELAY);
+    }
+
+    public static PostgreSqlConnectionProfile verifyRecoveryWorker(
+            DataSource dataSource, String environment, String expectedWorkloadIdentity) {
+        Objects.requireNonNull(dataSource);
+        try (var connection = dataSource.getConnection();
+                var statement = connection.createStatement()) {
+            statement.setQueryTimeout(5);
+            PostgreSqlConnectionProfile profile = PostgreSqlConnectionProfile.validate(
+                    environment, connection.getMetaData().getURL(),
+                    connection.getMetaData().getUserName(), expectedWorkloadIdentity);
+            try (var proof = statement.executeQuery("""
+                    select current_user=session_user,
+                      current_setting('server_version_num')='180004',
+                      login.rolcanlogin and login.rolinherit and not (
+                        login.rolsuper or login.rolcreaterole or login.rolcreatedb
+                        or login.rolreplication or login.rolbypassrls),
+                      pg_has_role(current_user,
+                        'scholarsense_ingestion_quality_recovery_worker','MEMBER'),
+                      pg_has_role(current_user,
+                        'scholarsense_ingestion_quality_recovery_worker','USAGE'),
+                      not pg_has_role(current_user,
+                        'scholarsense_ingestion_quality_recovery_worker','SET'),
+                      (select count(*)=1 and bool_and(m.inherit_option)
+                         and not bool_or(m.set_option) and not bool_or(m.admin_option)
+                         from pg_catalog.pg_auth_members m where m.member=login.oid)
+                    from pg_catalog.pg_roles login where login.rolname=current_user
+                    """)) {
+                if (!proof.next() || !proof.getBoolean(1) || !proof.getBoolean(2)
+                        || !proof.getBoolean(3) || !proof.getBoolean(4)
+                        || !proof.getBoolean(5) || !proof.getBoolean(6)
+                        || !proof.getBoolean(7) || proof.next()) {
+                    throw new IllegalArgumentException(
+                            "INGESTION_QUALITY_DATABASE_ROLE_MEMBERSHIP_MISMATCH");
+                }
+            }
+            try (var privileges = statement.executeQuery(privilegeQuery(
+                    List.of(), List.of(), List.of(
+                            "iq_claim_recovery_validation_job(uuid, character, timestamp with time zone, integer)",
+                            "iq_checkpoint_recovery_validation_job(uuid, bigint, bigint, jsonb, timestamp with time zone)",
+                            "iq_finalize_recovery_validation_job(uuid, bigint, jsonb, timestamp with time zone)",
+                            "iq_find_claimable_recovery_validation_jobs(integer, timestamp with time zone)",
+                            "iq_is_recovery_validation_lease_current(uuid, bigint, timestamp with time zone)",
+                            "iq_build_quality_recovery_readiness_evidence(uuid, timestamp with time zone)",
+                            "iq_load_recovery_validation_execution_context(uuid, timestamp with time zone)",
+                            "iq_execute_recovery_backfill(uuid, uuid, uuid, character, character, "
+                                    + "character, character, character)",
+                            "iq_execute_recovery_full_reconciliation(uuid, uuid, uuid, character, "
+                                    + "character, character, character, character)",
+                            "iq_release_recovery_validation_job(uuid, bigint, character varying, character varying, timestamp with time zone, timestamp with time zone)")))) {
+                if (!privileges.next() || !privileges.getBoolean(1) || privileges.next()) {
+                    throw new IllegalArgumentException(
+                            "INGESTION_QUALITY_DATABASE_PRIVILEGE_MATRIX_MISMATCH");
+                }
+            }
+            return profile;
+        } catch (SQLException unavailable) {
+            throw new IllegalStateException(
+                    "INGESTION_QUALITY_DATABASE_STARTUP_GATE_UNAVAILABLE", unavailable);
+        }
     }
 
     private static PostgreSqlConnectionProfile verify(
@@ -392,12 +553,18 @@ public final class PostgreSqlDataSourceStartupGate {
                 boolean authorityMember = proof.getBoolean(17);
                 boolean authorityUsage = proof.getBoolean(18);
                 boolean authoritySet = proof.getBoolean(19);
-                boolean ownerMember = proof.getBoolean(20);
-                boolean ownerUsage = proof.getBoolean(21);
-                boolean ownerSet = proof.getBoolean(22);
-                boolean restrictedGroups = proof.getBoolean(23);
-                boolean exactDirectMembership = proof.getBoolean(24);
-                boolean noIndirectMembership = proof.getBoolean(25);
+                boolean eligibilityMember = proof.getBoolean(20);
+                boolean eligibilityUsage = proof.getBoolean(21);
+                boolean eligibilitySet = proof.getBoolean(22);
+                boolean taskRelayMember = proof.getBoolean(23);
+                boolean taskRelayUsage = proof.getBoolean(24);
+                boolean taskRelaySet = proof.getBoolean(25);
+                boolean ownerMember = proof.getBoolean(26);
+                boolean ownerUsage = proof.getBoolean(27);
+                boolean ownerSet = proof.getBoolean(28);
+                boolean restrictedGroups = proof.getBoolean(29);
+                boolean exactDirectMembership = proof.getBoolean(30);
+                boolean noIndirectMembership = proof.getBoolean(31);
                 if (proof.next()) throw identityUnavailable();
                 profile = PostgreSqlConnectionProfile.validate(
                         environment,
@@ -422,24 +589,32 @@ public final class PostgreSqlDataSourceStartupGate {
                             && !relayMember && !relayUsage && !relaySet
                             && !retentionMember && !retentionUsage && !retentionSet
                             && !authorityMember && !authorityUsage && !authoritySet
+                            && !eligibilityMember && !eligibilityUsage && !eligibilitySet
+                            && !taskRelayMember && !taskRelayUsage && !taskRelaySet
                             && !ownerMember && !ownerUsage && !ownerSet;
                     case QUALITY_WORKER -> qualityMember && qualityUsage && !qualitySet
                             && !onlineMember && !onlineUsage && !onlineSet
                             && !relayMember && !relayUsage && !relaySet
                             && !retentionMember && !retentionUsage && !retentionSet
                             && !authorityMember && !authorityUsage && !authoritySet
+                            && !eligibilityMember && !eligibilityUsage && !eligibilitySet
+                            && !taskRelayMember && !taskRelayUsage && !taskRelaySet
                             && !ownerMember && !ownerUsage && !ownerSet;
                     case RELAY -> relayMember && relayUsage && !relaySet
                             && !onlineMember && !onlineUsage && !onlineSet
                             && !qualityMember && !qualityUsage && !qualitySet
                             && !retentionMember && !retentionUsage && !retentionSet
                             && !authorityMember && !authorityUsage && !authoritySet
+                            && !eligibilityMember && !eligibilityUsage && !eligibilitySet
+                            && !taskRelayMember && !taskRelayUsage && !taskRelaySet
                             && !ownerMember && !ownerUsage && !ownerSet;
                     case RETENTION_EXECUTOR -> retentionMember && retentionUsage && !retentionSet
                             && !onlineMember && !onlineUsage && !onlineSet
                             && !qualityMember && !qualityUsage && !qualitySet
                             && !relayMember && !relayUsage && !relaySet
                             && !authorityMember && !authorityUsage && !authoritySet
+                            && !eligibilityMember && !eligibilityUsage && !eligibilitySet
+                            && !taskRelayMember && !taskRelayUsage && !taskRelaySet
                             && !ownerMember && !ownerUsage && !ownerSet;
                     case CONSUMER_REGISTRY_AUTHORITY ->
                             authorityMember && authorityUsage && !authoritySet
@@ -447,6 +622,25 @@ public final class PostgreSqlDataSourceStartupGate {
                             && !qualityMember && !qualityUsage && !qualitySet
                             && !relayMember && !relayUsage && !relaySet
                             && !retentionMember && !retentionUsage && !retentionSet
+                            && !eligibilityMember && !eligibilityUsage && !eligibilitySet
+                            && !taskRelayMember && !taskRelayUsage && !taskRelaySet
+                            && !ownerMember && !ownerUsage && !ownerSet;
+                    case ELIGIBILITY_CONSUMER ->
+                            eligibilityMember && eligibilityUsage && !eligibilitySet
+                            && !onlineMember && !onlineUsage && !onlineSet
+                            && !qualityMember && !qualityUsage && !qualitySet
+                            && !relayMember && !relayUsage && !relaySet
+                            && !retentionMember && !retentionUsage && !retentionSet
+                            && !authorityMember && !authorityUsage && !authoritySet
+                            && !taskRelayMember && !taskRelayUsage && !taskRelaySet
+                            && !ownerMember && !ownerUsage && !ownerSet;
+                    case TASK_RELAY -> taskRelayMember && taskRelayUsage && !taskRelaySet
+                            && !onlineMember && !onlineUsage && !onlineSet
+                            && !qualityMember && !qualityUsage && !qualitySet
+                            && !relayMember && !relayUsage && !relaySet
+                            && !retentionMember && !retentionUsage && !retentionSet
+                            && !authorityMember && !authorityUsage && !authoritySet
+                            && !eligibilityMember && !eligibilityUsage && !eligibilitySet
                             && !ownerMember && !ownerUsage && !ownerSet;
                 };
                 if (!membershipValid) {
@@ -588,7 +782,9 @@ public final class PostgreSqlDataSourceStartupGate {
         QUALITY_WORKER(QUALITY_WORKER_PRIVILEGE_QUERY),
         RELAY(RELAY_PRIVILEGE_QUERY),
         RETENTION_EXECUTOR(RETENTION_PRIVILEGE_QUERY),
-        CONSUMER_REGISTRY_AUTHORITY(CONSUMER_REGISTRY_AUTHORITY_PRIVILEGE_QUERY);
+        CONSUMER_REGISTRY_AUTHORITY(CONSUMER_REGISTRY_AUTHORITY_PRIVILEGE_QUERY),
+        ELIGIBILITY_CONSUMER(ELIGIBILITY_CONSUMER_PRIVILEGE_QUERY),
+        TASK_RELAY(TASK_RELAY_PRIVILEGE_QUERY);
 
         private final String privilegeQuery;
 

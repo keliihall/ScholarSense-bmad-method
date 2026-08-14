@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/authorization/high-risk/high-risk-lifecycle-vectors.schema.json",
+  "title": "High-risk approval and execution lifecycle conformance vectors",
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "timeOrNull": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "approvalInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requestStatus", "makerPrincipalDigest", "decisionActorPrincipalDigest",
+        "requiredCheckerPrincipalDigests", "requestedAt", "expiresAt", "trustedNow",
+        "idempotencyKey", "requestDigest"
+      ],
+      "properties": {
+        "requestStatus": {"enum": ["pending", "approved", "rejected", "expired", "cancelled"]},
+        "makerPrincipalDigest": {"$ref": "#/$defs/digest"},
+        "decisionActorPrincipalDigest": {"$ref": "#/$defs/digest"},
+        "requiredCheckerPrincipalDigests": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/digest"}
+        },
+        "requestedAt": {"type": "string", "format": "date-time"},
+        "expiresAt": {"type": "string", "format": "date-time"},
+        "trustedNow": {"type": "string", "format": "date-time"},
+        "idempotencyKey": {"type": "string", "minLength": 16, "maxLength": 128},
+        "requestDigest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "executionInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "leaseState", "tokenJti", "executionJti", "idempotencyKey", "requestDigest",
+        "trustedNow", "authorizedUntil", "ownerCommittedAt", "confirmedAt", "bindings"
+      ],
+      "properties": {
+        "leaseState": {"enum": ["issued", "reserved", "executed", "expired", "cancelled"]},
+        "tokenJti": {"type": "string", "format": "uuid"},
+        "executionJti": {"type": "string", "format": "uuid"},
+        "idempotencyKey": {"type": "string", "minLength": 16, "maxLength": 128},
+        "requestDigest": {"$ref": "#/$defs/digest"},
+        "trustedNow": {"type": "string", "format": "date-time"},
+        "authorizedUntil": {"type": "string", "format": "date-time"},
+        "ownerCommittedAt": {"$ref": "#/$defs/timeOrNull"},
+        "confirmedAt": {"$ref": "#/$defs/timeOrNull"},
+        "bindings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "issuer", "audience", "keyVersion", "signatureVerified", "actionType",
+            "objectVersion", "approvalVersion", "authorizationGeneration", "policyDigest",
+            "matrixDigest", "roleFieldPolicyDigest", "checkerSetDigest", "scopeDigest",
+            "impactScopeDigest", "previewDigest", "authenticationStateDigest"
+          ],
+          "properties": {
+            "issuer": {"type": "string", "minLength": 1},
+            "audience": {"type": "string", "minLength": 1},
+            "keyVersion": {"type": "string", "minLength": 1},
+            "signatureVerified": {"type": "boolean"},
+            "actionType": {"type": "string", "minLength": 1},
+            "objectVersion": {"type": "integer", "minimum": 1},
+            "approvalVersion": {"type": "integer", "minimum": 1},
+            "authorizationGeneration": {"type": "integer", "minimum": 0},
+            "policyDigest": {"$ref": "#/$defs/digest"},
+            "matrixDigest": {"$ref": "#/$defs/digest"},
+            "roleFieldPolicyDigest": {"$ref": "#/$defs/digest"},
+            "checkerSetDigest": {"$ref": "#/$defs/digest"},
+            "scopeDigest": {"$ref": "#/$defs/digest"},
+            "impactScopeDigest": {"$ref": "#/$defs/digest"},
+            "previewDigest": {"$ref": "#/$defs/digest"},
+            "authenticationStateDigest": {"$ref": "#/$defs/digest"}
+          }
+        }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision", "approvalStatus", "leaseState", "ownerState", "tokenConsumed",
+        "sameExecutionJti", "reasonCode", "requiresFreshRequest", "publishInvalidationEvidence"
+      ],
+      "properties": {
+        "decision": {
+          "enum": [
+            "approve", "reject", "expire", "replay-original", "conflict",
+            "issue-lease", "finalize-executed", "compensate-to-fused"
+          ]
+        },
+        "approvalStatus": {
+          "type": ["string", "null"],
+          "enum": ["pending", "approved", "rejected", "expired", "cancelled", null]
+        },
+        "leaseState": {
+          "type": ["string", "null"],
+          "enum": ["issued", "reserved", "executed", "expired", "cancelled", null]
+        },
+        "ownerState": {"enum": ["fused", "recovering"]},
+        "tokenConsumed": {"type": "boolean"},
+        "sameExecutionJti": {"type": "boolean"},
+        "reasonCode": {
+          "enum": [
+            "APPROVED", "MAKER_CHECKER_CONFLICT", "APPROVAL_EXPIRED",
+            "IDEMPOTENT_REPLAY", "IDEMPOTENCY_CONFLICT", "TRUST_BINDING_INVALID",
+            "EXECUTION_AUTHORIZED", "EXECUTION_EXPIRED", "EXECUTION_ALREADY_USED",
+            "OWNER_COMMIT_CONFIRMED", "OWNER_COMMIT_TOO_LATE", "BINDING_DRIFT",
+            "AUTHORIZATION_INVALIDATED_AFTER_COMMIT"
+          ]
+        },
+        "requiresFreshRequest": {"type": "boolean"},
+        "publishInvalidationEvidence": {"type": "boolean"}
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caseId", "phase", "description", "approvalInput", "executionInput", "expected"],
+      "properties": {
+        "caseId": {"type": "string", "pattern": "^[a-z][a-z0-9-]{2,99}$"},
+        "phase": {"enum": ["approval", "execution", "reconciliation", "invalidation"]},
+        "description": {"type": "string", "minLength": 1},
+        "approvalInput": {"oneOf": [{"$ref": "#/$defs/approvalInput"}, {"type": "null"}]},
+        "executionInput": {"oneOf": [{"$ref": "#/$defs/executionInput"}, {"type": "null"}]},
+        "expected": {"$ref": "#/$defs/expected"}
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "vectorVersion", "policyVersion", "runtimePolicyVersion", "cases"],
+  "properties": {
+    "$schema": {"const": "high-risk-lifecycle-vectors.schema.json"},
+    "vectorVersion": {"const": "HIGH-RISK-LIFECYCLE-VECTORS-1.0.0"},
+    "policyVersion": {"const": "HRAP-1.0.0"},
+    "runtimePolicyVersion": {"const": "HRAP-RUNTIME-1.0.0"},
+    "cases": {
+      "type": "array",
+      "minItems": 16,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/case"}
+    }
+  }
+}

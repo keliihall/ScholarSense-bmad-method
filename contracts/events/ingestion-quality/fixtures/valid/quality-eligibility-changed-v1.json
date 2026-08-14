@@ -1,0 +1,102 @@
+{
+  "specversion": "1.0",
+  "type": "scholarsense.ingestion-quality.quality-eligibility.changed.v1",
+  "source": "https://scholarsense.suda.edu.cn/ingestion-quality",
+  "id": "019d2c7d-4000-7000-8000-000000000240",
+  "subject": "quality-eligibility/019d2c7d-4000-7000-8000-000000000241",
+  "time": "2026-08-10T11:31:55Z",
+  "datacontenttype": "application/json",
+  "traceparent": "00-11111111111111111111111111111111-1111111111111111-01",
+  "data": {
+    "eventId": "019d2c7d-4000-7000-8000-000000000240",
+    "aggregateId": "019d2c7d-4000-7000-8000-000000000241",
+    "aggregateType": "QualityEligibility",
+    "aggregateVersion": 1,
+    "contractVersion": "PIC-1.0.0",
+    "schemaVersion": "QUALITY-ELIGIBILITY-EVENT-1.0.0",
+    "occurredAt": "2026-08-10T11:31:55Z",
+    "traceId": "11111111111111111111111111111111",
+    "producer": "ingestion-quality",
+    "runtimeEvidenceClaim": "none",
+    "qualityEligibility": {
+      "eligibilityId": "019d2c7d-4000-7000-8000-000000000241",
+      "businessKey": "ACC-SAFE-001@1.0.0@RULE-DEPENDENCY-REGISTRY-1.0.0",
+      "aggregateVersion": 1,
+      "status": "fused",
+      "reasonCode": "REQUIRED_MEMBER_FUSED",
+      "ruleId": "ACC-SAFE-001",
+      "ruleVersion": "1.0.0",
+      "registryVersion": "RULE-DEPENDENCY-REGISTRY-1.0.0",
+      "registryDigest": "sha256:cd1915107c0c2657a430c2d5ba0abd420d9bd8d06f6cdcaed2a570c71ce6655a",
+      "catalogVersion": "DCC-1.1.0",
+      "catalogDigest": "sha256:aeb19962071e2144a85bb2e07fd124eff0d69edf93f7202e821204616a60f219",
+      "ruleCatalogVersion": "RC-1.0.0",
+      "ruleCatalogDigest": "sha256:d4f2587e0bde7a37964bab7ce990560327e2e5960f68fba5b770f09b041fd21a",
+      "operator": "all-of",
+      "threshold": null,
+      "members": [
+        {
+          "sourceId": "SRC-P0-ACCOMMODATION-001", "sourceVersion": "12", "dependencyId": "DEP-P0-ACCOMMODATION-001", "dependencyVersion": "12",
+          "requirement": "required", "state": "eligible", "versionContinuous": true, "sourceWatermark": "opaque-accommodation-source-watermark", "dependencyWatermark": "opaque-accommodation-dependency-watermark",
+          "snapshotId": "019d2c7d-4000-7000-8000-000000000242", "snapshotImmutableHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "qualityMetricDecisionProfileVersion": "QMDP-1.0.0", "qualityMetricDecisionProfileDigest": "sha256:c574eda413a5d3f7e9e8406f117a91dee8a7874beb82c19166c06584f6051bc8",
+          "qualitySnapshotHashProfileVersion": "QSHM-1.0.0", "qualitySnapshotHashProfileDigest": "sha256:cf5837474ae3bd7e82ae05ae9d6a74ea60677566ff6ee59ee780ab5e60f518b2",
+          "lineageId": "019d2c7d-4000-7000-8000-000000000243"
+        },
+        {
+          "sourceId": "SRC-P0-CALENDAR-001", "sourceVersion": "12", "dependencyId": "DEP-P0-CALENDAR-001", "dependencyVersion": "12",
+          "requirement": "required", "state": "eligible", "versionContinuous": true, "sourceWatermark": "opaque-calendar-source-watermark", "dependencyWatermark": "opaque-calendar-dependency-watermark",
+          "snapshotId": "019d2c7d-4000-7000-8000-000000000244", "snapshotImmutableHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+          "qualityMetricDecisionProfileVersion": "QMDP-1.0.0", "qualityMetricDecisionProfileDigest": "sha256:c574eda413a5d3f7e9e8406f117a91dee8a7874beb82c19166c06584f6051bc8",
+          "qualitySnapshotHashProfileVersion": "QSHM-1.0.0", "qualitySnapshotHashProfileDigest": "sha256:cf5837474ae3bd7e82ae05ae9d6a74ea60677566ff6ee59ee780ab5e60f518b2",
+          "lineageId": "019d2c7d-4000-7000-8000-000000000245"
+        },
+        {
+          "sourceId": "SRC-P0-CAMPUS-ACCESS-001", "sourceVersion": "12", "dependencyId": "DEP-P0-CAMPUS-ACCESS-001", "dependencyVersion": "12",
+          "requirement": "required", "state": "eligible", "versionContinuous": true, "sourceWatermark": "opaque-campus-source-watermark", "dependencyWatermark": "opaque-campus-dependency-watermark",
+          "snapshotId": "019d2c7d-4000-7000-8000-000000000246", "snapshotImmutableHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+          "qualityMetricDecisionProfileVersion": "QMDP-1.0.0", "qualityMetricDecisionProfileDigest": "sha256:c574eda413a5d3f7e9e8406f117a91dee8a7874beb82c19166c06584f6051bc8",
+          "qualitySnapshotHashProfileVersion": "QSHM-1.0.0", "qualitySnapshotHashProfileDigest": "sha256:cf5837474ae3bd7e82ae05ae9d6a74ea60677566ff6ee59ee780ab5e60f518b2",
+          "lineageId": "019d2c7d-4000-7000-8000-000000000247"
+        },
+        {
+          "sourceId": "SRC-P0-DEVICE-001", "sourceVersion": "12", "dependencyId": "DEP-P0-DEVICE-001", "dependencyVersion": "12",
+          "requirement": "required", "state": "eligible", "versionContinuous": true, "sourceWatermark": "opaque-device-source-watermark", "dependencyWatermark": "opaque-device-dependency-watermark",
+          "snapshotId": "019d2c7d-4000-7000-8000-000000000248", "snapshotImmutableHash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+          "qualityMetricDecisionProfileVersion": "QMDP-1.0.0", "qualityMetricDecisionProfileDigest": "sha256:c574eda413a5d3f7e9e8406f117a91dee8a7874beb82c19166c06584f6051bc8",
+          "qualitySnapshotHashProfileVersion": "QSHM-1.0.0", "qualitySnapshotHashProfileDigest": "sha256:cf5837474ae3bd7e82ae05ae9d6a74ea60677566ff6ee59ee780ab5e60f518b2",
+          "lineageId": "019d2c7d-4000-7000-8000-000000000249"
+        },
+        {
+          "sourceId": "SRC-P0-DORM-ACCESS-001", "sourceVersion": "12", "dependencyId": "DEP-P0-DORM-ACCESS-001", "dependencyVersion": "12",
+          "requirement": "required", "state": "fused", "versionContinuous": true, "sourceWatermark": "opaque-dorm-source-watermark", "dependencyWatermark": "opaque-dorm-dependency-watermark",
+          "snapshotId": "019d2c7d-4000-7000-8000-000000000250", "snapshotImmutableHash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+          "qualityMetricDecisionProfileVersion": "QMDP-1.0.0", "qualityMetricDecisionProfileDigest": "sha256:c574eda413a5d3f7e9e8406f117a91dee8a7874beb82c19166c06584f6051bc8",
+          "qualitySnapshotHashProfileVersion": "QSHM-1.0.0", "qualitySnapshotHashProfileDigest": "sha256:cf5837474ae3bd7e82ae05ae9d6a74ea60677566ff6ee59ee780ab5e60f518b2",
+          "lineageId": "019d2c7d-4000-7000-8000-000000000251"
+        },
+        {
+          "sourceId": "SRC-P0-LEAVE-001", "sourceVersion": "12", "dependencyId": "DEP-P0-LEAVE-001", "dependencyVersion": "12",
+          "requirement": "required", "state": "eligible", "versionContinuous": true, "sourceWatermark": "opaque-leave-source-watermark", "dependencyWatermark": "opaque-leave-dependency-watermark",
+          "snapshotId": "019d2c7d-4000-7000-8000-000000000252", "snapshotImmutableHash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+          "qualityMetricDecisionProfileVersion": "QMDP-1.0.0", "qualityMetricDecisionProfileDigest": "sha256:c574eda413a5d3f7e9e8406f117a91dee8a7874beb82c19166c06584f6051bc8",
+          "qualitySnapshotHashProfileVersion": "QSHM-1.0.0", "qualitySnapshotHashProfileDigest": "sha256:cf5837474ae3bd7e82ae05ae9d6a74ea60677566ff6ee59ee780ab5e60f518b2",
+          "lineageId": "019d2c7d-4000-7000-8000-000000000253"
+        },
+        {
+          "sourceId": "SRC-P0-TIMETABLE-001", "sourceVersion": "12", "dependencyId": "DEP-P0-TIMETABLE-001", "dependencyVersion": "12",
+          "requirement": "required", "state": "eligible", "versionContinuous": true, "sourceWatermark": "opaque-timetable-source-watermark", "dependencyWatermark": "opaque-timetable-dependency-watermark",
+          "snapshotId": "019d2c7d-4000-7000-8000-000000000254", "snapshotImmutableHash": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+          "qualityMetricDecisionProfileVersion": "QMDP-1.0.0", "qualityMetricDecisionProfileDigest": "sha256:c574eda413a5d3f7e9e8406f117a91dee8a7874beb82c19166c06584f6051bc8",
+          "qualitySnapshotHashProfileVersion": "QSHM-1.0.0", "qualitySnapshotHashProfileDigest": "sha256:cf5837474ae3bd7e82ae05ae9d6a74ea60677566ff6ee59ee780ab5e60f518b2",
+          "lineageId": "019d2c7d-4000-7000-8000-000000000255"
+        }
+      ],
+      "failedMembers": ["DEP-P0-DORM-ACCESS-001"],
+      "effectiveAt": "2026-08-10T11:31:00Z",
+      "occurredAt": "2026-08-10T11:31:55Z",
+      "traceId": "11111111111111111111111111111111",
+      "producer": "ingestion-quality"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "contractVersion": "QUALITY-ELIGIBILITY-RECOVERY-COMMAND-1.1.0",
+  "predecessor": {
+    "path": "contracts/ingestion-quality/rule-dependency/quality-eligibility-recovery-command-1.0.0.json",
+    "sha256": "698e09d14d233e6ed57485604783f98cd8e202eb428d48ef11cf946673ba3c55"
+  },
+  "ownerPort": "ingestion-quality/quality-eligibility-recovery-command-v1",
+  "ownerModule": "ingestion-quality",
+  "commands": {
+    "request": "QualityRecoveryRequestCommand",
+    "preview": "QualityRecoveryPreviewCommand",
+    "submitApproval": "HighRiskApprovalPort",
+    "decideApproval": "HighRiskApprovalPort",
+    "execute": "QualityEligibilityRecoveryCommand"
+  },
+  "executeRequiredFields": [
+    "recoveryRequestId", "eligibilityId", "episodeId", "taskId", "expectedAggregateVersion",
+    "expectedEpisodeVersion", "expectedTaskVersion", "evidencePackDigest", "previewDigest",
+    "approvalReceiptDigest", "executionAuthorizationLease", "executionJti", "idempotencyKey",
+    "reasonCode", "traceId"
+  ],
+  "allowedTransition": "fused-to-recovering",
+  "idempotency": {
+    "sameKeySameCanonicalDigest": "return-original-result",
+    "sameKeyDifferentCanonicalDigest": "conflict-409",
+    "executionJti": "single-use-in-ingestion-quality-owner-transaction",
+    "leaseReplay": "same-identity-access-lease-and-execution-jti-until-half-open-expiry"
+  },
+  "crossOwnerAuthorization": {
+    "owner": "identity-access",
+    "wireSchema": "contracts/authorization/high-risk/high-risk-execution-authorization-lease.schema.json",
+    "ownerLocalReceipt": "trusted-lease-digest-plus-execution-jti",
+    "confirmation": "ingestion-quality-outbox-idempotently-finalizes-identity-access-lease"
+  },
+  "concurrency": "stable-lock-reread-and-CAS-all-bound-versions",
+  "forbiddenSideEffects": ["eligible", "production", "publish-rule-evaluation", "create-candidate", "create-clue", "close-recovery-task"],
+  "runtimeEvidenceClaim": "contract-only"
+}

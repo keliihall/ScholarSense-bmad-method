@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/quality-recovery/quality-recovery-impact-preview.schema.json",
+  "title": "Non-authorizing quality recovery impact preview",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "previewId", "previewVersion", "object", "qualityRecoveryPolicyVersion", "qualityRecoveryPolicyDigest", "sourceClass", "targetState", "trustedServerNow", "observationDuration", "expectedObservationCompletesAt", "ruleVersionWindows", "previewDigest", "authorizesExecution", "finalActionabilityOwnerStory", "driftHandling", "generatedAt", "traceId", "canonicalizationProfile", "runtimeEvidenceClaim"],
+  "properties": {
+    "schemaVersion": {"const": "QUALITY-RECOVERY-IMPACT-PREVIEW-1.0.0"},
+    "previewId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "previewVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "object": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/recoveryObjectBinding"},
+    "qualityRecoveryPolicyVersion": {"const": "QRP-1.0.0"},
+    "qualityRecoveryPolicyDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "sourceClass": {"enum": ["streaming", "dailyBatch"]},
+    "targetState": {"const": "recovering"},
+    "trustedServerNow": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/instantMicros"},
+    "observationDuration": {"enum": ["PT60M", "P1D"]},
+    "expectedObservationCompletesAt": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/instantMicros"},
+    "ruleVersionWindows": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ruleVersion", "windowDigest", "latestActionableAt", "category"],
+        "properties": {
+          "ruleVersion": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/ruleVersionRef"},
+          "windowDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+          "latestActionableAt": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/instantMicros"},
+          "category": {"enum": ["already-expired-history-only", "currently-potentially-actionable", "expected-to-expire-before-observation-completes"]}
+        }
+      }
+    },
+    "previewDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "authorizesExecution": {"const": false},
+    "finalActionabilityOwnerStory": {"const": "2.5c"},
+    "driftHandling": {"const": "invalidate-and-require-explicit-repreview"},
+    "generatedAt": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/instantMicros"},
+    "traceId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/traceId"},
+    "canonicalizationProfile": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/canonicalizationProfile"},
+    "runtimeEvidenceClaim": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/runtimeEvidenceClaim"}
+  },
+  "x-crossFieldBindings": ["streaming binds PT60M and dailyBatch binds P1D", "previewDigest binds object versions, rule/member/watermark digests, QRP digest, trustedServerNow, observationDuration and every window", "2.5b does not retain, expire, activate or backfill any window"]
+}

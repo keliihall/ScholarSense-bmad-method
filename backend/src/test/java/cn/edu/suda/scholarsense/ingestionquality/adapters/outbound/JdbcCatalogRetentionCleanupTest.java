@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -27,13 +29,19 @@ class JdbcCatalogRetentionCleanupTest {
     @Test
     void passesOnlyTheFreshTrustedCutoffToTheOwnerFunction() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
-        when(jdbc.queryForObject(anyString(), eq(Long.class), any(Timestamp.class)))
+        Timestamp cutoff = Timestamp.from(NOW);
+        when(jdbc.queryForObject(
+                anyString(), eq(Long.class), any(Timestamp.class), any(Timestamp.class),
+                any(Timestamp.class), any(Timestamp.class)))
                 .thenReturn(4L);
 
         long deleted = new JdbcCatalogRetentionCleanup(
                 jdbc, () -> new TrustedTime(NOW, PROFILE)).cleanupExpired();
 
         assertEquals(4, deleted);
+        verify(jdbc).queryForObject(
+                contains("iq_cleanup_quality_fuse_expired"),
+                eq(Long.class), eq(cutoff), eq(cutoff), eq(cutoff), eq(cutoff));
     }
 
     @Test

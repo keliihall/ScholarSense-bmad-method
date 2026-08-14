@@ -1,0 +1,68 @@
+{
+  "version": "INGESTION-QUALITY-ROLES-4.0.0",
+  "status": "deployment-input-required",
+  "runtimeEvidenceClaim": "none",
+  "composition": {
+    "predecessorRolesPath": "ingestion-quality-roles-3.0.0.json",
+    "predecessorRolesRawSha256": "01e670bbd03c6507d2344f705040fbff0a2fad4b5d784789fdadc00e78906cf8",
+    "mutationAllowed": false,
+    "successorRuntimeProfile": "ingestion-quality-runtime-4.0.0.json"
+  },
+  "artifactContract": "same-backend-jar",
+  "roleOverrides": {
+    "web-api": {
+      "addCapabilityProfiles": ["ingestion-quality-runtime-4.0.0.json"],
+      "minimumReplicas": 2,
+      "businessHttp": true
+    },
+    "eligibility-consumer": {
+      "addCapabilityProfiles": ["ingestion-quality-runtime-4.0.0.json"],
+      "minimumReplicas": 2,
+      "businessHttp": false
+    }
+  },
+  "roles": {
+    "quality-task-relay": {
+      "artifact": "backend/target/scholarsense-backend.jar",
+      "capabilityProfiles": [
+        "ingestion-quality-runtime-1.0.0.json",
+        "ingestion-quality-runtime-2.0.0.json",
+        "ingestion-quality-runtime-3.0.0.json",
+        "ingestion-quality-runtime-4.0.0.json"
+      ],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "activationStatus": "deployment-input-required",
+      "targetActivationStatus": "deferred",
+      "minimumReplicas": 2,
+      "businessHttp": false,
+      "requiredEnvironment": [
+        "SCHOLARSENSE_INGESTION_QUALITY_TASK_RELAY_ENABLED",
+        "SCHOLARSENSE_INGESTION_QUALITY_TASK_RELAY_DATASOURCE_URL",
+        "SCHOLARSENSE_INGESTION_QUALITY_TASK_RELAY_DATASOURCE_USERNAME",
+        "SCHOLARSENSE_INGESTION_QUALITY_TASK_RELAY_DATASOURCE_PASSWORD"
+      ],
+      "environment": {
+        "SCHOLARSENSE_ROLE": "worker",
+        "SCHOLARSENSE_IDENTITY_ENABLED": "false",
+        "SCHOLARSENSE_IDENTITY_SYNC_ENABLED": "false",
+        "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "false",
+        "SCHOLARSENSE_INGESTION_QUALITY_TASK_RELAY_ENABLED": "true"
+      },
+      "probe": {
+        "type": "process-and-startup-gate",
+        "startupGate": "PostgreSqlDataSourceStartupGate.verifyTaskRelay"
+      }
+    }
+  },
+  "activationPolicy": {
+    "requiredTargetInputs": [
+      "seventh-dedicated-database-login",
+      "pic-1.1.0-quality-task-target",
+      "target-receipt-verification",
+      "protected-mtls-material"
+    ],
+    "partialActivationAllowed": false,
+    "fallbackProviderAllowed": false,
+    "runtimeEvidenceClaimBeforeTargetActivation": "none"
+  }
+}

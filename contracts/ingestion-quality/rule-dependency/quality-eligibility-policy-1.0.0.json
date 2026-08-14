@@ -1,0 +1,63 @@
+{
+  "policyVersion": "QUALITY-ELIGIBILITY-POLICY-1.0.0",
+  "statusValues": ["eligible", "fused", "recovering", "missing"],
+  "businessKey": ["ruleId", "ruleVersion", "registryVersion"],
+  "aggregateVersion": "owner-local-monotonic-per-business-key-starting-at-1",
+  "composition": {
+    "requiredGuard": "every required member must be eligible and version-continuous",
+    "optionalRule": "optional members never mask a required failure",
+    "operators": ["all-of", "any-of", "threshold"],
+    "productionOperators": ["all-of"],
+    "statusPrecedence": ["fused", "recovering", "missing", "eligible"],
+    "reasonCodes": [
+      "ALL_REQUIRED_ELIGIBLE", "REQUIRED_MEMBER_FUSED", "REQUIRED_MEMBER_RECOVERING",
+      "REQUIRED_MEMBER_MISSING", "REQUIRED_MEMBER_VERSION_GAP", "ANY_OF_UNSATISFIED",
+      "THRESHOLD_UNSATISFIED", "RECOVERY_COMMAND_ACCEPTED"
+    ]
+  },
+  "upstreamPairing": {
+    "assessedFailedV3": "validated-terminal-fused-no-v4-required",
+    "assessedPassedV3": "persist-pending-no-eligibility",
+    "publishedV4": "requires-exact-matching-passed-v3-and-owner-local-snapshot",
+    "snapshotLookup": "exact-snapshotId-and-immutableHash-never-latest",
+    "crossBindings": [
+      "batchId", "sourceId", "sourceVersion", "manifestDigest", "watermark", "lineageId",
+      "observationWindow", "cutoffAt", "effectiveAt", "qualityMetricDecisionProfileVersion",
+      "qualityMetricDecisionProfileDigest", "qualityGateVersion", "qualityGateDigest"
+    ],
+    "ownerLocalSnapshotAdditions": ["qualitySnapshotHashProfileVersion", "qualitySnapshotHashProfileDigest"],
+    "impactScopeCodesSemantics": "QMDP-metric-identifiers-only-never-dependency-impact"
+  },
+  "immutableEvidence": {
+    "requiredFactFields": [
+      "eligibilityId", "businessKey", "aggregateVersion", "status", "reasonCode", "ruleId",
+      "ruleVersion", "registryVersion", "registryDigest", "catalogVersion", "catalogDigest",
+      "ruleCatalogVersion", "ruleCatalogDigest", "operator", "threshold", "members", "failedMembers",
+      "effectiveAt", "occurredAt", "traceId", "producer"
+    ],
+    "requiredMemberFields": [
+      "sourceId", "sourceVersion", "dependencyId", "dependencyVersion", "requirement", "state",
+      "versionContinuous", "sourceWatermark", "dependencyWatermark", "snapshotId", "snapshotImmutableHash",
+      "qualityMetricDecisionProfileVersion", "qualityMetricDecisionProfileDigest",
+      "qualitySnapshotHashProfileVersion", "qualitySnapshotHashProfileDigest", "lineageId"
+    ],
+    "historicalMutation": "forbidden-successor-fact-only",
+    "deliveryStatusOnAggregate": "forbidden"
+  },
+  "idempotency": {
+    "commandRetention": "P90D",
+    "sameBusinessKeySameBody": "return-original-result",
+    "sameBusinessKeyDifferentBody": "conflict-409",
+    "staleExpectedAggregateVersion": "conflict-409",
+    "eventIdentity": ["source", "id"],
+    "eventMaximumWireBytes": 65536
+  },
+  "recoveryBoundary": {
+    "ownerPort": "ingestion-quality/quality-eligibility-recovery-command-v1",
+    "allowedTransition": "fused-to-recovering",
+    "requiresExpectedAggregateVersion": true,
+    "runtimeOwnerStory": "2.5",
+    "story24RuntimeActivation": "not-installed"
+  },
+  "runtimeEvidenceClaim": "none"
+}

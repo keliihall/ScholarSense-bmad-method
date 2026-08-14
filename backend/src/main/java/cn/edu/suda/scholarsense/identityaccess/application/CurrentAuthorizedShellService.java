@@ -29,9 +29,11 @@ public final class CurrentAuthorizedShellService {
     public CurrentAuthorizedShellProjection project(
             Set<RolePackage> currentRoles,
             List<InstalledShellCapability> installedCapabilities,
+            List<InstalledShellActionCapability> installedActions,
             Instant evaluatedAt) {
         currentRoles = Set.copyOf(currentRoles);
         installedCapabilities = List.copyOf(installedCapabilities);
+        installedActions = List.copyOf(installedActions);
         java.util.Objects.requireNonNull(evaluatedAt, "evaluatedAt");
         if (currentRoles.isEmpty()) {
             throw new IllegalArgumentException("IDENTITY_SHELL_ROLE_REQUIRED");
@@ -45,6 +47,7 @@ public final class CurrentAuthorizedShellService {
 
         List<AuthorizedShellMenuItem> menuItems = new ArrayList<>();
         List<AuthorizedShellEntryCapability> entries = new ArrayList<>();
+        List<AuthorizedShellActionEntryCapability> actions = new ArrayList<>();
         Set<String> seenIds = new LinkedHashSet<>();
         boolean dependencyUnavailable = false;
         for (InstalledShellCapability capability : installedCapabilities) {
@@ -68,14 +71,32 @@ public final class CurrentAuthorizedShellService {
                         capability.state().wireName()));
             }
         }
+        Set<String> seenActions = new LinkedHashSet<>();
+        for (InstalledShellActionCapability action : installedActions) {
+            if (java.util.Collections.disjoint(currentRoles, action.authorizedRoles())) continue;
+            if (!seenActions.add(action.actionType())) {
+                throw new IllegalArgumentException("IDENTITY_SHELL_ACTION_DUPLICATE");
+            }
+            actions.add(new AuthorizedShellActionEntryCapability(
+                    action.actionType(), action.state().wireName()));
+            if (action.state() == ShellCapabilityState.UNAVAILABLE) dependencyUnavailable = true;
+        }
         return new CurrentAuthorizedShellProjection(
-                "AUTHORIZED-SHELL-1.0.0",
+                "AUTHORIZED-SHELL-1.1.0",
                 RoleFieldPolicyCatalog.POLICY_VERSION,
                 "RFP-FIXTURE-1.0.0",
                 evaluatedAt,
                 defaultSurface,
                 menuItems,
                 entries,
+                actions,
                 dependencyUnavailable ? "unavailable" : "available");
+    }
+
+    public CurrentAuthorizedShellProjection project(
+            Set<RolePackage> currentRoles,
+            List<InstalledShellCapability> installedCapabilities,
+            Instant evaluatedAt) {
+        return project(currentRoles, installedCapabilities, List.of(), evaluatedAt);
     }
 }

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/quality-recovery/quality-recovery-event.schema.json",
+  "title": "Quality recovery state event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "eventId", "eventType", "aggregateType", "aggregateId",
+    "aggregateVersion", "recoveryRequestId", "episodeId", "taskId", "sourceId",
+    "dependencyId", "priorState", "targetState", "evidencePackDigest",
+    "previewDigest", "approvalReceiptDigest", "executionAuthorizationLeaseDigest",
+    "executionJtiDigest", "policyVersion", "policyDigest", "committedAt", "traceId"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "QUALITY-RECOVERY-EVENT-1.0.0"},
+    "eventId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "eventType": {"const": "quality-eligibility.recovering"},
+    "aggregateType": {"const": "QualityEligibility"},
+    "aggregateId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "aggregateVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "recoveryRequestId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "episodeId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "taskId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "sourceId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/sourceId"},
+    "dependencyId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/dependencyId"},
+    "priorState": {"const": "fused"},
+    "targetState": {"const": "recovering"},
+    "evidencePackDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "previewDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "approvalReceiptDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "executionAuthorizationLeaseDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "executionJtiDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "policyVersion": {"const": "QRP-1.0.0"},
+    "policyDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "committedAt": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/instantMicros"},
+    "traceId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/traceId"}
+  },
+  "x-forbiddenBusinessObjects": ["RuleEvaluation", "Candidate", "Clue"],
+  "x-privacy": "opaque-identifiers-digests-and-controlled-codes-only"
+}

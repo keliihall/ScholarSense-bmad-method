@@ -1,0 +1,23 @@
+{
+  "retentionVersion": "QUALITY-RECOVERY-RETENTION-1.0.0",
+  "owners": {
+    "identityAccess": {
+      "facts": ["approval-request", "approval-decision", "receipt", "token", "execution-authorization-lease", "lease-reconciliation"],
+      "evidenceRetention": "P2Y",
+      "idempotencyRetention": "P90D",
+      "legalHoldAware": true,
+      "cleanupOwner": "identity-access-retention-workload"
+    },
+    "ingestionQuality": {
+      "facts": ["recovery-request", "evidence-pack", "validation-job", "checkpoint", "result", "preview", "projection", "execution-jti", "audit", "event", "outbox"],
+      "evidenceRetention": "P2Y",
+      "idempotencyRetention": "P90D",
+      "legalHoldAware": true,
+      "cleanupOwner": "ingestion-quality-retention-workload"
+    }
+  },
+  "deleteOrder": ["expired-idempotency", "confirmed-outbox", "terminal-job-checkpoints", "terminal-job-results", "preview-projections", "recovery-evidence-after-legal-hold-check"],
+  "activeReferences": "never-delete-active-episode-open-task-or-recovering-handoff",
+  "crossOwnerCleanup": "forbidden",
+  "runtimeEvidenceClaim": "contract-only"
+}

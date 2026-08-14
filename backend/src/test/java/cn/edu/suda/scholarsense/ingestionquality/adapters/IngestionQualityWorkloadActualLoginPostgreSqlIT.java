@@ -14,7 +14,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-/** Clean and upgrade PostgreSQL 18.4 evidence for all five physical workload logins. */
+/** Clean and upgrade PostgreSQL 18.4 evidence for all eight physical workload logins. */
 class IngestionQualityWorkloadActualLoginPostgreSqlIT {
     private static final List<String> DATABASE_URL_PROPERTIES = List.of(
             "scholarsense.audit.pg.url", "scholarsense.audit.pg.upgrade-url");
@@ -49,7 +49,30 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
                             "iq_find_assessed_quality_snapshot_page_metrics",
                             "iq_find_assessed_quality_snapshot_page_impact_scopes",
                             "iq_resolve_quality_snapshot_source",
-                            "iq_append_quality_snapshot_read_audit")),
+                            "iq_append_quality_snapshot_read_audit",
+                            "iq_find_quality_eligibility_ids",
+                            "iq_find_quality_eligibility_page",
+                            "iq_find_quality_eligibility_page_members",
+                            "iq_resolve_quality_eligibility_source",
+                            "iq_append_quality_eligibility_read_audit",
+                            "iq_find_quality_recovery_task_ids",
+                            "iq_find_quality_recovery_task_page",
+                            "iq_find_quality_recovery_task_page_rules",
+                            "iq_append_quality_recovery_task_read_audit",
+                            "iq_submit_quality_recovery_request",
+                            "iq_submit_quality_recovery_with_validation",
+                            "iq_submit_recovery_validation_job",
+                            "iq_resolve_quality_recovery_task_owner",
+                            "iq_load_quality_recovery_command_context",
+                            "iq_find_quality_recovery_request",
+                            "iq_find_quality_recovery_idempotency",
+                            "iq_store_quality_recovery_evidence",
+                            "iq_bind_quality_recovery_approval",
+                            "iq_build_quality_recovery_readiness_evidence",
+                            "iq_execute_quality_recovery",
+                            "iq_claim_quality_recovery_confirmations",
+                            "iq_mark_quality_recovery_confirmation_delivered",
+                            "iq_release_quality_recovery_confirmation")),
             new Workload(
                     Kind.QUALITY_WORKER,
                     "scholarsense_ingestion_quality_quality_worker",
@@ -71,7 +94,11 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
                             "iq_claim_next_batch_quality_outbox",
                             "iq_release_batch_quality_outbox",
                             "iq_deliver_batch_quality_outbox",
-                            "iq_fail_batch_quality_outbox")),
+                            "iq_fail_batch_quality_outbox",
+                            "iq_claim_next_quality_eligibility_outbox",
+                            "iq_release_quality_eligibility_outbox",
+                            "iq_deliver_quality_eligibility_outbox",
+                            "iq_fail_quality_eligibility_outbox")),
             new Workload(
                     Kind.RETENTION_EXECUTOR,
                     "scholarsense_ingestion_quality_retention_executor",
@@ -79,15 +106,55 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
                     Set.of(
                             "iq_cleanup_expired",
                             "iq_find_next_due_quality_snapshot_retention",
-                            "iq_execute_quality_snapshot_retention")),
+                            "iq_execute_quality_snapshot_retention",
+                            "iq_cleanup_quality_eligibility_expired",
+                            "iq_cleanup_quality_fuse_expired",
+                            "iq_cleanup_quality_recovery_expired")),
             new Workload(
                     Kind.CONSUMER_REGISTRY_AUTHORITY,
                     "scholarsense_ingestion_quality_consumer_registry_authority",
                     "scholarsense_iq_actual_authority_test_login",
-                    Set.of("iq_ingest_quality_snapshot_retention_authority")));
+                    Set.of("iq_ingest_quality_snapshot_retention_authority")),
+            new Workload(
+                    Kind.ELIGIBILITY_CONSUMER,
+                    "scholarsense_ingestion_quality_eligibility_consumer",
+                    "scholarsense_iq_actual_eligibility_consumer_test_login",
+                    Set.of(
+                            "iq_find_quality_snapshot_evidence",
+                            "iq_find_quality_snapshot_evidence_v2",
+                            "iq_load_quality_eligibility_processing_state",
+                            "iq_load_quality_eligibility_processing_state_v2",
+                            "iq_accept_quality_eligibility_event",
+                            "iq_accept_quality_eligibility_event_v2",
+                            "iq_append_quality_fuse_rejection_audit")),
+            new Workload(
+                    Kind.TASK_RELAY,
+                    "scholarsense_ingestion_quality_task_relay",
+                    "scholarsense_iq_actual_task_relay_test_login",
+                    Set.of(
+                            "iq_claim_next_quality_task_outbox",
+                            "iq_authorize_quality_task_send",
+                            "iq_mark_quality_task_delivery_retry",
+                            "iq_complete_quality_task_delivery",
+                            "iq_fail_quality_task_delivery")),
+            new Workload(
+                    Kind.RECOVERY_WORKER,
+                    "scholarsense_ingestion_quality_recovery_worker",
+                    "scholarsense_iq_actual_recovery_worker_test_login",
+                    Set.of(
+                            "iq_claim_recovery_validation_job",
+                            "iq_checkpoint_recovery_validation_job",
+                            "iq_finalize_recovery_validation_job",
+                            "iq_find_claimable_recovery_validation_jobs",
+                            "iq_is_recovery_validation_lease_current",
+                            "iq_build_quality_recovery_readiness_evidence",
+                            "iq_load_recovery_validation_execution_context",
+                            "iq_execute_recovery_backfill",
+                            "iq_execute_recovery_full_reconciliation",
+                            "iq_release_recovery_validation_job")));
 
     @Test
-    void cleanAndUpgradeExerciseFiveExclusiveActualLoginsAndSecurityDefinerBoundaries() {
+    void cleanAndUpgradeExerciseEightExclusiveActualLoginsAndSecurityDefinerBoundaries() {
         String adminUser = required("scholarsense.audit.pg.user");
         for (String urlProperty : DATABASE_URL_PROPERTIES) {
             String url = required(urlProperty);
@@ -129,6 +196,13 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
             case CONSUMER_REGISTRY_AUTHORITY ->
                     PostgreSqlDataSourceStartupGate.verifyConsumerRegistryAuthority(
                             dataSource, "test", expectedIdentity);
+            case ELIGIBILITY_CONSUMER ->
+                    PostgreSqlDataSourceStartupGate.verifyEligibilityConsumer(
+                            dataSource, "test", expectedIdentity);
+            case TASK_RELAY -> PostgreSqlDataSourceStartupGate.verifyTaskRelay(
+                    dataSource, "test", expectedIdentity);
+            case RECOVERY_WORKER -> PostgreSqlDataSourceStartupGate.verifyRecoveryWorker(
+                    dataSource, "test", expectedIdentity);
         };
     }
 
@@ -406,6 +480,22 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
                     end if;
                     if not exists (
                         select 1 from pg_catalog.pg_roles
+                         where rolname='scholarsense_iq_actual_eligibility_consumer_test_login') then
+                        create role scholarsense_iq_actual_eligibility_consumer_test_login
+                            login inherit;
+                    end if;
+                    if not exists (
+                        select 1 from pg_catalog.pg_roles
+                         where rolname='scholarsense_iq_actual_task_relay_test_login') then
+                        create role scholarsense_iq_actual_task_relay_test_login login inherit;
+                    end if;
+                    if not exists (
+                        select 1 from pg_catalog.pg_roles
+                         where rolname='scholarsense_iq_actual_recovery_worker_test_login') then
+                        create role scholarsense_iq_actual_recovery_worker_test_login login inherit;
+                    end if;
+                    if not exists (
+                        select 1 from pg_catalog.pg_roles
                          where rolname='scholarsense_iq_hidden_set_escape_test') then
                         create role scholarsense_iq_hidden_set_escape_test nologin noinherit
                             nosuperuser nocreatedb nocreaterole noreplication nobypassrls;
@@ -422,17 +512,29 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
                     nosuperuser nocreatedb nocreaterole noreplication nobypassrls;
                 alter role scholarsense_iq_actual_authority_test_login login inherit
                     nosuperuser nocreatedb nocreaterole noreplication nobypassrls;
+                alter role scholarsense_iq_actual_eligibility_consumer_test_login login inherit
+                    nosuperuser nocreatedb nocreaterole noreplication nobypassrls;
+                alter role scholarsense_iq_actual_task_relay_test_login login inherit
+                    nosuperuser nocreatedb nocreaterole noreplication nobypassrls;
+                alter role scholarsense_iq_actual_recovery_worker_test_login login inherit
+                    nosuperuser nocreatedb nocreaterole noreplication nobypassrls;
                 revoke scholarsense_ingestion_quality_online,
                        scholarsense_ingestion_quality_quality_worker,
                        scholarsense_ingestion_quality_relay,
                        scholarsense_ingestion_quality_retention_executor,
                        scholarsense_ingestion_quality_consumer_registry_authority,
+                       scholarsense_ingestion_quality_eligibility_consumer,
+                       scholarsense_ingestion_quality_task_relay,
+                       scholarsense_ingestion_quality_recovery_worker,
                        scholarsense_ingestion_quality_batch_owner
                     from scholarsense_iq_actual_online_test_login,
                          scholarsense_iq_actual_quality_worker_test_login,
                          scholarsense_iq_actual_relay_test_login,
                          scholarsense_iq_actual_retention_test_login,
-                         scholarsense_iq_actual_authority_test_login;
+                         scholarsense_iq_actual_authority_test_login,
+                         scholarsense_iq_actual_eligibility_consumer_test_login,
+                         scholarsense_iq_actual_task_relay_test_login,
+                         scholarsense_iq_actual_recovery_worker_test_login;
                 revoke scholarsense_iq_hidden_set_escape_test
                     from scholarsense_iq_actual_quality_worker_test_login;
                 grant scholarsense_ingestion_quality_online
@@ -449,6 +551,15 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
                     with inherit true, set false;
                 grant scholarsense_ingestion_quality_consumer_registry_authority
                     to scholarsense_iq_actual_authority_test_login
+                    with inherit true, set false;
+                grant scholarsense_ingestion_quality_eligibility_consumer
+                    to scholarsense_iq_actual_eligibility_consumer_test_login
+                    with inherit true, set false;
+                grant scholarsense_ingestion_quality_task_relay
+                    to scholarsense_iq_actual_task_relay_test_login
+                    with inherit true, set false;
+                grant scholarsense_ingestion_quality_recovery_worker
+                    to scholarsense_iq_actual_recovery_worker_test_login
                     with inherit true, set false;
                 """);
     }
@@ -487,7 +598,10 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
         QUALITY_WORKER,
         RELAY,
         RETENTION_EXECUTOR,
-        CONSUMER_REGISTRY_AUTHORITY
+        CONSUMER_REGISTRY_AUTHORITY,
+        ELIGIBILITY_CONSUMER,
+        TASK_RELAY,
+        RECOVERY_WORKER
     }
 
     private record Workload(

@@ -1,0 +1,13 @@
+{
+  "retentionVersion": "QFRET-1.0.0",
+  "scheduleVersion": "RS-1.0.0",
+  "businessFacts": "P2Y",
+  "idempotencyRecords": "P90D",
+  "deliveryReceipts": "P90D",
+  "readAudit": "P2Y",
+  "cleanupEntrypoint": "iq_cleanup_quality_fuse_expired(trustedCutoff)",
+  "appendOnlyHistory": true,
+  "correction": "append-successor-never-rewrite",
+  "legalHold": "protect-business-delivery-idempotency-and-read-audit",
+  "runtimeEvidenceClaim": "none"
+}

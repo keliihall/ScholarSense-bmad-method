@@ -3,7 +3,13 @@ package cn.edu.suda.scholarsense.ingestionquality.adapters;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapability;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityProvider;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityState;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellActionCapability;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellActionCapabilityProvider;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizationObjectEvidenceProvider;
+import cn.edu.suda.scholarsense.identityaccess.api.HighRiskApprovalEvidenceQueryPort;
+import cn.edu.suda.scholarsense.identityaccess.api.HighRiskApprovalPort;
+import cn.edu.suda.scholarsense.identityaccess.api.HighRiskExecutionAuthorizationPort;
+import cn.edu.suda.scholarsense.identityaccess.api.RecoveryCheckerBindingResolver;
 import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationPort;
 import cn.edu.suda.scholarsense.identityaccess.api.CompositeAuthorizationRecheckPort;
 import cn.edu.suda.scholarsense.identityaccess.api.AuditTokenizationPort;
@@ -17,8 +23,14 @@ import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcCatalogSt
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcCatalogTransactionAdapter;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualitySnapshotQueryStore;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualitySnapshotReadAudit;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityEligibilityQueryStore;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityEligibilityReadAudit;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityRecoveryTaskQueryStore;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityRecoveryTaskReadAudit;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityRecoveryCommandStore;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcSubjectWindowRecomputeStore;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.QualitySnapshotOwnerEvidenceProvider;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.QualityRecoveryTaskOwnerEvidenceProvider;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.SharedAuditPublicationGuard;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.TrustedTimeRecomputeIds;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.inbound.FrozenDataCatalogBootstrapRunner;
@@ -29,6 +41,11 @@ import cn.edu.suda.scholarsense.ingestionquality.application.FrozenDataCatalogPo
 import cn.edu.suda.scholarsense.ingestionquality.application.MappingRecomputeIdPort;
 import cn.edu.suda.scholarsense.ingestionquality.application.MappingRecomputePlanner;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualitySnapshotQueryService;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityEligibilityQueryService;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryTaskQueryService;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseRecoveryService;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryAuthorizationGuard;
+import cn.edu.suda.scholarsense.ingestionquality.application.RecoveryValidationTrustedTimePort;
 import cn.edu.suda.scholarsense.ingestionquality.application.SubjectRecomputeJobQueryService;
 import cn.edu.suda.scholarsense.ingestionquality.application.SubjectMappingCorrectionCoordinator;
 import cn.edu.suda.scholarsense.subjectregistry.api.SubjectMappingChangedConsumerPort;
@@ -86,6 +103,17 @@ public class IngestionQualityConfiguration {
             PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
         return new QualitySnapshotOwnerEvidenceProvider(
                 jdbc, dataSourceCatalogOwnerEvidenceProvider);
+    }
+
+    @Bean
+    AuthorizationObjectEvidenceProvider qualityRecoveryTaskOwnerEvidenceProvider(
+            JdbcTemplate jdbc,
+            CatalogOwnerEvidenceProvider dataSourceCatalogOwnerEvidenceProvider,
+            ObjectProvider<HighRiskApprovalEvidenceQueryPort> approvalEvidence,
+            PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
+        return new QualityRecoveryTaskOwnerEvidenceProvider(
+                jdbc, dataSourceCatalogOwnerEvidenceProvider,
+                approvalEvidence.getIfAvailable(HighRiskApprovalEvidenceQueryPort::notInstalled));
     }
 
     @Bean
@@ -214,6 +242,122 @@ public class IngestionQualityConfiguration {
     }
 
     @Bean
+    JdbcQualityEligibilityQueryStore jdbcQualityEligibilityQueryStore(
+            JdbcTemplate jdbc,
+            PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
+        return new JdbcQualityEligibilityQueryStore(jdbc);
+    }
+
+    @Bean
+    JdbcQualityEligibilityReadAudit jdbcQualityEligibilityReadAudit(
+            JdbcTemplate jdbc,
+            ObjectMapper json,
+            TrustedTimeSource time,
+            AuditTokenizationPort tokenization,
+            @Qualifier("ingestionQualityTransactionManager")
+                    PlatformTransactionManager manager,
+            PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
+        return new JdbcQualityEligibilityReadAudit(
+                jdbc, json, time, new TransactionTemplate(manager), tokenization);
+    }
+
+    @Bean
+    QualityEligibilityQueryService qualityEligibilityQueryService(
+            JdbcQualityEligibilityQueryStore eligibilities,
+            CompositeAuthorizationPort authorization,
+            CompositeAuthorizationRecheckPort recheck,
+            JdbcQualityEligibilityReadAudit readAudit) {
+        return new QualityEligibilityQueryService(
+                eligibilities, authorization, recheck, readAudit);
+    }
+
+    @Bean
+    JdbcQualityRecoveryTaskQueryStore jdbcQualityRecoveryTaskQueryStore(
+            JdbcTemplate jdbc,
+            ObjectMapper json,
+            PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
+        return new JdbcQualityRecoveryTaskQueryStore(jdbc, json);
+    }
+
+    @Bean
+    JdbcQualityRecoveryTaskReadAudit jdbcQualityRecoveryTaskReadAudit(
+            JdbcTemplate jdbc,
+            ObjectMapper json,
+            TrustedTimeSource time,
+            AuditTokenizationPort tokenization,
+            @Qualifier("ingestionQualityTransactionManager")
+                    PlatformTransactionManager manager,
+            PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
+        return new JdbcQualityRecoveryTaskReadAudit(
+                jdbc, json, time, new TransactionTemplate(manager), tokenization);
+    }
+
+    @Bean
+    QualityRecoveryTaskQueryService qualityRecoveryTaskQueryService(
+            JdbcQualityRecoveryTaskQueryStore tasks,
+            CompositeAuthorizationPort authorization,
+            CompositeAuthorizationRecheckPort recheck,
+            JdbcQualityRecoveryTaskReadAudit readAudit) {
+        return new QualityRecoveryTaskQueryService(tasks, authorization, recheck, readAudit);
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            name = "scholarsense.ingestion-quality.recovery-runtime-enabled",
+            havingValue = "true")
+    JdbcQualityRecoveryCommandStore jdbcQualityRecoveryCommandStore(
+            JdbcTemplate jdbc, ObjectMapper json,
+            PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
+        return new JdbcQualityRecoveryCommandStore(jdbc, json);
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            name = "scholarsense.ingestion-quality.recovery-runtime-enabled",
+            havingValue = "true")
+    QualityFuseRecoveryService qualityFuseRecoveryService(
+            JdbcQualityRecoveryCommandStore store,
+            CompositeAuthorizationPort authorization,
+            CompositeAuthorizationRecheckPort recheck,
+            RecoveryCheckerBindingResolver checkers,
+            HighRiskApprovalPort approvals,
+            HighRiskExecutionAuthorizationPort executionAuthorizations,
+            TrustedTimeSource time,
+            MappingRecomputeIdPort ids) {
+        RecoveryValidationTrustedTimePort trustedTime = () -> time.now().instant();
+        return new QualityFuseRecoveryService(
+                store, authorization,
+                new QualityRecoveryAuthorizationGuard(authorization, recheck),
+                checkers, approvals, executionAuthorizations, trustedTime, ids::nextId);
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            name = "scholarsense.ingestion-quality.recovery-runtime-enabled",
+            havingValue = "true")
+    cn.edu.suda.scholarsense.ingestionquality.application
+            .QualityRecoveryConfirmationRelayProcessor qualityRecoveryConfirmationRelayProcessor(
+                    JdbcQualityRecoveryCommandStore store,
+                    HighRiskExecutionAuthorizationPort authorizations,
+                    TrustedTimeSource time) {
+        return new cn.edu.suda.scholarsense.ingestionquality.application
+                .QualityRecoveryConfirmationRelayProcessor(
+                        store, authorizations, () -> time.now().instant());
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            name = "scholarsense.ingestion-quality.recovery-runtime-enabled",
+            havingValue = "true")
+    cn.edu.suda.scholarsense.ingestionquality.adapters.inbound
+            .QualityRecoveryConfirmationRelayScheduler qualityRecoveryConfirmationRelayScheduler(
+                    cn.edu.suda.scholarsense.ingestionquality.application
+                            .QualityRecoveryConfirmationRelayProcessor processor) {
+        return new cn.edu.suda.scholarsense.ingestionquality.adapters.inbound
+                .QualityRecoveryConfirmationRelayScheduler(processor);
+    }
+
+    @Bean
     AuthorizedShellCapabilityProvider dataSourceCatalogShellCapability() {
         return () -> List.of(
                 new AuthorizedShellCapability(
@@ -223,6 +367,17 @@ public class IngestionQualityConfiguration {
                         "quality-snapshots", "批次与质量快照",
                         "data-quality.quality-snapshots",
                         AuthorizedShellCapabilityState.AVAILABLE, Set.of("R6-DATA-OWNER")));
+    }
+
+    @Bean
+    AuthorizedShellActionCapabilityProvider qualityFuseRecoveryShellActionCapability(
+            @Value("${scholarsense.ingestion-quality.recovery-runtime-enabled:false}")
+                    boolean recoveryRuntimeEnabled) {
+        AuthorizedShellCapabilityState state = recoveryRuntimeEnabled
+                ? AuthorizedShellCapabilityState.AVAILABLE
+                : AuthorizedShellCapabilityState.NOT_INSTALLED;
+        return () -> List.of(new AuthorizedShellActionCapability(
+                "quality-fuse.recover", state, Set.of("R6-DATA-OWNER")));
     }
 
     @Bean

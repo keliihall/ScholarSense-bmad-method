@@ -1,6 +1,7 @@
 package cn.edu.suda.scholarsense.identityaccess.adapters.outbound;
 
 import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellCapabilityProvider;
+import cn.edu.suda.scholarsense.identityaccess.api.AuthorizedShellActionCapabilityProvider;
 import cn.edu.suda.scholarsense.identityaccess.api.AuthoritativeIdentityContextQueryPort;
 import cn.edu.suda.scholarsense.identityaccess.api.IdentityFreshness;
 import cn.edu.suda.scholarsense.identityaccess.application.CurrentAuthorizedShellProjection;
@@ -11,6 +12,7 @@ import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationAuditPor
 import cn.edu.suda.scholarsense.identityaccess.application.AuthorizationAuditRequest;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySessionRepository;
 import cn.edu.suda.scholarsense.identityaccess.application.InstalledShellCapability;
+import cn.edu.suda.scholarsense.identityaccess.application.InstalledShellActionCapability;
 import cn.edu.suda.scholarsense.identityaccess.application.ShellCapabilityState;
 import cn.edu.suda.scholarsense.identityaccess.application.SensitiveReadTransactionPort;
 import cn.edu.suda.scholarsense.identityaccess.domain.FieldClass;
@@ -32,6 +34,7 @@ public final class CurrentAuthorizedShellQueryAdapter
     private final IdentitySessionRepository sessions;
     private final AuthoritativeIdentityContextQueryPort identities;
     private final List<AuthorizedShellCapabilityProvider> providers;
+    private final List<AuthorizedShellActionCapabilityProvider> actionProviders;
     private final TrustedTimeSource time;
     private final CurrentAuthorizedShellService shells;
     private final AuthorizationAuditPort audit;
@@ -41,6 +44,7 @@ public final class CurrentAuthorizedShellQueryAdapter
             IdentitySessionRepository sessions,
             AuthoritativeIdentityContextQueryPort identities,
             List<AuthorizedShellCapabilityProvider> providers,
+            List<AuthorizedShellActionCapabilityProvider> actionProviders,
             TrustedTimeSource time,
             RoleFieldPolicyCatalog policy,
             AuthorizationAuditPort audit,
@@ -48,10 +52,22 @@ public final class CurrentAuthorizedShellQueryAdapter
         this.sessions = java.util.Objects.requireNonNull(sessions);
         this.identities = java.util.Objects.requireNonNull(identities);
         this.providers = List.copyOf(providers);
+        this.actionProviders = List.copyOf(actionProviders);
         this.time = java.util.Objects.requireNonNull(time);
         this.shells = new CurrentAuthorizedShellService(policy);
         this.audit = java.util.Objects.requireNonNull(audit);
         this.transactions = java.util.Objects.requireNonNull(transactions);
+    }
+
+    public CurrentAuthorizedShellQueryAdapter(
+            IdentitySessionRepository sessions,
+            AuthoritativeIdentityContextQueryPort identities,
+            List<AuthorizedShellCapabilityProvider> providers,
+            TrustedTimeSource time,
+            RoleFieldPolicyCatalog policy,
+            AuthorizationAuditPort audit,
+            SensitiveReadTransactionPort transactions) {
+        this(sessions, identities, providers, List.of(), time, policy, audit, transactions);
     }
 
     @Override
@@ -111,6 +127,7 @@ public final class CurrentAuthorizedShellQueryAdapter
             throw dependencyUnavailable();
         }
         List<InstalledShellCapability> installed = new ArrayList<>();
+        List<InstalledShellActionCapability> installedActions = new ArrayList<>();
         try {
             for (AuthorizedShellCapabilityProvider provider : providers) {
                 provider.capabilities().forEach(capability -> installed.add(
@@ -118,6 +135,15 @@ public final class CurrentAuthorizedShellQueryAdapter
                                 capability.id(),
                                 capability.label(),
                                 capability.routeName(),
+                                ShellCapabilityState.valueOf(capability.state().name()),
+                                capability.authorizedRoleIds().stream()
+                                        .map(RolePackage::fromAuthorityId)
+                                        .collect(Collectors.toUnmodifiableSet()))));
+            }
+            for (AuthorizedShellActionCapabilityProvider provider : actionProviders) {
+                provider.actionCapabilities().forEach(capability -> installedActions.add(
+                        new InstalledShellActionCapability(
+                                capability.actionType(),
                                 ShellCapabilityState.valueOf(capability.state().name()),
                                 capability.authorizedRoleIds().stream()
                                         .map(RolePackage::fromAuthorityId)
@@ -131,7 +157,7 @@ public final class CurrentAuthorizedShellQueryAdapter
         }
         CurrentAuthorizedShellProjection projection;
         try {
-            projection = shells.project(roles, installed, now);
+            projection = shells.project(roles, installed, installedActions, now);
         } catch (RuntimeException unavailable) {
             auditShell(session.actorPseudonym(), session.sessionPseudonym(), roles,
                     identity.aggregateVersion(), "DEPENDENCY_UNAVAILABLE",

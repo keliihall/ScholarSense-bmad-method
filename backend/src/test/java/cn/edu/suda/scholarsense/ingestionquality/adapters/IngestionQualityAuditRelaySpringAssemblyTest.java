@@ -120,9 +120,15 @@ class IngestionQualityAuditRelaySpringAssemblyTest {
         when(principal.getBoolean(20)).thenReturn(false);
         when(principal.getBoolean(21)).thenReturn(false);
         when(principal.getBoolean(22)).thenReturn(false);
-        when(principal.getBoolean(23)).thenReturn(true);
-        when(principal.getBoolean(24)).thenReturn(true);
-        when(principal.getBoolean(25)).thenReturn(true);
+        when(principal.getBoolean(23)).thenReturn(false);
+        when(principal.getBoolean(24)).thenReturn(false);
+        when(principal.getBoolean(25)).thenReturn(false);
+        when(principal.getBoolean(26)).thenReturn(false);
+        when(principal.getBoolean(27)).thenReturn(false);
+        when(principal.getBoolean(28)).thenReturn(false);
+        when(principal.getBoolean(29)).thenReturn(true);
+        when(principal.getBoolean(30)).thenReturn(true);
+        when(principal.getBoolean(31)).thenReturn(true);
         when(matrix.next()).thenReturn(true, false);
         when(matrix.getBoolean(1)).thenReturn(true);
         return dataSource;

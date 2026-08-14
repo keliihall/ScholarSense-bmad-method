@@ -1,0 +1,39 @@
+{
+  "lockVersion": "QUALITY-ELIGIBILITY-CONTRACT-LOCK-1.0.0",
+  "runtimeEvidenceClaim": "none",
+  "files": {
+    "contracts/ingestion-quality/rule-dependency/rule-dependency-registry.schema.json": "sha256:5bfc1af97b40271485a45d348c312d593f99f1aae427d03f980f0cb7ee009b13",
+    "contracts/ingestion-quality/rule-dependency/rule-dependency-registry-1.0.0.json": "sha256:0c676d796dd65c1842ed041544c5f731d70f045708984415bd74bfd5ace25e61",
+    "contracts/ingestion-quality/rule-dependency/derivation-matrix-1.0.0.json": "sha256:592d7505c74ac60f4c8b242a6353a617d3cca92e0920a17779a87d67e9a5041a",
+    "contracts/ingestion-quality/rule-dependency/quality-eligibility-policy.schema.json": "sha256:37cb7bc4b75ba55a4eb8d0a0ca046ec7f707c18611707fa1f76a25332938b226",
+    "contracts/ingestion-quality/rule-dependency/quality-eligibility-policy-1.0.0.json": "sha256:71b3723575245c14331304bba175213de0aca89f8942ae5c0514cebe3f6ff32b",
+    "contracts/ingestion-quality/rule-dependency/quality-eligibility.schema.json": "sha256:e0434fae0279576f53c1580629d489bb3e5babed33b0f161d587891579bdfb66",
+    "contracts/ingestion-quality/rule-dependency/ordering-backfill-1.0.0.json": "sha256:c2e3b27d9ceb31bdce8d49108597da59de01343beaba8ccc26311d1389cc028a",
+    "contracts/ingestion-quality/rule-dependency/quality-eligibility-retention-1.0.0.json": "sha256:5a5a5931fef189534cc8a25603f4525dc4e27292d93888d6b5d5c92c1d81dda1",
+    "contracts/ingestion-quality/rule-dependency/dependency-eligibility-projection-1.0.0.json": "sha256:c339072dd9cf9999c62e81944a500167d03b8fa48c3ffa55a64325c6b9b2a1d0",
+    "contracts/ingestion-quality/rule-dependency/fixtures/valid/synthetic-composition-vectors-1.0.0.json": "sha256:8753d90bf516c4ecb2186a1e5b4d3efeb4be8ec241ec4b0bbab95e028dfa4a2f",
+    "contracts/ingestion-quality/rule-dependency/fixtures/invalid/negative-fixtures-1.0.0.json": "sha256:10bc709d961b125aaf73249689825d159f186bdab9a21cb7575f86bbc88e1eba",
+    "contracts/events/ingestion-quality/quality-eligibility-event.schema.json": "sha256:e327c3087e99f5ec94a7e4fd81876957cbdec0892e84aee50aeafb51e0844ec5",
+    "contracts/events/ingestion-quality/fixtures/valid/quality-eligibility-changed-v1.json": "sha256:775bcd9aee54019ad3ffbdb0501442679325d5d1ccfbe2eab690b634ec8682a1",
+    "contracts/events/ingestion-quality/fixtures/invalid/quality-eligibility-negative-fixtures-1.0.0.json": "sha256:42c3cc07b8e93b44b5b7cd684463f9677ca86fb04bc0172c13ae29f8e4d10da2",
+    "contracts/events/ingestion-quality/fixtures/ordering/quality-eligibility-ordering-1.0.0.json": "sha256:92486c52389f95d9ea45feb00d4f2d3564735b3a8abc6c3e80a4e10c91360ad4",
+    "contracts/events/ingestion-quality/quality-eligibility-consumer-handoff-1.0.0.json": "sha256:42b9ec6f6b49afb79c8d57f960e9219de2b6aa56f203a684a210488ace5267d9",
+    "contracts/ingestion-quality/rule-dependency/quality-eligibility-recovery-command-1.0.0.json": "sha256:698e09d14d233e6ed57485604783f98cd8e202eb428d48ef11cf946673ba3c55",
+    "contracts/openapi/quality-eligibilities.openapi.json": "sha256:82762fd9d773d9d1248f392365bf63af10297c2a32496c9b02792786d685cd8a"
+  },
+  "upstreamFiles": {
+    "contracts/data-catalog/dcc-1.1.0.json": "sha256:aeb19962071e2144a85bb2e07fd124eff0d69edf93f7202e821204616a60f219",
+    "contracts/data-catalog/dependency-registry-1.0.0.json": "sha256:7ed0ec4bd05c5078559a49ac01d1c8583f0db6f6056a22224fd01ebabcff4343",
+    "_bmad-output/planning-artifacts/rule-catalog.md": "sha256:d4f2587e0bde7a37964bab7ce990560327e2e5960f68fba5b770f09b041fd21a",
+    "contracts/ingestion-quality/batch-quality/executable-quality-contract-lock-1.0.0.json": "sha256:b93d5547e6b28aa7281f736bd2440800eea590987d68ae8ab28ffd6a225cdb6f",
+    "contracts/ingestion-quality/batch-quality/quality-snapshot-hash-contract-lock-1.0.0.json": "sha256:95eeb36ad905079eabf3f83addb40c335e0d9c862c4c582a5981e21b2379dc82",
+    "contracts/authorization/role-field-policy-rfp-1.0.0.json": "sha256:84191d8b844b31ef91fb051d34d6731b80981d6d193e42b0f8d19f73caa9ed25",
+    "contracts/field-projection/field-projection-policy-binding-1.1.0.json": "sha256:9a7e8edb67ad6c7c010af74e57ce62f64a38662aaa16c049a81dc1e7c58842b4",
+    "contracts/events/ingestion-quality/data-batch-quality-event-contract-lock-1.0.0.json": "sha256:8d014c21d94a180815c033663e70e07ddf58f1964aa181e608c45b70e7580771"
+  },
+  "canonicalDigests": {
+    "contracts/ingestion-quality/rule-dependency/rule-dependency-registry-1.0.0.json": "sha256:cd1915107c0c2657a430c2d5ba0abd420d9bd8d06f6cdcaed2a570c71ce6655a",
+    "contracts/ingestion-quality/rule-dependency/quality-eligibility-policy-1.0.0.json": "sha256:5427eadbc58250be4bb40f2d3ba7f204eba993bf95ecb512056ac0cdfa8565ec",
+    "contracts/ingestion-quality/rule-dependency/ordering-backfill-1.0.0.json": "sha256:974162dd0bf122f6bb93f4e161449097ba5c2855cfd21d3166b5715809903b27"
+  }
+}

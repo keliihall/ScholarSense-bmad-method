@@ -1,0 +1,16 @@
+{
+  "policyVersion": "QUALITY-ELIGIBILITY-RETENTION-1.0.0",
+  "retentionScheduleVersion": "RS-1.0.0",
+  "objectType": "QualityEligibility",
+  "classification": "reporting-and-operational-snapshot",
+  "retentionStartField": "occurredAt",
+  "retentionPeriod": "P2Y",
+  "expirationAction": "delete",
+  "legalHold": "targeted-half-open-window",
+  "consumerWatermarkRequired": true,
+  "backupMaximumRetention": "P35D",
+  "idempotencyRecordRetention": "P90D",
+  "downstreamEvidenceRule": "consumer-must-copy-minimum-self-contained-evidence-before-owner-deletion",
+  "deletionReceiptOwner": "audit-operations",
+  "runtimeEvidenceClaim": "none"
+}

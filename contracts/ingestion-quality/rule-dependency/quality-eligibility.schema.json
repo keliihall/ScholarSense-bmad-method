@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/rule-dependency/quality-eligibility.schema.json",
+  "title": "QualityEligibility immutable fact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eligibilityId", "businessKey", "aggregateVersion", "status", "reasonCode", "ruleId", "ruleVersion", "registryVersion", "registryDigest", "catalogVersion", "catalogDigest", "ruleCatalogVersion", "ruleCatalogDigest", "operator", "threshold", "members", "failedMembers", "effectiveAt", "occurredAt", "traceId", "producer"],
+  "properties": {
+    "eligibilityId": {"type": "string", "format": "uuid", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "businessKey": {"type": "string", "pattern": "^[A-Z0-9-]+@1\\.0\\.0@RULE-DEPENDENCY-REGISTRY-1\\.0\\.0$"},
+    "aggregateVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "status": {"enum": ["eligible", "fused", "recovering", "missing"]},
+    "reasonCode": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"},
+    "ruleId": {"type": "string", "pattern": "^[A-Z][A-Z0-9-]{2,63}$"}, "ruleVersion": {"const": "1.0.0"},
+    "registryVersion": {"const": "RULE-DEPENDENCY-REGISTRY-1.0.0"}, "registryDigest": {"$ref": "#/$defs/digest"},
+    "catalogVersion": {"const": "DCC-1.1.0"}, "catalogDigest": {"$ref": "#/$defs/digest"},
+    "ruleCatalogVersion": {"const": "RC-1.0.0"}, "ruleCatalogDigest": {"$ref": "#/$defs/digest"},
+    "operator": {"enum": ["all-of", "any-of", "threshold"]}, "threshold": {"type": ["integer", "null"], "minimum": 1},
+    "members": {"type": "array", "minItems": 1, "maxItems": 11, "items": {"$ref": "#/$defs/member"}},
+    "failedMembers": {"type": "array", "maxItems": 11, "uniqueItems": true, "items": {"type": "string"}},
+    "effectiveAt": {"type": "string", "format": "date-time"}, "occurredAt": {"type": "string", "format": "date-time"},
+    "traceId": {"type": "string", "pattern": "^(?!0{32}$)[0-9a-f]{32}$"}, "producer": {"const": "ingestion-quality"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "member": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sourceId", "sourceVersion", "dependencyId", "dependencyVersion", "requirement", "state", "versionContinuous", "sourceWatermark", "dependencyWatermark", "snapshotId", "snapshotImmutableHash", "qualityMetricDecisionProfileVersion", "qualityMetricDecisionProfileDigest", "qualitySnapshotHashProfileVersion", "qualitySnapshotHashProfileDigest", "lineageId"],
+      "properties": {
+        "sourceId": {"type": "string", "pattern": "^SRC-P[01]-[A-Z0-9-]+-[0-9]{3}$"}, "sourceVersion": {"type": "string", "pattern": "^[1-9][0-9]{0,15}$"}, "dependencyId": {"type": "string", "pattern": "^DEP-P[01]-[A-Z0-9-]+-[0-9]{3}$"}, "dependencyVersion": {"type": "string", "pattern": "^[1-9][0-9]{0,15}$"},
+        "requirement": {"enum": ["required", "optional"]}, "state": {"enum": ["eligible", "fused", "recovering", "missing"]}, "versionContinuous": {"type": "boolean"},
+        "sourceWatermark": {"type": "string", "minLength": 1, "maxLength": 512}, "dependencyWatermark": {"type": "string", "minLength": 1, "maxLength": 512}, "snapshotId": {"oneOf": [{"type": "string", "format": "uuid", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}, {"type": "null"}]}, "snapshotImmutableHash": {"oneOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+        "qualityMetricDecisionProfileVersion": {"const": "QMDP-1.0.0"}, "qualityMetricDecisionProfileDigest": {"$ref": "#/$defs/digest"},
+        "qualitySnapshotHashProfileVersion": {"const": "QSHM-1.0.0"}, "qualitySnapshotHashProfileDigest": {"$ref": "#/$defs/digest"}, "lineageId": {"oneOf": [{"type": "string", "format": "uuid", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}, {"type": "null"}]}
+      }
+    }
+  }
+}

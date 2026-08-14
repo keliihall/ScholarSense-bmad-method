@@ -27,19 +27,20 @@ final class MigrationRules {
     private static final Pattern FOREIGN_REFERENCE = Pattern.compile(
             "(?i)\\breferences\\s+(?:(" + IDENTIFIER + ")\\s*\\.\\s*)?(" + IDENTIFIER + ")");
     private static final Pattern TABLE_ALIAS = Pattern.compile(
-            "(?i)\\b(?:from|join|update|into)\\s+(?:(?:" + IDENTIFIER + ")\\s*\\.\\s*)?"
+            "(?i)\\b(?:from|join|update|into|using)\\s+(?:(?:" + IDENTIFIER + ")\\s*\\.\\s*)?"
                     + IDENTIFIER + "\\s+(?:as\\s+)?(?=(" + IDENTIFIER + ")\\b)");
     private static final Pattern FUNCTION_TABLE_ALIAS = Pattern.compile(
             "(?is)\\b(?:from|join)\\s+(?:lateral\\s+)?"
                     + "(?:(?:" + IDENTIFIER + ")\\s*\\.\\s*)?" + IDENTIFIER
-                    + "\\s*\\([^;]*?\\)\\s+(?:as\\s+)?(?=(" + IDENTIFIER + ")\\b)");
+                    + "\\s*\\([^;]*?\\)\\s+(?:with\\s+ordinality\\s+)?"
+                    + "(?:as\\s+)?(?=(" + IDENTIFIER + ")\\b)");
     private static final Pattern CTE_ALIAS = Pattern.compile(
             "(?i)(?:\\bwith\\s+(?:recursive\\s+)?|,)\\s*(" + IDENTIFIER
                     + ")(?:\\s*\\([^)]*\\))?\\s+as\\s*\\(");
     private static final Pattern DERIVED_TABLE_ALIAS = Pattern.compile(
             "(?i)\\)\\s+(?:as\\s+)?(" + IDENTIFIER + ")\\s+on\\b");
     private static final Pattern PLPGSQL_RECORD_VARIABLE = Pattern.compile(
-            "(?im)^\\s*(" + IDENTIFIER + ")\\s+(?:(?:" + IDENTIFIER
+            "(?im)^\\s*(?:declare\\s+)?(" + IDENTIFIER + ")\\s+(?:(?:" + IDENTIFIER
                     + ")\\s*\\.\\s*)?" + IDENTIFIER + "%rowtype\\s*;");
     private static final Pattern PLPGSQL_LOOP_RECORD = Pattern.compile(
             "(?i)\\bfor\\s+(" + IDENTIFIER + ")\\s+in\\s+(?:select|execute)\\b");
@@ -425,6 +426,11 @@ final class MigrationRules {
                     continue;
                 }
                 if (plpgsqlRecords.contains(schema)) {
+                    continue;
+                }
+                if (schema.equals("excluded")
+                        && statement.toLowerCase(Locale.ROOT)
+                                .matches("(?s).*\\bon\\s+conflict\\b.*\\bdo\\s+update\\b.*")) {
                     continue;
                 }
                 if (!schema.equals(expected.schema())

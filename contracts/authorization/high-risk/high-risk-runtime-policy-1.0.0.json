@@ -1,0 +1,61 @@
+{
+  "runtimePolicyVersion": "HRAP-RUNTIME-1.0.0",
+  "owner": "identity-access",
+  "publicPorts": {
+    "approval": "identity-access/api/HighRiskApprovalPort",
+    "executionAuthorization": "identity-access/api/HighRiskExecutionAuthorizationPort"
+  },
+  "wireContracts": {
+    "request": "high-risk-approval-request.schema.json",
+    "receipt": "high-risk-approval-receipt.schema.json",
+    "executionToken": "high-risk-execution-token.schema.json",
+    "executionAuthorizationLease": "high-risk-execution-authorization-lease.schema.json"
+  },
+  "approvalLifecycle": {
+    "states": ["pending", "approved", "rejected", "expired", "cancelled"],
+    "terminalStates": ["rejected", "expired", "cancelled"],
+    "pendingExpiry": "trustedNow-greater-than-or-equal-expiresAt-transitions-to-expired",
+    "makerChecker": "different-current-natural-person-principals",
+    "quorum": "all-distinct-business-owner-bindings"
+  },
+  "executionAuthorization": {
+    "tokenConsumption": "token-consumed-once-when-lease-is-issued-or-replayed",
+    "oneExecutionJtiPerApproval": true,
+    "sameIdempotencyKeySameDigest": "return-same-lease-and-execution-jti",
+    "sameIdempotencyKeyDifferentDigest": "conflict",
+    "leaseStates": ["issued", "reserved", "executed", "expired", "cancelled"],
+    "reservation": "issued-to-reserved-before-owner-command",
+    "commitBoundary": "ownerCommittedAt-strictly-before-authorizedUntil",
+    "lateConfirmation": "finalize-as-executed-when-ownerCommittedAt-strictly-before-authorizedUntil-even-if-confirmedAt-is-on-or-after-authorizedUntil",
+    "uncommittedExpiry": "issued-or-reserved-to-expired-at-authorizedUntil;token-and-execution-jti-never-reactivated",
+    "cancel": "issued-or-reserved-to-cancelled-before-owner-commit",
+    "executedTerminal": true,
+    "reconcileInput": [
+      "leaseId", "leaseVersion", "leaseDigest", "executionJti", "requestDigest",
+      "ownerCommitId", "ownerCommittedAt", "ownerResultDigest", "outboxEventId", "traceId"
+    ],
+    "reconcileIdempotencyKey": ["leaseId", "ownerCommitId", "outboxEventId"],
+    "reconcileSameKeyDifferentDigest": "conflict",
+    "issuer": "identity-access",
+    "audienceRequired": true,
+    "keyVersionRequired": true,
+    "signatureRequired": true
+  },
+  "invalidationRace": {
+    "beforeOwnerCommit": "deny-and-remain-current-state",
+    "afterOwnerCommitBeforeDownstreamConsumption": "idempotently-compensate-recovering-to-fused-and-publish-invalidation-evidence",
+    "downstreamBusinessConsumptionWhileRecovering": "forbidden"
+  },
+  "transactionBoundary": {
+    "crossOwnerGlobalAcidClaim": false,
+    "networkIoInsideOwnerTransaction": false,
+    "guarantee": "owner-local-atomicity-plus-single-use-lease-plus-outbox-reconciliation-plus-safe-compensation"
+  },
+  "retention": {
+    "evidence": "P2Y",
+    "idempotency": "P90D",
+    "legalHoldAware": true,
+    "cleanupOwner": "identity-access-retention-workload"
+  },
+  "unknownVersionDigestIssuerAudienceKeyOrAction": "deny"
+}

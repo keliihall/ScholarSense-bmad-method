@@ -19,14 +19,20 @@ export type AuthorizedShellEntryCapability = Readonly<{
   state: AuthorizedShellProviderState;
 }>;
 
+export type AuthorizedShellActionCapability = Readonly<{
+  actionType: 'quality-fuse.recover';
+  state: AuthorizedShellProviderState;
+}>;
+
 export type CurrentAuthorizedShell = Readonly<{
-  schemaVersion: 'AUTHORIZED-SHELL-1.0.0';
+  schemaVersion: 'AUTHORIZED-SHELL-1.1.0';
   policyVersion: 'RFP-1.0.0';
   fixtureVersion: 'RFP-FIXTURE-1.0.0';
   evaluatedAt: string;
   defaultSurface: AuthorizedShellSurface;
   menuItems: readonly AuthorizedShellMenuItem[];
   entryCapabilities: readonly AuthorizedShellEntryCapability[];
+  actionCapabilities: readonly AuthorizedShellActionCapability[];
   dependencyStatus: 'available' | 'unavailable';
 }>;
 
@@ -53,10 +59,10 @@ export class AuthorizedShellClient {
 
 function isCurrentAuthorizedShell(value: unknown): value is CurrentAuthorizedShell {
   if (!isExactRecord(value, [
-    'defaultSurface', 'dependencyStatus', 'entryCapabilities', 'evaluatedAt',
+    'actionCapabilities', 'defaultSurface', 'dependencyStatus', 'entryCapabilities', 'evaluatedAt',
     'fixtureVersion', 'menuItems', 'policyVersion', 'schemaVersion',
   ])) return false;
-  if (value.schemaVersion !== 'AUTHORIZED-SHELL-1.0.0'
+  if (value.schemaVersion !== 'AUTHORIZED-SHELL-1.1.0'
     || value.policyVersion !== 'RFP-1.0.0'
     || value.fixtureVersion !== 'RFP-FIXTURE-1.0.0'
     || !validDate(value.evaluatedAt)
@@ -68,8 +74,17 @@ function isCurrentAuthorizedShell(value: unknown): value is CurrentAuthorizedShe
     || !unique(value.menuItems.map((item) => item.routeName))
     || !Array.isArray(value.entryCapabilities)
     || !value.entryCapabilities.every(isCapability)
-    || !unique(value.entryCapabilities.map((item) => item.id))) return false;
+    || !unique(value.entryCapabilities.map((item) => item.id))
+    || !Array.isArray(value.actionCapabilities)
+    || !value.actionCapabilities.every(isActionCapability)
+    || !unique(value.actionCapabilities.map((item) => item.actionType))) return false;
   return true;
+}
+
+function isActionCapability(value: unknown): value is AuthorizedShellActionCapability {
+  return isExactRecord(value, ['actionType', 'state'])
+    && value.actionType === 'quality-fuse.recover'
+    && isProviderState(value.state);
 }
 
 function isSurface(value: unknown): value is AuthorizedShellSurface {
@@ -124,6 +139,9 @@ function freezeShell(value: CurrentAuthorizedShell): CurrentAuthorizedShell {
     menuItems: Object.freeze(value.menuItems.map((item) => Object.freeze({ ...item }))),
     entryCapabilities: Object.freeze(
       value.entryCapabilities.map((item) => Object.freeze({ ...item })),
+    ),
+    actionCapabilities: Object.freeze(
+      value.actionCapabilities.map((item) => Object.freeze({ ...item })),
     ),
   });
 }

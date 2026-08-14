@@ -1,0 +1,128 @@
+{
+  "version": "INGESTION-QUALITY-ROLES-3.0.0",
+  "status": "deployment-input-required",
+  "runtimeEvidenceClaim": "none",
+  "composition": {
+    "predecessorRolesPath": "ingestion-quality-roles-2.0.0.json",
+    "predecessorRolesRawSha256": "a8bd9b73096c7cc92552d266b286602f3ec5b97fb34b3a4f5c5cd5b4d1a05f43",
+    "mutationAllowed": false,
+    "successorRuntimeProfile": "ingestion-quality-runtime-3.0.0.json"
+  },
+  "artifactContract": "same-backend-jar",
+  "roleOverrides": {
+    "web-api": {
+      "addCapabilityProfiles": ["ingestion-quality-runtime-3.0.0.json"],
+      "minimumReplicas": 2,
+      "businessHttp": true
+    },
+    "quality-worker": {
+      "retainCapabilityProfiles": [
+        "ingestion-quality-runtime-1.0.0.json",
+        "ingestion-quality-runtime-2.0.0.json"
+      ],
+      "businessHttp": false
+    }
+  },
+  "roles": {
+    "eligibility-consumer": {
+      "artifact": "backend/target/scholarsense-backend.jar",
+      "capabilityProfiles": [
+        "ingestion-quality-runtime-1.0.0.json",
+        "ingestion-quality-runtime-2.0.0.json",
+        "ingestion-quality-runtime-3.0.0.json"
+      ],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "activationStatus": "deployment-input-required",
+      "minimumReplicas": 2,
+      "businessHttp": false,
+      "requiredEnvironment": [
+        "SCHOLARSENSE_INGESTION_QUALITY_ELIGIBILITY_CONSUMER_ENABLED",
+        "SCHOLARSENSE_INGESTION_QUALITY_ELIGIBILITY_CONSUMER_DATASOURCE_URL",
+        "SCHOLARSENSE_INGESTION_QUALITY_ELIGIBILITY_CONSUMER_DATASOURCE_USERNAME",
+        "SCHOLARSENSE_INGESTION_QUALITY_ELIGIBILITY_CONSUMER_DATASOURCE_PASSWORD",
+        "SCHOLARSENSE_INGESTION_QUALITY_CONTRACT_ROOT",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_AUTHORIZATION_REF",
+        "SCHOLARSENSE_INGESTION_QUALITY_TRUSTED_TIME_PROVIDER_REF",
+        "SCHOLARSENSE_INGESTION_QUALITY_QUALITY_EVENT_SUBSCRIPTION_REF",
+        "SCHOLARSENSE_INGESTION_QUALITY_BACKFILL_PROVIDER_REF",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_MTLS_CERT_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_MTLS_KEY_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_TRUST_BUNDLE_PATH",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_AUDIENCE",
+        "SCHOLARSENSE_INGESTION_QUALITY_WORKLOAD_CAPABILITIES"
+      ],
+      "environment": {
+        "SCHOLARSENSE_ROLE": "worker",
+        "SCHOLARSENSE_IDENTITY_ENABLED": "false",
+        "SCHOLARSENSE_IDENTITY_SYNC_ENABLED": "false",
+        "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "false",
+        "SCHOLARSENSE_INGESTION_QUALITY_ELIGIBILITY_CONSUMER_ENABLED": "true"
+      },
+      "probe": {
+        "type": "process-and-startup-gate",
+        "startupGate": "PostgreSqlDataSourceStartupGate.verifyEligibilityConsumer"
+      }
+    },
+    "audit-relay-worker": {
+      "artifact": "backend/target/scholarsense-backend.jar",
+      "capabilityProfiles": ["ingestion-quality-runtime-3.0.0.json"],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "activationStatus": "deployment-input-required",
+      "minimumReplicas": 2,
+      "businessHttp": false,
+      "requiredEnvironment": [
+        "SCHOLARSENSE_INGESTION_QUALITY_RELAY_DATASOURCE_URL",
+        "SCHOLARSENSE_INGESTION_QUALITY_RELAY_DATASOURCE_USERNAME",
+        "SCHOLARSENSE_INGESTION_QUALITY_RELAY_DATASOURCE_PASSWORD",
+        "SCHOLARSENSE_INGESTION_QUALITY_ELIGIBILITY_EVENT_PUBLISHER_REF"
+      ],
+      "environment": {
+        "SCHOLARSENSE_ROLE": "worker",
+        "SCHOLARSENSE_INGESTION_QUALITY_ELIGIBILITY_RELAY_ENABLED": "true"
+      },
+      "probe": {
+        "type": "process-and-startup-gate",
+        "startupGate": "PostgreSqlDataSourceStartupGate.verifyRelay"
+      }
+    },
+    "retention-executor": {
+      "artifact": "backend/target/scholarsense-backend.jar",
+      "capabilityProfiles": ["ingestion-quality-runtime-3.0.0.json"],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "activationStatus": "deployment-input-required",
+      "minimumReplicas": 1,
+      "businessHttp": false,
+      "requiredEnvironment": [
+        "SCHOLARSENSE_INGESTION_QUALITY_RETENTION_DATASOURCE_URL",
+        "SCHOLARSENSE_INGESTION_QUALITY_RETENTION_DATASOURCE_USERNAME",
+        "SCHOLARSENSE_INGESTION_QUALITY_RETENTION_DATASOURCE_PASSWORD",
+        "SCHOLARSENSE_INGESTION_QUALITY_TRUSTED_TIME_PROVIDER_REF",
+        "SCHOLARSENSE_AUDIT_RETENTION_CAPABILITY_REF"
+      ],
+      "environment": {
+        "SCHOLARSENSE_ROLE": "worker",
+        "SCHOLARSENSE_INGESTION_QUALITY_ELIGIBILITY_RETENTION_ENABLED": "true"
+      },
+      "probe": {
+        "type": "process-and-startup-gate",
+        "startupGate": "PostgreSqlDataSourceStartupGate.verifyRetentionExecutor"
+      }
+    }
+  },
+  "activationPolicy": {
+    "requiredTargetInputs": [
+      "four-dedicated-database-logins",
+      "all-member-human-authorization-provider",
+      "revocation-aware-workload-authority",
+      "quality-event-subscription",
+      "backfill-provider",
+      "trusted-time-provider",
+      "protected-mtls-material",
+      "event-publisher",
+      "retention-capability"
+    ],
+    "partialActivationAllowed": false,
+    "fallbackProviderAllowed": false,
+    "runtimeEvidenceClaimBeforeTargetActivation": "none"
+  }
+}

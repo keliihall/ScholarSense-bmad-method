@@ -1,0 +1,22 @@
+{
+  "handoffVersion": "QUALITY-ELIGIBILITY-CONSUMER-HANDOFF-1.0.0",
+  "targetStory": "3.2",
+  "targetOwner": "signal-evaluation",
+  "eventType": "scholarsense.ingestion-quality.quality-eligibility.changed.v1",
+  "schema": "contracts/events/ingestion-quality/quality-eligibility-event.schema.json",
+  "validFixture": "contracts/events/ingestion-quality/fixtures/valid/quality-eligibility-changed-v1.json",
+  "invalidFixture": "contracts/events/ingestion-quality/fixtures/invalid/quality-eligibility-negative-fixtures-1.0.0.json",
+  "orderingFixture": "contracts/events/ingestion-quality/fixtures/ordering/quality-eligibility-ordering-1.0.0.json",
+  "consumerRequirements": {
+    "idempotencyKey": ["source", "id"],
+    "aggregateOrdering": ["businessKey", "aggregateVersion"],
+    "sameVersionSameBody": "duplicate-no-op",
+    "sameVersionDifferentBody": "poison",
+    "gap": "pause-and-request-backfill",
+    "decisionInputs": "event-self-contained-never-owner-latest-lookup",
+    "forbiddenSourceFields": ["deliveryStatus"],
+    "maximumWireBytes": 65536
+  },
+  "objectsNotCreatedByStory24": ["RuleEvaluation", "Candidate", "Clue"],
+  "runtimeEvidenceClaim": "none"
+}

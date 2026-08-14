@@ -1,0 +1,92 @@
+{
+  "contractVersion": "RECOVERY-SAMPLE-RECOMPUTE-PROVIDER-1.1.0",
+  "predecessor": {
+    "contractVersion": "RECOVERY-SAMPLE-RECOMPUTE-PROVIDER-1.0.0",
+    "path": "contracts/ingestion-quality/quality-recovery/recovery-sample-provider-1.0.0.json",
+    "rawSha256": "sha256:2309f38747568a70a3bfbf0c907175b70a9bd1e72fe73ab43c89a64ad7cdf4d2"
+  },
+  "approval": {
+    "approvalRef": "AUTH-2026-08-13-RSP-001",
+    "approvedBy": "Hei",
+    "approvedAt": "2026-08-13T05:28:48+08:00",
+    "effectiveAt": "2026-08-13T05:28:48+08:00"
+  },
+  "publicPort": "signal-evaluation/api/RecoverySampleRecomputeProviderPort",
+  "ownerInternalPort": "ingestion-quality/application/RecoverySampleRecomputePort",
+  "ownerAdapter": "ingestion-quality/adapters/outbound/SignalEvaluationRecoverySampleRecomputeAdapter",
+  "producer": "signal-evaluation",
+  "consumer": "ingestion-quality",
+  "interaction": "pure-bounded-computation-query-no-cross-module-command-or-shared-transaction",
+  "providerVersion": "RECOVERY-SAMPLE-PROVIDER-1.0.0",
+  "availability": ["available", "unavailable", "not-installed"],
+  "workloadAudience": "ingestion-quality-recovery-worker",
+  "requestFields": [
+    "providerVersion",
+    "recoveryRequestId",
+    "episodeId",
+    "taskId",
+    "ruleVersionsDigest",
+    "memberSetDigest",
+    "watermarksDigest",
+    "qualityRecoveryPolicyVersion",
+    "qualityRecoveryPolicyDigest",
+    "opaqueSubjectWindowSelectionRef",
+    "selectionSeed",
+    "requestedSampleCount",
+    "requestDigest",
+    "traceId"
+  ],
+  "resultFields": [
+    "providerVersion",
+    "selectionSeed",
+    "populationCount",
+    "selectedCount",
+    "strata",
+    "strataSummaryDigest",
+    "expectedDigest",
+    "actualDigest",
+    "mismatchCount",
+    "completedAt",
+    "traceId"
+  ],
+  "stratumFields": [
+    "stratumCode",
+    "populationCount",
+    "selectedCount",
+    "mismatchCount",
+    "summaryDigest"
+  ],
+  "strataRules": {
+    "maximumItems": 128,
+    "ordering": "stratumCode-utf8-ascending",
+    "duplicateCode": "reject",
+    "totals": "sum-population-selected-mismatch-must-equal-result-totals",
+    "summaryDigest": "covers-canonical-ordered-complete-strata-array"
+  },
+  "privacy": {
+    "studentPlaintext": "forbidden",
+    "subjectOrWindowIdentifier": "forbidden",
+    "rawFailureRows": "forbidden",
+    "freeText": "forbidden",
+    "opaqueSelectionResolution": "provider-side-only"
+  },
+  "bounds": {
+    "timeoutMillis": 30000,
+    "maximumSelectedSubjectWindows": 10000,
+    "maximumStrata": 128,
+    "maximumWireBytes": 65536
+  },
+  "idempotency": {
+    "key": ["providerVersion", "requestDigest"],
+    "sameKeySameDigest": "return-same-immutable-result",
+    "sameKeyDifferentBody": "reject",
+    "deterministicSelectionSeed": true
+  },
+  "failure": {
+    "notInstalled": "durable-failure-remain-fused",
+    "unavailable": "durable-retryable-failure-remain-fused",
+    "unknownVersionOrDigest": "fail-closed"
+  },
+  "forbiddenSideEffects": ["RuleEvaluation", "Candidate", "Clue"],
+  "runtimeEvidenceClaim": "contract-only"
+}

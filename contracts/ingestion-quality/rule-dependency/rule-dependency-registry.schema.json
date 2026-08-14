@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/rule-dependency/rule-dependency-registry.schema.json",
+  "title": "RuleDependencyRegistry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["registryVersion", "catalog", "identitySeed", "ruleCatalog", "qualityProfiles", "canonicalizationProfile", "owner", "approvalRef", "effectiveAt", "rules", "excludedSources"],
+  "properties": {
+    "registryVersion": {"const": "RULE-DEPENDENCY-REGISTRY-1.0.0"},
+    "catalog": {"$ref": "#/$defs/versionDigest"},
+    "identitySeed": {"$ref": "#/$defs/versionDigest"},
+    "ruleCatalog": {"$ref": "#/$defs/versionDigest"},
+    "qualityProfiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["qmdp", "qshm"],
+      "properties": {"qmdp": {"$ref": "#/$defs/versionDigest"}, "qshm": {"$ref": "#/$defs/versionDigest"}}
+    },
+    "canonicalizationProfile": {"const": "SCHOLARSENSE-CANONICAL-JSON-1.0.0"},
+    "owner": {"const": "ingestion-quality"},
+    "approvalRef": {"const": "AUTH-2026-07-17-001"},
+    "effectiveAt": {"type": "string", "format": "date-time"},
+    "rules": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"$ref": "#/$defs/rule"}},
+    "excludedSources": {"type": "array", "minItems": 6, "maxItems": 6, "uniqueItems": true, "items": {"type": "string", "pattern": "^SRC-P[01]-[A-Z0-9-]+-001$"}}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "versionDigest": {
+      "type": "object", "additionalProperties": false, "required": ["version", "digest"],
+      "properties": {"version": {"type": "string", "minLength": 1}, "digest": {"$ref": "#/$defs/digest"}}
+    },
+    "rule": {
+      "type": "object", "additionalProperties": false, "required": ["ruleId", "ruleVersion", "composition", "members"],
+      "properties": {
+        "ruleId": {"enum": ["ACC-SAFE-001", "ACC-SAFE-002", "ECON-012", "NIGHT-001", "ACADEMIC-001"]},
+        "ruleVersion": {"const": "1.0.0"},
+        "composition": {
+          "type": "object", "additionalProperties": false, "required": ["operator", "threshold"],
+          "properties": {"operator": {"enum": ["all-of", "any-of", "threshold"]}, "threshold": {"type": ["integer", "null"], "minimum": 1}}
+        },
+        "members": {"type": "array", "minItems": 1, "maxItems": 11, "items": {"$ref": "#/$defs/member"}}
+      }
+    },
+    "member": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sourceId", "sourceVersion", "dependencyId", "dependencyVersion", "requirement", "compositionGroup"],
+      "properties": {
+        "sourceId": {"type": "string", "pattern": "^SRC-P[01]-[A-Z0-9-]+-001$"},
+        "sourceVersion": {"type": "string", "minLength": 1},
+        "dependencyId": {"type": "string", "pattern": "^DEP-P[01]-[A-Z0-9-]+-001$"},
+        "dependencyVersion": {"const": "1.0.0"},
+        "requirement": {"enum": ["required", "optional"]},
+        "compositionGroup": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$"}
+      }
+    }
+  }
+}

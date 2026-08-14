@@ -1,0 +1,167 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "ScholarSense rule dependency quality eligibilities",
+    "version": "1.0.0",
+    "description": "Read-only R6 owned-source composition facts. Every exposed member is authorized before projection; runtimeEvidenceClaim=none."
+  },
+  "servers": [{"url": "/api/v1"}],
+  "security": [{"sessionCookie": []}],
+  "paths": {
+    "/quality-eligibilities": {
+      "get": {
+        "operationId": "listQualityEligibilities",
+        "summary": "List fully authorized current rule dependency compositions",
+        "parameters": [
+          {"$ref": "#/components/parameters/Status"},
+          {"$ref": "#/components/parameters/RuleId"},
+          {"$ref": "#/components/parameters/AfterOccurredAt"},
+          {"$ref": "#/components/parameters/AfterEligibilityId"},
+          {"$ref": "#/components/parameters/PageSize"}
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized and audit-bound eligibility page",
+            "headers": {
+              "Cache-Control": {"schema": {"const": "no-store"}},
+              "Referrer-Policy": {"schema": {"const": "no-referrer"}}
+            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/QualityEligibilityPage"}}}
+          },
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "404": {"$ref": "#/components/responses/Concealed"},
+          "503": {"$ref": "#/components/responses/Unavailable"}
+        }
+      }
+    },
+    "/quality-eligibilities/{eligibilityId}": {
+      "get": {
+        "operationId": "getQualityEligibility",
+        "summary": "Read one fully authorized dependency composition",
+        "parameters": [{"$ref": "#/components/parameters/EligibilityId"}],
+        "responses": {
+          "200": {
+            "description": "Authorized and audit-bound eligibility detail",
+            "headers": {
+              "Cache-Control": {"schema": {"const": "no-store"}},
+              "Referrer-Policy": {"schema": {"const": "no-referrer"}}
+            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/QualityEligibility"}}}
+          },
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "404": {"$ref": "#/components/responses/Concealed"},
+          "503": {"$ref": "#/components/responses/Unavailable"}
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {"type": "apiKey", "in": "cookie", "name": "JSESSIONID"}
+    },
+    "parameters": {
+      "EligibilityId": {"name": "eligibilityId", "in": "path", "required": true, "schema": {"$ref": "#/components/schemas/UuidV7"}},
+      "Status": {"name": "status", "in": "query", "required": false, "schema": {"type": "string", "enum": ["eligible", "fused", "recovering", "missing"]}},
+      "RuleId": {"name": "ruleId", "in": "query", "required": false, "schema": {"type": "string", "pattern": "^[A-Z][A-Z0-9-]{2,63}$"}},
+      "AfterOccurredAt": {"name": "afterOccurredAt", "in": "query", "required": false, "schema": {"$ref": "#/components/schemas/OffsetTimestamp"}},
+      "AfterEligibilityId": {"name": "afterEligibilityId", "in": "query", "required": false, "schema": {"$ref": "#/components/schemas/UuidV7"}},
+      "PageSize": {"name": "size", "in": "query", "required": false, "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Malformed request",
+        "headers": {"Cache-Control": {"schema": {"const": "no-store"}}},
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+      },
+      "Concealed": {
+        "description": "Absent and any partially unauthorized composition are indistinguishable",
+        "headers": {"Cache-Control": {"schema": {"const": "no-store"}}},
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+      },
+      "Unavailable": {
+        "description": "Authorization, owner evidence, recheck, audit, or storage unavailable",
+        "headers": {"Cache-Control": {"schema": {"const": "no-store"}}},
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}
+      }
+    },
+    "schemas": {
+      "UuidV7": {"type": "string", "format": "uuid", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+      "OffsetTimestamp": {"type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,9})?(?:Z|[+-][0-9]{2}:[0-9]{2})$"},
+      "SafeInteger": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+      "Sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+      "QualityEligibilityMember": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceId", "sourceVersion", "dependencyId", "dependencyVersion", "requirement", "state", "versionContinuous", "sourceWatermark", "dependencyWatermark", "snapshotId", "snapshotImmutableHash"],
+        "properties": {
+          "sourceId": {"type": "string", "pattern": "^SRC-P[01]-[A-Z0-9-]+-[0-9]{3}$"},
+          "sourceVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+          "dependencyId": {"type": "string", "pattern": "^DEP-P[01]-[A-Z0-9-]+-[0-9]{3}$"},
+          "dependencyVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+          "requirement": {"type": "string", "enum": ["required", "optional"]},
+          "state": {"type": "string", "enum": ["eligible", "fused", "recovering", "missing"]},
+          "versionContinuous": {"type": "boolean"},
+          "sourceWatermark": {"type": "string", "minLength": 1, "maxLength": 512},
+          "dependencyWatermark": {"type": "string", "minLength": 1, "maxLength": 512},
+          "snapshotId": {"oneOf": [{"$ref": "#/components/schemas/UuidV7"}, {"type": "null"}]},
+          "snapshotImmutableHash": {"oneOf": [{"$ref": "#/components/schemas/Sha256"}, {"type": "null"}]}
+        }
+      },
+      "QualityEligibility": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["eligibilityId", "ruleId", "ruleVersion", "status", "reasonCode", "operator", "threshold", "members", "failedMembers", "registryVersion", "aggregateVersion", "effectiveAt", "occurredAt"],
+        "properties": {
+          "eligibilityId": {"$ref": "#/components/schemas/UuidV7"},
+          "ruleId": {"type": "string", "pattern": "^[A-Z][A-Z0-9-]{2,63}$"},
+          "ruleVersion": {"type": "string", "pattern": "^[1-9][0-9]*\\.[0-9]+\\.[0-9]+$"},
+          "status": {"type": "string", "enum": ["eligible", "fused", "recovering", "missing"]},
+          "reasonCode": {"type": "string", "enum": ["ALL_REQUIRED_ELIGIBLE", "REQUIRED_MEMBER_FUSED", "REQUIRED_MEMBER_RECOVERING", "REQUIRED_MEMBER_MISSING", "REQUIRED_MEMBER_VERSION_GAP", "ANY_OF_UNSATISFIED", "THRESHOLD_UNSATISFIED", "RECOVERY_COMMAND_ACCEPTED"]},
+          "operator": {"type": "string", "enum": ["all-of", "any-of", "threshold"]},
+          "threshold": {"oneOf": [{"type": "integer", "minimum": 1, "maximum": 11}, {"type": "null"}]},
+          "members": {"type": "array", "minItems": 1, "maxItems": 11, "items": {"$ref": "#/components/schemas/QualityEligibilityMember"}},
+          "failedMembers": {"type": "array", "maxItems": 11, "uniqueItems": true, "items": {"type": "string", "pattern": "^DEP-P[01]-[A-Z0-9-]+-[0-9]{3}$"}},
+          "registryVersion": {"const": "RULE-DEPENDENCY-REGISTRY-1.0.0"},
+          "aggregateVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+          "effectiveAt": {"$ref": "#/components/schemas/OffsetTimestamp"},
+          "occurredAt": {"$ref": "#/components/schemas/OffsetTimestamp"}
+        }
+      },
+      "Cursor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["occurredAt", "eligibilityId"],
+        "properties": {
+          "occurredAt": {"$ref": "#/components/schemas/OffsetTimestamp"},
+          "eligibilityId": {"$ref": "#/components/schemas/UuidV7"}
+        }
+      },
+      "QualityEligibilityPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["items", "size", "hasMore", "nextCursor"],
+        "properties": {
+          "items": {"type": "array", "maxItems": 100, "items": {"$ref": "#/components/schemas/QualityEligibility"}},
+          "size": {"type": "integer", "minimum": 1, "maximum": 100},
+          "hasMore": {"type": "boolean"},
+          "nextCursor": {"oneOf": [{"$ref": "#/components/schemas/Cursor"}, {"type": "null"}]}
+        }
+      },
+      "FieldError": {
+        "type": "object", "additionalProperties": false,
+        "required": ["field", "code"],
+        "properties": {"field": {"type": "string"}, "code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"}}
+      },
+      "Error": {
+        "type": "object", "additionalProperties": false,
+        "required": ["code", "traceId", "currentVersion", "fieldErrors"],
+        "properties": {
+          "code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"},
+          "traceId": {"type": "string", "pattern": "^(?!0{32})[0-9a-f]{32}$"},
+          "currentVersion": {"oneOf": [{"type": "integer", "minimum": 0, "maximum": 9007199254740991}, {"type": "null"}]},
+          "fieldErrors": {"type": "array", "items": {"$ref": "#/components/schemas/FieldError"}}
+        }
+      }
+    }
+  }
+}

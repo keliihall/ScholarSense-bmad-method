@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.local/contracts/ingestion-quality/quality-fuse/quality-fuse-policy.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "policyVersion", "authority", "singleWriter", "provenance", "upstream",
+    "triggerReasons", "transitions", "episode", "qualityProfiles",
+    "downstreamHandoffs", "runtimeEvidenceClaim"
+  ],
+  "properties": {
+    "$schema": {"const": "quality-fuse-policy.schema.json"},
+    "policyVersion": {"const": "QFTP-1.0.0"},
+    "authority": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": {"type": "string", "enum": ["DEC-012", "DEC-019", "DCC-1.1.0", "QG-1.0.0", "QMDP-1.0.0", "QSHM-1.0.0", "RC-1.0.0"]}
+    },
+    "singleWriter": {"const": "ingestion-quality"},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["realtime", "bootstrap", "bootstrapRequiresExplicitImportOrMigration", "absenceOfPriorFactDoesNotImplyBootstrap"],
+      "properties": {
+        "realtime": {"const": "REALTIME_ASSESSMENT"},
+        "bootstrap": {"const": "BOOTSTRAP_MATERIALIZATION"},
+        "bootstrapRequiresExplicitImportOrMigration": {"const": true},
+        "absenceOfPriorFactDoesNotImplyBootstrap": {"const": true}
+      }
+    },
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["acceptedDecision", "requiredBinding", "lookup", "gap", "poison"],
+      "properties": {
+        "acceptedDecision": {"const": "Story-2.4 QualityEligibility owner-local decision"},
+        "requiredBinding": {
+          "type": "array", "minItems": 28, "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]+$"}
+        },
+        "lookup": {"const": "exact-self-contained-evidence-never-latest"},
+        "gap": {"const": "pause-and-backfill"},
+        "poison": {"const": "quarantine-without-business-transition"}
+      }
+    },
+    "triggerReasons": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["business", "technical", "nonTriggering", "requires"],
+      "properties": {
+        "business": {
+          "type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true,
+          "items": {"type": "string", "enum": ["REQUIRED_MEMBER_FAILED", "COMPOSITION_THRESHOLD_FAILED"]}
+        },
+        "technical": {"type": "array", "maxItems": 0},
+        "nonTriggering": {
+          "type": "array", "minItems": 10, "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"}
+        },
+        "requires": {
+          "type": "array", "minItems": 4, "maxItems": 4, "uniqueItems": true,
+          "items": {"type": "string", "enum": ["batch-sealed", "assessment-complete", "exact-assessed-published-pair", "approved-profile-digests"]}
+        }
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["caseId", "priorState", "evaluatedState", "appliedState", "episodeAction", "taskAction"],
+        "properties": {
+          "caseId": {"type": "string", "pattern": "^[a-z][a-z0-9-]{2,63}$"},
+          "provenance": {"type": "string", "enum": ["REALTIME_ASSESSMENT", "BOOTSTRAP_MATERIALIZATION"]},
+          "priorState": {"type": "string", "enum": ["eligible", "fused", "recovering", "missing"]},
+          "evaluatedState": {"type": "string", "enum": ["eligible", "fused", "recovering", "missing"]},
+          "appliedState": {"type": "string", "enum": ["eligible", "fused", "recovering", "missing"]},
+          "episodeAction": {"type": "string", "enum": ["none", "start", "update", "preserve"]},
+          "taskAction": {"type": "string", "enum": ["none", "create", "update", "preserve"]},
+          "reasonCode": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,127}$"}
+        }
+      }
+    },
+    "episode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["activeKey", "start", "update", "closeOwnerStory", "reopen"],
+      "properties": {
+        "activeKey": {
+          "type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true,
+          "items": {"type": "string", "enum": ["sourceId", "dependencyId", "generation"]}
+        },
+        "start": {"const": "first-verified-business-failure-without-active-episode"},
+        "update": {"const": "verified-failure-within-active-generation"},
+        "closeOwnerStory": {"const": "2.5c"},
+        "reopen": {"const": "allocate-generation-plus-one-after-terminal-close"}
+      }
+    },
+    "qualityProfiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gateVersion", "metricDecisionProfileVersion", "snapshotHashProfileVersion", "legacyMappings", "unknownMapping", "formulaEvaluationOwner", "story25aBehavior"],
+      "properties": {
+        "gateVersion": {"const": "QG-1.0.0"},
+        "metricDecisionProfileVersion": {"const": "QMDP-1.0.0"},
+        "snapshotHashProfileVersion": {"const": "QSHM-1.0.0"},
+        "legacyMappings": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"type": "string", "enum": ["Q1", "Q2"]}},
+        "unknownMapping": {"const": "reject"},
+        "formulaEvaluationOwner": {"const": "Story-2.3"},
+        "story25aBehavior": {"const": "consume-comparison-result-never-recalculate"}
+      }
+    },
+    "downstreamHandoffs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signalEvaluationConsumerOwnerStory", "publicTaskFinalApplyOwnerStory", "recoveryCommandOwnerStory", "observationAndCloseOwnerStory"],
+      "properties": {
+        "signalEvaluationConsumerOwnerStory": {"const": "3.2"},
+        "publicTaskFinalApplyOwnerStory": {"const": "5.5"},
+        "recoveryCommandOwnerStory": {"const": "2.5b"},
+        "observationAndCloseOwnerStory": {"const": "2.5c"}
+      }
+    },
+    "runtimeEvidenceClaim": {"const": "owner-local-conformance"}
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/ingestion-quality/quality-recovery/quality-recovery-evidence-pack-1.1.0.schema.json",
+  "title": "Immutable self-contained multi-RuleVersion quality recovery evidence pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "evidencePackId", "evidencePackVersion", "object", "policy",
+    "sourceClass", "sourceSchemaVersion", "sourceSchemaDigest", "dependencyVersion",
+    "dependencyDigest", "qualityEvidence", "batchEvidence", "backfillEvidence",
+    "reconciliationEvidence", "sampleEvidence", "previewDigest", "readinessDecision",
+    "missingEvidenceCodes", "trustedStartedAt", "trustedCompletedAt",
+    "validationResultDigest", "evidencePackDigest", "traceId",
+    "canonicalizationProfile", "runtimeEvidenceClaim"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "QUALITY-RECOVERY-EVIDENCE-PACK-1.1.0"},
+    "evidencePackId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+    "evidencePackVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "object": {"$ref": "#/$defs/recoveryTaskBinding"},
+    "policy": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/recoveryPolicyBinding"},
+    "sourceClass": {"enum": ["streaming", "dailyBatch"]},
+    "sourceSchemaVersion": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]*-[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "sourceSchemaDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "dependencyVersion": {"type": "string", "pattern": "^[1-9][0-9]{0,15}$"},
+    "dependencyDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "qualityEvidence": {"$ref": "quality-recovery-validation-result-1.1.0.schema.json#/$defs/qualityEvidence"},
+    "batchEvidence": {"$ref": "quality-recovery-validation-result-1.1.0.schema.json#/$defs/batchEvidence"},
+    "backfillEvidence": {"$ref": "quality-recovery-validation-result-1.1.0.schema.json#/$defs/backfillEvidence"},
+    "reconciliationEvidence": {"$ref": "#/$defs/reconciliationEvidence"},
+    "sampleEvidence": {"$ref": "#/$defs/sampleEvidence"},
+    "previewDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "readinessDecision": {"enum": ["ready-for-d4", "not-ready"]},
+    "missingEvidenceCodes": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"enum": ["QUALITY_GATE_NOT_PASSED", "CONSECUTIVE_BATCHES_INSUFFICIENT", "BACKFILL_INCOMPLETE", "RECONCILIATION_MISMATCH", "SAMPLE_INSUFFICIENT", "SAMPLE_MISMATCH", "SAMPLE_PROVIDER_UNAVAILABLE", "REQUIRED_DEPENDENCY_NOT_ELIGIBLE", "ACTIVE_EPISODE_MISSING", "OPEN_RECOVERY_TASK_MISSING", "VERSION_OR_DIGEST_UNKNOWN"]}},
+    "trustedStartedAt": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/instantMicros"},
+    "trustedCompletedAt": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/instantMicros"},
+    "validationResultDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "evidencePackDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+    "traceId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/traceId"},
+    "canonicalizationProfile": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/canonicalizationProfile"},
+    "runtimeEvidenceClaim": {"const": "installed-and-verified"}
+  },
+  "$defs": {
+    "recoveryTaskBinding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["recoveryRequestId", "episodeId", "taskId", "episodeGeneration", "sourceId", "dependencyId", "expectedEpisodeVersion", "expectedTaskVersion", "ruleVersionsDigest", "memberSetDigest", "watermarksDigest", "eligibilityBindings", "currentBindingDigest"],
+      "properties": {
+        "recoveryRequestId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+        "episodeId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+        "taskId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/uuidV7"},
+        "episodeGeneration": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "sourceId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/sourceId"},
+        "dependencyId": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/dependencyId"},
+        "expectedEpisodeVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "expectedTaskVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+        "ruleVersionsDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+        "memberSetDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+        "watermarksDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+        "eligibilityBindings": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "quality-recovery-validation-result-1.1.0.schema.json#/$defs/eligibilityBinding"}},
+        "currentBindingDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"}
+      }
+    },
+    "reconciliationEvidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["summaryVersion", "coverage", "expectedCount", "actualCount", "mismatchCount", "summaryDigest", "completedAt"],
+      "properties": {
+        "summaryVersion": {"const": "QUALITY-RECOVERY-RECONCILIATION-SUMMARY-1.0.0"},
+        "coverage": {"const": "full"},
+        "expectedCount": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+        "actualCount": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+        "mismatchCount": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+        "summaryDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+        "completedAt": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/instantMicros"}
+      }
+    },
+    "sampleEvidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["summaryVersion", "providerVersion", "providerAvailability", "selectionSeed", "populationCount", "selectedCount", "strata", "strataSummaryDigest", "expectedDigest", "actualDigest", "mismatchCount", "completedAt"],
+      "properties": {
+        "summaryVersion": {"const": "QUALITY-RECOVERY-SAMPLE-SUMMARY-1.0.0"},
+        "providerVersion": {"const": "RECOVERY-SAMPLE-PROVIDER-1.0.0"},
+        "providerAvailability": {"const": "available"},
+        "selectionSeed": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+        "populationCount": {"type": "integer", "minimum": 0, "maximum": 9007199254740991},
+        "selectedCount": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "strata": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/stratumSummary"}},
+        "strataSummaryDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+        "expectedDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+        "actualDigest": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/digest"},
+        "mismatchCount": {"type": "integer", "minimum": 0, "maximum": 10000},
+        "completedAt": {"$ref": "quality-recovery-wire-common.schema.json#/$defs/instantMicros"}
+      }
+    }
+  },
+  "x-crossFieldBindings": [
+    "the affected eligibility set is exact, bounded, multi-RuleVersion, and sealed by currentBindingDigest",
+    "ready-for-d4 requires empty missingEvidenceCodes, exact QRP batch and quality gates, all current required members eligible, successful max(LKG,trustedNow-P90D) backfill, full reconciliation mismatchCount=0, and an available all-if-fewer/minimum-100 subject-window sample with mismatchCount=0",
+    "the pack is built only from the immutable validation result and is never reconstructed from latest facts",
+    "student identifiers, subject/window identifiers, raw rows, raw metric payloads, principals and free text are forbidden"
+  ],
+  "x-maximumWireBytes": 262144,
+  "x-predecessor": "quality-recovery-evidence-pack.schema.json"
+}

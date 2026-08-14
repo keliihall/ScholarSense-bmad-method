@@ -133,3 +133,33 @@ their first surviving catalog or set it to null, but never deletes them.
 
 The global sequence and clean/upgrade inventory are discovered from the production migration tree;
 this document is explanatory and is not runtime evidence.
+
+`V000015__ingestion-quality__quality_eligibility_v1.sql` adds the digest-locked five-rule,
+eleven-dependency registry projection and the owner-local Story 2.4 event inbox, source/dependency
+cursor, passed-v3 pending pair, poison quarantine, gap/backfill request, dependency current state,
+immutable eligibility history/member evidence, current pointer, local audit, idempotency and
+business outbox. The new eligibility-consumer login receives only exact snapshot evidence lookup,
+bounded state load and atomic acceptance functions; online, relay and retention workloads receive
+only their closed query/audit, delivery-CAS and cleanup entrypoints. No workload receives raw DML.
+Acceptance uses one source-scoped advisory transaction lock and writes inbox, cursor, dependency,
+history/current, audit and outbox together. The exact Story 2.3 snapshot identity/hash lookup copies
+QSHM references from the immutable owner row; unknown binding, gap and technical poison never create
+an eligibility fact. History updates always fail, deletes require the exclusive retention login,
+and owner-local aggregate CAS starts at one. Query pages use one ID query plus bounded bulk fact and
+member functions, backed by status/page/member-owner indexes; no snapshot hash scan or per-row member
+query is required.
+
+`V000016__ingestion-quality__quality_fuse_task_v1.sql` is a forward-only successor that leaves
+V000015 and its original entrypoints intact. It extends the same eligibility-consumer transaction
+with v2 state-load and acceptance functions, locks source and affected RuleVersions before the
+source/dependency episode and task, and atomically appends fuse episode, RecoveryTask, affected-rule,
+audit, idempotency and public-task outbox facts. One partial unique constraint permits at most one
+active episode per source/dependency, while closed generations remain historical. The accepted plan
+binds the upstream digest, expected episode version, profile and transition evidence, and a live
+five-minute workload authorization proof; only the exclusive eligibility-consumer login can invoke
+the owner functions and raw DML remains unavailable.
+
+Task delivery is an independent sidecar. A separate task-relay login can only claim and finalize
+the public-task outbox through attempt/lease-fenced security-definer functions. Pending, retrying,
+confirmed and failed delivery facts never change QualityEligibility, episode or RecoveryTask
+business status, and all external I/O occurs after the owner transaction commits.

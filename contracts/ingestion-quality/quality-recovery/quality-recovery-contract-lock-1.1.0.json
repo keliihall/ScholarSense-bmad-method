@@ -1,0 +1,11 @@
+{
+  "lockVersion": "QUALITY-RECOVERY-CONTRACT-LOCK-1.1.0",
+  "canonicalizationProfile": "SCHOLARSENSE-RAW-BYTE-SHA256-1.0.0",
+  "predecessorLock": {
+    "path": "contracts/ingestion-quality/quality-recovery/quality-recovery-contract-lock-1.0.0.json",
+    "rawSha256": "sha256:570b4c30379f27e9db6d158a51182b2b8802328e4c377c4514e20e75e5cd01a4"
+  },
+  "successorFiles": {
+    "contracts/ingestion-quality/quality-recovery/recovery-sample-provider-1.1.0.json": "sha256:3d2b0b1bb5d680c7c4c65ec77f689e6266076cf20be92cc7195559d0007de388"
+  }
+}

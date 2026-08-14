@@ -1,0 +1,52 @@
+{
+  "fixtureVersion": "QUALITY-ELIGIBILITY-ORDERING-FIXTURES-1.0.0",
+  "eventSchemaVersion": "QUALITY-ELIGIBILITY-EVENT-1.0.0",
+  "runtimeEvidenceClaim": "none",
+  "businessKey": "ACC-SAFE-001@1.0.0@RULE-DEPENDENCY-REGISTRY-1.0.0",
+  "scenarios": [
+    {
+      "caseId": "duplicate",
+      "currentAggregateVersion": 1,
+      "deliveries": [
+        {"source":"https://scholarsense.suda.edu.cn/ingestion-quality","id":"019d2c7d-4000-7000-8000-000000000240","aggregateVersion":1,"bodyDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+        {"source":"https://scholarsense.suda.edu.cn/ingestion-quality","id":"019d2c7d-4000-7000-8000-000000000240","aggregateVersion":1,"bodyDigest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+      ],
+      "expectedAction": "duplicate-no-op",
+      "expectedAggregateVersion": 1
+    },
+    {
+      "caseId": "old",
+      "currentAggregateVersion": 2,
+      "deliveries": [{"id":"019d2c7d-4000-7000-8000-000000000240","aggregateVersion":1}],
+      "expectedAction": "old-no-op",
+      "expectedAggregateVersion": 2
+    },
+    {
+      "caseId": "gap",
+      "currentAggregateVersion": 1,
+      "deliveries": [{"id":"019d2c7d-4000-7000-8000-000000000244","aggregateVersion":3}],
+      "expectedAction": "pause-and-backfill",
+      "expectedAggregateVersion": 1
+    },
+    {
+      "caseId": "poison",
+      "currentAggregateVersion": 1,
+      "deliveries": [
+        {"source":"https://scholarsense.suda.edu.cn/ingestion-quality","id":"019d2c7d-4000-7000-8000-000000000240","aggregateVersion":1,"bodyDigest":"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
+      ],
+      "expectedAction": "quarantine-and-alert",
+      "expectedAggregateVersion": 1
+    },
+    {
+      "caseId": "backfill",
+      "currentAggregateVersion": 1,
+      "initialDelivery": {"id":"019d2c7d-4000-7000-8000-000000000244","aggregateVersion":3},
+      "replay": [
+        {"id":"019d2c7d-4000-7000-8000-000000000245","aggregateVersion":2},
+        {"id":"019d2c7d-4000-7000-8000-000000000244","aggregateVersion":3}
+      ],
+      "expectedAction": "contiguous-replay",
+      "expectedAggregateVersion": 3
+    }
+  ]
+}

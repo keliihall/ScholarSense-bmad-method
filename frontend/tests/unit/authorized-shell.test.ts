@@ -10,7 +10,7 @@ import {
 } from '../../src/domains/identity-access';
 
 const shell = {
-  schemaVersion: 'AUTHORIZED-SHELL-1.0.0',
+  schemaVersion: 'AUTHORIZED-SHELL-1.1.0',
   policyVersion: 'RFP-1.0.0',
   fixtureVersion: 'RFP-FIXTURE-1.0.0',
   evaluatedAt: '2026-08-01T00:00:00Z',
@@ -26,6 +26,7 @@ const shell = {
     { id: 'identity-session', state: 'available' },
     { id: 'care-workbench', state: 'not-installed' },
   ],
+  actionCapabilities: [],
   dependencyStatus: 'available',
 } as const;
 

@@ -1,0 +1,17 @@
+{
+  "fixtureVersion": "QFNEG-1.0.0",
+  "cases": [
+    {"caseId": "unsealed-batch", "expected": "reject-no-transition"},
+    {"caseId": "assessment-incomplete", "expected": "reject-no-transition"},
+    {"caseId": "profile-digest-mismatch", "expected": "reject-no-transition"},
+    {"caseId": "unknown-q1-q2", "expected": "reject-no-transition"},
+    {"caseId": "bootstrap-fused-task", "expected": "reject-task"},
+    {"caseId": "event-gap-as-business-failure", "expected": "reject-task"},
+    {"caseId": "poison-as-business-failure", "expected": "reject-task"},
+    {"caseId": "duplicate-active-task", "expected": "idempotent-original"},
+    {"caseId": "cross-owner-projection", "expected": "omit-without-count-leak"},
+    {"caseId": "delivery-on-eligibility", "expected": "reject-schema"},
+    {"caseId": "same-key-different-body", "expected": "409"},
+    {"caseId": "payload-65537", "expected": "reject-before-relay"}
+  ]
+}

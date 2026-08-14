@@ -1,0 +1,43 @@
+{
+  "policyVersion": "HRAP-1.0.0",
+  "matrixVersion": "HRAM-1.0.0",
+  "authority": {
+    "decision": "DEC-004",
+    "approvalRef": "AUTH-2026-07-17-001",
+    "approver": "Hei",
+    "approvedAt": "2026-07-17T00:00:00+08:00",
+    "evidenceRef": "_bmad-output/planning-artifacts/high-risk-action-matrix.md"
+  },
+  "defaultLevel": "D0",
+  "states": ["pending", "approved", "rejected", "expired", "cancelled"],
+  "levels": {
+    "D0": {"mechanism": "deny"},
+    "D1": {"mechanism": "instant-confirmation", "challengeMinutes": 5},
+    "D2": {"mechanism": "fresh-aal2", "freshAuthenticationMinutes": 5},
+    "D3": {"mechanism": "independent-approval", "pendingMinutes": 1440, "executionTokenMinutes": 30},
+    "D4": {"mechanism": "maker-checker-all-required-checkers", "pendingMinutes": 240, "executionTokenMinutes": 15}
+  },
+  "actions": [
+    {"actionType": "sensitive-export.create", "level": "D3"},
+    {"actionType": "sensitive-export.download", "level": "D2"},
+    {"actionType": "temporary-grant.issue", "level": "D4"},
+    {"actionType": "temporary-grant.revoke", "level": "D1"},
+    {"actionType": "whitelist.create-or-change", "level": "D4"},
+    {"actionType": "rule.publish", "level": "D4"},
+    {"actionType": "rule.rollback", "level": "D3"},
+    {"actionType": "strategy.publish", "level": "D4"},
+    {"actionType": "strategy.rollback", "level": "D3"},
+    {"actionType": "quality-fuse.recover", "level": "D4"},
+    {"actionType": "bulk-governance.execute", "level": "D4"},
+    {"actionType": "transfer.submit", "level": "D1"},
+    {"actionType": "leader-action.record", "level": "D1"}
+  ],
+  "bindingInvalidation": [
+    "policy-version-or-digest", "matrix-version-or-digest", "role-field-policy-version-or-digest",
+    "approval-version-or-status", "object-version-or-state", "scope-or-impact-scope",
+    "preview-digest", "authorization-generation", "authentication-state",
+    "checker-binding-set-or-quorum"
+  ],
+  "clientSuppliedApprovalEvidence": "forbidden",
+  "runtimeActivation": "per-action-seven-path-and-separation-of-duty-evidence-required"
+}

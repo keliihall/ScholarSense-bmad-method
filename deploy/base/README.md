@@ -39,3 +39,36 @@ subject-window worker; 60-second leases and monotonic fencing tokens make replic
 Identifier AES-GCM and HMAC material must be delivered from the approved school KMS into protected,
 non-symlink mounts. The profile remains `deployment-input-required`: local fixtures do not claim the
 production KMS runtime evidence required for a production-complete declaration.
+
+The QualityEligibility successor is separately versioned in
+`ingestion-quality-runtime-3.0.0.json` and composed by
+`ingestion-quality-roles-3.0.0.json`. It keeps web API, eligibility consumer, outbox relay and
+retention execution on distinct logins and exact inherited NOLOGIN grants. The consumer uses
+database inbox/cursor/CAS/outbox fencing and requires two replicas; retention uses the exclusive
+database retention lock. All-member human authorization, workload authorization, trusted time,
+event subscription/publishing, backfill and retention capability are target inputs. Until those
+inputs are activated and independently evidenced, Story 2.5 recovery and Story 3.2 rule-domain
+consumption remain not installed and the runtime evidence claim remains `none`.
+
+The quality-fuse/task successor is separately versioned in
+`ingestion-quality-runtime-4.0.0.json` and composed by
+`ingestion-quality-roles-4.0.0.json`. The eligibility consumer additionally requires a protected
+`SCHOLARSENSE_INGESTION_QUALITY_FUSE_WORK_ITEM_HMAC_KEY_PATH` and explicit key version; the
+version is pinned when an episode is created, rotation affects only new episodes, and retired
+material must remain available through the corresponding episode and retention period. It adds
+the dedicated `quality-task-relay` login and a
+same-artifact worker role with two replicas, no business HTTP, database lease-generation fencing
+and the eight-attempt ceiling. PIC 1.1.0 target/receipt activation, recovery execution, Story 3.2
+consumption, Story 5.5 final public apply and production-duration evidence remain target inputs;
+until independently activated, every one of those boundaries retains
+`runtimeEvidenceClaim=none`.
+
+The recovery successor is separately versioned in
+`ingestion-quality-runtime-5.0.0.json` and composed by
+`ingestion-quality-roles-5.0.0.json`. It adds an eighth exclusive recovery-validation login,
+database lease-generation fencing and checkpoints, the signal-evaluation public sample provider,
+identity-access-owned durable HRAP execution authorization, and a literal
+`quality-fuse.recover` action capability. Its positive evidence stops at the atomic
+`fused -> recovering` owner transaction. Story 2.5c observation/eligible, Story 3.2 consumption,
+Story 5.5 final apply and production-duration evidence remain uninstalled and must keep a `none`
+claim.

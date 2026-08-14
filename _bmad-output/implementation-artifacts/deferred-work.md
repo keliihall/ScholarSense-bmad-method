@@ -40,3 +40,22 @@
 - **本 Story 关闭范围**：主体映射、历史窗口、映射更正重算请求、ingestion-quality 作业编排与 owner conformance；本地 fixture 只证明 contract conformance。
 - **后续 owner**：Story 3.4 的 `signal-evaluation` 必须追加 successor evaluation；Story 3.5 的 `clue-care` 必须追加证据更正/人工复核并沿用 Candidate lineage 去重；Story 3.14c 负责更正水位上的导出失效。
 - **证据边界**：上述 owner consumer 在各自 Story 激活并绑定真实候选前均保持 `runtimeEvidenceClaim=none`；不得用本 Story fixture 冒充生产 apply、水位收敛或 FR-13 runtime full。
+
+## Story 2.4 质量资格分阶段关闭（2026-08-10）
+
+### DEFER-5：质量资格目标部署、恢复与规则消费激活
+
+- **本 Story 关闭范围**：RuleDependencyRegistry、owner-local QualityEligibility/cursor/inbox/backfill/quarantine/current/history/audit/outbox、R6 全成员授权只读投影，以及 duplicate/old/gap/poison/backfill conformance。
+- **尚未激活的目标输入**：eligibility consumer/relay/retention 的独立登录与 mTLS、权威 workload authorization、trusted-time、质量事件 subscription/publisher、真实 backfill/retention capability；additive runtime/roles v3 固定为 `deployment-input-required`，`runtimeEvidenceClaim=none`。
+- **后续 owner**：Story 2.5a-c 安装具权恢复、熔断任务与收敛流程；Story 3.2 安装 signal-evaluation consumer，并以真实 QualityEligibility 阻止新的 RuleEvaluation/Candidate/Clue；生产持续时长与最终运行闭环由相应 owner/Release DoD 验收。
+- **证据边界**：schema/fixture、PostgreSQL 行、outbox 或本地 clean replay 只证明可复现实现，不构成生产部署、真实 consumer apply、恢复审批、backfill/retention 激活或“熔断后新正式线索数=0”的运行声明。
+
+## Story 2.5a 质量熔断与任务分阶段关闭（2026-08-11）
+
+### DEFER-6：公共目标激活、恢复执行、规则消费与生产持续时长
+
+- **本 Story 关闭范围**：owner-local fuse latch/episode/RecoveryTask、eligibility/audit/outbox 原子提交、PIC 1.1.0 quality-task intent、独立 TaskDelivery relay、source-owned 审计查询、desktop 只读投影，以及 duplicate/gap/poison/CAS/concurrency/64 KiB conformance。
+- **尚未激活的目标输入**：PIC 1.1.0 真实 quality-task target 与 receipt provider、受保护 mTLS/工作负载凭据、恢复命令/审批/观察窗、Story 3.2 signal-evaluation consumer、Story 5.5 final public apply 和生产持续时长采集；runtime/roles v4 与 release v7 均固定为 `deployment-input-required`、`runtimeEvidenceClaim=none`。
+- **已完成边界（Story 2.5b，2026-08-13）**：已安装 QRP evidence validation、真实 sample provider、identity-access-owned D4/15m durable execution lease、literal `quality-fuse.recover` action capability，以及 ingestion-quality 单写入者 `fused -> recovering` 正向闭环；该边界的 `runtimeEvidenceClaim=story-2.5b-executable-closure`，不得再记为 `none`。
+- **后续 owner**：Story 2.5c 负责完整 observation、复发回退、`recovering -> eligible` 与 episode/task 收敛；Story 3.2 以真实 QualityEligibility 阻止新的 RuleEvaluation/Candidate/Clue；Story 5.5 完成公共任务最终 apply/回写；Release DoD 在目标环境收集生产持续时长与独立运行证据。这四项继续 `runtimeEvidenceClaim=none`。
+- **证据边界**：本地 fixture、PostgreSQL task/outbox/receipt 行、transport `confirmed`、deployment profile、两次 clean replay 或 UI 投影只证明实现与制品可复现，不构成目标平台受理、质量修复、恢复完成、下游业务 apply、生产部署或“熔断后新正式线索数=0”的运行声明。

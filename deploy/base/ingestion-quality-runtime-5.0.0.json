@@ -1,0 +1,124 @@
+{
+  "version": "INGESTION-QUALITY-RUNTIME-5.0.0",
+  "status": "installed-and-verified",
+  "runtimeEvidenceClaim": "story-2.5b-executable-closure",
+  "predecessor": {
+    "path": "ingestion-quality-runtime-4.0.0.json",
+    "rawSha256": "a4a842f1befedd00ab3f97fa432267cb6141e18a3ccbcc6fb81131695acc4e1f",
+    "mutationAllowed": false
+  },
+  "sameArtifactRoles": {
+    "web-api": {
+      "capabilities": [
+        "quality-recovery-request",
+        "quality-recovery-approval",
+        "quality-recovery-execute",
+        "quality-fuse-recover-action-capability"
+      ],
+      "businessHttp": true,
+      "minimumReplicas": 2,
+      "activation": {
+        "requiredProviderPorts": [
+          "CompositeAuthorizationPort",
+          "CompositeAuthorizationRecheckPort",
+          "HighRiskApprovalPort",
+          "HighRiskExecutionAuthorizationPort",
+          "QualityRecoveryCommandStorePort"
+        ],
+        "providerEvidence": "identity-access-durable-hrap-lease-and-ingestion-quality-owner-transaction",
+        "failureMode": "startup-fail-closed"
+      }
+    },
+    "recovery-validation-worker": {
+      "capabilities": [
+        "quality-recovery-validation-job",
+        "quality-recovery-backfill-summary",
+        "quality-recovery-full-reconciliation",
+        "quality-recovery-sample-recompute"
+      ],
+      "businessHttp": false,
+      "minimumReplicas": 2,
+      "statelessTakeover": "database-lease-generation-fencing-checkpoints-and-five-attempt-ceiling",
+      "requiredEnvironment": [
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_ENABLED",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_URL",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_USERNAME",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_PASSWORD",
+        "SCHOLARSENSE_SIGNAL_EVALUATION_RECOVERY_ENABLED"
+      ],
+      "activation": {
+        "requiredProviderPorts": [
+          "RecoveryValidationWorkPort",
+          "RecoveryValidationExternalWorkPort",
+          "RecoverySampleRecomputeProviderPort",
+          "RecoverySampleNormalizedInputPort"
+        ],
+        "providerEvidence": "signal-evaluation-api-provider-with-durable-replay-and-normalized-pii-free-input",
+        "failureMode": "startup-fail-closed"
+      }
+    },
+    "retention-executor": {
+      "capabilities": ["quality-recovery-retention"],
+      "businessHttp": false,
+      "minimumReplicas": 1,
+      "ownerSplit": {
+        "ingestion-quality": "request-job-evidence-preview-local-jti-idempotency",
+        "identity-access": "approval-receipt-token-execution-lease"
+      }
+    }
+  },
+  "databaseStartupGate": {
+    "requiredServerVersionNum": "180004",
+    "sessionIdentityInvariant": "session_user=current_user=role-specific-datasource-username",
+    "exclusivePhysicalLogin": true,
+    "distinctWorkloadLogins": [
+      "web-api",
+      "quality-worker",
+      "audit-relay-worker",
+      "retention-executor",
+      "consumer-registry-authority",
+      "eligibility-consumer",
+      "quality-task-relay",
+      "recovery-validation-worker"
+    ],
+    "workloadRoleBindings": {
+      "recovery-validation-worker": {
+        "expectedIdentitySource": "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_USERNAME",
+        "requiredGroupRole": "scholarsense_ingestion_quality_recovery_worker",
+        "forbiddenGroupRoles": [
+          "scholarsense_ingestion_quality_online",
+          "scholarsense_ingestion_quality_quality_worker",
+          "scholarsense_ingestion_quality_relay",
+          "scholarsense_ingestion_quality_retention_executor",
+          "scholarsense_ingestion_quality_consumer_registry_authority",
+          "scholarsense_ingestion_quality_eligibility_consumer",
+          "scholarsense_ingestion_quality_task_relay"
+        ]
+      }
+    },
+    "effectivePrivilegeVerification": "exact-table-column-and-function-matrix",
+    "failureMode": "startup-fail-closed"
+  },
+  "actionActivation": {
+    "actionType": "quality-fuse.recover",
+    "authorizedShellContract": "AUTHORIZED-SHELL-1.1.0",
+    "provider": "IngestionQualityConfiguration",
+    "runtimeState": "available",
+    "uiCapabilityIsAuthorization": false
+  },
+  "executableClosure": {
+    "requestToValidationJob": "installed",
+    "sampleProvider": "RECOVERY-SAMPLE-PROVIDER-1.0.0",
+    "highRiskApprovalOwner": "identity-access",
+    "highRiskExecutionProtocol": "durable-execution-authorization-lease",
+    "ownerTransaction": "fused-to-recovering-with-audit-events-outbox-idempotency-and-local-jti",
+    "positiveEvidence": "focused-java-postgresql18-contract-and-frontend-runtime-tests"
+  },
+  "deferredBoundaries": {
+    "story25cObservationEligible": "not-installed",
+    "story32ConsumerActivation": "not-installed",
+    "story55FinalPublicApply": "not-installed",
+    "productionDurationEvidence": "not-collected",
+    "runtimeEvidenceClaim": "none"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "handoffVersion": "QRH-2.5C-1.0.0",
+  "producerStory": "2.5b",
+  "consumerStory": "2.5c",
+  "stateAtHandoff": "recovering",
+  "immutableBindings": [
+    "recoveryRequestId", "eligibilityId", "episodeId", "taskId", "generation",
+    "qualityRecoveryPolicyVersion", "qualityRecoveryPolicyDigest", "evidencePackDigest",
+    "previewDigest", "ruleVersionsDigest", "memberSetDigest", "watermarksDigest",
+    "approvalReceiptDigest", "executionAuthorizationLeaseDigest", "executionJti",
+    "recoveringStartedAt", "observationDuration"
+  ],
+  "consumerMustRecheck": [
+    "current-authorization", "persistent-approval-evidence", "policy-and-matrix-versions",
+    "member-set", "watermarks", "quality-thresholds", "complete-observation-duration"
+  ],
+  "consumerRequiresFreshExecutionConfirmation": true,
+  "producerTokenReusable": false,
+  "finalWindowRule": "recoveryCompletedAt-less-than-or-equal-latestActionableAt",
+  "lateWindowResult": "history-only-never-backfill-candidate-or-clue"
+}

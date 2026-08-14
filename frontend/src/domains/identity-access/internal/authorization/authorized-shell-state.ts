@@ -54,6 +54,7 @@ function signature(value: CurrentAuthorizedShell): string {
     defaultSurface: value.defaultSurface,
     menuItems: value.menuItems,
     entryCapabilities: value.entryCapabilities,
+    actionCapabilities: value.actionCapabilities,
     dependencyStatus: value.dependencyStatus,
   });
 }

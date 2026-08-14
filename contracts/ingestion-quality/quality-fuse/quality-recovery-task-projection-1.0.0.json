@@ -1,0 +1,23 @@
+{
+  "projectionVersion": "QFRTPROJ-1.0.0",
+  "predecessor": "RFP-1.0.0",
+  "objectClass": "RecoveryTask",
+  "purpose": "data-quality.read",
+  "requiredScopeAnchor": "OWNED_SOURCE",
+  "authorization": {
+    "action": "RecoveryTask/data-quality.read",
+    "currentSourceOwnership": true,
+    "currentIdentityGeneration": true,
+    "beforeQueryAndSerialization": true,
+    "sensitiveDetailAuditBeforeResponse": true,
+    "partialOwnerProjection": "authorized-slice-without-count-page-or-not-found-leak",
+    "providerOrAuditUnavailable": "fail-closed"
+  },
+  "allowedFields": [
+    "taskId", "episodeId", "episodeGeneration", "sourceId", "dependencyId", "affectedRules",
+    "ownerRef", "priority", "dueAt", "status", "watermark", "trigger", "currentEvidence",
+    "taskDelivery.status", "taskDelivery.target", "taskDelivery.attempt", "taskDelivery.nextAttemptAt"
+  ],
+  "globallyHidden": ["studentRef", "studentName", "rawRecord", "failureRow", "payloadBody"],
+  "runtimeEvidenceClaim": "owner-local-conformance"
+}

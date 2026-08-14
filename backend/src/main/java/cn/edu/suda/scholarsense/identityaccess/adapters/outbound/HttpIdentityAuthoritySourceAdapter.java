@@ -575,6 +575,8 @@ public final class HttpIdentityAuthoritySourceAdapter
                             externalDigest(rawExternalRef),
                             binding,
                             bindings,
+                            optionalText(payload, "naturalPersonPrincipalDigest"),
+                            optionalText(payload, "naturalPersonAuthorityEvidenceDigest"),
                             status(text(payload, "status")),
                             interval(payload),
                             longValue(payload, "recordVersion"),
@@ -707,6 +709,17 @@ public final class HttpIdentityAuthoritySourceAdapter
             return null;
         }
         if (!value.isTextual()) {
+            throw invalid("IDENTITY_SOURCE_PAYLOAD_INVALID");
+        }
+        return value.asText();
+    }
+
+    private static String optionalText(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        if (!value.isTextual() || value.asText().isBlank()) {
             throw invalid("IDENTITY_SOURCE_PAYLOAD_INVALID");
         }
         return value.asText();

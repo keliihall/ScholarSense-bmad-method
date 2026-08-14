@@ -1,0 +1,17 @@
+{
+  "fixtureVersion": "QUALITY-ELIGIBILITY-NEGATIVE-FIXTURES-1.0.0",
+  "baseFixture": "contracts/events/ingestion-quality/fixtures/valid/quality-eligibility-changed-v1.json",
+  "runtimeEvidenceClaim": "none",
+  "cases": [
+    {"caseId":"event-id-mismatch","mutation":{"pointer":"/data/eventId","value":"019d2c7d-4000-7000-8000-000000000299"},"expectedError":"QUALITY_ELIGIBILITY_EVENT_IDENTITY_MISMATCH"},
+    {"caseId":"subject-mismatch","mutation":{"pointer":"/subject","value":"quality-eligibility/019d2c7d-4000-7000-8000-000000000299"},"expectedError":"QUALITY_ELIGIBILITY_EVENT_SUBJECT_MISMATCH"},
+    {"caseId":"aggregate-version-mismatch","mutation":{"pointer":"/data/aggregateVersion","value":2},"expectedError":"QUALITY_ELIGIBILITY_EVENT_VERSION_MISMATCH"},
+    {"caseId":"occurred-at-mismatch","mutation":{"pointer":"/time","value":"2026-08-10T11:31:56Z"},"expectedError":"QUALITY_ELIGIBILITY_EVENT_TIME_MISMATCH"},
+    {"caseId":"trace-mismatch","mutation":{"pointer":"/data/traceId","value":"22222222222222222222222222222222"},"expectedError":"QUALITY_ELIGIBILITY_EVENT_TRACE_MISMATCH"},
+    {"caseId":"registry-digest-drift","mutation":{"pointer":"/data/qualityEligibility/registryDigest","value":"sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},"expectedError":"QUALITY_ELIGIBILITY_REGISTRY_DIGEST_MISMATCH"},
+    {"caseId":"unknown-member","mutation":{"pointer":"/data/qualityEligibility/members/0/dependencyId","value":"DEP-P0-UNKNOWN-001"},"expectedError":"QUALITY_ELIGIBILITY_MEMBER_UNKNOWN"},
+    {"caseId":"duplicate-member","mutation":{"pointer":"/data/qualityEligibility/members/-","copyFrom":"/data/qualityEligibility/members/0"},"expectedError":"QUALITY_ELIGIBILITY_MEMBER_DUPLICATE"},
+    {"caseId":"delivery-status-on-aggregate","mutation":{"pointer":"/data/qualityEligibility/deliveryStatus","value":"pending"},"expectedError":"QUALITY_ELIGIBILITY_EVENT_FIELD_FORBIDDEN"},
+    {"caseId":"wire-size-overflow","mutation":{"pointer":"/data/qualityEligibility/members/0/sourceWatermark","repeat":"x","bytes":65537},"expectedError":"QUALITY_ELIGIBILITY_EVENT_TOO_LARGE"}
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "fixtureVersion": "QUALITY-ELIGIBILITY-NEGATIVE-VECTORS-1.0.0",
+  "cases": [
+    {"caseId":"unknown-source","expectedCode":"INGESTION_QUALITY_REGISTRY_SOURCE_UNKNOWN"},
+    {"caseId":"duplicate-dependency-member","expectedCode":"INGESTION_QUALITY_REGISTRY_MEMBER_DUPLICATE"},
+    {"caseId":"non-rule-consumer-source","expectedCode":"INGESTION_QUALITY_REGISTRY_SOURCE_NOT_RULE_CONSUMER"},
+    {"caseId":"corroborate-direct-binding","expectedCode":"INGESTION_QUALITY_REGISTRY_RULE_NOT_SOURCE_BACKED"},
+    {"caseId":"spm-as-rule","expectedCode":"INGESTION_QUALITY_REGISTRY_RULE_UNKNOWN"},
+    {"caseId":"threshold-missing","expectedCode":"INGESTION_QUALITY_THRESHOLD_INVALID"},
+    {"caseId":"threshold-out-of-range","expectedCode":"INGESTION_QUALITY_THRESHOLD_INVALID"},
+    {"caseId":"registry-digest-drift","expectedCode":"INGESTION_QUALITY_REGISTRY_DIGEST_MISMATCH"},
+    {"caseId":"snapshot-hash-drift","expectedCode":"INGESTION_QUALITY_UPSTREAM_BINDING_INVALID"},
+    {"caseId":"impact-scope-as-dependency","expectedCode":"INGESTION_QUALITY_UPSTREAM_BINDING_INVALID"},
+    {"caseId":"technical-error-as-fused","expectedCode":"INGESTION_QUALITY_TECHNICAL_FAILURE"},
+    {"caseId":"batch-v3-v4-cross-batch-order","expectedCode":"INGESTION_QUALITY_SEQUENCE_INVALID"}
+  ]
+}

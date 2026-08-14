@@ -1,0 +1,34 @@
+{
+  "fixtureVersion": "HIGH-RISK-NEGATIVE-FIXTURES-1.0.0",
+  "baseFixtures": {
+    "approvalRequest": "fixtures/valid/high-risk-approval-request.json",
+    "approvalReceipt": "fixtures/valid/high-risk-approval-receipt.json",
+    "executionToken": "fixtures/valid/high-risk-execution-token.json",
+    "executionLease": "fixtures/valid/high-risk-execution-authorization-lease.json"
+  },
+  "cases": [
+    {"caseId": "maker-equals-checker", "phase": "approval", "operation": "replace", "path": "decisionActorPrincipalDigest", "value": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "expectedReasonCode": "MAKER_CHECKER_CONFLICT", "expectedOwnerState": "fused"},
+    {"caseId": "approval-at-four-hour-boundary", "phase": "approval", "operation": "replace", "path": "trustedNow", "value": "2026-08-12T12:00:00Z", "expectedReasonCode": "APPROVAL_EXPIRED", "expectedOwnerState": "fused"},
+    {"caseId": "token-at-fifteen-minute-boundary", "phase": "execution", "operation": "replace", "path": "trustedNow", "value": "2026-08-12T10:15:00Z", "expectedReasonCode": "EXECUTION_EXPIRED", "expectedOwnerState": "fused"},
+    {"caseId": "token-second-use-new-idempotency-key", "phase": "execution", "operation": "replace", "path": "idempotencyKey", "value": "hrap-execution-reuse-9999", "expectedReasonCode": "EXECUTION_ALREADY_USED", "expectedOwnerState": "recovering"},
+    {"caseId": "same-key-different-request-digest", "phase": "execution", "operation": "replace", "path": "requestDigest", "value": "sha256:7676767676767676767676767676767676767676767676767676767676767676", "expectedReasonCode": "IDEMPOTENCY_CONFLICT", "expectedOwnerState": "fused"},
+    {"caseId": "untrusted-token-issuer", "phase": "execution", "operation": "replace", "path": "issuer", "value": "recovery-client", "expectedReasonCode": "TRUST_BINDING_INVALID", "expectedOwnerState": "fused"},
+    {"caseId": "wrong-token-audience", "phase": "execution", "operation": "replace", "path": "audience", "value": "signal-evaluation", "expectedReasonCode": "TRUST_BINDING_INVALID", "expectedOwnerState": "fused"},
+    {"caseId": "unknown-key-version", "phase": "execution", "operation": "replace", "path": "keyVersion", "value": "unknown-key", "expectedReasonCode": "TRUST_BINDING_INVALID", "expectedOwnerState": "fused"},
+    {"caseId": "invalid-signature", "phase": "execution", "operation": "replace", "path": "signature", "value": "invalid", "expectedReasonCode": "TRUST_BINDING_INVALID", "expectedOwnerState": "fused"},
+    {"caseId": "wrong-action-type", "phase": "execution", "operation": "replace", "path": "actionType", "value": "quality-fuse.fast-recover", "expectedReasonCode": "TRUST_BINDING_INVALID", "expectedOwnerState": "fused"},
+    {"caseId": "stale-object-version", "phase": "execution", "operation": "replace", "path": "objectVersion", "value": 6, "expectedReasonCode": "BINDING_DRIFT", "expectedOwnerState": "fused"},
+    {"caseId": "approval-version-drift", "phase": "execution", "operation": "replace", "path": "approvalVersion", "value": 2, "expectedReasonCode": "BINDING_DRIFT", "expectedOwnerState": "fused"},
+    {"caseId": "authorization-generation-drift", "phase": "execution", "operation": "replace", "path": "authorizationGeneration", "value": 12, "expectedReasonCode": "BINDING_DRIFT", "expectedOwnerState": "fused"},
+    {"caseId": "policy-digest-drift", "phase": "execution", "operation": "replace", "path": "policyDigest", "value": "sha256:2323232323232323232323232323232323232323232323232323232323232323", "expectedReasonCode": "BINDING_DRIFT", "expectedOwnerState": "fused"},
+    {"caseId": "matrix-digest-drift", "phase": "execution", "operation": "replace", "path": "matrixDigest", "value": "sha256:1212121212121212121212121212121212121212121212121212121212121212", "expectedReasonCode": "BINDING_DRIFT", "expectedOwnerState": "fused"},
+    {"caseId": "role-field-policy-digest-drift", "phase": "execution", "operation": "replace", "path": "roleFieldPolicyDigest", "value": "sha256:3434343434343434343434343434343434343434343434343434343434343434", "expectedReasonCode": "BINDING_DRIFT", "expectedOwnerState": "fused"},
+    {"caseId": "checker-set-digest-drift", "phase": "execution", "operation": "replace", "path": "checkerSetDigest", "value": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd", "expectedReasonCode": "BINDING_DRIFT", "expectedOwnerState": "fused"},
+    {"caseId": "scope-digest-drift", "phase": "execution", "operation": "replace", "path": "scopeDigest", "value": "sha256:edededededededededededededededededededededededededededededededededed", "expectedReasonCode": "BINDING_DRIFT", "expectedOwnerState": "fused"},
+    {"caseId": "impact-scope-digest-drift", "phase": "execution", "operation": "replace", "path": "impactScopeDigest", "value": "sha256:fefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefe", "expectedReasonCode": "BINDING_DRIFT", "expectedOwnerState": "fused"},
+    {"caseId": "preview-digest-drift", "phase": "execution", "operation": "replace", "path": "previewDigest", "value": "sha256:4545454545454545454545454545454545454545454545454545454545454545", "expectedReasonCode": "BINDING_DRIFT", "expectedOwnerState": "fused"},
+    {"caseId": "authentication-state-drift", "phase": "execution", "operation": "replace", "path": "authenticationStateDigest", "value": "sha256:6767676767676767676767676767676767676767676767676767676767676767", "expectedReasonCode": "BINDING_DRIFT", "expectedOwnerState": "fused"},
+    {"caseId": "owner-commit-exact-expiry", "phase": "reconciliation", "operation": "replace", "path": "ownerCommittedAt", "value": "2026-08-12T10:15:00Z", "expectedReasonCode": "OWNER_COMMIT_TOO_LATE", "expectedOwnerState": "fused"},
+    {"caseId": "post-commit-invalidation", "phase": "invalidation", "operation": "replace", "path": "checkerSetDigest", "value": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd", "expectedReasonCode": "AUTHORIZATION_INVALIDATED_AFTER_COMMIT", "expectedOwnerState": "fused"}
+  ]
+}

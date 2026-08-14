@@ -1,0 +1,949 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "ScholarSense quality recovery tasks and evidence-based recovery",
+    "version": "1.1.0",
+    "description": "Additive successor. R6 owned-source recovery requests use server-owned D4 evidence and may only transition Fused to Recovering."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "sessionCookie": []
+    },
+    {
+      "csrfHeader": []
+    }
+  ],
+  "paths": {
+    "/quality-recovery-tasks": {
+      "get": {
+        "operationId": "listQualityRecoveryTasksV11",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SourceId"
+          },
+          {
+            "$ref": "#/components/parameters/PageSize"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/TaskPage"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/Concealed"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/quality-recovery-tasks/{taskId}": {
+      "get": {
+        "operationId": "getQualityRecoveryTaskV11",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Task"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/Concealed"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/quality-recovery-tasks/{taskId}/recovery-requests": {
+      "post": {
+        "operationId": "createQualityFuseRecoveryRequest",
+        "description": "Maker request only; this is not HRAP approval and does not change Fused state.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecoveryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RecoveryRequest"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/Concealed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/quality-recovery-requests/{requestId}": {
+      "get": {
+        "operationId": "getQualityFuseRecoveryRequest",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RecoveryRequest"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/Concealed"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/quality-recovery-requests/{requestId}/approval-requests": {
+      "post": {
+        "operationId": "requestQualityFuseRecoveryApproval",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpectedVersion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RecoveryRequest"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/Concealed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/quality-recovery-requests/{requestId}/approval-decisions": {
+      "post": {
+        "operationId": "decideQualityFuseRecoveryApproval",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalDecision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RecoveryRequest"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/Concealed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    },
+    "/quality-recovery-requests/{requestId}/execute": {
+      "post": {
+        "operationId": "executeQualityFuseRecovery",
+        "description": "Consumes one identity-access execution lease and atomically applies Fused to Recovering. It never returns a token or receipt.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RequestId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpectedVersion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Execution"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/Concealed"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/Unprocessable"
+          },
+          "503": {
+            "$ref": "#/components/responses/Unavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "JSESSIONID"
+      },
+      "csrfHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-TOKEN"
+      }
+    },
+    "parameters": {
+      "TaskId": {
+        "name": "taskId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/UuidV7"
+        }
+      },
+      "RequestId": {
+        "name": "requestId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/UuidV7"
+        }
+      },
+      "SourceId": {
+        "name": "sourceId",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^SRC-P[01]-[A-Z0-9-]+-[0-9]{3}$"
+        }
+      },
+      "PageSize": {
+        "name": "size",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "responses": {
+      "TaskPage": {
+        "description": "Authorized task page",
+        "headers": {
+          "Cache-Control": {
+            "schema": {
+              "const": "no-store"
+            }
+          },
+          "Referrer-Policy": {
+            "schema": {
+              "const": "no-referrer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/QualityRecoveryTaskPage"
+            }
+          }
+        }
+      },
+      "Task": {
+        "description": "Authorized task",
+        "headers": {
+          "Cache-Control": {
+            "schema": {
+              "const": "no-store"
+            }
+          },
+          "Referrer-Policy": {
+            "schema": {
+              "const": "no-referrer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/QualityRecoveryTask"
+            }
+          }
+        }
+      },
+      "RecoveryRequest": {
+        "description": "Safe status projection",
+        "headers": {
+          "Cache-Control": {
+            "schema": {
+              "const": "no-store"
+            }
+          },
+          "Referrer-Policy": {
+            "schema": {
+              "const": "no-referrer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/RecoveryRequest"
+            }
+          }
+        }
+      },
+      "Execution": {
+        "description": "Recovering transition receipt without D4 secrets",
+        "headers": {
+          "Cache-Control": {
+            "schema": {
+              "const": "no-store"
+            }
+          },
+          "Referrer-Policy": {
+            "schema": {
+              "const": "no-referrer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Execution"
+            }
+          }
+        }
+      },
+      "BadRequest": {
+        "description": "Malformed or unknown field",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Concealed": {
+        "description": "Absent and unauthorized are indistinguishable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "CAS or idempotency conflict; currentVersion is safe",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unprocessable": {
+        "description": "Controlled invalid recovery state",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unavailable": {
+        "description": "Authorization, HRAP, provider, audit or storage unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "UuidV7": {
+        "type": "string",
+        "format": "uuid",
+        "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+      },
+      "SafeVersion": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991
+      },
+      "Digest": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      },
+      "Instant": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "CreateRecoveryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedTaskVersion",
+          "reasonCode"
+        ],
+        "properties": {
+          "expectedTaskVersion": {
+            "$ref": "#/components/schemas/SafeVersion"
+          },
+          "reasonCode": {
+            "const": "QUALITY_EVIDENCE_REVALIDATION_REQUESTED"
+          }
+        }
+      },
+      "ExpectedVersion": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedVersion"
+        ],
+        "properties": {
+          "expectedVersion": {
+            "$ref": "#/components/schemas/SafeVersion"
+          }
+        }
+      },
+      "ApprovalDecision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedVersion",
+          "expectedApprovalVersion",
+          "decision"
+        ],
+        "properties": {
+          "expectedVersion": {
+            "$ref": "#/components/schemas/SafeVersion"
+          },
+          "expectedApprovalVersion": {
+            "$ref": "#/components/schemas/SafeVersion"
+          },
+          "decision": {
+            "enum": [
+              "approve",
+              "reject",
+              "cancel"
+            ]
+          }
+        }
+      },
+      "RecoveryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "recoveryRequestId",
+          "requestVersion",
+          "taskId",
+          "status",
+          "validationJobId",
+          "validationStatus",
+          "validationResultDigest",
+          "previewId",
+          "previewVersion",
+          "previewDigest",
+          "previewExpiresAt",
+          "previewSummary",
+          "approvalId",
+          "approvalVersion",
+          "approvalStatus",
+          "traceId"
+        ],
+        "properties": {
+          "recoveryRequestId": {
+            "$ref": "#/components/schemas/UuidV7"
+          },
+          "requestVersion": {
+            "$ref": "#/components/schemas/SafeVersion"
+          },
+          "taskId": {
+            "$ref": "#/components/schemas/UuidV7"
+          },
+          "status": {
+            "enum": [
+              "requested",
+              "validating",
+              "validation-succeeded",
+              "validation-failed",
+              "approval-pending",
+              "approval-approved",
+              "executed",
+              "cancelled"
+            ]
+          },
+          "validationJobId": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UuidV7"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "validationStatus": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled",
+              null
+            ]
+          },
+          "validationResultDigest": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Digest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "previewId": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UuidV7"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "previewVersion": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SafeVersion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "previewDigest": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Digest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "previewExpiresAt": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Instant"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "previewSummary": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RecoveryPreviewSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approvalId": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UuidV7"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approvalVersion": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SafeVersion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "approvalStatus": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "pending",
+              "approved",
+              "rejected",
+              "expired",
+              "cancelled",
+              null
+            ]
+          },
+          "traceId": {
+            "type": "string",
+            "pattern": "^(?!0{32}$)[0-9a-f]{32}$"
+          }
+        }
+      },
+      "RecoveryPreviewSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "qualityRecoveryPolicyVersion",
+          "requiredConsecutivePassedBatches",
+          "actualConsecutivePassedBatches",
+          "observationDuration",
+          "backfillStatus",
+          "backfillLookbackDays",
+          "reconciliationExpectedCount",
+          "reconciliationActualCount",
+          "reconciliationMismatchCount",
+          "samplePopulationCount",
+          "sampleSelectedCount",
+          "sampleMismatchCount",
+          "sampleStrataCount",
+          "impactAlreadyExpiredCount",
+          "impactPotentiallyActionableCount",
+          "impactExpectedToExpireCount",
+          "finalActionabilityOwnerStory"
+        ],
+        "properties": {
+          "qualityRecoveryPolicyVersion": { "const": "QRP-1.0.0" },
+          "requiredConsecutivePassedBatches": { "type": "integer", "minimum": 1, "maximum": 3 },
+          "actualConsecutivePassedBatches": { "type": "integer", "minimum": 0 },
+          "observationDuration": { "enum": ["PT60M", "PT24H"] },
+          "backfillStatus": { "enum": ["succeeded", "failed", "unavailable"] },
+          "backfillLookbackDays": { "const": 90 },
+          "reconciliationExpectedCount": { "type": "integer", "minimum": 0 },
+          "reconciliationActualCount": { "type": "integer", "minimum": 0 },
+          "reconciliationMismatchCount": { "type": "integer", "minimum": 0 },
+          "samplePopulationCount": { "type": "integer", "minimum": 0 },
+          "sampleSelectedCount": { "type": "integer", "minimum": 0 },
+          "sampleMismatchCount": { "type": "integer", "minimum": 0 },
+          "sampleStrataCount": { "type": "integer", "minimum": 0, "maximum": 128 },
+          "impactAlreadyExpiredCount": { "type": "integer", "minimum": 0 },
+          "impactPotentiallyActionableCount": { "type": "integer", "minimum": 0 },
+          "impactExpectedToExpireCount": { "type": "integer", "minimum": 0 },
+          "finalActionabilityOwnerStory": { "const": "2.5c" }
+        }
+      },
+      "Execution": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "recoveryRequestId",
+          "taskId",
+          "episodeId",
+          "state",
+          "transitionApplied",
+          "ownerCommittedAt",
+          "traceId"
+        ],
+        "properties": {
+          "recoveryRequestId": {
+            "$ref": "#/components/schemas/UuidV7"
+          },
+          "taskId": {
+            "$ref": "#/components/schemas/UuidV7"
+          },
+          "episodeId": {
+            "$ref": "#/components/schemas/UuidV7"
+          },
+          "state": {
+            "const": "recovering"
+          },
+          "transitionApplied": {
+            "const": true
+          },
+          "ownerCommittedAt": {
+            "$ref": "#/components/schemas/Instant"
+          },
+          "traceId": {
+            "type": "string",
+            "pattern": "^(?!0{32}$)[0-9a-f]{32}$"
+          }
+        }
+      },
+      "QualityRecoveryTask": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "taskId",
+          "taskVersion",
+          "episodeId",
+          "episodeGeneration",
+          "sourceId",
+          "dependencyId",
+          "affectedRules",
+          "ownerRef",
+          "priority",
+          "dueAt",
+          "status",
+          "watermark",
+          "trigger",
+          "currentEvidence",
+          "taskDelivery"
+        ],
+        "properties": {
+          "taskId": {
+            "$ref": "#/components/schemas/UuidV7"
+          },
+          "taskVersion": {
+            "$ref": "#/components/schemas/SafeVersion"
+          },
+          "episodeId": {
+            "$ref": "#/components/schemas/UuidV7"
+          },
+          "episodeGeneration": {
+            "$ref": "#/components/schemas/SafeVersion"
+          },
+          "sourceId": {
+            "type": "string",
+            "pattern": "^SRC-P[01]-[A-Z0-9-]+-[0-9]{3}$"
+          },
+          "dependencyId": {
+            "type": "string",
+            "pattern": "^DEP-P[01]-[A-Z0-9-]+-[0-9]{3}$"
+          },
+          "affectedRules": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "ruleId",
+                "ruleVersion"
+              ],
+              "properties": {
+                "ruleId": {
+                  "type": "string"
+                },
+                "ruleVersion": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "ownerRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "priority": {
+            "enum": [
+              "P0",
+              "P1",
+              "P2"
+            ]
+          },
+          "dueAt": {
+            "$ref": "#/components/schemas/Instant"
+          },
+          "status": {
+            "const": "open"
+          },
+          "watermark": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "trigger": {
+            "type": "object"
+          },
+          "currentEvidence": {
+            "type": "object"
+          },
+          "taskDelivery": {
+            "type": "object"
+          }
+        }
+      },
+      "QualityRecoveryTaskPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "size",
+          "hasMore",
+          "nextCursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/QualityRecoveryTask"
+            }
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "type": [
+              "object",
+              "null"
+            ]
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "traceId",
+          "currentVersion",
+          "fieldErrors"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "currentVersion": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "fieldErrors": {
+            "type": "array",
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  }
+}

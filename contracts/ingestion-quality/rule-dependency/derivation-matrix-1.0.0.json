@@ -1,0 +1,25 @@
+{
+  "matrixVersion": "RULE-DEPENDENCY-DERIVATION-1.0.0",
+  "runtimeEvidenceClaim": "none",
+  "authorities": [
+    {"decision": "DEC-012", "artifact": "contracts/data-catalog/dcc-1.1.0.json", "contribution": "17 source identities, schema versions, owners, purposes and consumerMode"},
+    {"decision": "DEC-012", "artifact": "contracts/data-catalog/dependency-registry-1.0.0.json", "contribution": "11 stable sourceId-to-dependencyId identity bindings"},
+    {"decision": "RC-1.0.0", "artifact": "_bmad-output/planning-artifacts/rule-catalog.md", "contribution": "five source-backed RuleVersion required all-of member sets; CORROBORATE-001 has no direct source dependency; SPM is not a RuleVersion"},
+    {"decision": "DEC-019", "artifact": "contracts/ingestion-quality/batch-quality/executable-quality-contract-lock-1.0.0.json", "contribution": "QMDP version and digest, DCC successor and fail-closed quality semantics"},
+    {"decision": "DEC-019-QSHM-ADDENDUM", "artifact": "contracts/ingestion-quality/batch-quality/quality-snapshot-hash-contract-lock-1.0.0.json", "contribution": "QSHM version and immutable snapshot digest binding"},
+    {"decision": "PIC-1.0.0", "artifact": "contracts/events/ingestion-quality/data-batch-quality-event-contract-lock-1.0.0.json", "contribution": "assessed v3 and published v4 handoff envelope, 64 KiB and source+id idempotency"},
+    {"decision": "RFP-1.0.0", "artifact": "contracts/authorization/role-field-policy-rfp-1.0.0.json", "contribution": "R6 Dependency/data-quality.read/owned-source authorization"},
+    {"decision": "RS-1.0.0", "artifact": "_bmad-output/planning-artifacts/delegated-decision-baseline-2026-07-17.md", "contribution": "QualityEligibility is classified as a reporting-and-operational snapshot with two-year retention; idempotency evidence is retained 90 days"}
+  ],
+  "closedDecisions": {
+    "sourceBackedRuleCount": 5,
+    "stableDependencyCount": 11,
+    "nonRuleConsumerSourceCount": 6,
+    "productionOperators": ["all-of"],
+    "syntheticOnlyOperators": ["any-of", "threshold"],
+    "qualityStates": ["eligible", "fused", "recovering", "missing"],
+    "technicalFailureEffect": "quarantine-or-pause-without-cursor-or-business-state-advance",
+    "recoveringOwnerPort": "ingestion-quality/quality-eligibility-recovery-command-v1",
+    "recoveringRuntimeOwnerStory": "2.5"
+  }
+}
