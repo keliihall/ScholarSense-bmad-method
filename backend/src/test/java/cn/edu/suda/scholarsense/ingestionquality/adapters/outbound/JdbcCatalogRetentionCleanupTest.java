@@ -32,16 +32,16 @@ class JdbcCatalogRetentionCleanupTest {
         Timestamp cutoff = Timestamp.from(NOW);
         when(jdbc.queryForObject(
                 anyString(), eq(Long.class), any(Timestamp.class), any(Timestamp.class),
-                any(Timestamp.class), any(Timestamp.class)))
-                .thenReturn(4L);
+                any(Timestamp.class), any(Timestamp.class), any(Timestamp.class)))
+                .thenReturn(5L);
 
         long deleted = new JdbcCatalogRetentionCleanup(
                 jdbc, () -> new TrustedTime(NOW, PROFILE)).cleanupExpired();
 
-        assertEquals(4, deleted);
+        assertEquals(5, deleted);
         verify(jdbc).queryForObject(
-                contains("iq_cleanup_quality_fuse_expired"),
-                eq(Long.class), eq(cutoff), eq(cutoff), eq(cutoff), eq(cutoff));
+                contains("iq_cleanup_quality_finalization_expired"),
+                eq(Long.class), eq(cutoff), eq(cutoff), eq(cutoff), eq(cutoff), eq(cutoff));
     }
 
     @Test

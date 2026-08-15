@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recovery-observation-decision.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decisionId", "recoveryId", "generation", "sourceClass", "status", "consecutivePassedBatches", "requiredPassedBatches", "observedDuration", "requiredDuration", "finalObservationWatermark", "memberSetDigest", "policyDigest", "decisionDigest", "decidedAt", "traceId"],
+  "properties": {
+    "decisionId": {"type": "string", "format": "uuid"},
+    "recoveryId": {"type": "string", "format": "uuid"},
+    "generation": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "sourceClass": {"enum": ["streaming", "dailyBatch"]},
+    "status": {"enum": ["observing", "not-ready", "ready", "relapsed", "dependency-unavailable", "policy-drift"]},
+    "consecutivePassedBatches": {"type": "integer", "minimum": 0},
+    "requiredPassedBatches": {"enum": [2, 3]},
+    "observedDuration": {"type": "string", "pattern": "^P"},
+    "requiredDuration": {"enum": ["PT60M", "P1D"]},
+    "failedMembers": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9._:-]{1,127}$"}},
+    "reasonCode": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{2,63}$"},
+    "finalObservationWatermark": {"type": "string", "minLength": 1, "maxLength": 256},
+    "memberSetDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "policyDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "decisionDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "decidedAt": {"type": "string", "format": "date-time"},
+    "traceId": {"type": "string", "pattern": "^(?!0{32}$)[0-9a-f]{32}$"}
+  },
+  "x-noDataMeans": "not-ready-never-pass"
+}

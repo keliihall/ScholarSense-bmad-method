@@ -1,0 +1,61 @@
+{
+  "architectureVersion": "QFA-1.0.0",
+  "owner": "ingestion-quality",
+  "publicPorts": {
+    "observationCommand": "ingestion-quality/application/RecoveryObservationCommandPort",
+    "observationQuery": "ingestion-quality/api/RecoveryObservationQueryPort",
+    "finalizationCommand": "ingestion-quality/application/QualityRecoveryFinalizationCommandPort"
+  },
+  "idempotency": {
+    "key": ["recoveryId", "finalObservationWatermark"],
+    "digest": "canonical-final-command-digest",
+    "sameKeySameDigest": "return-original-committed-result",
+    "sameKeyDifferentDigest": "conflict",
+    "differentKeyAfterWinner": "return-winning-result"
+  },
+  "locking": {
+    "scope": "sourceId",
+    "order": [
+      "source-advisory-lock",
+      "final-idempotency",
+      "rule-version-and-member-facts",
+      "episode-and-task",
+      "eligibilities-by-id",
+      "observation-decision",
+      "approval-and-execution-jti"
+    ],
+    "winner": "verified-failure-or-new-policy",
+    "insideLockReread": true,
+    "optimisticCas": true
+  },
+  "ownerTransaction": {
+    "networkIo": false,
+    "allOrNothing": true,
+    "atomicWrites": [
+      "final-observation-decision",
+      "all-eligibility-history-and-current",
+      "episode-close-history-and-current",
+      "same-task-close-history-and-current",
+      "window-outcomes",
+      "audit",
+      "eligibility-and-task-events-and-outbox",
+      "execution-jti",
+      "idempotent-response"
+    ],
+    "partialTerminalState": "forbidden"
+  },
+  "eventOrdering": {
+    "aggregateVersion": "monotonic",
+    "routeSequence": "monotonic",
+    "payload": "owner-committed-self-contained-result",
+    "consumerLatestLookup": "forbidden"
+  },
+  "delivery": {
+    "send": "outside-owner-transaction",
+    "permit": "task-scoped-advisory-lock-through-authorize-send-finalize",
+    "failureEffect": "delivery-sidecar-only",
+    "ownerResultDigest": "computed-from-committed-result"
+  },
+  "forbiddenSideEffects": ["RuleEvaluation", "Candidate", "Clue", "backfill", "network-io-in-owner-transaction", "second-task-owner"],
+  "unresolvedSemantics": []
+}

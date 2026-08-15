@@ -8,6 +8,10 @@ import {
   QualityFuseRecoveryMemory,
 } from './quality-fuse-recovery';
 import type { QualityFuseRecoveryRequest } from './quality-fuse-recovery';
+import type {
+  QualityRecoveryFinalization,
+  QualityRecoveryObservation,
+} from './quality-fuse-recovery';
 
 const props = defineProps<{
   task: QualityRecoveryTask;
@@ -22,11 +26,14 @@ const client = new QualityFuseRecoveryClient(undefined,
   (signal) => identityClient.csrfProof(signal));
 const memory = new QualityFuseRecoveryMemory();
 const current = ref<QualityFuseRecoveryRequest>();
+const observation = ref<QualityRecoveryObservation>();
+const finalization = ref<QualityRecoveryFinalization>();
 const active = ref<AbortController>();
 const busy = ref(false);
 const executionCompleted = ref(false);
 const message = ref('');
 const dialog = ref<HTMLDialogElement>();
+const finalDialog = ref<HTMLDialogElement>();
 
 const visible = computed(() => props.available && props.online && !props.narrow);
 const canCreate = computed(() => visible.value && current.value === undefined && !busy.value);
@@ -36,6 +43,19 @@ const canApprove = computed(() => current.value?.status === 'approval-pending'
   && current.value.approvalVersion !== null && !busy.value);
 const canExecute = computed(() => current.value?.status === 'approval-approved'
   && !executionCompleted.value && !busy.value);
+const canFinalApproval = computed(() => observation.value?.status === 'ready'
+  && ['not-requested', 'approval-rejected', 'cancelled']
+    .includes(observation.value.finalizationState)
+  && observation.value.watermark !== null && !busy.value);
+const finalizationState = computed(() => finalization.value?.finalizationState
+  ?? observation.value?.finalizationState);
+const finalApprovalVersion = computed(() => finalization.value?.approvalVersion
+  ?? observation.value?.approvalVersion);
+const canFinalApprove = computed(() => finalizationState.value === 'approval-pending'
+  && finalApprovalVersion.value !== null && finalApprovalVersion.value !== undefined
+  && !busy.value);
+const canFinalize = computed(() => finalizationState.value === 'approval-approved'
+  && observation.value?.watermark !== null && !busy.value);
 const preview = computed(() => current.value?.previewSummary);
 
 function open(): void {
@@ -98,6 +118,64 @@ async function execute(): Promise<void> {
       ? '质量资格已进入 Recovering 观察；尚未 eligible、recovered 或 production。'
       : '执行已重放；质量资格仍处于 Recovering 观察。';
     executionCompleted.value = true;
+    await loadObservation(signal);
+    emit('completed');
+  });
+}
+
+async function refreshObservation(): Promise<void> {
+  await run(loadObservation);
+}
+
+async function loadObservation(signal: AbortSignal): Promise<void> {
+  observation.value = await client.observation(props.task.taskId, signal);
+  message.value = observationText(observation.value);
+}
+
+async function requestFinalApproval(): Promise<void> {
+  if (!canFinalApproval.value || observation.value?.watermark === null) return;
+  await run(async (signal) => {
+    finalization.value = await client.requestFinalApproval(
+      observation.value!.recoveryId, observation.value!.recoveryVersion,
+      observation.value!.taskVersion, observation.value!.watermark!,
+      key('final-approval'), signal);
+    message.value = '最终 D4 已提交；仍需独立 checker 确认，当前资格保持 Recovering。';
+  });
+}
+
+async function decideFinal(decision: 'approve' | 'reject' | 'cancel'): Promise<void> {
+  const recoveryId = finalization.value?.recoveryId ?? observation.value?.recoveryId;
+  const approvalVersion = finalApprovalVersion.value;
+  if (!canFinalApprove.value || recoveryId === undefined
+      || approvalVersion === null || approvalVersion === undefined) return;
+  await run(async (signal) => {
+    finalization.value = await client.decideFinalApproval(
+      recoveryId, approvalVersion,
+      decision, key(`final-decision-${decision}`), signal);
+    message.value = decision === 'approve'
+      ? '最终 D4 已批准；提交时仍会重检观察、水位、成员、策略与授权。'
+      : '最终确认未获批准；质量资格保持 Recovering。';
+  });
+}
+
+function openFinalizationConfirmation(): void {
+  if (!canFinalize.value) return;
+  finalDialog.value?.showModal();
+}
+
+async function finalizeRecovery(): Promise<void> {
+  if (!canFinalize.value || observation.value?.watermark === null
+      || observation.value === undefined) return;
+  await run(async (signal) => {
+    const result = await client.finalize(
+      observation.value!.recoveryId, observation.value!.recoveryVersion,
+      observation.value!.taskVersion, observation.value!.watermark!,
+      key('finalize'), signal);
+    message.value = result.deliveryStatus === 'confirmed'
+      ? '本地质量已 Eligible；同一任务已关闭；外部平台已确认投递。'
+      : '本地质量已 Eligible；同一任务关闭 intent 已提交，外部投递仍独立处理中。';
+    finalDialog.value?.close();
+    await loadObservation(signal);
     emit('completed');
   });
 }
@@ -131,9 +209,28 @@ function clear(): void {
   active.value?.abort();
   active.value = undefined;
   current.value = undefined;
+  observation.value = undefined;
+  finalization.value = undefined;
   executionCompleted.value = false;
   memory.clear();
   dialog.value?.close();
+  finalDialog.value?.close();
+}
+
+function observationText(value: QualityRecoveryObservation): string {
+  if (value.status === 'relapsed') return '观察到真实质量失败，资格已回退为 Fused。';
+  if (value.status === 'policy-drift') return '策略或成员已变化；旧观察不能用于最终确认。';
+  if (value.status === 'ready') return '完整观察已通过；可发起 fresh D4 最终确认。';
+  if (value.status === 'finalized') return value.deliveryStatus === 'confirmed'
+    ? '本地质量已 Eligible；外部平台已确认投递。'
+    : '本地质量已 Eligible；任务关闭投递仍独立处理中。';
+  return '正在累计真实质量事实；无数据不会被当作通过。';
+}
+
+function durationText(value: 'PT60M' | 'PT24H' | 'P1D'): string {
+  if (value === 'PT60M') return '60 分钟';
+  if (value === 'PT24H' || value === 'P1D') return '24 小时';
+  return '未知策略时长';
 }
 
 function key(phase: string): string {
@@ -165,7 +262,7 @@ onBeforeUnmount(clear);
   <section v-if="visible" class="quality-fuse-recovery-panel"
     aria-labelledby="quality-fuse-recovery-heading">
     <h5 id="quality-fuse-recovery-heading">证据化质量恢复</h5>
-    <p>只会申请 Fused → Recovering；解除熔断与 Eligible 属于后续观察故事。</p>
+    <p>先进入 Recovering 持续观察；仅完整达标并完成 fresh D4 后才会进入 Eligible。</p>
     <p v-if="message" role="status" aria-live="polite">{{ message }}</p>
     <section v-if="preview" class="quality-recovery-evidence"
       aria-labelledby="quality-recovery-evidence-heading">
@@ -173,7 +270,7 @@ onBeforeUnmount(clear);
       <dl>
         <div><dt>恢复策略</dt><dd>{{ preview.qualityRecoveryPolicyVersion }}</dd></div>
         <div><dt>连续通过批次</dt><dd>{{ preview.actualConsecutivePassedBatches }} / 至少 {{ preview.requiredConsecutivePassedBatches }}</dd></div>
-        <div><dt>Recovering 观察窗</dt><dd>{{ preview.observationDuration === 'PT60M' ? '60 分钟' : '24 小时' }}</dd></div>
+        <div><dt>Recovering 观察窗</dt><dd>{{ durationText(preview.observationDuration) }}</dd></div>
         <div><dt>历史补数</dt><dd>{{ preview.backfillStatus }} · {{ preview.backfillLookbackDays }} 天</dd></div>
         <div><dt>全量对账</dt><dd>期望 {{ preview.reconciliationExpectedCount }} / 实际 {{ preview.reconciliationActualCount }} / 不一致 {{ preview.reconciliationMismatchCount }}</dd></div>
         <div><dt>分层抽样</dt><dd>总体 {{ preview.samplePopulationCount }} / 已选 {{ preview.sampleSelectedCount }} / 分层 {{ preview.sampleStrataCount }} / 不一致 {{ preview.sampleMismatchCount }}</dd></div>
@@ -181,6 +278,22 @@ onBeforeUnmount(clear);
       </dl>
       <p>本预览不授权执行；最终可行动性由 Story {{ preview.finalActionabilityOwnerStory }} 判定。</p>
       <p v-if="current?.previewExpiresAt">预览有效至 {{ new Date(current.previewExpiresAt).toLocaleString('zh-CN') }}；过期或版本漂移后必须显式重做。</p>
+    </section>
+    <section v-if="observation" class="quality-recovery-observation"
+      aria-labelledby="quality-recovery-observation-heading">
+      <h6 id="quality-recovery-observation-heading">恢复观察与终态</h6>
+      <dl>
+        <div><dt>策略 / 来源类别</dt><dd>{{ observation.policyVersion }} / {{ observation.sourceClass }}</dd></div>
+        <div><dt>连续通过批次</dt><dd>{{ observation.consecutivePassedBatches }} / {{ observation.requiredPassedBatches }}</dd></div>
+        <div><dt>观察时长</dt><dd>{{ Math.floor(observation.observedDurationMicros / 60000000) }} 分钟 / {{ durationText(observation.observationDuration) }}</dd></div>
+        <div><dt>水位</dt><dd>{{ observation.watermark ?? '尚无可信事实' }}</dd></div>
+        <div><dt>最早可行动截止</dt><dd>{{ observation.latestActionableAt ? new Date(observation.latestActionableAt).toLocaleString('zh-CN') : '无窗口' }}</dd></div>
+        <div><dt>失败成员</dt><dd>{{ observation.failedMembers.length === 0 ? '无' : observation.failedMembers.join('、') }}</dd></div>
+        <div><dt>资格 / 原任务</dt><dd>{{ observation.eligibilityStatus }} / {{ observation.taskStatus }}</dd></div>
+        <div><dt>任务投递</dt><dd>{{ observation.deliveryStatus }}（独立传输状态）</dd></div>
+        <div v-if="observation.status === 'finalized'"><dt>最终窗口</dt><dd>可交接 {{ observation.eligibleForHandoffWindowCount }} / 仅历史 {{ observation.historyOnlyWindowCount }}</dd></div>
+        <div v-if="observation.failureReasonCode"><dt>未通过原因</dt><dd>{{ observation.failureReasonCode }}</dd></div>
+      </dl>
     </section>
     <div class="quality-filter-actions">
       <button v-if="canCreate" type="button" @click="open">发起恢复验证</button>
@@ -190,6 +303,11 @@ onBeforeUnmount(clear);
       <button v-if="canApprove" type="button" @click="decide('reject')">拒绝审批</button>
       <button v-if="canApprove" type="button" @click="decide('cancel')">取消审批</button>
       <button v-if="canExecute" type="button" @click="execute">执行进入 Recovering</button>
+      <button type="button" :disabled="busy" @click="refreshObservation">刷新观察与任务状态</button>
+      <button v-if="canFinalApproval" type="button" @click="requestFinalApproval">{{ observation?.finalizationState === 'not-requested' ? '申请最终 D4' : '重新申请最终 D4' }}</button>
+      <button v-if="canFinalApprove" type="button" @click="decideFinal('approve')">独立 checker 最终批准</button>
+      <button v-if="canFinalApprove" type="button" @click="decideFinal('reject')">拒绝最终确认</button>
+      <button v-if="canFinalize" type="button" @click="openFinalizationConfirmation">确认 Eligible 并关闭同一任务</button>
     </div>
     <dialog ref="dialog" aria-labelledby="quality-fuse-recovery-dialog-title">
       <h5 id="quality-fuse-recovery-dialog-title">确认发起恢复验证</h5>
@@ -197,6 +315,15 @@ onBeforeUnmount(clear);
       <div class="quality-filter-actions">
         <button type="button" :disabled="busy" @click="create">确认发起</button>
         <button type="button" :disabled="busy" @click="dialog?.close()">取消</button>
+      </div>
+    </dialog>
+    <dialog ref="finalDialog" aria-labelledby="quality-finalization-dialog-title">
+      <h5 id="quality-finalization-dialog-title">确认进入 Eligible 并关闭同一任务</h5>
+      <p>此操作将提交不可逆的本地终态：全部受影响资格进入 Eligible、当前 episode 关闭、原质量任务关闭。提交前系统仍会重检策略、成员、水位、授权与 fresh D4 lease。</p>
+      <p>外部任务投递是独立状态；投递失败不会回滚本地 Eligible。</p>
+      <div class="quality-filter-actions">
+        <button type="button" :disabled="busy" @click="finalizeRecovery">确认执行不可逆终态</button>
+        <button type="button" :disabled="busy" @click="finalDialog?.close()">返回检查</button>
       </div>
     </dialog>
   </section>

@@ -13,7 +13,8 @@ public record QualityEligibilityMutation(
         QualityEligibilityBackfillRequest backfillRequest,
         QualityEligibilityQuarantine quarantine,
         QualityEligibilitySnapshotEvidence snapshotEvidence,
-        QualityFuseTaskPlan fuseTaskPlan) {
+        QualityFuseTaskPlan fuseTaskPlan,
+        RecoveryObservationProgressState recoveryObservationProgress) {
 
     public QualityEligibilityMutation {
         outcome = Objects.requireNonNull(outcome);
@@ -28,9 +29,23 @@ public record QualityEligibilityMutation(
             List<RuleEligibilityDecision> decisions,
             QualityEligibilityBackfillRequest backfillRequest,
             QualityEligibilityQuarantine quarantine,
+            QualityEligibilitySnapshotEvidence snapshotEvidence,
+            QualityFuseTaskPlan fuseTaskPlan) {
+        this(outcome, cursor, pendingPair, dependencyState, decisions,
+                backfillRequest, quarantine, snapshotEvidence, fuseTaskPlan, null);
+    }
+
+    public QualityEligibilityMutation(
+            QualityEligibilityProcessingOutcome outcome,
+            QualityEligibilityCursor cursor,
+            PendingQualityPair pendingPair,
+            DependencyQualityState dependencyState,
+            List<RuleEligibilityDecision> decisions,
+            QualityEligibilityBackfillRequest backfillRequest,
+            QualityEligibilityQuarantine quarantine,
             QualityEligibilitySnapshotEvidence snapshotEvidence) {
         this(outcome, cursor, pendingPair, dependencyState, decisions,
-                backfillRequest, quarantine, snapshotEvidence, null);
+                backfillRequest, quarantine, snapshotEvidence, null, null);
     }
 
     public static QualityEligibilityMutation noChange(
@@ -39,6 +54,7 @@ public record QualityEligibilityMutation(
         return new QualityEligibilityMutation(
                 outcome, state.cursor(), state.pendingPair(), null, List.of(),
                 null, null, null,
-                state.currentInbox() == null ? null : state.currentInbox().fuseTaskPlan());
+                state.currentInbox() == null ? null : state.currentInbox().fuseTaskPlan(),
+                null);
     }
 }

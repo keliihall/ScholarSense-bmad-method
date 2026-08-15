@@ -1,0 +1,65 @@
+{
+  "policyVersion": "QOFP-1.0.0",
+  "owner": "ingestion-quality",
+  "predecessors": {
+    "qualityRecoveryPolicy": {"path": "contracts/ingestion-quality/quality-recovery/quality-recovery-policy-1.0.0.json", "rawSha256": "sha256:195a22553b13ac35da5923e704ef8385f85d17574b8a753cc1afc16c2055f366"},
+    "handoff": {"path": "contracts/ingestion-quality/quality-recovery/quality-recovery-handoff-2.5c-1.0.0.json", "rawSha256": "sha256:1fbae3be1d118d8bd3b0eab7872f6179c6b742a0b2105d64121be196a63af217"}
+  },
+  "clock": {
+    "start": "owner-committed-recoveringStartedAt",
+    "now": "trusted-server-utc",
+    "precision": "microsecond",
+    "durationBoundary": "inclusive"
+  },
+  "sourceClasses": {
+    "streaming": {"minimumConsecutivePassedBatches": 3, "observationDuration": "PT60M"},
+    "dailyBatch": {"minimumConsecutivePassedBatches": 2, "observationDuration": "P1D", "acceptedWireAliases": ["PT24H"]}
+  },
+  "sourceClassResolution": "approved-DCC-binding-only-never-ui-frequency-or-default",
+  "batchQualification": {
+    "acceptedPair": "strict-assessed-passed-then-exact-published",
+    "sequenceKey": ["sourceId", "sourceVersionOrdinal", "lineageRevision"],
+    "forbiddenOrderingFields": ["eventId", "occurredAt", "watermark", "batchId"],
+    "requiredFacts": ["sealed-batch", "quality-snapshot", "reconciliation", "sample-summary"]
+  },
+  "absenceAndGap": {
+    "noData": "not-pass",
+    "sequenceGap": "not-pass-and-fail-closed",
+    "poison": "not-pass-and-fail-closed",
+    "staleSlo": "not-pass-and-fail-closed",
+    "unknownProvider": "not-pass-and-fail-closed",
+    "providerUnavailable": "retry-without-relapse",
+    "verifiedQualityFailure": "business-relapse"
+  },
+  "qualityRequirements": {
+    "requiredMembers": "all-current-members",
+    "reconciliationMismatchCount": 0,
+    "sampleMismatchCount": 0,
+    "sampleMinimumSubjectWindows": 100,
+    "sampleAllWhenPopulationFewer": true
+  },
+  "candidateGate": [
+    "same-recovery-and-generation",
+    "all-affected-eligibilities-current-and-recovering",
+    "current-policy-member-watermark-and-owner-bindings",
+    "complete-duration-and-consecutive-batches",
+    "zero-verified-quality-failure"
+  ],
+  "windowDecision": {
+    "eligibleForHandoff": "recoveryCompletedAt-less-than-or-equal-latestActionableAt",
+    "historyOnly": "recoveryCompletedAt-greater-than-latestActionableAt",
+    "lateWork": "never-backfill-or-create-rule-evaluation-candidate-clue"
+  },
+  "relapse": {
+    "window": "P1D",
+    "duringObservation": "same-open-task-update-and-recovering-to-fused",
+    "afterTerminalClose": "generation-plus-one-new-episode-and-task-never-reopen"
+  },
+  "privacy": {
+    "allowedFactClasses": ["version", "digest", "count", "watermark", "timestamp", "closed-reason-code"],
+    "studentPlaintext": "forbidden",
+    "rawRows": "forbidden",
+    "freeText": "forbidden"
+  },
+  "runtimeEvidenceClaim": "contract-only"
+}

@@ -1,0 +1,17 @@
+{
+  "retentionVersion": "QUALITY-FINALIZATION-RETENTION-1.0.0",
+  "owner": "ingestion-quality-retention-workload",
+  "evidence": {
+    "facts": ["observation-fact", "observation-decision", "window-outcome", "task-close-history", "episode-close-history", "audit", "event", "outbox"],
+    "retention": "P2Y"
+  },
+  "idempotency": {
+    "facts": ["final-command", "final-response", "execution-jti"],
+    "retention": "P90D"
+  },
+  "legalHoldAware": true,
+  "activeReferences": "never-delete-active-recovery-open-task-or-retrying-outbox",
+  "deleteOrder": ["expired-idempotency-and-jti", "confirmed-outbox", "terminal-worker-checkpoints", "window-outcomes", "observation-decisions", "observation-facts-after-legal-hold-check"],
+  "scheduler": "iq_cleanup_quality_finalization_expired",
+  "runtimeEvidenceClaim": "contract-only"
+}

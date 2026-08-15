@@ -18,6 +18,7 @@ const task = Object.freeze({
   affectedRules: [{ ruleId: 'ACC-SAFE-001', ruleVersion: '1.0.0' }],
   ownerRef: 'source-owner:SRC-P0-CAMPUS-ACCESS-001', priority: 'P1',
   dueAt: '2026-08-11T00:00:00Z', status: 'open', watermark: 'opaque-watermark',
+  closedAt: null, closureReason: null, ownerResultDigest: null,
   trigger: { batchId: '019fe8a0-0000-7000-8000-000000000803',
     snapshotId: '019fe8a0-0000-7000-8000-000000000804',
     reasonCode: 'REQUIRED_MEMBER_FUSED' },
@@ -76,6 +77,18 @@ describe('quality recovery task frontend boundary', () => {
     expect(qualityRecoveryTaskDeliveryText('confirmed')).toBe('外部平台已确认投递');
     expect(qualityRecoveryTaskDeliveryText('failed')).toContain('投递失败');
     expect(qualityRecoveryTaskDeliveryText('confirmed')).not.toContain('已修复');
+  });
+
+  it('accepts an additive same-task terminal projection and rejects partial close', async () => {
+    const closed = { ...structuredClone(task), taskVersion: 2, status: 'closed',
+      closedAt: '2026-08-11T01:00:00Z', closureReason: 'RECOVERY_FINALIZED',
+      ownerResultDigest: `sha256:${'a'.repeat(64)}` } as const;
+    await expect(new QualityRecoveryTaskClient(
+      vi.fn<typeof fetch>().mockResolvedValue(response(closed)),
+    ).detail(taskId)).resolves.toMatchObject({ taskId, status: 'closed', taskVersion: 2 });
+    await expect(new QualityRecoveryTaskClient(
+      vi.fn<typeof fetch>().mockResolvedValue(response({ ...closed, closedAt: null })),
+    ).detail(taskId)).rejects.toThrow('INGESTION_QUALITY_RESPONSE_INVALID');
   });
 
   it('clears only volatile task objects and binds query keys to identity generation', () => {

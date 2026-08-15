@@ -1,0 +1,74 @@
+{
+  "version": "INGESTION-QUALITY-ROLES-6.0.0",
+  "status": "installed-and-verified",
+  "runtimeEvidenceClaim": "story-2.5c-observation-finalization-closure",
+  "composition": {
+    "predecessorRolesPath": "ingestion-quality-roles-5.0.0.json",
+    "predecessorRolesRawSha256": "63f1ba503b7520f06ecff080c8454b5a6fca2dc173dcae6906ead26fc6bc6910",
+    "mutationAllowed": false,
+    "successorRuntimeProfile": "ingestion-quality-runtime-6.0.0.json"
+  },
+  "artifactContract": "same-backend-jar",
+  "roleOverrides": {
+    "web-api": {
+      "addCapabilityProfiles": ["ingestion-quality-runtime-6.0.0.json"],
+      "minimumReplicas": 2,
+      "businessHttp": true
+    },
+    "retention-executor": {
+      "addCapabilityProfiles": ["ingestion-quality-runtime-6.0.0.json"],
+      "minimumReplicas": 1,
+      "businessHttp": false
+    },
+    "recovery-validation-worker": {
+      "addCapabilityProfiles": ["ingestion-quality-runtime-6.0.0.json"],
+      "minimumReplicas": 2,
+      "businessHttp": false
+    }
+  },
+  "roles": {
+    "recovery-validation-worker": {
+      "artifact": "backend/target/scholarsense-backend.jar",
+      "capabilityProfiles": [
+        "ingestion-quality-runtime-1.0.0.json",
+        "ingestion-quality-runtime-2.0.0.json",
+        "ingestion-quality-runtime-3.0.0.json",
+        "ingestion-quality-runtime-4.0.0.json",
+        "ingestion-quality-runtime-5.0.0.json",
+        "ingestion-quality-runtime-6.0.0.json"
+      ],
+      "allowedEnvironments": ["test", "stage", "prod"],
+      "activationStatus": "installed-and-verified",
+      "minimumReplicas": 2,
+      "businessHttp": false,
+      "requiredEnvironment": [
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_ENABLED",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_URL",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_USERNAME",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_PASSWORD"
+      ],
+      "environment": {
+        "SCHOLARSENSE_ROLE": "worker",
+        "SCHOLARSENSE_IDENTITY_ENABLED": "false",
+        "SCHOLARSENSE_IDENTITY_SYNC_ENABLED": "false",
+        "SCHOLARSENSE_AUDIT_LEDGER_ENABLED": "false",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_ENABLED": "true"
+      },
+      "probe": {
+        "type": "process-and-startup-gate",
+        "startupGate": "PostgreSqlDataSourceStartupGate.verifyRecoveryWorker"
+      }
+    }
+  },
+  "activationPolicy": {
+    "requiredTargetInputs": [
+      "existing-eighth-dedicated-database-login",
+      "identity-access-final-hrap-signing-key",
+      "quality-finalization-contract-root",
+      "postgresql-18.4-v21-clean-and-upgrade-evidence"
+    ],
+    "partialActivationAllowed": false,
+    "fallbackProviderAllowed": false,
+    "runtimeEvidenceClaim": "story-2.5c-observation-finalization-closure"
+  }
+}

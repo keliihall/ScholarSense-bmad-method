@@ -31,8 +31,8 @@ class Story25QualityRecoveryTaskJdbcBoundaryContractTest {
 
         assertEquals(3, occurrences(adapter, "jdbc.query("),
                 "page size must not add JDBC round trips");
-        assertTrue(adapter.contains("iq_find_quality_recovery_task_ids("));
-        assertTrue(adapter.contains("iq_find_quality_recovery_task_page(?::uuid[])"));
+        assertTrue(adapter.contains("iq_find_quality_recovery_task_ids_v2("));
+        assertTrue(adapter.contains("iq_find_quality_recovery_task_page_v2(?::uuid[])"));
         assertTrue(adapter.contains("iq_find_quality_recovery_task_page_rules(?::uuid[])"));
         assertFalse(adapter.contains("for (UUID"),
                 "task hydration must remain bulk-shaped rather than N+1");

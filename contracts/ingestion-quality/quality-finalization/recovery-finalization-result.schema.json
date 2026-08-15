@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recovery-finalization-result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["recoveryId", "generation", "eligibilityStatus", "episodeStatus", "taskId", "taskStatus", "taskVersion", "recoveryCompletedAt", "windowOutcomesDigest", "ownerResultDigest", "deliveryStatus", "traceId"],
+  "properties": {
+    "recoveryId": {"type": "string", "format": "uuid"},
+    "generation": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "eligibilityStatus": {"enum": ["eligible", "fused"]},
+    "episodeStatus": {"enum": ["closed", "active"]},
+    "taskId": {"type": "string", "format": "uuid"},
+    "taskStatus": {"enum": ["closed", "open"]},
+    "taskVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "recoveryCompletedAt": {"type": "string", "format": "date-time"},
+    "windowOutcomesDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "ownerResultDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "deliveryStatus": {"enum": ["pending", "retrying", "failed", "confirmed"]},
+    "traceId": {"type": "string", "pattern": "^(?!0{32}$)[0-9a-f]{32}$"}
+  },
+  "x-runtimeEvidenceClaim": "owner-local-only"
+}

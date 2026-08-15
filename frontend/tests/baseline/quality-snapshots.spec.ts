@@ -81,6 +81,7 @@ const recoveryTask = {
   affectedRules: [{ ruleId: 'ACC-SAFE-001', ruleVersion: '1.0.0' }],
   ownerRef: 'source-owner:SRC-P0-CAMPUS-ACCESS-001', priority: 'P1',
   dueAt: '2026-08-12T08:00:00Z', status: 'open', watermark: 'source-version:42',
+  closedAt: null, closureReason: null, ownerResultDigest: null,
   trigger: { batchId, snapshotId, reasonCode: 'REQUIRED_MEMBER_FUSED' },
   currentEvidence: { qualityGateVersion: 'QG-1.0.0', qmdpVersion: 'QMDP-1.0.0',
     qshmVersion: 'QSHM-1.0.0' },
@@ -252,6 +253,25 @@ test('recovery request through D4 approval only enters Recovering after explicit
       ownerCommittedAt: '2026-08-13T00:10:00Z', traceId: '00112233445566778899aabbccddeeff',
     }) });
   });
+  await page.route(new RegExp(`/api/v1/quality-recovery-tasks/${taskId}/observation$`),
+    (route) => route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        recoveryId: recoveryRequestId, recoveryVersion: 5, taskId, taskVersion: 1,
+        generation: 1, sourceClass: 'streaming', policyVersion: 'QRP-1.0.0',
+        policyDigest: `sha256:${'9'.repeat(64)}`, status: 'observing',
+        finalizationState: 'not-requested', approvalId: null, approvalVersion: null,
+        consecutivePassedBatches: 0,
+        requiredPassedBatches: 3, observedDurationMicros: 0,
+        requiredDurationMicros: 3_600_000_000, observationDuration: 'PT60M',
+        watermark: null, recoveringStartedAt: '2026-08-13T00:10:00Z',
+        lastObservedAt: '2026-08-13T00:10:00Z', latestActionableAt: '2099-08-13T00:10:00Z',
+        failedMembers: [], failureReasonCode: null,
+        eligibilityStatus: 'recovering', taskStatus: 'open',
+        taskClosedAt: null, ownerResultDigest: null, deliveryStatus: 'confirmed',
+        deliveryAttempt: 1, deliveryNextAttemptAt: null,
+        eligibleForHandoffWindowCount: 0, historyOnlyWindowCount: 0,
+        traceId: '0123456789abcdef0123456789abcdef',
+      }) }));
 
   function view() {
     const ready = status !== 'validating';
@@ -284,7 +304,7 @@ test('recovery request through D4 approval only enters Recovering after explicit
   await page.getByRole('button', { name: '独立 checker 批准' }).click();
   await expect(page.getByText('D4 审批已完成')).toBeVisible();
   await page.getByRole('button', { name: '执行进入 Recovering' }).click();
-  await expect(page.getByText('质量资格已进入 Recovering 观察；尚未 eligible、recovered 或 production。')).toBeVisible();
+  await expect(page.getByText('正在累计真实质量事实；无数据不会被当作通过。')).toBeVisible();
   expect(requests).toHaveLength(2);
   const persisted = await page.evaluate(async () => ({ local: localStorage.length,
     session: sessionStorage.length, databases: await indexedDB.databases(),

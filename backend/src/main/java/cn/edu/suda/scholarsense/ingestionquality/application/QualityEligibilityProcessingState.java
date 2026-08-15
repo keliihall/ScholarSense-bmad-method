@@ -15,7 +15,8 @@ public record QualityEligibilityProcessingState(
         List<DependencyQualityState> dependencyStates,
         Map<String, QualityEligibilityCurrentState> currentEligibilities,
         Map<String, QualityFuseEpisodeState> activeEpisodes,
-        Map<String, Long> latestEpisodeGenerations) {
+        Map<String, Long> latestEpisodeGenerations,
+        Map<String, RecoveryObservationProgressState> recoveryObservations) {
 
     public QualityEligibilityProcessingState {
         inboxEntries = Map.copyOf(new LinkedHashMap<>(Objects.requireNonNull(inboxEntries)));
@@ -25,11 +26,13 @@ public record QualityEligibilityProcessingState(
         activeEpisodes = Map.copyOf(new LinkedHashMap<>(Objects.requireNonNull(activeEpisodes)));
         latestEpisodeGenerations = Map.copyOf(new LinkedHashMap<>(
                 Objects.requireNonNull(latestEpisodeGenerations)));
+        recoveryObservations = Map.copyOf(new LinkedHashMap<>(
+                Objects.requireNonNull(recoveryObservations)));
     }
 
     public static QualityEligibilityProcessingState empty() {
         return new QualityEligibilityProcessingState(
-                Map.of(), null, null, null, List.of(), Map.of(), Map.of(), Map.of());
+                Map.of(), null, null, null, List.of(), Map.of(), Map.of(), Map.of(), Map.of());
     }
 
     public QualityEligibilityProcessingState(
@@ -39,14 +42,28 @@ public record QualityEligibilityProcessingState(
             PendingQualityPair pendingPair,
             List<DependencyQualityState> dependencyStates) {
         this(inboxEntries, currentInbox, cursor, pendingPair, dependencyStates,
-                Map.of(), Map.of(), Map.of());
+                Map.of(), Map.of(), Map.of(), Map.of());
+    }
+
+    public QualityEligibilityProcessingState(
+            Map<UUID, QualityEligibilityInboxEntry> inboxEntries,
+            QualityEligibilityInboxEntry currentInbox,
+            QualityEligibilityCursor cursor,
+            PendingQualityPair pendingPair,
+            List<DependencyQualityState> dependencyStates,
+            Map<String, QualityEligibilityCurrentState> currentEligibilities,
+            Map<String, QualityFuseEpisodeState> activeEpisodes,
+            Map<String, Long> latestEpisodeGenerations) {
+        this(inboxEntries, currentInbox, cursor, pendingPair, dependencyStates,
+                currentEligibilities, activeEpisodes, latestEpisodeGenerations, Map.of());
     }
 
     public QualityEligibilityProcessingState withCurrentInbox(
             QualityEligibilityInboxEntry entry) {
         return new QualityEligibilityProcessingState(
                 inboxEntries, entry, cursor, pendingPair, dependencyStates,
-                currentEligibilities, activeEpisodes, latestEpisodeGenerations);
+                currentEligibilities, activeEpisodes, latestEpisodeGenerations,
+                recoveryObservations);
     }
 
     public static String episodeKey(String sourceId, String dependencyId) {

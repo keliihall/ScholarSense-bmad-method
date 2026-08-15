@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cn.edu.suda.scholarsense.identityaccess.adapters.outbound.JdbcCurrentNaturalPersonBindingQueryAdapter;
@@ -25,6 +26,9 @@ import cn.edu.suda.scholarsense.identityaccess.application.HighRiskExecutionAuth
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.FrozenQualityRecoveryPolicyLoader;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.FrozenRecoverySourceClassRegistryLoader;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityRecoveryCommandStore;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityRecoveryFinalizationStore;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityRecoveryTaskQueryStore;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcRecoveryObservationQueryStore;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcRecoveryBackfillAndReconciliationAdapter;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcRecoveryValidationExternalWork;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcRecoveryValidationWork;
@@ -33,6 +37,10 @@ import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseRecovery
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryAuthorizationGuard;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryCommandActor;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryExecutionCommit;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryFinalizationCommand;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryFinalizationCommit;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryFinalizationContext;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryFinalizationService;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryConfirmationRelayProcessor;
 import cn.edu.suda.scholarsense.ingestionquality.application.RecoveryValidationJobProcessor;
 import cn.edu.suda.scholarsense.rulegovernance.adapters.outbound.JdbcRuleVersionBusinessOwnerBindingQueryAdapter;
@@ -54,6 +62,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import tools.jackson.databind.JsonNode;
@@ -205,6 +214,316 @@ class QualityRecoveryRuntimePostgreSqlIT {
                     select count(*) from ingestion_quality.iq_quality_recovery_evidence_pack
                      where recovery_request_id=?
                     """, Integer.class, fixture.requestId()));
+        } finally {
+            fixture.close();
+        }
+    }
+
+    @Test
+    void observationStartsFromOwnerCommitAndRejectsMixedGenerationAndLateFence()
+            throws Exception {
+        Fixture fixture = fixture();
+        try {
+            assertEquals(1, fixture.processor().runBatch().succeeded());
+            QualityRecoveryExecutionCommit commit = executeApprovedRecovery(fixture);
+            Instant ownerCommittedAt = fixture.admin().queryForObject("""
+                    select updated_at
+                      from ingestion_quality.iq_quality_recovery_request_current
+                     where recovery_request_id=?
+                    """, Instant.class, fixture.requestId());
+            Map<String, Object> base = Map.ofEntries(
+                    Map.entry("recoveryId", fixture.requestId().toString()),
+                    Map.entry("jobId", uuid(7501).toString()),
+                    Map.entry("generation", 1),
+                    Map.entry("sourceClass", "streaming"),
+                    Map.entry("policyVersion", "QRP-1.0.0"),
+                    Map.entry("policyDigest", QRP),
+                    Map.entry("memberSetDigest", fixture.admin().queryForObject("""
+                            select trim(member_set_digest)
+                              from ingestion_quality.iq_quality_recovery_request_current
+                             where recovery_request_id=?
+                            """, String.class, fixture.requestId())),
+                    Map.entry("watermarksDigest", fixture.admin().queryForObject("""
+                            select trim(watermarks_digest)
+                              from ingestion_quality.iq_quality_recovery_request_current
+                             where recovery_request_id=?
+                            """, String.class, fixture.requestId())),
+                    Map.entry("recoveringStartedAt", "2000-01-01T00:00:00Z"));
+
+            LinkedHashMap<String, Object> mixed = new LinkedHashMap<>(base);
+            mixed.put("generation", 2);
+            assertThrows(DataAccessException.class, () -> fixture.online().queryForObject("""
+                    select ingestion_quality.iq_start_recovery_observation(?::jsonb)::text
+                    """, String.class, JSON.writeValueAsString(mixed)));
+
+            JsonNode started = tree(fixture.online().queryForObject("""
+                    select ingestion_quality.iq_start_recovery_observation(?::jsonb)::text
+                    """, String.class, JSON.writeValueAsString(base)));
+            UUID actualObservationJob = UUID.fromString(
+                    started.required("jobId").asText());
+            assertEquals(ownerCommittedAt, fixture.admin().queryForObject("""
+                    select recovering_started_at
+                      from ingestion_quality.iq_recovery_observation_current
+                     where recovery_id=?
+                    """, Instant.class, fixture.requestId()));
+
+            Instant claimedAt = fixture.workerNow();
+            JsonNode claim = tree(fixture.worker().queryForObject("""
+                    select ingestion_quality.iq_claim_recovery_observation_job(
+                        ?,?,?,120)::text
+                    """, String.class, actualObservationJob, digest("observation-worker"),
+                    Timestamp.from(claimedAt)));
+            long leaseGeneration = claim.required("leaseGeneration").asLong();
+            Instant pollAt = claimedAt;
+            for (int poll = 0; poll < 9; poll++) {
+                if (poll > 0) {
+                    claim = tree(fixture.worker().queryForObject("""
+                            select ingestion_quality.iq_claim_recovery_observation_job(
+                                ?,?,?,120)::text
+                            """, String.class, actualObservationJob,
+                            digest("observation-worker"), Timestamp.from(pollAt)));
+                    leaseGeneration = claim.required("leaseGeneration").asLong();
+                }
+                assertTrue(fixture.worker().queryForObject("""
+                        select ingestion_quality.iq_release_recovery_observation_job(
+                            ?,?,'yielded',?,?)
+                        """, Boolean.class, actualObservationJob, leaseGeneration,
+                        Timestamp.from(pollAt.plusSeconds(1)), Timestamp.from(pollAt)));
+                pollAt = pollAt.plusSeconds(2);
+            }
+            assertEquals(0, fixture.admin().queryForObject("""
+                    select attempt_count
+                      from ingestion_quality.iq_recovery_observation_job
+                     where job_id=?
+                    """, Integer.class, actualObservationJob));
+            assertEquals(actualObservationJob, fixture.worker().queryForObject("""
+                    select job_id
+                      from ingestion_quality.iq_find_claimable_recovery_observation_jobs(20,?)
+                     where job_id=?
+                    """, UUID.class, Timestamp.from(pollAt), actualObservationJob));
+            assertFalse(fixture.worker().queryForObject("""
+                    select ingestion_quality.iq_finalize_recovery_observation_job(
+                        ?,?,'{}'::jsonb,?)
+                    """, Boolean.class, actualObservationJob, leaseGeneration,
+                    Timestamp.from(claimedAt)));
+            assertEquals("open", fixture.admin().queryForObject("""
+                    select status from ingestion_quality.iq_quality_recovery_task_current
+                     where task_id=?
+                    """, String.class, commit.taskId()));
+        } finally {
+            fixture.close();
+        }
+    }
+
+    @Test
+    void finalOwnerTransactionClosesEligibilityEpisodeAndSameTaskExactlyOnce()
+            throws Exception {
+        Fixture fixture = fixture();
+        try {
+            assertEquals(1, fixture.processor().runBatch().succeeded());
+            QualityRecoveryExecutionCommit predecessor = executeApprovedRecovery(fixture);
+            JsonNode request = tree(fixture.admin().queryForObject("""
+                    select aggregate::text
+                      from ingestion_quality.iq_quality_recovery_request_current
+                     where recovery_request_id=?
+                    """, String.class, fixture.requestId()));
+            UUID observationJob = uuid(7601);
+            Map<String, Object> start = Map.ofEntries(
+                    Map.entry("recoveryId", fixture.requestId().toString()),
+                    Map.entry("jobId", observationJob.toString()),
+                    Map.entry("generation", 1), Map.entry("sourceClass", "streaming"),
+                    Map.entry("policyVersion", "QRP-1.0.0"),
+                    Map.entry("policyDigest", QRP),
+                    Map.entry("memberSetDigest", request.required("memberSetDigest").asText()),
+                    Map.entry("watermarksDigest", request.required("watermarksDigest").asText()));
+            JsonNode started = tree(fixture.online().queryForObject("""
+                    select ingestion_quality.iq_start_recovery_observation(?::jsonb)::text
+                    """, String.class, JSON.writeValueAsString(start)));
+            observationJob = UUID.fromString(started.required("jobId").asText());
+            fixture.admin().update("""
+                    update ingestion_quality.iq_recovery_observation_current
+                       set last_source_version_ordinal=3,last_lineage_revision=0,
+                           consecutive_passed_batches=3,watermark_utf8=convert_to('wm-final','UTF8'),
+                           aggregate_version=3,updated_at=recovering_started_at+interval '60 minutes'
+                     where recovery_id=?
+                    """, fixture.requestId());
+            Instant claimAt = fixture.workerNow();
+            JsonNode claim = tree(fixture.worker().queryForObject("""
+                    select ingestion_quality.iq_claim_recovery_observation_job(
+                        ?,?,?,120)::text
+                    """, String.class, observationJob, digest("final-observation-worker"),
+                    Timestamp.from(claimAt)));
+            Map<String, Object> ready = Map.ofEntries(
+                    Map.entry("decisionId", uuid(7602).toString()),
+                    Map.entry("status", "ready"), Map.entry("reasonCode", "READY"),
+                    Map.entry("consecutivePassedBatches", 3),
+                    Map.entry("requiredPassedBatches", 3),
+                    Map.entry("observedDurationMicros", 3_600_000_000L),
+                    Map.entry("requiredDurationMicros", 3_600_000_000L),
+                    Map.entry("finalWatermark", "wm-final"),
+                    Map.entry("decisionDigest", digest("ready-observation")),
+                    Map.entry("traceId", TRACE));
+            assertTrue(fixture.worker().queryForObject("""
+                    select ingestion_quality.iq_finalize_recovery_observation_job(
+                        ?,?,?::jsonb,?)
+                    """, Boolean.class, observationJob,
+                    claim.required("leaseGeneration").asLong(),
+                    JSON.writeValueAsString(ready), Timestamp.from(claimAt)));
+
+            assertThrows(DataAccessException.class, () -> fixture.admin().update("""
+                    update ingestion_quality.iq_quality_fuse_episode_current
+                       set active=false
+                     where episode_id=?
+                    """, predecessor.episodeId()));
+            assertTrue(fixture.admin().queryForObject("""
+                    select active from ingestion_quality.iq_quality_fuse_episode_current
+                     where episode_id=?
+                    """, Boolean.class, predecessor.episodeId()));
+
+            JdbcQualityRecoveryFinalizationStore store =
+                    new JdbcQualityRecoveryFinalizationStore(fixture.online(), JSON);
+            QualityRecoveryFinalizationContext context = store.load(fixture.requestId())
+                    .orElseThrow();
+            Map<String, Object> forgedApproval = new LinkedHashMap<>();
+            forgedApproval.put("recoveryId", fixture.requestId().toString());
+            forgedApproval.put("approvalId", uuid(7603).toString());
+            forgedApproval.put("approvalVersion", 2);
+            forgedApproval.put("approvalStatus", "approved");
+            forgedApproval.put("approvalReceiptDigest", digest("forged-final-receipt"));
+            forgedApproval.put("requestDigest", digest("forged-final-request"));
+            forgedApproval.put("finalPreviewDigest", context.finalPreviewDigest());
+            forgedApproval.put("observationDecisionDigest", context.observationDecisionDigest());
+            forgedApproval.put("policyDigest", context.policyDigest());
+            forgedApproval.put("memberSetDigest", context.memberSetDigest());
+            forgedApproval.put("watermarksDigest", context.watermarksDigest());
+            forgedApproval.put("checkerSetDigest", digest("forged-final-checkers"));
+            forgedApproval.put("ownerBindingSetDigest", digest("forged-final-owners"));
+            forgedApproval.put("checkerPersonSetDigest", digest("forged-final-persons"));
+            forgedApproval.put("authorizationContextDigest", digest("forged-authorization"));
+            forgedApproval.put("authenticationStateDigest", digest("forged-authentication"));
+            forgedApproval.put("authorizationGeneration", 7);
+            forgedApproval.put(
+                    "makerPrincipalDigest", fixture.maker().naturalPersonPrincipalDigest());
+            forgedApproval.put("traceId", TRACE);
+            assertThrows(DataAccessException.class, () -> store.bindApproval(forgedApproval));
+
+            QualityRecoveryFinalizationService service = finalizationService(fixture);
+            QualityRecoveryFinalizationCommand approvalCommand =
+                    new QualityRecoveryFinalizationCommand(
+                            fixture.requestId(), context.recoveryVersion(),
+                            context.taskVersion(), "wm-final",
+                            "final-approval-request-0001");
+            QualityRecoveryFinalizationContext pending = service.requestApproval(
+                    approvalCommand, fixture.maker(), TRACE);
+            QualityRecoveryFinalizationContext rejected = service.decide(
+                    fixture.requestId(), pending.approvalVersion(), "reject",
+                    "final-approval-decision-0001", fixture.checker(), TRACE);
+            assertEquals("approval-rejected", rejected.finalizationState());
+            QualityRecoveryFinalizationCommand reRequestCommand =
+                    new QualityRecoveryFinalizationCommand(
+                            fixture.requestId(), rejected.recoveryVersion(),
+                            rejected.taskVersion(), "wm-final",
+                            "final-approval-rerequest-0002");
+            QualityRecoveryFinalizationContext freshPending = service.requestApproval(
+                    reRequestCommand, fixture.maker(), TRACE);
+            assertNotEquals(rejected.approvalId(), freshPending.approvalId());
+            QualityRecoveryFinalizationContext approved = service.decide(
+                    fixture.requestId(), freshPending.approvalVersion(), "approve",
+                    "final-approval-decision-0002", fixture.checker(), TRACE);
+
+            UUID forgedLeaseId = uuid(7604);
+            UUID forgedExecutionJti = uuid(7605);
+            Map<String, Object> forgedCommand = new LinkedHashMap<>();
+            forgedCommand.put("recoveryId", fixture.requestId().toString());
+            forgedCommand.put("expectedRecoveryVersion", approved.recoveryVersion());
+            forgedCommand.put("expectedTaskVersion", approved.taskVersion());
+            forgedCommand.put("expectedEpisodeVersion", approved.episodeVersion());
+            forgedCommand.put("finalObservationWatermark", "wm-final");
+            forgedCommand.put("clientCommandDigest", digest("forged-final-command"));
+            forgedCommand.put("requestDigest", approved.requestDigest());
+            forgedCommand.put("finalPreviewDigest", approved.finalPreviewDigest());
+            forgedCommand.put("observationDecisionDigest", approved.observationDecisionDigest());
+            forgedCommand.put("policyDigest", approved.policyDigest());
+            forgedCommand.put("memberSetDigest", approved.memberSetDigest());
+            forgedCommand.put("watermarksDigest", approved.watermarksDigest());
+            forgedCommand.put("authorizationGeneration", approved.authorizationGeneration());
+            forgedCommand.put("approvalId", approved.approvalId().toString());
+            forgedCommand.put("approvalVersion", approved.approvalVersion());
+            forgedCommand.put("approvalReceiptDigest", approved.approvalReceiptDigest());
+            forgedCommand.put("leaseId", forgedLeaseId.toString());
+            forgedCommand.put("leaseVersion", 2);
+            forgedCommand.put("leaseDigest", digest("forged-final-lease"));
+            forgedCommand.put("leaseState", "reserved");
+            forgedCommand.put("leaseIssuer", "identity-access");
+            forgedCommand.put("leaseAudience", "ingestion-quality");
+            forgedCommand.put("executionJti", forgedExecutionJti.toString());
+            forgedCommand.put("authorizedUntil", fixture.workerNow().plusSeconds(900).toString());
+            forgedCommand.put("rootEventId", forgedExecutionJti.toString());
+            forgedCommand.put("traceId", TRACE);
+            assertThrows(DataAccessException.class, () -> store.execute(
+                    digest("forged-final-idempotency"), forgedCommand));
+
+            QualityRecoveryFinalizationCommand executeCommand =
+                    new QualityRecoveryFinalizationCommand(
+                            fixture.requestId(), approved.recoveryVersion(),
+                            approved.taskVersion(), "wm-final",
+                            "final-execution-key-0001");
+            QualityRecoveryFinalizationCommit committed = service.execute(
+                    executeCommand, fixture.maker(), TRACE);
+            QualityRecoveryFinalizationCommit replay = service.execute(
+                    executeCommand, fixture.maker(), TRACE);
+            assertEquals(committed, replay);
+            QualityRecoveryFinalizationCommand differentKey =
+                    new QualityRecoveryFinalizationCommand(
+                            fixture.requestId(), approved.recoveryVersion(),
+                            approved.taskVersion(), "wm-final",
+                            "final-execution-key-0002");
+            assertEquals(committed, service.execute(differentKey, fixture.maker(), TRACE));
+            assertEquals("eligible", fixture.admin().queryForObject("""
+                    select status from ingestion_quality.iq_quality_eligibility_current
+                     where rule_id=? and rule_version='1.0.0'
+                    """, String.class, RULE));
+            assertFalse(fixture.admin().queryForObject("""
+                    select active from ingestion_quality.iq_quality_fuse_episode_current
+                     where episode_id=?
+                    """, Boolean.class, predecessor.episodeId()));
+            assertEquals("closed", fixture.admin().queryForObject("""
+                    select status from ingestion_quality.iq_quality_recovery_task_current
+                     where task_id=?
+                    """, String.class, predecessor.taskId()));
+            var closedTask = new JdbcQualityRecoveryTaskQueryStore(fixture.online(), JSON)
+                    .findCurrentById(predecessor.taskId()).orElseThrow();
+            assertEquals("closed", closedTask.status());
+            assertEquals("RECOVERY_FINALIZED", closedTask.closureReason());
+            assertEquals(committed.ownerResultDigest(), closedTask.ownerResultDigest());
+            var observationView = new JdbcRecoveryObservationQueryStore(
+                    fixture.online(), JSON).findByTaskId(predecessor.taskId()).orElseThrow();
+            assertEquals("finalized", observationView.status());
+            assertEquals("eligible", observationView.eligibilityStatus());
+            assertEquals("closed", observationView.taskStatus());
+            assertEquals(1, fixture.admin().queryForObject("""
+                    select count(*) from ingestion_quality.iq_recovery_final_execution_jti
+                     where execution_jti=?
+                    """, Integer.class, committed.executionJti()));
+            JdbcQualityRecoveryCommandStore confirmationRelay =
+                    new JdbcQualityRecoveryCommandStore(fixture.online(), JSON);
+            var confirmations = confirmationRelay.claim(10, fixture.workerNow());
+            assertEquals(1, confirmations.size());
+            assertEquals(committed.executionJti(), confirmations.getFirst().executionJti());
+            assertTrue(confirmationRelay.markDelivered(
+                    confirmations.getFirst().outboxEventId(),
+                    confirmations.getFirst().payloadDigest(), fixture.workerNow()));
+            assertNotNull(fixture.admin().queryForObject("""
+                    select confirmed_at
+                     from ingestion_quality.iq_recovery_final_execution_jti
+                     where execution_jti=?
+                    """, Instant.class, committed.executionJti()));
+            assertTrue(fixture.admin().queryForObject("""
+                    select bool_and((recovery_completed_at<=latest_actionable_at)
+                      =(outcome='eligible-for-handoff'))
+                      from ingestion_quality.iq_recovery_window_outcome
+                     where recovery_id=?
+                    """, Boolean.class, fixture.requestId()));
         } finally {
             fixture.close();
         }
@@ -385,6 +704,40 @@ class QualityRecoveryRuntimePostgreSqlIT {
         assertEquals(1, confirmationRelay.runBatch(100));
         assertEquals(0, confirmationRelay.runBatch(100));
         return commit;
+    }
+
+    private static QualityRecoveryFinalizationService finalizationService(Fixture fixture) {
+        JdbcTemplate identity = new JdbcTemplate(login(IDENTITY_LOGIN));
+        JdbcTemplate rules = new JdbcTemplate(login(RULE_LOGIN));
+        AtomicInteger sequence = new AtomicInteger(7700);
+        java.util.function.Supplier<UUID> ids = () -> uuid(sequence.incrementAndGet());
+        HighRiskEvidenceSignaturePort signatures = canonical ->
+                new HighRiskEvidenceSignaturePort.SignedValue(
+                        "test-k1", "A".repeat(43), digest(canonical));
+        JdbcHighRiskApprovalRepository approvalRepository =
+                new JdbcHighRiskApprovalRepository(identity, JSON);
+        var approvalPort = new HighRiskApprovalService(
+                new HighRiskApprovalUseCase(approvalRepository, ids::get, signatures));
+        JdbcHighRiskExecutionLeaseRepository leaseRepository =
+                new JdbcHighRiskExecutionLeaseRepository(identity, JSON);
+        var executionPort = new HighRiskExecutionAuthorizationService(
+                new HighRiskExecutionAuthorizationUseCase(
+                        approvalRepository, leaseRepository, ids::get, signatures,
+                        () -> dbNow(identity)));
+        RecoveryCheckerBindingResolver checkers = new RecoveryCheckerBindingResolver(
+                new JdbcRuleVersionBusinessOwnerBindingQueryAdapter(rules, JSON),
+                new JdbcCurrentNaturalPersonBindingQueryAdapter(identity, JSON));
+        CompositeAuthorizationPort authorization = request -> authorizationDecision(
+                request.expectedObjectVersion(), dbNow(fixture.online()));
+        CompositeAuthorizationRecheckPort recheck = ignored ->
+                new CompositeAuthorizationRecheckDecision(
+                        CompositeAuthorizationRecheckOutcome.CURRENT,
+                        "AUTHORIZATION_CURRENT");
+        return new QualityRecoveryFinalizationService(
+                new JdbcQualityRecoveryFinalizationStore(fixture.online(), JSON),
+                new QualityRecoveryAuthorizationGuard(authorization, recheck),
+                checkers, approvalPort, executionPort,
+                () -> dbNow(fixture.online()), ids);
     }
 
     private static CompositeAuthorizationDecision authorizationDecision(
@@ -655,7 +1008,8 @@ class QualityRecoveryRuntimePostgreSqlIT {
                   work_item_key_version,source_id,dependency_id,status,priority,due_at,owner_ref,
                   trigger,current_evidence,watermark_utf8,occurred_at,legal_hold)
                 values (?,1,?,1,?,'k7',?,?,'open','P0',?,'owner:test',
-                  '{"story":"2.5b"}'::jsonb,'{"state":"fused"}'::jsonb,
+                  '{"story":"2.5b"}'::jsonb,
+                  '{"qualityGateVersion":"QG-1.0.0","qmdpVersion":"QMDP-1.0.0","qshmVersion":"QSHM-1.0.0"}'::jsonb,
                   convert_to('wm-campus-3','UTF8'),?,false)
                 """, taskId, episodeId, "qf:" + "a".repeat(64), SOURCE, DEPENDENCY,
                 Timestamp.from(now.plusSeconds(3600)), Timestamp.from(now.minusSeconds(60)));
@@ -809,9 +1163,11 @@ class QualityRecoveryRuntimePostgreSqlIT {
     private static void createLogins(JdbcTemplate admin) {
         dropLogins(admin);
         admin.execute("create role " + ONLINE_LOGIN + " login inherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls");
-        admin.execute("grant scholarsense_ingestion_quality_online to " + ONLINE_LOGIN);
+        admin.execute("grant scholarsense_ingestion_quality_online to " + ONLINE_LOGIN
+                + " with inherit true, set false, admin false");
         admin.execute("create role " + WORKER_LOGIN + " login inherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls");
-        admin.execute("grant scholarsense_ingestion_quality_recovery_worker to " + WORKER_LOGIN);
+        admin.execute("grant scholarsense_ingestion_quality_recovery_worker to " + WORKER_LOGIN
+                + " with inherit true, set false, admin false");
         admin.execute("create role " + SIGNAL_LOGIN + " login inherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls");
         admin.execute("grant scholarsense_signal_evaluation_recovery_worker, scholarsense_signal_evaluation_input_authority to " + SIGNAL_LOGIN);
         admin.execute("create role " + IDENTITY_LOGIN + " login inherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls");

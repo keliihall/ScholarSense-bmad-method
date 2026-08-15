@@ -75,4 +75,74 @@ describe('quality fuse recovery command boundary', () => {
     memory.clear();
     expect(memory.current()).toBeUndefined();
   });
+
+  it('decodes P1D explicitly and sends only opaque final command fields', async () => {
+    const observation = {
+      recoveryId: requestId, recoveryVersion: 5, taskId, taskVersion: 2, generation: 1,
+      sourceClass: 'daily-batch', policyVersion: 'QRP-1.0.0',
+      policyDigest: `sha256:${'a'.repeat(64)}`, status: 'ready',
+      finalizationState: 'approval-pending',
+      approvalId: '019fe8a0-0000-7000-8000-000000000911', approvalVersion: 1,
+      consecutivePassedBatches: 2,
+      requiredPassedBatches: 2, observedDurationMicros: 86_400_000_000,
+      requiredDurationMicros: 86_400_000_000, observationDuration: 'P1D',
+      watermark: 'opaque-final-watermark', recoveringStartedAt: '2026-08-12T00:00:00Z',
+      lastObservedAt: '2026-08-13T00:00:00Z', latestActionableAt: '2026-08-13T00:00:00Z',
+      failedMembers: [], failureReasonCode: null,
+      eligibilityStatus: 'recovering', taskStatus: 'open',
+      taskClosedAt: null, ownerResultDigest: null, deliveryStatus: 'confirmed',
+      deliveryAttempt: 1, deliveryNextAttemptAt: null,
+      eligibleForHandoffWindowCount: 0, historyOnlyWindowCount: 0,
+      traceId: '0123456789abcdef0123456789abcdef',
+    } as const;
+    const final = {
+      recoveryId: requestId, recoveryVersion: 5, taskId, taskVersion: 2,
+      observationStatus: 'ready', finalizationState: 'approval-pending',
+      approvalId: '019fe8a0-0000-7000-8000-000000000911', approvalVersion: 1,
+      policyVersion: 'QRP-1.0.0', finalPreviewDigest: `sha256:${'b'.repeat(64)}`,
+      observationDecisionDigest: `sha256:${'c'.repeat(64)}`,
+      finalObservationWatermark: 'opaque-final-watermark',
+      traceId: '0123456789abcdef0123456789abcdef',
+    } as const;
+    const request = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(response(observation)).mockResolvedValueOnce(response(final));
+    const client = new QualityFuseRecoveryClient(request,
+      vi.fn().mockResolvedValue({ headerName: 'X-CSRF', value: 'v' }));
+
+    await expect(client.observation(taskId)).resolves.toMatchObject({
+      observationDuration: 'P1D', status: 'ready', approvalVersion: 1,
+    });
+    await client.requestFinalApproval(
+      requestId, 5, 2, 'opaque-final-watermark', 'final-key');
+    const command = request.mock.calls[1]?.[1];
+    expect(JSON.parse(String(command?.body))).toEqual({
+      expectedRecoveryVersion: 5, expectedTaskVersion: 2,
+      finalObservationWatermark: 'opaque-final-watermark',
+    });
+    expect(String(command?.body)).not.toContain('approvalReceipt');
+    expect(String(command?.body)).not.toContain('executionJti');
+  });
+
+  it('fails closed on an unknown duration instead of guessing 24 hours', async () => {
+    const invalidObservation = {
+      recoveryId: requestId, recoveryVersion: 5, taskId, taskVersion: 2, generation: 1,
+      sourceClass: 'daily-batch', policyVersion: 'QRP-1.0.0',
+      policyDigest: `sha256:${'a'.repeat(64)}`, status: 'observing',
+      finalizationState: 'not-requested', approvalId: null, approvalVersion: null,
+      consecutivePassedBatches: 1,
+      requiredPassedBatches: 2, observedDurationMicros: 1, requiredDurationMicros: 2,
+      observationDuration: 'PT23H', watermark: null,
+      recoveringStartedAt: '2026-08-12T00:00:00Z',
+      lastObservedAt: '2026-08-12T00:00:00Z', latestActionableAt: null,
+      failedMembers: [], failureReasonCode: null,
+      eligibilityStatus: 'recovering', taskStatus: 'open',
+      taskClosedAt: null, ownerResultDigest: null, deliveryStatus: 'pending',
+      deliveryAttempt: 0, deliveryNextAttemptAt: null,
+      eligibleForHandoffWindowCount: 0, historyOnlyWindowCount: 0,
+      traceId: '0123456789abcdef0123456789abcdef',
+    };
+    await expect(new QualityFuseRecoveryClient(
+      vi.fn<typeof fetch>().mockResolvedValue(response(invalidObservation)),
+    ).observation(taskId)).rejects.toThrow('INGESTION_QUALITY_RESPONSE_INVALID');
+  });
 });

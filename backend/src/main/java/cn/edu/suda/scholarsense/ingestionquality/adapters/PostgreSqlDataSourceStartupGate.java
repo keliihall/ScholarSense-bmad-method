@@ -287,6 +287,9 @@ public final class PostgreSqlDataSourceStartupGate {
                     "iq_find_quality_recovery_task_ids(character varying, character varying, "
                             + "timestamp with time zone, uuid, integer)",
                     "iq_find_quality_recovery_task_page(uuid[])",
+                    "iq_find_quality_recovery_task_ids_v2(character varying, character varying, "
+                            + "timestamp with time zone, uuid, integer)",
+                    "iq_find_quality_recovery_task_page_v2(uuid[])",
                     "iq_find_quality_recovery_task_page_rules(uuid[])",
                     "iq_append_quality_recovery_task_read_audit(uuid, uuid, bigint, "
                             + "character varying, character varying, character varying, "
@@ -307,7 +310,13 @@ public final class PostgreSqlDataSourceStartupGate {
                     "iq_mark_quality_recovery_confirmation_delivered(uuid, character, "
                             + "timestamp with time zone)",
                     "iq_release_quality_recovery_confirmation(uuid, character, "
-                            + "character varying, timestamp with time zone)"));
+                            + "character varying, timestamp with time zone)",
+                    "iq_start_recovery_observation(jsonb)",
+                    "iq_load_recovery_observation_view(uuid)",
+                    "iq_load_quality_finalization_context(uuid)",
+                    "iq_bind_quality_finalization_approval(jsonb)",
+                    "iq_find_quality_finalization_replay(character, character, uuid, text)",
+                    "iq_execute_quality_finalization(character, jsonb)"));
     private static final String QUALITY_WORKER_PRIVILEGE_QUERY = privilegeQuery(
             List.of(
                     entry("iq_data_batch", "SELECT"),
@@ -387,7 +396,8 @@ public final class PostgreSqlDataSourceStartupGate {
                             + "uuid, character)",
                     "iq_cleanup_quality_eligibility_expired(timestamp with time zone)",
                     "iq_cleanup_quality_fuse_expired(timestamp with time zone)",
-                    "iq_cleanup_quality_recovery_expired(timestamp with time zone)"));
+                    "iq_cleanup_quality_recovery_expired(timestamp with time zone)",
+                    "iq_cleanup_quality_finalization_expired(timestamp with time zone)"));
     private static final String CONSUMER_REGISTRY_AUTHORITY_PRIVILEGE_QUERY = privilegeQuery(
             List.of(),
             List.of(),
@@ -508,7 +518,12 @@ public final class PostgreSqlDataSourceStartupGate {
                                     + "character, character, character)",
                             "iq_execute_recovery_full_reconciliation(uuid, uuid, uuid, character, "
                                     + "character, character, character, character)",
-                            "iq_release_recovery_validation_job(uuid, bigint, character varying, character varying, timestamp with time zone, timestamp with time zone)")))) {
+                            "iq_release_recovery_validation_job(uuid, bigint, character varying, character varying, timestamp with time zone, timestamp with time zone)",
+                            "iq_find_claimable_recovery_observation_jobs(integer, timestamp with time zone)",
+                            "iq_claim_recovery_observation_job(uuid, character, timestamp with time zone, integer)",
+                            "iq_is_recovery_observation_lease_current(uuid, bigint, timestamp with time zone)",
+                            "iq_finalize_recovery_observation_job(uuid, bigint, jsonb, timestamp with time zone)",
+                            "iq_release_recovery_observation_job(uuid, bigint, character varying, timestamp with time zone, timestamp with time zone)")))) {
                 if (!privileges.next() || !privileges.getBoolean(1) || privileges.next()) {
                     throw new IllegalArgumentException(
                             "INGESTION_QUALITY_DATABASE_PRIVILEGE_MATRIX_MISMATCH");

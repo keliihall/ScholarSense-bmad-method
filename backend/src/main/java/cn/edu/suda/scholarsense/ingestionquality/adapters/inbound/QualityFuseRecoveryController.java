@@ -13,12 +13,17 @@ import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseRecovery
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryCommandActor;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryExecutionCommit;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryRequestState;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryFinalizationService;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryFinalizationCommand;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryFinalizationContext;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryFinalizationCommit;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.constraints.NotBlank;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -42,16 +47,28 @@ public final class QualityFuseRecoveryController {
     private final InternalSessionIdentityPort sessions;
     private final AuthoritativeIdentityContextQueryPort identities;
     private final CurrentNaturalPersonPrincipalQueryPort naturalPersons;
+    private final QualityRecoveryFinalizationService finalization;
 
     public QualityFuseRecoveryController(
             QualityFuseRecoveryService recovery,
             InternalSessionIdentityPort sessions,
             AuthoritativeIdentityContextQueryPort identities,
             CurrentNaturalPersonPrincipalQueryPort naturalPersons) {
+        this(recovery, sessions, identities, naturalPersons, null);
+    }
+
+    @Autowired
+    public QualityFuseRecoveryController(
+            QualityFuseRecoveryService recovery,
+            InternalSessionIdentityPort sessions,
+            AuthoritativeIdentityContextQueryPort identities,
+            CurrentNaturalPersonPrincipalQueryPort naturalPersons,
+            QualityRecoveryFinalizationService finalization) {
         this.recovery = java.util.Objects.requireNonNull(recovery);
         this.sessions = java.util.Objects.requireNonNull(sessions);
         this.identities = java.util.Objects.requireNonNull(identities);
         this.naturalPersons = java.util.Objects.requireNonNull(naturalPersons);
+        this.finalization = finalization;
     }
 
     @PostMapping(value = "/quality-recovery-tasks/{taskId}/recovery-requests",
@@ -128,6 +145,58 @@ public final class QualityFuseRecoveryController {
                 value.recoveryRequestId(), value.taskId(), value.episodeId(),
                 value.state(), value.transitionApplied(), value.ownerCommittedAt(),
                 value.traceId()));
+    }
+
+    @PostMapping(value = "/quality-recovery-requests/{requestId}/final-approval-requests",
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<FinalizationView> finalApprovalRequest(
+            @PathVariable UUID requestId,
+            @RequestHeader("Idempotency-Key") @NotBlank String idempotencyKey,
+            @RequestBody JsonNode rawBody, HttpServletRequest request) {
+        requireUuidV7(requestId);
+        requireIdempotencyKey(idempotencyKey);
+        FinalCommandBody body = finalCommandBody(rawBody);
+        String traceId = DataSourceCatalogController.trace(request);
+        return ok(finalizationView(callFinal(() -> requireFinalization().requestApproval(
+                finalCommand(requestId, body, idempotencyKey), actor(request, traceId),
+                traceId))));
+    }
+
+    @PostMapping(value = "/quality-recovery-requests/{requestId}/final-approval-decisions",
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<FinalizationView> finalApprovalDecision(
+            @PathVariable UUID requestId,
+            @RequestHeader("Idempotency-Key") @NotBlank String idempotencyKey,
+            @RequestBody JsonNode rawBody, HttpServletRequest request) {
+        requireUuidV7(requestId);
+        requireIdempotencyKey(idempotencyKey);
+        FinalDecisionBody body = finalDecisionBody(rawBody);
+        String traceId = DataSourceCatalogController.trace(request);
+        return ok(finalizationView(callFinal(() -> requireFinalization().decide(
+                requestId, body.expectedApprovalVersion(), body.decision(), idempotencyKey,
+                actor(request, traceId), traceId))));
+    }
+
+    @PostMapping(value = "/quality-recovery-requests/{requestId}/finalize",
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<FinalExecutionView> finalizeRecovery(
+            @PathVariable UUID requestId,
+            @RequestHeader("Idempotency-Key") @NotBlank String idempotencyKey,
+            @RequestBody JsonNode rawBody, HttpServletRequest request) {
+        requireUuidV7(requestId);
+        requireIdempotencyKey(idempotencyKey);
+        FinalCommandBody body = finalCommandBody(rawBody);
+        String traceId = DataSourceCatalogController.trace(request);
+        QualityRecoveryFinalizationCommit value = callFinal(
+                () -> requireFinalization().execute(
+                        finalCommand(requestId, body, idempotencyKey),
+                        actor(request, traceId), traceId));
+        return ok(new FinalExecutionView(
+                value.recoveryId(), value.taskId(), value.generation(),
+                value.eligibilityStatus(), value.episodeStatus(), value.taskStatus(),
+                value.taskVersion(), value.recoveryCompletedAt(),
+                value.windowOutcomesDigest(), value.ownerResultDigest(),
+                value.deliveryStatus(), value.traceId()));
     }
 
     private QualityRecoveryCommandActor actor(
@@ -232,6 +301,83 @@ public final class QualityFuseRecoveryController {
                 version(body, "expectedApprovalVersion"), decision.asText());
     }
 
+    private static FinalCommandBody finalCommandBody(JsonNode body) {
+        requireExactObject(body, java.util.Set.of(
+                "expectedRecoveryVersion", "expectedTaskVersion",
+                "finalObservationWatermark"));
+        JsonNode watermark = body.get("finalObservationWatermark");
+        if (watermark == null || !watermark.isTextual() || watermark.asText().isBlank()
+                || watermark.asText().length() > 256) throw new CatalogRequestException();
+        return new FinalCommandBody(version(body, "expectedRecoveryVersion"),
+                version(body, "expectedTaskVersion"), watermark.asText());
+    }
+
+    private static FinalDecisionBody finalDecisionBody(JsonNode body) {
+        requireExactObject(body, java.util.Set.of("expectedApprovalVersion", "decision"));
+        JsonNode decision = body.get("decision");
+        if (decision == null || !decision.isTextual()
+                || !java.util.Set.of("approve", "reject", "cancel")
+                        .contains(decision.asText())) throw new CatalogRequestException();
+        return new FinalDecisionBody(
+                version(body, "expectedApprovalVersion"), decision.asText());
+    }
+
+    private static QualityRecoveryFinalizationCommand finalCommand(
+            UUID requestId, FinalCommandBody body, String idempotencyKey) {
+        try {
+            return new QualityRecoveryFinalizationCommand(
+                    requestId, body.expectedRecoveryVersion(), body.expectedTaskVersion(),
+                    body.finalObservationWatermark(), idempotencyKey);
+        } catch (IllegalArgumentException invalid) {
+            throw new CatalogRequestException(invalid);
+        }
+    }
+
+    private QualityRecoveryFinalizationService requireFinalization() {
+        if (finalization == null) throw unavailable();
+        return finalization;
+    }
+
+    private static <T> T callFinal(java.util.function.Supplier<T> action) {
+        try {
+            return action.get();
+        } catch (IngestionQualityApplicationException known) {
+            throw known;
+        } catch (org.springframework.dao.DataAccessException failure) {
+            Throwable root = failure.getMostSpecificCause();
+            String state = root instanceof java.sql.SQLException sql ? sql.getSQLState() : null;
+            if ("40001".equals(state) || "23505".equals(state)) {
+                throw new IngestionQualityApplicationException(
+                        "INGESTION_QUALITY_VERSION_CONFLICT");
+            }
+            if ("23514".equals(state)) {
+                throw new IngestionQualityApplicationException(
+                        "INGESTION_QUALITY_INVALID_STATE");
+            }
+            if ("P0002".equals(state)) throw forbidden();
+            throw unavailable();
+        } catch (IllegalStateException failure) {
+            String code = failure.getMessage();
+            if ("QUALITY_FINALIZATION_CONFLICT".equals(code)) {
+                throw new IngestionQualityApplicationException(
+                        "INGESTION_QUALITY_VERSION_CONFLICT");
+            }
+            if ("QUALITY_FINALIZATION_NOT_FOUND".equals(code)
+                    || "QUALITY_RECOVERY_NOT_FOUND".equals(code)) throw forbidden();
+            throw unavailable();
+        }
+    }
+
+    private static FinalizationView finalizationView(
+            QualityRecoveryFinalizationContext value) {
+        return new FinalizationView(
+                value.recoveryId(), value.recoveryVersion(), value.taskId(),
+                value.taskVersion(), value.observationStatus(), value.finalizationState(),
+                value.approvalId(), value.approvalVersion(), value.policyVersion(),
+                value.finalPreviewDigest(), value.observationDecisionDigest(),
+                value.finalObservationWatermark(), value.traceId());
+    }
+
     private static void requireExactObject(JsonNode body, java.util.Set<String> fields) {
         if (body == null || !body.isObject()
                 || !body.properties().stream().map(java.util.Map.Entry::getKey)
@@ -269,6 +415,13 @@ public final class QualityFuseRecoveryController {
     public record ApprovalDecisionBody(
             long expectedVersion, long expectedApprovalVersion, String decision) {}
 
+    public record FinalCommandBody(
+            long expectedRecoveryVersion,
+            long expectedTaskVersion,
+            String finalObservationWatermark) {}
+
+    public record FinalDecisionBody(long expectedApprovalVersion, String decision) {}
+
     public record RequestView(
             UUID recoveryRequestId,
             long requestVersion,
@@ -294,5 +447,34 @@ public final class QualityFuseRecoveryController {
             String state,
             boolean transitionApplied,
             Instant ownerCommittedAt,
+            String traceId) {}
+
+    public record FinalizationView(
+            UUID recoveryId,
+            long recoveryVersion,
+            UUID taskId,
+            long taskVersion,
+            String observationStatus,
+            String finalizationState,
+            UUID approvalId,
+            Long approvalVersion,
+            String policyVersion,
+            String finalPreviewDigest,
+            String observationDecisionDigest,
+            String finalObservationWatermark,
+            String traceId) {}
+
+    public record FinalExecutionView(
+            UUID recoveryId,
+            UUID taskId,
+            long generation,
+            String eligibilityStatus,
+            String episodeStatus,
+            String taskStatus,
+            long taskVersion,
+            Instant recoveryCompletedAt,
+            String windowOutcomesDigest,
+            String ownerResultDigest,
+            String deliveryStatus,
             String traceId) {}
 }

@@ -35,7 +35,7 @@ public record HighRiskExecutionToken(
     }
 
     public String canonicalUnsigned() {
-        return String.join("\n",
+        String predecessor = String.join("\n",
                 "HIGH-RISK-EXECUTION-TOKEN-1.0.0",
                 tokenJti.toString(), approvalId.toString(), Long.toString(approvalVersion),
                 approvalReceiptDigest, binding.requestId().toString(), binding.requestDigest(),
@@ -52,5 +52,10 @@ public record HighRiskExecutionToken(
                 String.join(",", binding.requiredCheckerPrincipalDigests()),
                 Long.toString(binding.authorizationGeneration()), binding.traceId(),
                 issuedAt.toString(), authorizedUntil.toString(), audience);
+        if (binding.observationDecisionDigest() == null) return predecessor;
+        return String.join("\n", predecessor, binding.observationDecisionDigest(),
+                binding.memberSetDigest(), binding.watermarksDigest(),
+                binding.qualityRecoveryPolicyVersion(),
+                binding.qualityRecoveryPolicyDigest());
     }
 }

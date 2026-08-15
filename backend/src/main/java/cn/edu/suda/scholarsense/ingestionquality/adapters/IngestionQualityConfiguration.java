@@ -28,6 +28,8 @@ import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityEl
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityRecoveryTaskQueryStore;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityRecoveryTaskReadAudit;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityRecoveryCommandStore;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityRecoveryFinalizationStore;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcRecoveryObservationQueryStore;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcSubjectWindowRecomputeStore;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.QualitySnapshotOwnerEvidenceProvider;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.QualityRecoveryTaskOwnerEvidenceProvider;
@@ -44,7 +46,9 @@ import cn.edu.suda.scholarsense.ingestionquality.application.QualitySnapshotQuer
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityEligibilityQueryService;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryTaskQueryService;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseRecoveryService;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryFinalizationService;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryAuthorizationGuard;
+import cn.edu.suda.scholarsense.ingestionquality.application.RecoveryObservationQueryService;
 import cn.edu.suda.scholarsense.ingestionquality.application.RecoveryValidationTrustedTimePort;
 import cn.edu.suda.scholarsense.ingestionquality.application.SubjectRecomputeJobQueryService;
 import cn.edu.suda.scholarsense.ingestionquality.application.SubjectMappingCorrectionCoordinator;
@@ -302,6 +306,20 @@ public class IngestionQualityConfiguration {
     }
 
     @Bean
+    JdbcRecoveryObservationQueryStore jdbcRecoveryObservationQueryStore(
+            JdbcTemplate jdbc, ObjectMapper json,
+            PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
+        return new JdbcRecoveryObservationQueryStore(jdbc, json);
+    }
+
+    @Bean
+    RecoveryObservationQueryService recoveryObservationQueryService(
+            QualityRecoveryTaskQueryService tasks,
+            JdbcRecoveryObservationQueryStore observations) {
+        return new RecoveryObservationQueryService(tasks, observations);
+    }
+
+    @Bean
     @ConditionalOnProperty(
             name = "scholarsense.ingestion-quality.recovery-runtime-enabled",
             havingValue = "true")
@@ -329,6 +347,35 @@ public class IngestionQualityConfiguration {
                 store, authorization,
                 new QualityRecoveryAuthorizationGuard(authorization, recheck),
                 checkers, approvals, executionAuthorizations, trustedTime, ids::nextId);
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            name = "scholarsense.ingestion-quality.recovery-runtime-enabled",
+            havingValue = "true")
+    JdbcQualityRecoveryFinalizationStore jdbcQualityRecoveryFinalizationStore(
+            JdbcTemplate jdbc, ObjectMapper json,
+            PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
+        return new JdbcQualityRecoveryFinalizationStore(jdbc, json);
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            name = "scholarsense.ingestion-quality.recovery-runtime-enabled",
+            havingValue = "true")
+    QualityRecoveryFinalizationService qualityRecoveryFinalizationService(
+            JdbcQualityRecoveryFinalizationStore store,
+            CompositeAuthorizationPort authorization,
+            CompositeAuthorizationRecheckPort recheck,
+            RecoveryCheckerBindingResolver checkers,
+            HighRiskApprovalPort approvals,
+            HighRiskExecutionAuthorizationPort executionAuthorizations,
+            TrustedTimeSource time,
+            MappingRecomputeIdPort ids) {
+        return new QualityRecoveryFinalizationService(
+                store, new QualityRecoveryAuthorizationGuard(authorization, recheck),
+                checkers, approvals, executionAuthorizations,
+                () -> time.now().instant(), ids::nextId);
     }
 
     @Bean

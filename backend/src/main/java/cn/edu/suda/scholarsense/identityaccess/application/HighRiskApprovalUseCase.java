@@ -127,7 +127,9 @@ public final class HighRiskApprovalUseCase {
                 value.policyDigest(), value.roleFieldPolicyVersion(),
                 value.roleFieldPolicyDigest(), value.previewDigest(), value.checkerSetDigest(),
                 value.requiredCheckerPrincipalDigests(), value.authorizationGeneration(),
-                value.traceId());
+                value.traceId(), value.observationDecisionDigest(), value.memberSetDigest(),
+                value.watermarksDigest(), value.qualityRecoveryPolicyVersion(),
+                value.qualityRecoveryPolicyDigest());
     }
 
     private static HighRiskApprovalResult view(

@@ -1,0 +1,13 @@
+{
+  "profileVersion": "QFEP-1.0.0",
+  "statuses": [400, 404, 409, 422, 503],
+  "responseFields": ["code", "message", "traceId", "fieldErrors", "retryable"],
+  "authorizationDenial": "concealed-404",
+  "objectNotFound": "concealed-404",
+  "versionPolicyMemberWatermarkOrWinnerConflict": "closed-409",
+  "illegalState": "closed-422",
+  "dependencyUnavailable": "closed-503",
+  "externalBodyHandling": "discard-never-reflect",
+  "freeText": "forbidden",
+  "internalVersionsAndLocks": "never-reflect"
+}
