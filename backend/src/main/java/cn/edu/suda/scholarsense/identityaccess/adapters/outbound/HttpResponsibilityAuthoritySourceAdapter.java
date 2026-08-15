@@ -11,6 +11,7 @@ import cn.edu.suda.scholarsense.identityaccess.application.PseudonymizationPort;
 import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityAuthoritySourcePort;
 import cn.edu.suda.scholarsense.identityaccess.application.WorkloadIdentityAuthenticationPort;
 import cn.edu.suda.scholarsense.runtime.ResponsibilityAuthorityRuntimeProfile;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClient;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +37,7 @@ public final class HttpResponsibilityAuthoritySourceAdapter
     private static final String CONTRACT_HEADER =
             "X-Responsibility-Authority-Contract-Version";
 
-    private final HttpClient http;
+    private final TrustedHttpClient http;
     private final ObjectMapper json;
     private final ResponsibilityAuthorityRuntimeProfile profile;
     private final WorkloadIdentityAuthenticationPort workloadIdentity;
@@ -66,6 +67,26 @@ public final class HttpResponsibilityAuthoritySourceAdapter
                 false);
     }
 
+    public HttpResponsibilityAuthoritySourceAdapter(
+            TrustedHttpClient http,
+            ObjectMapper json,
+            ResponsibilityAuthorityRuntimeProfile profile,
+            WorkloadIdentityAuthenticationPort workloadIdentity,
+            IdentitySourceSignaturePort signatures,
+            EnvelopeEncryptionPort encryption,
+            PseudonymizationPort pseudonyms,
+            TrustedTimeSource time) {
+        this.http = java.util.Objects.requireNonNull(http);
+        this.json = java.util.Objects.requireNonNull(json);
+        this.profile = java.util.Objects.requireNonNull(profile);
+        this.workloadIdentity = java.util.Objects.requireNonNull(workloadIdentity);
+        this.signatures = java.util.Objects.requireNonNull(signatures);
+        this.encryption = java.util.Objects.requireNonNull(encryption);
+        this.time = java.util.Objects.requireNonNull(time);
+        this.normalizer = new ResponsibilityAuthorityNormalizer(json, pseudonyms);
+        profile.requirePublicHttpsEndpoint();
+    }
+
     HttpResponsibilityAuthoritySourceAdapter(
             HttpClient http,
             ObjectMapper json,
@@ -76,7 +97,7 @@ public final class HttpResponsibilityAuthoritySourceAdapter
             PseudonymizationPort pseudonyms,
             TrustedTimeSource time,
             boolean allowLoopbackHttpForTests) {
-        this.http = java.util.Objects.requireNonNull(http);
+        this.http = TrustedHttpClient.unobserved(http);
         this.json = java.util.Objects.requireNonNull(json);
         this.profile = java.util.Objects.requireNonNull(profile);
         this.workloadIdentity =
@@ -205,7 +226,8 @@ public final class HttpResponsibilityAuthoritySourceAdapter
         HttpResponse<InputStream> response;
         try {
             response = http.send(
-                    request, HttpResponse.BodyHandlers.ofInputStream());
+                    request, HttpResponse.BodyHandlers.ofInputStream(),
+                    "identity-access", traceId);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             throw new IdentitySyncException(

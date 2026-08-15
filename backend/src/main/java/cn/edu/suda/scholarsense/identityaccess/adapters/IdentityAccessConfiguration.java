@@ -57,6 +57,7 @@ import cn.edu.suda.scholarsense.identityaccess.application.FieldCiphertextEnvelo
 import cn.edu.suda.scholarsense.identityaccess.application.WipeablePlaintext;
 import cn.edu.suda.scholarsense.identityaccess.application.TokenCustodyService;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClientFactory;
 import cn.edu.suda.scholarsense.shared.time.EvidenceBoundTrustedTimeSource;
 import cn.edu.suda.scholarsense.shared.time.TimeSynchronizationStatusProvider;
 import cn.edu.suda.scholarsense.shared.time.TrustedClockConstraints;
@@ -534,11 +535,14 @@ public class IdentityAccessConfiguration {
             ClientRegistrationRepository registrations,
             ObjectMapper json,
             Clock clock,
+            TrustedHttpClientFactory trustedHttp,
             @Value("${scholarsense.identity.revocation-endpoint}") URI revocationEndpoint,
             @Value("${scholarsense.identity.end-session-endpoint}") URI endSessionEndpoint,
             @Value("${scholarsense.identity.post-logout-redirect-uri}") URI postLogoutRedirectUri) {
         return new HttpRemoteIdentityProviderClient(
-                HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(),
+                trustedHttp.wrapSandboxIdentityProvider(HttpClient.newBuilder()
+                        .connectTimeout(Duration.ofSeconds(5)).build(),
+                        revocationEndpoint, endSessionEndpoint),
                 json, registrations, revocationEndpoint, endSessionEndpoint,
                 postLogoutRedirectUri, clock);
     }

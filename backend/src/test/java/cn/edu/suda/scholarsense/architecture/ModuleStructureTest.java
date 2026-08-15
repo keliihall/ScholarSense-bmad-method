@@ -25,7 +25,8 @@ class ModuleStructureTest {
             "auditoperations");
 
     private static final Set<String> LAYERS = Set.of("api", "domain", "application", "adapters");
-    private static final Set<String> SHARED_KERNELS = Set.of("id", "time", "error", "trace", "outbox");
+    private static final Set<String> SHARED_KERNELS = Set.of(
+            "id", "time", "error", "trace", "outbox", "observability");
 
     @Test
     void allBusinessModulesDeclareEveryBoundary() {

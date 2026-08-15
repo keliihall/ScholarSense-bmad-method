@@ -1,7 +1,7 @@
 package cn.edu.suda.scholarsense.identityaccess.adapters.inbound;
 
 import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchSecurityAuditPort;
-import cn.edu.suda.scholarsense.shared.trace.W3cTraceId;
+import cn.edu.suda.scholarsense.shared.observability.HttpTraceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -32,9 +32,7 @@ final class AuditSearchSecurityRejection {
                 : authentication != null && authentication.isAuthenticated()
                         && !(authentication instanceof AnonymousAuthenticationToken)
                         ? authentication.getName() : "anonymous-security-boundary";
-        String traceId = W3cTraceId.from(
-                request.getHeader("Traceparent"),
-                request.getMethod() + ":" + request.getRequestURI());
+        String traceId = HttpTraceContext.traceId(request);
         try {
             audit.recordRejected(requester, reasonCode, traceId);
             return true;

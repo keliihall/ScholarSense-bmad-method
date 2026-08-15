@@ -1,0 +1,1 @@
+{"caseId":"untrusted-egress","expectedIssue":"untrusted egress propagation","candidate":{"signal":"span","target":"untrusted.example","injectTraceparent":true}}

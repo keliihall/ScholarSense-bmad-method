@@ -84,7 +84,7 @@ class SubjectWindowRecomputePostgreSqlIT {
         for (String function : List.of(
                 "iq_record_historical_window", "iq_accept_subject_mapping_event",
                 "iq_reconcile_subject_mapping_consumer", "iq_record_mapping_recompute_plan",
-                "iq_enqueue_mapping_recompute",
+                "iq_enqueue_mapping_recompute", "iq_enqueue_mapping_recompute_v2",
                 "iq_claim_mapping_recompute_job", "iq_checkpoint_mapping_recompute_job",
                 "iq_complete_mapping_recompute_job", "iq_fail_mapping_recompute_job",
                 "iq_requeue_mapping_recompute_job", "iq_cancel_mapping_recompute_job")) {
@@ -150,6 +150,10 @@ class SubjectWindowRecomputePostgreSqlIT {
         assertEquals(firstId, first);
         assertEquals(first, replay);
         assertEquals(replayId, successor);
+        assertNull(admin.queryForObject("""
+                select traceparent from ingestion_quality.iq_mapping_recompute_job
+                 where job_id=?
+                """, String.class, first));
         assertNull(enqueue(uuid("019fcfea-6400-7000-8000-000000000022"),
                 "sha256:" + "c".repeat(64), NOW));
 
@@ -276,6 +280,13 @@ class SubjectWindowRecomputePostgreSqlIT {
                 """, Boolean.class, LINEAGE)));
         assertEquals(MappingRecomputeJobStatus.QUEUED,
                 store.findJob(REQUEST).orElseThrow().status());
+        String traceparent = admin.queryForObject("""
+                select traceparent from ingestion_quality.iq_mapping_recompute_job
+                 limit 1
+                """, String.class);
+        assertTrue(traceparent.matches(
+                "^00-" + TRACE + "-(?!0{16})[0-9a-f]{16}-(?:00|01)$"));
+        assertEquals(traceparent, store.findClaimable(100, NOW).getFirst().traceparent());
     }
 
     @Test

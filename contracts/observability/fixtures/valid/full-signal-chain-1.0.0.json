@@ -1,0 +1,13 @@
+{
+  "caseId": "full-signal-chain",
+  "performanceProfileVersion": "PP-1.0.0",
+  "signals": [
+    {"signal":"span","name":"http.server","traceId":"11111111111111111111111111111111","spanId":"1111111111111111","parentSpanId":null,"kind":"SERVER","status":"OK","values":{"code":"ok"}},
+    {"signal":"span","name":"job.attempt","traceId":"11111111111111111111111111111111","spanId":"2222222222222222","parentSpanId":"1111111111111111","kind":"INTERNAL","status":"OK","values":{"code":"ok"}},
+    {"signal":"span","name":"batch.evaluate","traceId":"11111111111111111111111111111111","spanId":"3333333333333333","parentSpanId":"2222222222222222","kind":"INTERNAL","status":"OK","values":{"code":"ok"}},
+    {"signal":"span","name":"outbox.publish","traceId":"11111111111111111111111111111111","spanId":"4444444444444444","parentSpanId":"3333333333333333","kind":"PRODUCER","status":"OK","values":{"code":"ok"}},
+    {"signal":"event","name":"data-batch.quality-assessed","traceId":"11111111111111111111111111111111","spanId":"4444444444444444","parentSpanId":"3333333333333333","values":{"traceparent":"00-11111111111111111111111111111111-4444444444444444-01","aggregateVersion":7,"code":"accepted"}},
+    {"signal":"span","name":"event.consume","traceId":"11111111111111111111111111111111","spanId":"5555555555555555","parentSpanId":"4444444444444444","kind":"CONSUMER","status":"OK","values":{"code":"ok"}},
+    {"signal":"span","name":"http.client","traceId":"11111111111111111111111111111111","spanId":"6666666666666666","parentSpanId":"5555555555555555","kind":"CLIENT","status":"OK","values":{"code":"ok","target":"quality-provider.suda.edu.cn"}}
+  ]
+}

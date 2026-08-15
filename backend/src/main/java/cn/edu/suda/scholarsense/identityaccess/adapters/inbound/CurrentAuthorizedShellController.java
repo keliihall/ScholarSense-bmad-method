@@ -3,7 +3,7 @@ package cn.edu.suda.scholarsense.identityaccess.adapters.inbound;
 import cn.edu.suda.scholarsense.identityaccess.application.CurrentAuthorizedShellProjection;
 import cn.edu.suda.scholarsense.identityaccess.application.CurrentAuthorizedShellQueryPort;
 import cn.edu.suda.scholarsense.identityaccess.domain.IdentityAccessException;
-import cn.edu.suda.scholarsense.shared.trace.W3cTraceId;
+import cn.edu.suda.scholarsense.shared.observability.HttpTraceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,8 +36,7 @@ public final class CurrentAuthorizedShellController {
                 .header("Referrer-Policy", "no-referrer")
                 .body(shells.current(
                         session.getId(),
-                        W3cTraceId.from(
-                                request.getHeader("traceparent"), request.getRequestURI()),
+                        HttpTraceContext.traceId(request),
                         request.getRemoteAddr()));
     }
 }

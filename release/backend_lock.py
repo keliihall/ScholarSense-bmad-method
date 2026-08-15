@@ -84,7 +84,7 @@ def generate_backend_lock(project_root: Path, repository: Path | None = None) ->
         dependencies.append(_component(*_coordinate_from_path(exact[0], maven_repository), maven_repository))
     plugins = [_component(group, artifact, version, maven_repository) for group, artifact, version in BUILD_PLUGINS]
     return {
-        "version": "BACKEND-LOCK-1.0.0",
+        "version": "BACKEND-LOCK-2.0.0",
         "dependencies": sorted(dependencies, key=lambda item: item["coordinate"]),
         "plugins": sorted(plugins, key=lambda item: item["coordinate"]),
         "wrapper": {
@@ -244,7 +244,7 @@ def resolve_plugin_graph(project_root: Path) -> list[dict[str, Any]]:
 
 def validate_backend_lock(lock: dict[str, Any], project_root: Path) -> list[str]:
     issues: list[str] = []
-    if lock.get("version") != "BACKEND-LOCK-1.0.0":
+    if lock.get("version") not in {"BACKEND-LOCK-1.0.0", "BACKEND-LOCK-2.0.0"}:
         issues.append("BACKEND_LOCK_VERSION_INVALID")
     repository = Path.home() / ".m2/repository"
     for section in ("dependencies", "plugins"):
@@ -352,7 +352,7 @@ def validate_backend_lock(lock: dict[str, Any], project_root: Path) -> list[str]
     except OSError:
         issues.append("BACKEND_LOCK_WRAPPER_PROPERTIES_UNREADABLE")
     jar = project_root / "backend/target/scholarsense-backend.jar"
-    if jar.is_file():
+    if lock.get("version") == "BACKEND-LOCK-2.0.0" and jar.is_file():
         try:
             actual = generate_backend_lock(project_root)
             if lock.get("dependencies") != actual["dependencies"]:

@@ -10,6 +10,9 @@ import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.TrustedTimeQu
 import cn.edu.suda.scholarsense.ingestionquality.application.ConsumerRegistryAuthorityPort;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualitySnapshotRetentionOrchestrator;
 import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
+import cn.edu.suda.scholarsense.shared.observability.CurrentTraceSource;
+import cn.edu.suda.scholarsense.shared.observability.ObservationPort;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -110,8 +113,12 @@ public class IngestionQualityRetentionConfiguration {
     @Bean
     QualitySnapshotRetentionScheduler ingestionQualityQualitySnapshotRetentionScheduler(
             QualitySnapshotRetentionOrchestrator orchestrator,
+            CurrentTraceSource currentTrace,
+            W3cTraceContextCodec traceCodec,
+            ObservationPort observations,
             @Qualifier("ingestionQualityRetentionPostgreSqlConnectionProfile")
                     PostgreSqlConnectionProfile connectionProfile) {
-        return new QualitySnapshotRetentionScheduler(orchestrator);
+        return new QualitySnapshotRetentionScheduler(
+                orchestrator, currentTrace, traceCodec, observations);
     }
 }

@@ -193,7 +193,7 @@ def build_release(root: Path, destination: Path) -> dict[str, Any]:
     source_inventory = runtime_release_source_inventory(project_root, commit)
     source_manifest_sha256 = source_inventory["normalizedManifestSha256"]
     toolchain_lock = load_json(project_root / "contracts/release/toolchain-lock-1.0.0.json")
-    backend_lock = load_json(project_root / "contracts/release/backend-lock-1.0.0.json")
+    backend_lock = load_json(project_root / "contracts/release/backend-lock-2.0.0.json")
     toolchain_lock_sha256 = canonical_sha256(toolchain_lock)
     backend_lock_sha256 = canonical_sha256(backend_lock)
     frontend_lock_sha256 = _digest(project_root / "frontend/package-lock.json")
@@ -217,6 +217,9 @@ def build_release(root: Path, destination: Path) -> dict[str, Any]:
             _run(["git", "checkout", "--quiet", "--detach", commit], attempt)
             environment = os.environ.copy()
             environment.update(FIXED_BUILD_ENVIRONMENT)
+            environment["MAVEN_ARGS"] = (
+                (environment.get("MAVEN_ARGS", "") + " -o").strip()
+            )
             environment["FRONTEND_RELEASE_OUTPUT"] = str(attempt / "release-out/frontend-dist")
             environment["RELEASE_BUILD_ATTEMPT"] = str(number)
             _run([str(attempt / "scripts/verify_core.sh"), "--review"], attempt, environment)

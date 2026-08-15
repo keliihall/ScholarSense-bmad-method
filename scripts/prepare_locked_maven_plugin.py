@@ -61,7 +61,7 @@ def _materialize(uri: str, expected_sha256: str, destination: Path) -> None:
 
 
 def prepare(project_root: Path, repository: Path) -> int:
-    lock = load_json(project_root / "contracts/release/backend-lock-1.0.0.json")
+    lock = load_json(project_root / "contracts/release/backend-lock-2.0.0.json")
     artifacts = bootstrap_plugin_artifacts(lock)
     for artifact in artifacts:
         _materialize(artifact["pomSourceUri"], artifact["pomSha256"], _local_path(repository, artifact["pomSourceUri"]))

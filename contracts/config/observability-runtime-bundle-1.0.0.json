@@ -1,0 +1,49 @@
+{
+  "$schema": "./observability-runtime-bundle.schema.json",
+  "version": "OBSERVABILITY-RUNTIME-BUNDLE-1.0.0",
+  "contract": {
+    "version": "OBS-1.0.0",
+    "path": "contracts/observability/observability-contract-1.0.0.json",
+    "binarySha256": "8bc685d2c233a90ce1a2fa34b85ef943ff4850917001aa48eb25ab87effc4cf8"
+  },
+  "profiles": [
+    {
+      "environment": "dev",
+      "role": "web-api",
+      "version": "OBS-RUNTIME-1.0.0",
+      "path": "contracts/config/observability-runtime-dev-1.0.0.json",
+      "binarySha256": "2d38820075da23b6d6c536bfb93fb8842221346738b12ccda93ccd4127d0d6f8"
+    },
+    {
+      "environment": "test",
+      "role": "worker",
+      "version": "OBS-RUNTIME-1.0.0",
+      "path": "contracts/config/observability-runtime-test-1.0.0.json",
+      "binarySha256": "4fe6b12ef1ac9fb9b4ddc5f29ca2f7ac2db477b4483830933b7b8cc3436c7fea"
+    },
+    {
+      "environment": "stage",
+      "role": "web-api",
+      "version": "OBS-RUNTIME-1.0.0",
+      "path": "contracts/config/observability-runtime-stage-1.0.0.json",
+      "binarySha256": "515b9386f5e58954f1f9da99d04273934e033e6dcd602d2e7e110b99edda5d1b"
+    },
+    {
+      "environment": "prod",
+      "role": "web-api",
+      "version": "OBS-RUNTIME-1.0.0",
+      "path": "contracts/config/observability-runtime-prod-1.0.0.json",
+      "binarySha256": "eb57f1f7f0a5badfb16444ff975f1fbfd90d92013a194c17ea8697b062f8833b"
+    }
+  ],
+  "supportedRoles": [
+    "web-api",
+    "worker"
+  ],
+  "exportPolicy": {
+    "businessOutcomeAuthority": "forbidden",
+    "failureMode": "drop-telemetry-keep-business-truth",
+    "maxQueueSize": 2048,
+    "networkInsideOwnerTransaction": false
+  }
+}

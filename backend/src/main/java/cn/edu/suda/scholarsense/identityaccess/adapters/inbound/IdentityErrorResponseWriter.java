@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
-import cn.edu.suda.scholarsense.shared.trace.W3cTraceId;
+import cn.edu.suda.scholarsense.shared.observability.HttpTraceContext;
 import org.springframework.http.MediaType;
 
 /** Writes the frozen identity error envelope from security filters and MVC handlers alike. */
@@ -87,7 +87,6 @@ final class IdentityErrorResponseWriter {
     }
 
     private static String traceId(HttpServletRequest request) {
-        return W3cTraceId.from(
-                request.getHeader("Traceparent"), request.getMethod() + ":" + request.getRequestURI());
+        return HttpTraceContext.traceId(request);
     }
 }

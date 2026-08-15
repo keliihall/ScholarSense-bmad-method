@@ -24,7 +24,8 @@ public record RuntimeConfiguration(
         String auditCollectorReference,
         String auditVerifierReference,
         String auditAlertTransportReference,
-        String auditMetricBindingReference) {
+        String auditMetricBindingReference,
+        ObservabilityRuntimeProfile observability) {
 
     private static final String AUDIT_INGESTION_POLICY = "audit-ingestion-policy-1-0-0";
     private static final String AUDIT_HASH_PROFILE = "audit-ledger-hash-1-0-0";
@@ -116,6 +117,8 @@ public record RuntimeConfiguration(
         String auditMetricBindingReference = controlledAuditReference(
                 values, "SCHOLARSENSE_AUDIT_METRIC_BINDING_REF", environment,
                 auditLedgerEnabled, AUDIT_METRIC_BINDING);
+        ObservabilityRuntimeProfile observability =
+                ObservabilityRuntimeProfile.from(values, environment, role);
         return new RuntimeConfiguration(
                 environment,
                 role,
@@ -136,7 +139,8 @@ public record RuntimeConfiguration(
                 auditCollectorReference,
                 auditVerifierReference,
                 auditAlertTransportReference,
-                auditMetricBindingReference);
+                auditMetricBindingReference,
+                observability);
     }
 
     private static String required(Map<String, String> values, String field) {

@@ -58,13 +58,20 @@ class MicrometerIdentitySyncObservabilityAdapterTest {
         adapter.record(new IdentitySyncObservation(
                 "identity_sync_job_total",
                 1,
-                Map.of("outcome", "succeeded", "consumerProjection", "identity-org"),
+                Map.of(
+                        "feedId", "identity-authority",
+                        "outcome", "succeeded",
+                        "consumerProjection", "identity-org"),
                 "0123456789abcdef0123456789abcdef",
                 Instant.parse("2026-07-24T00:00:00Z")));
 
         assertEquals(1.0, registry.counter(
-                "identity_sync_job_total",
-                "consumerProjection", "identity-org",
+                "scholarsense.operation.total",
+                "service", "scholarsense",
+                "module", "identity-access",
+                "operation", "identity-sync-job-total",
+                "role", "identity-org",
+                "dependency", "identity-authority",
                 "outcome", "succeeded").count());
         assertEquals(3.0, gauge(registry, "identity_sync_job_backlog"));
         assertEquals(1_700_000_000.0,
@@ -81,6 +88,35 @@ class MicrometerIdentitySyncObservabilityAdapterTest {
         assertEquals(7.0, gauge(registry, "access_invalidation_expiry_backlog"));
         verify(jdbc, never()).queryForObject(
                 contains("last_checked_at"), eq(Double.class));
+    }
+
+    @Test
+    void feedDimensionKeepsApprovedFeedsInSeparateMetricSeries() {
+        var registry = new SimpleMeterRegistry();
+        var adapter = new MicrometerIdentitySyncObservabilityAdapter(registry);
+        Instant observedAt = Instant.parse("2026-08-15T00:00:00Z");
+
+        adapter.record(observation("identity-authority", observedAt));
+        adapter.record(observation("responsibility-authority", observedAt));
+
+        assertEquals(1.0, counter(registry, "identity-authority"));
+        assertEquals(1.0, counter(registry, "responsibility-authority"));
+    }
+
+    private static IdentitySyncObservation observation(String feedId, Instant observedAt) {
+        return new IdentitySyncObservation(
+                "identity_sync_applied_total", 1,
+                Map.of(
+                        "sourceId", "SRC-P0-RESPONSIBILITY-001",
+                        "feedId", feedId,
+                        "consumerProjection", "identity-org",
+                        "outcome", "applied"),
+                "0123456789abcdef0123456789abcdef", observedAt);
+    }
+
+    private static double counter(SimpleMeterRegistry registry, String feedId) {
+        return registry.get("scholarsense.operation.total")
+                .tag("dependency", feedId).counter().count();
     }
 
     private static double gauge(SimpleMeterRegistry registry, String name) {

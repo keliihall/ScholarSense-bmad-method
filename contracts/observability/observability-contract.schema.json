@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scholarsense.suda.edu.cn/contracts/observability/observability-contract.schema.json",
+  "title": "ScholarSense observability field contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "schemaVersion", "contractVersion", "owner", "performanceProfile",
+    "signals", "traceSemantics", "propagation", "sampling", "compatibility",
+    "runtimeEvidence", "unresolvedSemantics", "selfDigest"
+  ],
+  "properties": {
+    "$schema": { "const": "./observability-contract.schema.json" },
+    "schemaVersion": { "const": "1.0.0" },
+    "contractVersion": { "const": "OBS-1.0.0" },
+    "owner": { "const": "platform-observability" },
+    "performanceProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "version", "contentDigest"],
+      "properties": {
+        "path": { "const": "contracts/performance/performance-profile-pp-1.0.0.json" },
+        "version": { "const": "PP-1.0.0" },
+        "contentDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["log", "metric", "span", "event", "privacy", "trustBoundary"],
+      "properties": {
+        "log": { "$ref": "#/$defs/logSignal" },
+        "metric": { "$ref": "#/$defs/metricSignal" },
+        "span": { "$ref": "#/$defs/spanSignal" },
+        "event": { "$ref": "#/$defs/eventSignal" },
+        "privacy": { "type": "object" },
+        "trustBoundary": { "type": "object" }
+      }
+    },
+    "traceSemantics": { "type": "object" },
+    "propagation": { "type": "object" },
+    "sampling": { "type": "object" },
+    "compatibility": { "type": "object" },
+    "runtimeEvidence": { "type": "object" },
+    "unresolvedSemantics": { "const": [] },
+    "selfDigest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "signal": {
+      "type": "object",
+      "required": ["fields"],
+      "properties": {
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/field" }
+        }
+      }
+    },
+    "logSignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fixedFields", "additionalFieldAllowlist", "additionalFields", "fields"],
+      "properties": {
+        "fixedFields": { "type": "array", "items": { "type": "string" } },
+        "additionalFieldAllowlist": { "type": "array", "items": { "type": "string" } },
+        "additionalFields": { "type": "array", "items": { "$ref": "#/$defs/field" } },
+        "fields": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/field" } }
+      }
+    },
+    "metricSignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowedLabels", "forbiddenLabels", "correlation", "labels", "fields"],
+      "properties": {
+        "allowedLabels": { "type": "array", "items": { "type": "string" } },
+        "forbiddenLabels": { "type": "array", "items": { "type": "string" } },
+        "correlation": { "type": "string", "minLength": 1 },
+        "labels": { "type": "array", "items": { "$ref": "#/$defs/field" } },
+        "fields": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/field" } }
+      }
+    },
+    "spanSignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lowCardinalityAttributes", "highCardinalityAttributes", "attributes", "fields"],
+      "properties": {
+        "lowCardinalityAttributes": { "type": "array", "items": { "type": "string" } },
+        "highCardinalityAttributes": { "type": "array", "items": { "type": "string" } },
+        "attributes": { "type": "array", "items": { "$ref": "#/$defs/field" } },
+        "fields": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/field" } }
+      }
+    },
+    "eventSignal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["envelopeVersion", "fields"],
+      "properties": {
+        "envelopeVersion": { "type": "string", "minLength": 1 },
+        "fields": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/field" } }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name", "type", "semantics", "source", "owner", "required", "cardinality",
+        "sensitivity", "allowedValues", "retention", "export"
+      ],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["string", "integer", "number", "boolean", "timestamp"] },
+        "semantics": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "owner": { "type": "string", "minLength": 1 },
+        "required": { "type": "boolean" },
+        "cardinality": { "enum": ["constant", "low", "high", "forbidden"] },
+        "sensitivity": { "enum": ["public-technical", "internal-technical", "restricted", "forbidden"] },
+        "allowedValues": { "type": "array", "items": { "type": "string" } },
+        "retention": { "type": "string", "minLength": 1 },
+        "export": { "enum": ["allowed", "local-only", "forbidden"] }
+      }
+    }
+  }
+}

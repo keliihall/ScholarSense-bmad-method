@@ -1,0 +1,197 @@
+{
+  "$defs": {
+    "component": {
+      "additionalProperties": false,
+      "properties": {
+        "binarySha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "coordinate": {
+          "pattern": "^[^:]+:[^:]+:[0-9][^:]*$",
+          "type": "string"
+        },
+        "sourceUri": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "coordinate",
+        "sourceUri",
+        "binarySha256"
+      ],
+      "type": "object"
+    },
+    "pluginArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "binarySha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "coordinate": {
+          "minLength": 5,
+          "type": "string"
+        },
+        "pomSha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "pomSourceUri": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "sourceUri": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "coordinate",
+        "sourceUri",
+        "binarySha256",
+        "pomSourceUri",
+        "pomSha256"
+      ],
+      "type": "object"
+    },
+    "pluginRoot": {
+      "additionalProperties": false,
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/$defs/pluginArtifact"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "root": {
+          "pattern": "^[^:]+:[^:]+:[0-9][^:]*$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "root",
+        "artifacts"
+      ],
+      "type": "object"
+    },
+    "runtimeNode": {
+      "additionalProperties": false,
+      "properties": {
+        "artifactId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "children": {
+          "items": {
+            "$ref": "#/$defs/runtimeNode"
+          },
+          "type": "array"
+        },
+        "classifier": {
+          "type": "string"
+        },
+        "groupId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "optional": {
+          "enum": [
+            "false",
+            "true"
+          ],
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "type": {
+          "const": "jar"
+        },
+        "version": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "groupId",
+        "artifactId",
+        "version",
+        "type",
+        "scope",
+        "classifier",
+        "optional"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://scholarsense.suda.edu.cn/contracts/release/backend-lock-2.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "bootstrapPlugin": {
+      "const": "org.apache.maven.plugins:maven-dependency-plugin:3.10.0"
+    },
+    "dependencies": {
+      "items": {
+        "$ref": "#/$defs/component"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "extensions": {
+      "items": {
+        "$ref": "#/$defs/component"
+      },
+      "maxItems": 0,
+      "type": "array"
+    },
+    "pluginResolution": {
+      "items": {
+        "$ref": "#/$defs/pluginRoot"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "plugins": {
+      "items": {
+        "$ref": "#/$defs/component"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "runtimeGraph": {
+      "$ref": "#/$defs/runtimeNode"
+    },
+    "runtimeGraphSupplement": {
+      "items": {
+        "pattern": "^[^:]+:[^:]+:[0-9][^:]*$",
+        "type": "string"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "version": {
+      "const": "BACKEND-LOCK-2.0.0"
+    },
+    "wrapper": {
+      "$ref": "#/$defs/component"
+    }
+  },
+  "required": [
+    "version",
+    "bootstrapPlugin",
+    "dependencies",
+    "plugins",
+    "pluginResolution",
+    "extensions",
+    "runtimeGraph",
+    "runtimeGraphSupplement",
+    "wrapper"
+  ],
+  "type": "object"
+}

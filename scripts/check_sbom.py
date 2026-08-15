@@ -102,7 +102,7 @@ def validate(project_root: Path, artifact_root: Path, sbom_root: Path) -> list[s
         issues.extend(_canonical_file_issues(evidence_path, evidence))
         context = _scan_context(evidence["scanContext"])
         manifest = load_json(artifacts / "build-manifest.json")
-        backend_lock = load_json(root / "contracts/release/backend-lock-1.0.0.json")
+        backend_lock = load_json(root / "contracts/release/backend-lock-2.0.0.json")
         package_lock = load_json(root / "frontend/package-lock.json")
         vulnerability_policy = load_json(root / "contracts/release/vulnerability-policy-1.0.0.json")
         license_policy = load_json(root / "contracts/release/license-policy-1.0.0.json")

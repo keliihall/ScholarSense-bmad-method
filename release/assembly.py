@@ -190,13 +190,34 @@ CONTROLLED_INPUTS_V9 = {
         "deploy/base/ingestion-quality-roles-6.0.0.json",
     ),
 }
+CONTROLLED_INPUTS_V10 = {
+    **CONTROLLED_INPUTS_V9,
+    "ObservabilityContract": (
+        "OBS-1.0.0",
+        "contracts/observability/observability-contract-1.0.0.json",
+    ),
+    "ObservabilityEventCompatibility": (
+        "OBS-EVENT-COMPAT-1.0.0",
+        "contracts/observability/event-trace-context-compatibility-1.0.0.json",
+    ),
+    "ObservabilityRuntimeBundle": (
+        "OBSERVABILITY-RUNTIME-BUNDLE-1.0.0",
+        "contracts/config/observability-runtime-bundle-1.0.0.json",
+    ),
+}
 # Backward-compatible public name: it remains the immutable V1 mapping.
 CONTROLLED_INPUTS = CONTROLLED_INPUTS_V1
-LOCKS = {
+LOCKS_V1 = {
     "backend-lock": ("BACKEND-LOCK-1.0.0", "contracts/release/backend-lock-1.0.0.json"),
     "frontend-lock": ("PACKAGE-LOCK-3", "frontend/package-lock.json"),
     "toolchain-lock": ("TOOLCHAIN-LOCK-1.0.0", "contracts/release/toolchain-lock-1.0.0.json"),
 }
+LOCKS_V10 = {
+    **LOCKS_V1,
+    "backend-lock": ("BACKEND-LOCK-2.0.0", "contracts/release/backend-lock-2.0.0.json"),
+}
+# Backward-compatible public name: V1-V9 retain their historical lock identity.
+LOCKS = LOCKS_V1
 
 
 def _sha256(path: Path) -> str:
@@ -379,10 +400,11 @@ def assemble_release_manifest_input(
             _reference("frontend-brand-asset-manifest", "BRAND-ASSET-MANIFEST-1.0.0", artifact_uri, source_root / "contracts/release/brand-asset-manifest-1.0.0.json", kind="brand-asset-manifest", subject_sha256=subject_digests["frontend"]),
         ]
     )
-    if manifest_version not in {"1", "2", "3", "4", "5", "6", "7", "8", "9"}:
+    if manifest_version not in {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}:
         raise ValueError("RELEASE_ASSEMBLY_MANIFEST_VERSION_INVALID")
     controlled_inputs = (
-        CONTROLLED_INPUTS_V9 if manifest_version == "9"
+        CONTROLLED_INPUTS_V10 if manifest_version == "10"
+        else CONTROLLED_INPUTS_V9 if manifest_version == "9"
         else CONTROLLED_INPUTS_V8 if manifest_version == "8"
         else CONTROLLED_INPUTS_V7 if manifest_version == "7"
         else CONTROLLED_INPUTS_V6 if manifest_version == "6"
@@ -392,7 +414,7 @@ def assemble_release_manifest_input(
         else CONTROLLED_INPUTS_V2 if manifest_version == "2"
         else CONTROLLED_INPUTS_V1
     )
-    if manifest_version in {"2", "3", "4", "5", "6", "7", "8", "9"}:
+    if manifest_version in {"2", "3", "4", "5", "6", "7", "8", "9", "10"}:
         if (
             public_integration_target_evidence_uri is None
             or public_integration_target_evidence_path is None
@@ -469,7 +491,7 @@ def assemble_release_manifest_input(
             "scenarioSetSha256": scenario_digest,
         })
         evidence.append(pic_reference)
-    if manifest_version in {"3", "4", "5", "6", "7", "8", "9"}:
+    if manifest_version in {"3", "4", "5", "6", "7", "8", "9", "10"}:
         if (
             data_catalog_target_evidence_uri is None
             or data_catalog_target_evidence_path is None
@@ -599,41 +621,41 @@ def assemble_release_manifest_input(
             "runtimeEvidenceClaim": "none",
         },
     ]
-    if manifest_version in {"3", "4", "5", "6", "7", "8", "9"}:
+    if manifest_version in {"3", "4", "5", "6", "7", "8", "9", "10"}:
         runtime_evidence.append({
             "id": "data-catalog-target-conformance",
             "status": "passed",
             "evidenceIds": ["DataCatalogTargetConformance"],
         })
-    if manifest_version in {"4", "5", "6", "7", "8", "9"}:
+    if manifest_version in {"4", "5", "6", "7", "8", "9", "10"}:
         runtime_evidence.append({
             "id": "subject-registry-production-kms",
             "status": "deployment-input-required",
             "ownerStory": "2.2",
             "runtimeEvidenceClaim": "none",
         })
-    if manifest_version in {"5", "6", "7", "8", "9"}:
+    if manifest_version in {"5", "6", "7", "8", "9", "10"}:
         runtime_evidence.append({
             "id": "ingestion-quality-quality-worker-deployment",
             "status": "deployment-input-required",
             "ownerStory": "2.3",
             "runtimeEvidenceClaim": "none",
         })
-    if manifest_version in {"6", "7", "8", "9"}:
+    if manifest_version in {"6", "7", "8", "9", "10"}:
         runtime_evidence.append({
             "id": "ingestion-quality-eligibility-deployment",
             "status": "deployment-input-required",
             "ownerStory": "2.4",
             "runtimeEvidenceClaim": "none",
         })
-    if manifest_version in {"7", "8", "9"}:
+    if manifest_version in {"7", "8", "9", "10"}:
         runtime_evidence.append({
             "id": "ingestion-quality-fuse-task-deployment",
             "status": "deployment-input-required",
             "ownerStory": "2.5a",
             "runtimeEvidenceClaim": "none",
         })
-    if manifest_version in {"8", "9"}:
+    if manifest_version in {"8", "9", "10"}:
         runtime_evidence.append({
             "id": "ingestion-quality-recovery-executable-closure",
             "status": "passed",
@@ -644,7 +666,7 @@ def assemble_release_manifest_input(
                 "frontend-formal-web-report",
             ],
         })
-    if manifest_version == "9":
+    if manifest_version in {"9", "10"}:
         runtime_evidence.append({
             "id": "ingestion-quality-finalization-executable-closure",
             "status": "passed",
@@ -653,6 +675,17 @@ def assemble_release_manifest_input(
             "evidenceIds": [
                 "backend-provenance",
                 "frontend-formal-web-report",
+            ],
+        })
+    if manifest_version == "10":
+        runtime_evidence.append({
+            "id": "platform-observability-executable-closure",
+            "status": "passed",
+            "ownerStory": "2.6a",
+            "runtimeEvidenceClaim": "story-2.6a-observability-closure",
+            "evidenceIds": [
+                "backend-provenance",
+                "backend-sbom-cyclonedx",
             ],
         })
     return {
@@ -684,7 +717,10 @@ def assemble_release_manifest_input(
         "controlledInputs": _controlled_references(
             source_root, artifact_uri, controlled_inputs
         ),
-        "locks": _controlled_references(source_root, artifact_uri, LOCKS),
+        "locks": _controlled_references(
+            source_root, artifact_uri,
+            LOCKS_V10 if manifest_version == "10" else LOCKS_V1,
+        ),
         "artifacts": artifacts,
         "evidence": evidence,
         "frozenAt": frozen_at,

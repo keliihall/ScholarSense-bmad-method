@@ -1,0 +1,7 @@
+{
+  "fixtureVersion": "DATA-BATCH-QUALITY-TRACE-INVALID-2.0.0",
+  "contractVersion": "DATA-BATCH-QUALITY-TRACE-2.0.0",
+  "traceId": "00112233445566778899aabbccddeeff",
+  "producerTraceparent": "00-ffeeddccbbaa99887766554433221100-1111111111111111-01",
+  "expectedIssue": "producer traceparent trace-id drift"
+}

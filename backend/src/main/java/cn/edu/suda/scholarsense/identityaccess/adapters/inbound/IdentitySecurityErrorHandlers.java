@@ -3,7 +3,7 @@ package cn.edu.suda.scholarsense.identityaccess.adapters.inbound;
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCommandService;
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCommandType;
 import cn.edu.suda.scholarsense.identityaccess.api.AuditSearchSecurityAuditPort;
-import cn.edu.suda.scholarsense.shared.trace.W3cTraceId;
+import cn.edu.suda.scholarsense.shared.observability.HttpTraceContext;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -32,9 +32,7 @@ final class IdentitySecurityErrorHandlers {
                         type,
                         request.getHeader("Idempotency-Key"),
                         request.getRemoteAddr(),
-                        W3cTraceId.from(
-                                request.getHeader("Traceparent"),
-                                request.getMethod() + ":" + request.getRequestURI()));
+                        HttpTraceContext.traceId(request));
             }
             if (AuditSearchSecurityRejection.record(
                     request, response, audit, "AUDIT_SEARCH_REQUEST_REJECTED")) {

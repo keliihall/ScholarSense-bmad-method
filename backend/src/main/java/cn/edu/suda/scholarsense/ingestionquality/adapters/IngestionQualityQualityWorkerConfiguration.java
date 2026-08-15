@@ -7,6 +7,8 @@ import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.QualityWorker
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.QualityWorkerProviderAdapters;
 import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchAuthorizationPort;
 import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchCanonicalOutboxFactory;
+import cn.edu.suda.scholarsense.shared.observability.CurrentTraceSource;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchCommandService;
 import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchQualityEvaluationService;
 import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchWorkloadAuthorizationGuard;
@@ -17,6 +19,7 @@ import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
 import cn.edu.suda.scholarsense.shared.time.EvidenceBoundTrustedTimeSource;
 import cn.edu.suda.scholarsense.shared.time.TrustedClockConstraints;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClientFactory;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
@@ -58,9 +61,12 @@ public class IngestionQualityQualityWorkerConfiguration {
                     URI snapshotIds,
             @Value("${scholarsense.ingestion-quality.trusted-time-provider-ref}") URI trustedTime,
             ObjectMapper json,
-            @Qualifier("ingestionQualityQualityWorkerProviderHttpClient") HttpClient http) {
+            @Qualifier("ingestionQualityQualityWorkerProviderHttpClient") HttpClient http,
+            TrustedHttpClientFactory trustedHttp) {
         return new QualityWorkerProviderAdapters(
-                dataAuthorization, workloadAuthorization, snapshotIds, trustedTime, json, http);
+                dataAuthorization, workloadAuthorization, snapshotIds, trustedTime, json,
+                trustedHttp.wrapSandboxQualityWorker(http, dataAuthorization, workloadAuthorization,
+                        snapshotIds, trustedTime));
     }
 
     @Bean
@@ -133,9 +139,13 @@ public class IngestionQualityQualityWorkerConfiguration {
     @Bean
     DataBatchCanonicalOutboxFactory ingestionQualityDataBatchCanonicalOutboxFactory(
             @Qualifier("ingestionQualityQualityWorkerPostgreSqlConnectionProfile")
-                    PostgreSqlConnectionProfile connectionProfile) {
+                    PostgreSqlConnectionProfile connectionProfile,
+            CurrentTraceSource currentTrace,
+            W3cTraceContextCodec traceCodec,
+            cn.edu.suda.scholarsense.shared.observability.ObservationPort observations) {
         return new DataBatchCanonicalOutboxFactory(
-                connectionProfile.expectedWorkloadIdentity());
+                connectionProfile.expectedWorkloadIdentity(), currentTrace, traceCodec,
+                observations);
     }
 
     @Bean

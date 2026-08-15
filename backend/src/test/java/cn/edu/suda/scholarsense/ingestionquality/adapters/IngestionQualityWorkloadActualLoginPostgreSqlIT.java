@@ -34,6 +34,7 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
                             "iq_accept_subject_mapping_event",
                             "iq_reconcile_subject_mapping_consumer",
                             "iq_enqueue_mapping_recompute",
+                            "iq_enqueue_mapping_recompute_v2",
                             "iq_record_mapping_recompute_plan",
                             "iq_claim_mapping_recompute_job",
                             "iq_checkpoint_mapping_recompute_job",

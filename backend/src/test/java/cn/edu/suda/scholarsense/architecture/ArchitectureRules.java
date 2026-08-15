@@ -21,7 +21,10 @@ final class ArchitectureRules {
             "identityaccess", "subjectregistry", "ingestionquality", "rulegovernance",
             "signalevaluation", "cluecare", "collaboration", "reporting", "auditoperations");
     private static final Set<String> LAYERS = Set.of("api", "domain", "application", "adapters");
-    private static final Set<String> SHARED_KERNELS = Set.of("id", "time", "error", "trace", "outbox");
+    private static final Set<String> SHARED_KERNELS = Set.of(
+            "id", "time", "error", "trace", "outbox", "observability");
+    private static final Set<String> APPROVED_SHARED_TECHNICAL_POLICIES = Set.of(
+            "cn.edu.suda.scholarsense.shared.observability.TrustedTargetPolicy");
     private static final Set<String> INFRASTRUCTURE_PACKAGES = Set.of("runtime");
     private static final Set<String> AUDIT_API_COMPATIBILITY_ALIASES = Set.of(
             "cn.edu.suda.scholarsense.auditoperations.api.AuditLedgerIngressPort",
@@ -146,7 +149,10 @@ final class ArchitectureRules {
         if (owner.length < 2 || !SHARED_KERNELS.contains(owner[1])) {
             violations.add("SHARED_KERNEL_NOT_APPROVED: " + source);
         }
-        if (SHARED_BUSINESS_TYPE.matcher(content).find()) {
+        String declaredType = ROOT + "." + String.join(".", owner) + "."
+                + source.getFileName().toString().replaceFirst("\\.java$", "");
+        if (SHARED_BUSINESS_TYPE.matcher(content).find()
+                && !APPROVED_SHARED_TECHNICAL_POLICIES.contains(declaredType)) {
             violations.add("SHARED_BUSINESS_POLLUTION: " + source);
         }
         Matcher imports = IMPORT.matcher(content);

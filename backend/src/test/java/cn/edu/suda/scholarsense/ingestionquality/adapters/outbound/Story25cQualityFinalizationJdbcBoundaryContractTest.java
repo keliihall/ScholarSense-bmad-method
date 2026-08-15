@@ -19,7 +19,8 @@ class Story25cQualityFinalizationJdbcBoundaryContractTest {
             "ingestion-quality/V000021__ingestion-quality__quality_finalization_v1.sql");
 
     @Test
-    void v21IsTheOnlyNextForwardMigrationAndPredecessorBytesStayFrozen() throws Exception {
+    void v21PredecessorBytesStayFrozenWhileLaterForwardMigrationsRemainAppendOnly()
+            throws Exception {
         List<Integer> versions;
         try (var paths = Files.walk(MIGRATIONS)) {
             versions = paths.filter(path -> path.getFileName().toString().matches(
@@ -28,8 +29,14 @@ class Story25cQualityFinalizationJdbcBoundaryContractTest {
                             path.getFileName().toString().substring(1, 7)))
                     .sorted(Comparator.naturalOrder()).toList();
         }
-        assertEquals(21, versions.getLast());
-        assertEquals(21, versions.stream().distinct().count());
+        assertEquals(24, versions.getLast());
+        assertEquals(24, versions.stream().distinct().count());
+        assertTrue(Files.isRegularFile(MIGRATIONS.resolve(
+                "ingestion-quality/V000022__ingestion-quality__durable_trace_context_v2.sql")));
+        assertTrue(Files.isRegularFile(MIGRATIONS.resolve(
+                "ingestion-quality/V000023__ingestion-quality__data_batch_event_trace_v2.sql")));
+        assertTrue(Files.isRegularFile(MIGRATIONS.resolve(
+                "ingestion-quality/V000024__ingestion-quality__data_batch_outbox_event_v2.sql")));
         assertEquals(
                 "21a66478ce29bf71838f4375c7162f5bbd390d5db60661981c5acfa03c419edb",
                 sha256(MIGRATIONS.resolve(

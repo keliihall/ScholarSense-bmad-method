@@ -23,6 +23,8 @@ import cn.edu.suda.scholarsense.ingestionquality.application.CatalogRetentionCle
 import cn.edu.suda.scholarsense.ingestionquality.application.FrozenDataCatalogBootstrap;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualitySnapshotRetentionOrchestrator;
 import cn.edu.suda.scholarsense.shared.outbox.AuditProducerBacklogPort;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContext;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
@@ -97,6 +99,15 @@ class IngestionQualityAuditRelayRuntimeTest {
         new QualitySnapshotRetentionScheduler(orchestrator).executeOne();
         verify(orchestrator).runOne(argThat(trace ->
                 trace != null && trace.matches("(?!0{32})[0-9a-f]{32}")));
+
+        W3cTraceContext scheduledContext = new W3cTraceContext(
+                "1234567890abcdef1234567890abcdef", "1234567890abcdef", true);
+        QualitySnapshotRetentionOrchestrator tracedOrchestrator =
+                mock(QualitySnapshotRetentionOrchestrator.class);
+        new QualitySnapshotRetentionScheduler(
+                tracedOrchestrator, () -> java.util.Optional.of(scheduledContext),
+                new W3cTraceContextCodec()).executeOne();
+        verify(tracedOrchestrator).runOne(scheduledContext.traceId());
     }
 
     @Test

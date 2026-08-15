@@ -10,6 +10,7 @@ import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchWorkloadAu
 import cn.edu.suda.scholarsense.ingestionquality.application.QualitySnapshotIdPort;
 import cn.edu.suda.scholarsense.shared.time.TimeSynchronizationStatus;
 import cn.edu.suda.scholarsense.shared.time.TimeSynchronizationStatusProvider;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClient;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -51,8 +52,21 @@ public final class QualityWorkerProviderAdapters implements
             ObjectMapper json,
             HttpClient http) {
         this(dataBatchAuthorization, workloadAuthorization, snapshotIds, trustedTime, json,
-                httpExchange(java.util.Objects.requireNonNull(http), json));
+                httpExchange(TrustedHttpClient.unobserved(
+                        java.util.Objects.requireNonNull(http)), json));
         if (http.followRedirects() != HttpClient.Redirect.NEVER) throw unavailable();
+    }
+
+    public QualityWorkerProviderAdapters(
+            URI dataBatchAuthorization,
+            URI workloadAuthorization,
+            URI snapshotIds,
+            URI trustedTime,
+            ObjectMapper json,
+            TrustedHttpClient http) {
+        this(dataBatchAuthorization, workloadAuthorization, snapshotIds, trustedTime, json,
+                httpExchange(java.util.Objects.requireNonNull(http), json));
+        if (http.delegate().followRedirects() != HttpClient.Redirect.NEVER) throw unavailable();
     }
 
     QualityWorkerProviderAdapters(
@@ -267,13 +281,18 @@ public final class QualityWorkerProviderAdapters implements
 
     private static URI endpoint(URI value) {
         java.util.Objects.requireNonNull(value);
+        boolean explicitLoopback = value.getPort() > 0
+                && ("localhost".equalsIgnoreCase(value.getHost())
+                        || "127.0.0.1".equals(value.getHost())
+                        || "::1".equals(value.getHost()));
         if (!"https".equals(value.getScheme()) || value.getHost() == null
                 || value.getUserInfo() != null || value.getFragment() != null
-                || value.getPort() != -1) throw unavailable();
+                || value.getQuery() != null
+                || value.getPort() != -1 && !explicitLoopback) throw unavailable();
         return value;
     }
 
-    private static Exchange httpExchange(HttpClient http, ObjectMapper json) {
+    private static Exchange httpExchange(TrustedHttpClient http, ObjectMapper json) {
         java.util.Objects.requireNonNull(json);
         return (endpoint, request) -> {
             try {
@@ -284,8 +303,11 @@ public final class QualityWorkerProviderAdapters implements
                         .header("Content-Type", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofByteArray(payload))
                         .build();
+                String persistedTraceId = request.path("traceId").isTextual()
+                        ? request.path("traceId").asText() : null;
                 HttpResponse<byte[]> response = http.send(
-                        outbound, HttpResponse.BodyHandlers.ofByteArray());
+                        outbound, HttpResponse.BodyHandlers.ofByteArray(),
+                        "ingestion-quality", persistedTraceId);
                 if (response.statusCode() != 200 || response.body() == null
                         || response.body().length == 0
                         || response.body().length > MAX_RESPONSE_BYTES) throw unavailable();

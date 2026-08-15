@@ -1,0 +1,13 @@
+{
+  "$schema": "./observability-runtime.schema.json",
+  "profileVersion": "OBS-RUNTIME-1.0.0",
+  "environment": "dev",
+  "role": "web-api",
+  "otlp": {"enabled": false, "protocol": "http/protobuf", "timeoutMs": 2000, "maxQueueSize": 2048},
+  "sampling": {"sampler": "parent-based-trace-id-ratio", "probability": 0.1},
+  "resource": {"service": "scholarsense", "module": "web-api"},
+  "trustedIngress": {"profileVersion":"TRUSTED-INGRESS-1.0.0","socketSources":["127.0.0.1","::1"],"proxyIdentity":"portal-proxy-dev-v1","proxyClearsPropagationHeaders":true},
+  "structuredLogging": {"format":"scholarsense-json-1","timestampZone":"UTC","fields":["timestamp","level","service","module","traceId","event","code"],"arbitraryMdc":"forbidden"},
+  "baggage": "forbidden",
+  "runtimeEvidenceClaim": "none"
+}

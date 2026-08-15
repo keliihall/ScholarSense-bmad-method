@@ -60,7 +60,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("release_version")
     parser.add_argument("output")
     parser.add_argument(
-        "--manifest-version", choices=("1", "2", "3", "4", "5", "6", "7", "8", "9"), default="1"
+        "--manifest-version", choices=("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), default="1"
     )
     try:
         args = parser.parse_args(argv[1:])

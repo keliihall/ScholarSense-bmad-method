@@ -33,4 +33,10 @@ public enum UpstreamQualityEventKind {
     public long batchAggregateVersion() {
         return batchAggregateVersion;
     }
+
+    public boolean matches(String candidateType, String candidateSchema) {
+        return (eventType.equals(candidateType) && schemaVersion.equals(candidateSchema))
+                || (eventType.replace(".v1", ".v2").equals(candidateType)
+                    && schemaVersion.replace("-1.0.0", "-2.0.0").equals(candidateSchema));
+    }
 }

@@ -249,6 +249,10 @@ public final class PostgreSqlDataSourceStartupGate {
                             + "character varying, character varying, character varying, "
                             + "character varying, character, "
                             + "timestamp with time zone, timestamp with time zone, character)",
+                    "iq_enqueue_mapping_recompute_v2(uuid, uuid, character varying, uuid, "
+                            + "character varying, character varying, character varying, "
+                            + "character varying, character, timestamp with time zone, "
+                            + "timestamp with time zone, character, character varying)",
                     "iq_record_mapping_recompute_plan(uuid, uuid, character varying, integer, "
                             + "integer, timestamp with time zone, character)",
                     "iq_claim_mapping_recompute_job(uuid, character varying, "

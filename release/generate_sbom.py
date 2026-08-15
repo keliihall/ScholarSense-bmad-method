@@ -252,7 +252,7 @@ def generate(
         path = artifact_root / artifact["name"]
         if not path.is_file() or path.stat().st_size != artifact["size"] or _sha256(path) != artifact["binarySha256"]:
             raise ValueError(f"SBOM_ARTIFACT_MANIFEST_MISMATCH: {artifact['name']}")
-    backend_lock = load_json(project_root / "contracts/release/backend-lock-1.0.0.json")
+    backend_lock = load_json(project_root / "contracts/release/backend-lock-2.0.0.json")
     package_lock = load_json(project_root / "frontend/package-lock.json")
     npm_tree = load_json(npm_tree_path.resolve())
     npm_tree_summary, npm_tree_issues = npm_tree_reconciliation(package_lock, npm_tree)

@@ -143,6 +143,8 @@ class ReleaseBuildContractTest(unittest.TestCase):
         self.assertIn('scripts/verify_core.sh" --review', top_level_content)
         self.assertIn('[str(attempt / "scripts/verify_core.sh"), "--review"]',
                       (PROJECT_ROOT / "release" / "build_release.py").read_text())
+        self.assertIn('environment["MAVEN_ARGS"]', implementation)
+        self.assertIn(' + " -o"', implementation)
         self.assertLess(
             top_level_content.index("scripts/verify_core.sh"),
             top_level_content.index("scripts/build-release.sh"),

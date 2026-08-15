@@ -1,0 +1,41 @@
+{
+  "contractVersion": "DATA-BATCH-QUALITY-TRACE-2.0.0",
+  "owner": "ingestion-quality",
+  "predecessor": {
+    "contractVersion": "DATA-BATCH-QUALITY-EVENT-1.0.0",
+    "fixtures": "contracts/events/ingestion-quality/fixtures/valid/data-batch-*-v1.json",
+    "mutationPolicy": "read-only"
+  },
+  "successor": {
+    "qualityAssessedType": "scholarsense.ingestion-quality.data-batch.quality-assessed.v2",
+    "qualityAssessedSchema": "DATA-BATCH-QUALITY-ASSESSED-2.0.0",
+    "publishedType": "scholarsense.ingestion-quality.data-batch.published.v2",
+    "publishedSchema": "DATA-BATCH-PUBLISHED-2.0.0",
+    "readerCutover": "dual-read-v1-v2-before-producer-cutover",
+    "producerCutover": "single-v2-event-no-dual-publish"
+  },
+  "traceContext": {
+    "wireField": "traceparent",
+    "format": "00-{persisted-trace-id}-{non-zero-producer-span-id}-{00|01}",
+    "producer": "real-w3c-child-context",
+    "reader": "same-trace-id-any-valid-non-zero-parent-span",
+    "invalid": "reject-before-owner-transaction"
+  },
+  "processing": {
+    "identity": "CloudEvent-source-plus-id",
+    "orderingKey": "data.aggregateId",
+    "versionField": "data.aggregateVersion",
+    "latestStateLookup": "forbidden",
+    "ownerTransaction": "inbox-cursor-business-state-and-derived-outbox-atomic"
+  },
+  "requiredScenarios": [
+    "producer",
+    "consumer",
+    "duplicate",
+    "gap",
+    "poison",
+    "replay",
+    "aggregateVersion-conflict"
+  ],
+  "runtimeEvidenceClaim": "local-conformance-only"
+}

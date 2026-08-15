@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/observability-runtime.schema.json",
+  "title": "ScholarSense observability runtime profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "profileVersion", "environment", "role", "otlp", "sampling",
+    "resource", "trustedIngress", "structuredLogging", "baggage", "runtimeEvidenceClaim"
+  ],
+  "properties": {
+    "$schema": { "const": "./observability-runtime.schema.json" },
+    "profileVersion": { "const": "OBS-RUNTIME-1.0.0" },
+    "environment": { "enum": ["dev", "test", "stage", "prod"] },
+    "role": { "enum": ["web-api", "worker"] },
+    "otlp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "protocol", "timeoutMs", "maxQueueSize"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "endpoint": {
+          "type": "string",
+          "format": "uri",
+          "enum": [
+            "https://otel.stage.scholarsense.suda.edu.cn/v1/traces",
+            "https://otel.prod.scholarsense.suda.edu.cn/v1/traces"
+          ]
+        },
+        "metricsEndpoint": {
+          "type": "string",
+          "format": "uri",
+          "enum": [
+            "https://otel.stage.scholarsense.suda.edu.cn/v1/metrics",
+            "https://otel.prod.scholarsense.suda.edu.cn/v1/metrics"
+          ]
+        },
+        "protocol": { "const": "http/protobuf" },
+        "timeoutMs": { "type": "integer", "minimum": 100, "maximum": 10000 },
+        "maxQueueSize": { "type": "integer", "minimum": 128, "maximum": 8192 }
+      }
+    },
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sampler", "probability"],
+      "properties": {
+        "sampler": { "const": "parent-based-trace-id-ratio" },
+        "probability": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["service", "module"],
+      "properties": {
+        "service": { "const": "scholarsense" },
+        "module": { "enum": ["web-api", "worker"] }
+      }
+    },
+    "trustedIngress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profileVersion", "socketSources", "proxyIdentity", "proxyClearsPropagationHeaders"],
+      "properties": {
+        "profileVersion": { "const": "TRUSTED-INGRESS-1.0.0" },
+        "socketSources": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[0-9a-f.:]{2,45}$" }
+        },
+        "proxyIdentity": { "type": "string", "pattern": "^portal-proxy-(dev|test|stage|prod)-v1$" },
+        "proxyClearsPropagationHeaders": { "const": true }
+      }
+    },
+    "structuredLogging": {
+      "const": {
+        "format": "scholarsense-json-1",
+        "timestampZone": "UTC",
+        "fields": ["timestamp", "level", "service", "module", "traceId", "event", "code"],
+        "arbitraryMdc": "forbidden"
+      }
+    },
+    "baggage": { "const": "forbidden" },
+    "runtimeEvidenceClaim": { "enum": ["none", "conformance-only"] }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "environment": { "enum": ["stage", "prod"] } }, "required": ["environment"] },
+      "then": {
+        "properties": {
+          "otlp": { "required": ["enabled", "endpoint", "metricsEndpoint", "protocol", "timeoutMs", "maxQueueSize"] },
+          "runtimeEvidenceClaim": { "const": "none" }
+        }
+      }
+    }
+  ]
+}

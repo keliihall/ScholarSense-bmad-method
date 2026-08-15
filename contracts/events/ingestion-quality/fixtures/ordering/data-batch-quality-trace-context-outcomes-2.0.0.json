@@ -1,0 +1,18 @@
+{
+  "fixtureVersion": "DATA-BATCH-QUALITY-TRACE-OUTCOMES-2.0.0",
+  "contractVersion": "DATA-BATCH-QUALITY-TRACE-2.0.0",
+  "traceId": "00112233445566778899aabbccddeeff",
+  "producerTraceparent": "00-00112233445566778899aabbccddeeff-1111111111111111-01",
+  "consumerParentTraceparent": "00-00112233445566778899aabbccddeeff-1111111111111111-01",
+  "ownerTransaction": "inbox-cursor-business-state-and-derived-outbox-atomic",
+  "latestStateLookup": false,
+  "scenarios": [
+    {"case":"producer","currentVersion":2,"incomingVersion":3,"sameEventId":false,"payloadDigestMatches":true,"expectedAction":"commit-owner-state-and-outbox","cursorAdvances":true},
+    {"case":"consumer","currentVersion":2,"incomingVersion":3,"sameEventId":false,"payloadDigestMatches":true,"expectedAction":"apply-in-owner-transaction","cursorAdvances":true},
+    {"case":"duplicate","currentVersion":3,"incomingVersion":3,"sameEventId":true,"payloadDigestMatches":true,"expectedAction":"acknowledge-noop","cursorAdvances":false},
+    {"case":"gap","currentVersion":2,"incomingVersion":4,"sameEventId":false,"payloadDigestMatches":true,"expectedAction":"pause-and-backfill-version-3","cursorAdvances":false},
+    {"case":"poison","currentVersion":2,"incomingVersion":3,"sameEventId":false,"payloadDigestMatches":true,"expectedAction":"quarantine-without-business-mutation","cursorAdvances":false},
+    {"case":"replay","currentVersion":2,"incomingVersion":3,"sameEventId":false,"payloadDigestMatches":true,"expectedAction":"apply-and-resume","cursorAdvances":true},
+    {"case":"aggregateVersion-conflict","currentVersion":3,"incomingVersion":3,"sameEventId":true,"payloadDigestMatches":false,"expectedAction":"stable-idempotency-conflict","cursorAdvances":false}
+  ]
+}

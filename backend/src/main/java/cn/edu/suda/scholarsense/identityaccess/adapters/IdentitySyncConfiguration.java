@@ -89,6 +89,7 @@ import cn.edu.suda.scholarsense.shared.time.EvidenceBoundTrustedTimeSource;
 import cn.edu.suda.scholarsense.shared.time.TimeSynchronizationStatusProvider;
 import cn.edu.suda.scholarsense.shared.time.TrustedClockConstraints;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClientFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -185,9 +186,10 @@ public class IdentitySyncConfiguration {
             EnvelopeEncryptionPort encryption,
             PseudonymizationPort pseudonyms,
             TrustedTimeSource time,
-            JdbcIdentitySyncRepository references) {
+            JdbcIdentitySyncRepository references,
+            TrustedHttpClientFactory trustedHttp) {
         return new HttpIdentityAuthoritySourceAdapter(
-                http, json, profile, workloadIdentity, signatures,
+                trustedHttp.wrap(http, profile), json, profile, workloadIdentity, signatures,
                 encryption, pseudonyms, time, references);
     }
 
@@ -201,9 +203,10 @@ public class IdentitySyncConfiguration {
             IdentitySourceSignaturePort signatures,
             EnvelopeEncryptionPort encryption,
             PseudonymizationPort pseudonyms,
-            TrustedTimeSource time) {
+            TrustedTimeSource time,
+            TrustedHttpClientFactory trustedHttp) {
         return new HttpResponsibilityAuthoritySourceAdapter(
-                http,
+                trustedHttp.wrap(http, profile),
                 json,
                 profile,
                 workloadIdentity,
@@ -220,9 +223,11 @@ public class IdentitySyncConfiguration {
             ObjectMapper json,
             ResponsibilityAuthorityRuntimeProfile profile,
             WorkloadIdentityAuthenticationPort workloadIdentity,
-            IdentitySourceSignaturePort signatures) {
+            IdentitySourceSignaturePort signatures,
+            TrustedHttpClientFactory trustedHttp) {
         return new HttpResponsibilityFullSnapshotSourceAdapter(
-                http, json, profile, workloadIdentity, signatures);
+                trustedHttp.wrap(http, profile),
+                json, profile, workloadIdentity, signatures);
     }
 
     @Bean

@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import cn.edu.suda.scholarsense.identityaccess.application.CheckpointKey;
 import cn.edu.suda.scholarsense.identityaccess.application.EncryptedSecret;
@@ -12,12 +15,21 @@ import cn.edu.suda.scholarsense.identityaccess.application.IdentityArchivedEnvel
 import cn.edu.suda.scholarsense.identityaccess.application.IdentityAuthorityReferencePort;
 import cn.edu.suda.scholarsense.identityaccess.application.PseudonymizationPort;
 import cn.edu.suda.scholarsense.runtime.IdentityAuthorityRuntimeProfile;
+import cn.edu.suda.scholarsense.runtime.RuntimeEnvironment;
+import cn.edu.suda.scholarsense.shared.observability.ObservationPort;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClient;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClientFactory;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContext;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import cn.edu.suda.scholarsense.shared.time.TimeSourceProfile;
 import cn.edu.suda.scholarsense.shared.time.TrustedTime;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +40,8 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.io.ByteArrayInputStream;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 
@@ -65,6 +79,53 @@ class HttpIdentityAuthoritySourceAdapterTest {
         } finally {
             server.stop(0);
         }
+    }
+
+    @Test
+    void signedAuthorityProductionPathUsesGovernedClientWithoutChangingAuthOrTimeout()
+            throws Exception {
+        HttpClient raw = mock(HttpClient.class);
+        when(raw.followRedirects()).thenReturn(HttpClient.Redirect.NEVER);
+        HttpResponse<java.io.InputStream> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(503);
+        when(response.headers()).thenReturn(HttpHeaders.of(Map.of(), (name, value) -> true));
+        when(response.body()).thenReturn(new ByteArrayInputStream(new byte[0]));
+        AtomicReference<HttpRequest> sent = new AtomicReference<>();
+        when(raw.send(any(), any(HttpResponse.BodyHandler.class))).thenAnswer(invocation -> {
+            sent.set(invocation.getArgument(0));
+            return response;
+        });
+        W3cTraceContext parent = new W3cTraceContext(
+                TRACE, "1111111111111111", true);
+        W3cTraceContext child = new W3cTraceContext(
+                TRACE, "2222222222222222", true);
+        ObservationPort observations = mock(ObservationPort.class);
+        ObservationPort.ObservationScope scope = mock(ObservationPort.ObservationScope.class);
+        when(observations.start(any(), any(), any(), any())).thenReturn(scope);
+        when(scope.context()).thenReturn(child);
+        IdentityAuthorityRuntimeProfile profile = profile(
+                URI.create("https://identity-authority.suda.edu.cn/api/v1/incremental"));
+        TrustedHttpClient governed = new TrustedHttpClientFactory(
+                () -> Optional.of(parent), new W3cTraceContextCodec(),
+                RuntimeEnvironment.STAGE, observations).wrap(raw, profile);
+        IdentityAuthorityReferencePort references = mock(IdentityAuthorityReferencePort.class);
+        HttpIdentityAuthoritySourceAdapter adapter = new HttpIdentityAuthoritySourceAdapter(
+                governed, new ObjectMapper(), profile,
+                ignored -> "Bearer sandbox-workload", mock(cn.edu.suda.scholarsense.identityaccess
+                        .application.IdentitySourceSignaturePort.class),
+                mock(cn.edu.suda.scholarsense.identityaccess.application.EnvelopeEncryptionPort.class),
+                (purpose, rawValue) -> "pseudonym", HttpIdentityAuthoritySourceAdapterTest::trustedNow,
+                references);
+
+        IdentitySyncException failure = assertThrows(
+                IdentitySyncException.class, () -> adapter.fetch(KEY, 6, TRACE));
+
+        assertEquals("IDENTITY_SOURCE_DEPENDENCY_UNAVAILABLE", failure.code());
+        assertEquals("Bearer sandbox-workload",
+                sent.get().headers().firstValue("Authorization").orElseThrow());
+        assertEquals(profile.requestTimeout(), sent.get().timeout().orElseThrow());
+        assertEquals("00-" + TRACE + "-" + child.spanId() + "-01",
+                sent.get().headers().firstValue("traceparent").orElseThrow());
     }
 
     @Test
@@ -313,24 +374,7 @@ class HttpIdentityAuthoritySourceAdapterTest {
             PseudonymizationPort pseudonyms) {
         URI endpoint = URI.create(
                 "http://127.0.0.1:" + server.getAddress().getPort() + "/api/v1/incremental");
-        var profile = new IdentityAuthorityRuntimeProfile(
-                "IDENTITY-AUTHORITY-PROFILE-1.0.0",
-                KEY.sourceId(),
-                KEY.feedId(),
-                KEY.partitionId(),
-                KEY.consumerProjection(),
-                endpoint,
-                Duration.ofSeconds(2),
-                Duration.ofSeconds(2),
-                "account://test/identity-sync-worker",
-                "secret://test/identity-authority-signature",
-                "config://test/identity-authority-inbox",
-                "config://test/identity-role-mapping-1-0-0",
-                "IDENTITY-ROLE-MAPPING-1.0.0",
-                "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
-                Duration.ofSeconds(30),
-                5,
-                false);
+        var profile = profile(endpoint);
         return new HttpIdentityAuthoritySourceAdapter(
                 HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build(),
                 new ObjectMapper(),
@@ -349,6 +393,27 @@ class HttpIdentityAuthoritySourceAdapterTest {
                 pseudonyms,
                 HttpIdentityAuthoritySourceAdapterTest::trustedNow,
                 true);
+    }
+
+    private static IdentityAuthorityRuntimeProfile profile(URI endpoint) {
+        return new IdentityAuthorityRuntimeProfile(
+                "IDENTITY-AUTHORITY-PROFILE-1.0.0",
+                KEY.sourceId(),
+                KEY.feedId(),
+                KEY.partitionId(),
+                KEY.consumerProjection(),
+                endpoint,
+                Duration.ofSeconds(2),
+                Duration.ofSeconds(2),
+                "account://test/identity-sync-worker",
+                "secret://test/identity-authority-signature",
+                "config://test/identity-authority-inbox",
+                "config://test/identity-role-mapping-1-0-0",
+                "IDENTITY-ROLE-MAPPING-1.0.0",
+                "sha256:f09768f88cd6a595791ec6591e65758b85fd8402585c8ffaa053446214895e29",
+                Duration.ofSeconds(30),
+                5,
+                false);
     }
 
     private static HttpServer server(

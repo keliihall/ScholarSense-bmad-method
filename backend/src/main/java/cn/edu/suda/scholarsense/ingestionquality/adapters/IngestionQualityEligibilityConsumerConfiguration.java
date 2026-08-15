@@ -9,6 +9,8 @@ import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseWorkItem
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseWorkloadAuthorizationGuard;
 import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchWorkloadAuthorizationPort;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
+import cn.edu.suda.scholarsense.shared.observability.ObservationPort;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import java.util.Arrays;
 import javax.crypto.spec.SecretKeySpec;
 import cn.edu.suda.scholarsense.ingestionquality.domain.RuleDependencyRegistry;
@@ -113,12 +115,14 @@ public class IngestionQualityEligibilityConsumerConfiguration {
             QualityFuseWorkItemKeyPort workItemKeys,
             QualityFuseWorkloadAuthorizationGuard authorization,
             TrustedTimeSource trustedTime,
+            ObservationPort observations,
+            W3cTraceContextCodec traceCodec,
             @Qualifier("ingestionQualityEligibilityConsumerPostgreSqlConnectionProfile")
                     PostgreSqlConnectionProfile connectionProfile) {
         return new QualityEligibilityEventConsumer(
                 new JdbcQualityEligibilitySnapshotLookupStore(jdbc, json),
                 new JdbcQualityEligibilityEventTransactionAdapter(
                         jdbc, transactions, json, authorization, trustedTime),
-                registry, workItemKeys);
+                registry, workItemKeys, observations, traceCodec);
     }
 }

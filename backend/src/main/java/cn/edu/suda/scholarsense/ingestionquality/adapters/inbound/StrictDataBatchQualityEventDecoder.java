@@ -10,6 +10,8 @@ import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import tools.jackson.core.StreamReadFeature;
 import tools.jackson.core.json.JsonFactory;
 import tools.jackson.databind.JsonNode;
@@ -44,6 +46,16 @@ public final class StrictDataBatchQualityEventDecoder {
 
     private static final ObjectMapper MAPPER = new ObjectMapper(
             JsonFactory.builder().enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build());
+    private static final Pattern TRACEPARENT = Pattern.compile(
+            "^00-((?!0{32})[0-9a-f]{32})-((?!0{16})[0-9a-f]{16})-0[01]$");
+    private static final String ASSESSED_V1 =
+            "scholarsense.ingestion-quality.data-batch.quality-assessed.v1";
+    private static final String ASSESSED_V2 =
+            "scholarsense.ingestion-quality.data-batch.quality-assessed.v2";
+    private static final String PUBLISHED_V1 =
+            "scholarsense.ingestion-quality.data-batch.published.v1";
+    private static final String PUBLISHED_V2 =
+            "scholarsense.ingestion-quality.data-batch.published.v2";
 
     public UpstreamQualityEvent decode(byte[] payload) {
         if (payload == null || payload.length == 0) throw invalid();
@@ -93,7 +105,9 @@ public final class StrictDataBatchQualityEventDecoder {
                     text(batch, "qualityGateVersion"),
                     text(batch, "qualityGateDigest"),
                     instant(batch, "effectiveAt"),
+                    instant(snapshot, "effectiveAt"),
                     instant(data, "occurredAt"),
+                    text(root, "traceparent"),
                     text(data, "traceId"),
                     digest(payload));
         } catch (IllegalArgumentException exception) {
@@ -135,8 +149,7 @@ public final class StrictDataBatchQualityEventDecoder {
         requireText(data, "producer", "ingestion-quality");
         requireText(data, "runtimeEvidenceClaim", "none");
         if (!text(root, "subject").equals("data-batch/" + aggregateId)
-                || !text(root, "time").equals(text(data, "occurredAt"))
-                || !text(root, "traceparent").equals(traceparent(text(data, "traceId")))) {
+                || !text(root, "time").equals(text(data, "occurredAt"))) {
             throw invalid();
         }
         instant(root, "time");
@@ -146,7 +159,7 @@ public final class StrictDataBatchQualityEventDecoder {
                 "sourceSchemaVersion", "sourceSchemaDigest",
                 "qualityMetricDecisionProfileVersion",
                 "qualityMetricDecisionProfileDigest", "qualityGateVersion",
-                "qualityGateDigest", "lineageId", "effectiveAt", "evaluatedAt")) {
+                "qualityGateDigest", "lineageId", "evaluatedAt")) {
             requireEqual(batch, field, snapshot, field);
         }
 
@@ -159,8 +172,13 @@ public final class StrictDataBatchQualityEventDecoder {
         String assessedStatus = text(snapshot, "assessedBatchStatus");
         String overallResult = text(snapshot, "overallResult");
         JsonNode publishedAt = batch.get("publishedAt");
-        if ("scholarsense.ingestion-quality.data-batch.quality-assessed.v1".equals(eventType)) {
-            if (!"DATA-BATCH-QUALITY-ASSESSED-1.0.0".equals(schemaVersion)
+        boolean assessedV1 = ASSESSED_V1.equals(eventType)
+                && "DATA-BATCH-QUALITY-ASSESSED-1.0.0".equals(schemaVersion);
+        boolean assessedV2 = ASSESSED_V2.equals(eventType)
+                && "DATA-BATCH-QUALITY-ASSESSED-2.0.0".equals(schemaVersion);
+        if (assessedV1 || assessedV2) {
+            if (!validTraceparent(
+                        text(root, "traceparent"), text(data, "traceId"), assessedV1)
                     || dataVersion != 3 || batchVersion != 3 || snapshotVersion != 3
                     || !Set.of("quality-passed", "quality-failed").contains(batchStatus)
                     || publishedAt == null || !publishedAt.isNull()
@@ -170,8 +188,13 @@ public final class StrictDataBatchQualityEventDecoder {
             }
             return;
         }
-        if (!"scholarsense.ingestion-quality.data-batch.published.v1".equals(eventType)
-                || !"DATA-BATCH-PUBLISHED-1.0.0".equals(schemaVersion)
+        boolean publishedV1 = PUBLISHED_V1.equals(eventType)
+                && "DATA-BATCH-PUBLISHED-1.0.0".equals(schemaVersion);
+        boolean publishedV2 = PUBLISHED_V2.equals(eventType)
+                && "DATA-BATCH-PUBLISHED-2.0.0".equals(schemaVersion);
+        if ((!publishedV1 && !publishedV2)
+                || !validTraceparent(
+                        text(root, "traceparent"), text(data, "traceId"), publishedV1)
                 || dataVersion != 4 || batchVersion != 4 || snapshotVersion != 3
                 || !"published".equals(batchStatus)
                 || !"quality-passed".equals(assessedStatus)
@@ -193,11 +216,14 @@ public final class StrictDataBatchQualityEventDecoder {
         if (leftValue == null || !leftValue.equals(rightValue)) throw invalid();
     }
 
-    private static String traceparent(String traceId) {
-        if (!traceId.matches("^(?!0{32}$)[0-9a-f]{32}$")) throw invalid();
+    private static boolean validTraceparent(
+            String traceparent, String traceId, boolean predecessor) {
+        Matcher match = TRACEPARENT.matcher(traceparent);
+        if (!match.matches() || !match.group(1).equals(traceId)) return false;
+        if (!predecessor) return true;
         String spanId = traceId.substring(0, 16);
-        if ("0".repeat(16).equals(spanId)) spanId = traceId.substring(16);
-        return "00-" + traceId + "-" + spanId + "-01";
+        if (spanId.equals("0".repeat(16))) spanId = traceId.substring(16);
+        return traceparent.equals("00-" + traceId + "-" + spanId + "-01");
     }
 
     private static void requireObjectWithExactKeys(JsonNode value, Set<String> expected) {

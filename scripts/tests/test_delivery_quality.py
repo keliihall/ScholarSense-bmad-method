@@ -198,6 +198,43 @@ class DeliveryQualityTest(unittest.TestCase):
             npmrc.write_text("//registry.npmjs.org/:_authToken=secret\n", encoding="utf-8")
             self.assertTrue(any(value.startswith("RAW_CREDENTIAL_LITERAL") for value in scan(root)), scan(root))
 
+    def test_observability_dev_test_loopback_exceptions_are_exact_and_fail_closed(self) -> None:
+        approved_files = {
+            "backend/src/main/java/cn/edu/suda/scholarsense/shared/observability/TrustedIngressAllowlist.java": (
+                'Map.of("127.0.0.1", "portal-proxy-dev-v1", '
+                '"127.0.0.1", "portal-proxy-test-v1");\n'
+            ),
+            "backend/src/main/java/cn/edu/suda/scholarsense/shared/observability/TrustedTargetPolicy.java": (
+                'boolean loopback = host.equalsIgnoreCase("127.0.0.1") '
+                '|| host.equalsIgnoreCase("localhost");\n'
+            ),
+            "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/QualityWorkerProviderAdapters.java": (
+                'boolean explicitLoopback = "localhost".equalsIgnoreCase(value.getHost()) '
+                '|| "127.0.0.1".equals(value.getHost());\n'
+            ),
+            "contracts/config/observability-runtime-dev-1.0.0.json": (
+                '{"socketSources":["127.0.0.1","::1"]}\n'
+            ),
+            "contracts/config/observability-runtime-test-1.0.0.json": (
+                '{"socketSources":["127.0.0.1","::1"]}\n'
+            ),
+        }
+        for relative, content in approved_files.items():
+            with self.subTest(relative=relative), self.fixture() as root:
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+                self.assertEqual([], scan(root))
+
+                path.write_text(
+                    content + 'String rogue = "http://127.0.0.1:9999";\n',
+                    encoding="utf-8",
+                )
+                self.assertTrue(
+                    any(value.startswith("LOCAL_ENDPOINT_LITERAL") for value in scan(root)),
+                    scan(root),
+                )
+
     def test_subject_registry_fixture_exceptions_are_exact_and_fail_closed(self) -> None:
         approved = """
 const csrf = { token: 'abcdefghijklmnopqrstuvwxyzABCDEF' };
