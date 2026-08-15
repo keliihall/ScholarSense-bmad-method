@@ -13,7 +13,9 @@ public record QualityRecoveryTaskQueryCriteria(
         if (sourceId != null && !sourceId.matches("^SRC-P[01]-[A-Z0-9-]+-[0-9]{3}$")) {
             throw invalid();
         }
-        if (status != null && !"open".equals(status)) throw invalid();
+        if (status != null && !java.util.List.of("open", "closed").contains(status)) {
+            throw invalid();
+        }
         if ((afterOccurredAt == null) != (afterTaskId == null) || limit < 1 || limit > 101) {
             throw invalid();
         }

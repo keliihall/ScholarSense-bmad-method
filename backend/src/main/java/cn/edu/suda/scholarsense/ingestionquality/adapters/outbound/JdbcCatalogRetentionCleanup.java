@@ -35,8 +35,10 @@ public final class JdbcCatalogRetentionCleanup implements CatalogRetentionCleanu
                          + ingestion_quality.iq_cleanup_quality_fuse_expired(?)
                          + ingestion_quality.iq_cleanup_quality_eligibility_expired(?)
                          + ingestion_quality.iq_cleanup_quality_recovery_expired(?)
+                         + ingestion_quality.iq_cleanup_quality_finalization_expired(?)
                     """,
                     Long.class,
+                    Timestamp.from(cutoff.instant()),
                     Timestamp.from(cutoff.instant()),
                     Timestamp.from(cutoff.instant()),
                     Timestamp.from(cutoff.instant()),

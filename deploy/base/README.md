@@ -72,3 +72,11 @@ identity-access-owned durable HRAP execution authorization, and a literal
 `fused -> recovering` owner transaction. Story 2.5c observation/eligible, Story 3.2 consumption,
 Story 5.5 final apply and production-duration evidence remain uninstalled and must keep a `none`
 claim.
+
+Story 2.5c is installed additively by `ingestion-quality-runtime-6.0.0.json` and
+`ingestion-quality-roles-6.0.0.json`. It reuses the eighth recovery-validation login for the
+durable observation worker and adds owner-function-only observation, fresh final D4,
+`recovering -> eligible`, same-task close, confirmation compensation, retention, and
+new-generation relapse capabilities. Story 3.2 consumption, Story 5.5 public target apply,
+Story 2.7c NFR8 final evidence, and production-duration evidence remain unactivated with
+`runtimeEvidenceClaim=none`.

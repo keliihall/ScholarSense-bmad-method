@@ -16,7 +16,9 @@ from release_json import load_json, schema_issues  # noqa: E402
 
 def _schema_issues(name: str, document: dict) -> list[str]:
     suffix = (
-        "-8" if document.get("version") in {
+        "-9" if document.get("version") in {
+            "RELEASE-MANIFEST-9.0.0", "EVIDENCE-INDEX-9.0.0"
+        } else "-8" if document.get("version") in {
             "RELEASE-MANIFEST-8.0.0", "EVIDENCE-INDEX-8.0.0"
         } else "-7" if document.get("version") in {
             "RELEASE-MANIFEST-7.0.0", "EVIDENCE-INDEX-7.0.0"

@@ -1,0 +1,137 @@
+{
+  "version": "INGESTION-QUALITY-RUNTIME-6.0.0",
+  "status": "installed-and-verified",
+  "runtimeEvidenceClaim": "story-2.5c-observation-finalization-closure",
+  "predecessor": {
+    "path": "ingestion-quality-runtime-5.0.0.json",
+    "rawSha256": "e818a992b61fa7d04bef7c240d5777272bb8b7751e9053b13c520a1bf6a7061b",
+    "mutationAllowed": false
+  },
+  "sameArtifactRoles": {
+    "web-api": {
+      "capabilities": [
+        "quality-recovery-observation-read",
+        "quality-recovery-final-approval-request",
+        "quality-recovery-final-approval-decision",
+        "quality-recovery-finalization-execute",
+        "quality-recovery-closed-task-read"
+      ],
+      "businessHttp": true,
+      "minimumReplicas": 2,
+      "activation": {
+        "requiredProviderPorts": [
+          "CompositeAuthorizationPort",
+          "CompositeAuthorizationRecheckPort",
+          "HighRiskApprovalPort",
+          "HighRiskExecutionAuthorizationPort",
+          "RecoveryObservationQueryPort",
+          "QualityRecoveryFinalizationStorePort"
+        ],
+        "providerEvidence": "fresh-final-d4-and-ingestion-quality-owner-local-terminal-transaction",
+        "failureMode": "startup-fail-closed"
+      }
+    },
+    "recovery-validation-worker": {
+      "capabilities": [
+        "quality-recovery-observation-job",
+        "quality-recovery-observation-fact-accumulation",
+        "quality-recovery-observation-decision",
+        "quality-recovery-relapse-latch"
+      ],
+      "businessHttp": false,
+      "minimumReplicas": 2,
+      "statelessTakeover": "database-lease-generation-fencing-checkpoints-and-bounded-retry",
+      "requiredEnvironment": [
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_ENABLED",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_URL",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_USERNAME",
+        "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_PASSWORD"
+      ],
+      "activation": {
+        "requiredProviderPorts": [
+          "RecoveryObservationWorkPort",
+          "RecoveryObservationTrustedTimePort",
+          "QualityEligibilityEventTransactionPort"
+        ],
+        "providerEvidence": "v21-durable-observation-ledger-fencing-and-failure-wins-owner-transaction",
+        "failureMode": "startup-fail-closed"
+      }
+    },
+    "retention-executor": {
+      "capabilities": [
+        "quality-recovery-observation-retention",
+        "quality-recovery-finalization-retention",
+        "quality-recovery-confirmation-compensation"
+      ],
+      "businessHttp": false,
+      "minimumReplicas": 1,
+      "ownerSplit": {
+        "ingestion-quality": "observation-decision-window-outcome-final-jti-idempotency-and-outbox",
+        "identity-access": "fresh-final-approval-receipt-and-execution-lease"
+      }
+    }
+  },
+  "databaseStartupGate": {
+    "requiredServerVersionNum": "180004",
+    "sessionIdentityInvariant": "session_user=current_user=role-specific-datasource-username",
+    "exclusivePhysicalLogin": true,
+    "distinctWorkloadLogins": [
+      "web-api",
+      "quality-worker",
+      "audit-relay-worker",
+      "retention-executor",
+      "consumer-registry-authority",
+      "eligibility-consumer",
+      "quality-task-relay",
+      "recovery-validation-worker"
+    ],
+    "workloadRoleBindings": {
+      "web-api": {
+        "requiredFunctions": [
+          "iq_load_recovery_observation_view",
+          "iq_load_quality_finalization_context",
+          "iq_bind_quality_finalization_approval",
+          "iq_find_quality_finalization_replay",
+          "iq_execute_quality_finalization"
+        ],
+        "tableDml": "none"
+      },
+      "recovery-validation-worker": {
+        "expectedIdentitySource": "SCHOLARSENSE_INGESTION_QUALITY_RECOVERY_WORKER_DATASOURCE_USERNAME",
+        "requiredGroupRole": "scholarsense_ingestion_quality_recovery_worker",
+        "tableDml": "none-owner-functions-only"
+      },
+      "retention-executor": {
+        "requiredFunction": "iq_cleanup_quality_finalization_expired",
+        "tableDml": "none"
+      }
+    },
+    "effectivePrivilegeVerification": "exact-table-column-and-function-matrix",
+    "failureMode": "startup-fail-closed"
+  },
+  "finalizationActivation": {
+    "actionType": "quality-fuse.recover",
+    "authorizedTransition": "recovering-to-eligible",
+    "highRiskBinding": "RECOVERY_TASK",
+    "approvalFreshness": "new-approval-and-fifteen-minute-single-use-execution-confirmation",
+    "owner": "ingestion-quality",
+    "networkInsideOwnerTransaction": false,
+    "runtimeState": "available"
+  },
+  "executableClosure": {
+    "observationStart": "same-owner-commit-as-fused-to-recovering",
+    "observationWorker": "durable-real-quality-facts-with-lease-generation-fencing",
+    "observationDurations": {"streaming": "PT60M", "dailyBatch": "P1D"},
+    "finalOwnerTransaction": "observation-decision-all-eligibilities-episode-task-window-audit-events-outbox-jti-and-idempotent-response",
+    "taskDelivery": "local-close-orthogonal-to-external-delivery-confirmation",
+    "terminalRelapse": "new-generation-without-reopening-closed-task",
+    "positiveEvidence": "contract-domain-mvc-jdbc-postgresql18-frontend-and-deterministic-release-tests"
+  },
+  "deferredBoundaries": {
+    "story27cNfr8Final": "not-installed",
+    "story32ConsumerActivation": "not-installed",
+    "story55FinalPublicApply": "not-installed",
+    "productionDurationEvidence": "not-collected",
+    "runtimeEvidenceClaim": "none"
+  }
+}

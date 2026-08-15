@@ -128,6 +128,20 @@ def source_scope_issues(files: list[dict[str, str]]) -> list[str]:
         "scripts/verify-release.sh",
         "scripts/verify_core.sh",
     }
+    story25c_successor = {
+        "contracts/ingestion-quality/quality-finalization/quality-finalization-contract-lock-1.0.0.json",
+        "contracts/openapi/quality-recovery-tasks-1.2.openapi.json",
+        "contracts/public-integration/pic-1.2.0.json",
+        "contracts/release/release-manifest-9.schema.json",
+        "contracts/release/evidence-index-9.schema.json",
+        "deploy/base/ingestion-quality-runtime-6.0.0.json",
+        "deploy/base/ingestion-quality-roles-6.0.0.json",
+        "scripts/check_ingestion_quality_finalization_contracts.py",
+        "scripts/tests/test_ingestion_quality_finalization_contracts.py",
+        "scripts/tests/test_release_v9.py",
+    }
+    if paths & story25c_successor:
+        required.update(story25c_successor)
     issues = [f"RELEASE_SOURCE_REQUIRED_PATH_MISSING: {path}" for path in sorted(required - paths)]
     if INVENTORY_PATH in paths:
         issues.append("RELEASE_SOURCE_INVENTORY_SELF_REFERENCE")

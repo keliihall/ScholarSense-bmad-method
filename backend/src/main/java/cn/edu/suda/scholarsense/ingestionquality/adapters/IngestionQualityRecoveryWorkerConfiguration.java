@@ -8,10 +8,13 @@ import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.FrozenQuality
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.FrozenRecoverySourceClassRegistryLoader;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.SignalEvaluationRecoverySampleRecomputeAdapter;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.TrustedTimeRecomputeIds;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcRecoveryObservationWork;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.inbound.RecoveryObservationScheduler;
 import cn.edu.suda.scholarsense.ingestionquality.application.MappingRecomputeIdPort;
 import cn.edu.suda.scholarsense.ingestionquality.application.RecoverySampleRecomputePort;
 import cn.edu.suda.scholarsense.ingestionquality.application.RecoveryValidationJobProcessor;
 import cn.edu.suda.scholarsense.ingestionquality.application.RecoveryValidationTrustedTimePort;
+import cn.edu.suda.scholarsense.ingestionquality.application.RecoveryObservationJobProcessor;
 import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
 import cn.edu.suda.scholarsense.signalevaluation.api.RecoverySampleNormalizedInputPort;
@@ -98,5 +101,23 @@ public class IngestionQualityRecoveryWorkerConfiguration {
     RecoveryValidationScheduler recoveryValidationScheduler(
             RecoveryValidationJobProcessor processor) {
         return new RecoveryValidationScheduler(processor);
+    }
+
+    @Bean
+    RecoveryObservationJobProcessor recoveryObservationJobProcessor(
+            @Qualifier("ingestionQualityRecoveryWorkerJdbc") JdbcTemplate jdbc,
+            ObjectMapper json,
+            TrustedTimeSource trustedTime,
+            @Value("${scholarsense.ingestion-quality.recovery-worker-digest}")
+                    String workerDigest) {
+        return new RecoveryObservationJobProcessor(
+                new JdbcRecoveryObservationWork(jdbc, json),
+                () -> trustedTime.now().instant(), workerDigest);
+    }
+
+    @Bean
+    RecoveryObservationScheduler recoveryObservationScheduler(
+            RecoveryObservationJobProcessor processor) {
+        return new RecoveryObservationScheduler(processor);
     }
 }

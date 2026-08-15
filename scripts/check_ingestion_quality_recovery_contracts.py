@@ -646,33 +646,45 @@ def check(root: Path) -> list[str]:
     git_directory = root / ".git"
     if git_directory.exists():
         import subprocess
+        candidate = overlay.get("candidateCommit")
         try:
-            candidate = overlay["candidateCommit"]
-            actual_tree = subprocess.check_output(
-                ["git", "rev-parse", f"{candidate}^{{tree}}"], cwd=root,
-                text=True, stderr=subprocess.DEVNULL).strip()
-            actual_paths_raw = subprocess.check_output(
-                ["git", "diff-tree", "--no-commit-id", "--name-only", "-r", "-z",
-                 candidate], cwd=root, stderr=subprocess.DEVNULL)
-            actual_paths = [value.decode("utf-8")
-                            for value in actual_paths_raw.split(b"\0") if value]
-            if actual_tree != overlay.get("candidateTree") \
-                    or actual_paths != overlay_paths:
+            candidate_is_materialized = isinstance(candidate, str) and (
+                subprocess.run(
+                    ["git", "cat-file", "-e", f"{candidate}^{{commit}}"],
+                    cwd=root, stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL, check=False,
+                ).returncode == 0
+            )
+        except OSError:
+            candidate_is_materialized = False
+        if candidate_is_materialized:
+            try:
+                actual_tree = subprocess.check_output(
+                    ["git", "rev-parse", f"{candidate}^{{tree}}"], cwd=root,
+                    text=True, stderr=subprocess.DEVNULL).strip()
+                actual_paths_raw = subprocess.check_output(
+                    ["git", "diff-tree", "--no-commit-id", "--name-only", "-r",
+                     "-z", candidate], cwd=root, stderr=subprocess.DEVNULL)
+                actual_paths = [value.decode("utf-8")
+                                for value in actual_paths_raw.split(b"\0") if value]
+                if actual_tree != overlay.get("candidateTree") \
+                        or actual_paths != overlay_paths:
+                    issues.append("complete Story 2.4/2.5a overlay manifest")
+                else:
+                    for item in overlay_files:
+                        raw = subprocess.check_output(
+                            ["git", "show", f"{candidate}:{item['path']}"], cwd=root,
+                            stderr=subprocess.DEVNULL)
+                        actual_blob = subprocess.check_output(
+                            ["git", "rev-parse", f"{candidate}:{item['path']}"],
+                            cwd=root, text=True,
+                            stderr=subprocess.DEVNULL).strip()
+                        if (hashlib.sha256(raw).hexdigest() != item["rawSha256"]
+                                or actual_blob != item["blobSha1"]):
+                            issues.append("complete Story 2.4/2.5a overlay manifest")
+                            break
+            except (KeyError, OSError, subprocess.CalledProcessError):
                 issues.append("complete Story 2.4/2.5a overlay manifest")
-            else:
-                for item in overlay_files:
-                    raw = subprocess.check_output(
-                        ["git", "show", f"{candidate}:{item['path']}"], cwd=root,
-                        stderr=subprocess.DEVNULL)
-                    actual_blob = subprocess.check_output(
-                        ["git", "rev-parse", f"{candidate}:{item['path']}"], cwd=root,
-                        text=True, stderr=subprocess.DEVNULL).strip()
-                    if (hashlib.sha256(raw).hexdigest() != item["rawSha256"]
-                            or actual_blob != item["blobSha1"]):
-                        issues.append("complete Story 2.4/2.5a overlay manifest")
-                        break
-        except (KeyError, OSError, subprocess.CalledProcessError):
-            issues.append("materialized Story 2.4/2.5a overlay candidate available")
 
     successor = load(root, COMMAND_SUCCESSOR)
     predecessor_digest = raw_digest(root / COMMAND_PREDECESSOR)

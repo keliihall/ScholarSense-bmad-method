@@ -45,6 +45,39 @@ class HighRiskApprovalLifecycleTest {
         assertEquals(HighRiskApprovalStatus.CANCELLED, cancelled.status());
     }
 
+    @Test
+    void additiveFinalizationBindingAcceptsOnlyRecoveringToEligibleWithFreshDigests() {
+        HighRiskApprovalBinding finalization = new HighRiskApprovalBinding(
+                uuid("019ff5a0-3000-7000-8000-000000000202"), digest('1'),
+                "quality-fuse.recover", digest('a'), digest('2'), digest('3'),
+                "RECOVERY_TASK", digest('4'), 9, digest('5'), digest('6'),
+                HighRiskApprovalBinding.DataSensitivity.HIGHLY_SENSITIVE_DEIDENTIFIED,
+                "recovering", "eligible", "RECOVERY_FINALIZATION", "HRAM-1.0.0",
+                digest('7'), "HRAP-1.0.0", digest('8'), "RFP-1.0.0", digest('9'),
+                digest('d'), digest('e'), List.of(digest('b'), digest('c')), 12,
+                "00112233445566778899aabbccddeeff",
+                digest('f'), digest('0'), digest('a'), "QRP-1.0.0", digest('8'));
+        assertEquals("eligible", finalization.targetState());
+        assertEquals(digest('f'), finalization.observationDecisionDigest());
+
+        assertThrows(IllegalArgumentException.class, () -> new HighRiskApprovalBinding(
+                finalization.requestId(), finalization.requestDigest(), finalization.actionType(),
+                finalization.makerPrincipalDigest(), finalization.authorizationContextDigest(),
+                finalization.authenticationStateDigest(), finalization.objectType(),
+                finalization.objectRefDigest(), finalization.objectVersion(),
+                finalization.scopeDigest(), finalization.impactScopeDigest(),
+                finalization.dataSensitivity(), "recovering", "fused",
+                finalization.reasonCode(), finalization.matrixVersion(),
+                finalization.matrixDigest(), finalization.policyVersion(),
+                finalization.policyDigest(), finalization.roleFieldPolicyVersion(),
+                finalization.roleFieldPolicyDigest(), finalization.previewDigest(),
+                finalization.checkerSetDigest(), finalization.requiredCheckerPrincipalDigests(),
+                finalization.authorizationGeneration(), finalization.traceId(),
+                finalization.observationDecisionDigest(), finalization.memberSetDigest(),
+                finalization.watermarksDigest(), finalization.qualityRecoveryPolicyVersion(),
+                finalization.qualityRecoveryPolicyDigest()));
+    }
+
     private static HighRiskApproval pending() {
         return HighRiskApproval.pending(
                 uuid("019ff5a0-3000-7000-8000-000000000101"), binding(), NOW);

@@ -8,6 +8,8 @@ import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryTask
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryTaskQueryService;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryTaskView;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualitySnapshotActorContext;
+import cn.edu.suda.scholarsense.ingestionquality.application.RecoveryObservationQueryService;
+import cn.edu.suda.scholarsense.ingestionquality.application.RecoveryObservationView;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.constraints.Max;
@@ -18,6 +20,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -37,12 +40,22 @@ import org.springframework.web.bind.annotation.RestController;
 public final class QualityRecoveryTaskController {
     private final QualityRecoveryTaskQueryService tasks;
     private final InternalSessionIdentityPort identities;
+    private final RecoveryObservationQueryService observations;
 
     public QualityRecoveryTaskController(
             QualityRecoveryTaskQueryService tasks,
             InternalSessionIdentityPort identities) {
+        this(tasks, identities, null);
+    }
+
+    @Autowired
+    public QualityRecoveryTaskController(
+            QualityRecoveryTaskQueryService tasks,
+            InternalSessionIdentityPort identities,
+            RecoveryObservationQueryService observations) {
         this.tasks = java.util.Objects.requireNonNull(tasks);
         this.identities = java.util.Objects.requireNonNull(identities);
+        this.observations = observations;
     }
 
     @GetMapping
@@ -79,6 +92,15 @@ public final class QualityRecoveryTaskController {
         requireUuidV7(taskId);
         String traceId = DataSourceCatalogController.trace(request);
         return ok(tasks.get(taskId, actorContext(request, traceId), traceId));
+    }
+
+    @GetMapping("/{taskId}/observation")
+    public ResponseEntity<RecoveryObservationView> observation(
+            @PathVariable UUID taskId, HttpServletRequest request) {
+        requireUuidV7(taskId);
+        if (observations == null) throw unavailable();
+        String traceId = DataSourceCatalogController.trace(request);
+        return ok(observations.get(taskId, actorContext(request, traceId), traceId));
     }
 
     private QualitySnapshotActorContext actorContext(

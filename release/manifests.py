@@ -90,6 +90,16 @@ REQUIRED_CONTROLLED_INPUT_IDS_V8 = frozenset(
         "IngestionQualityRecoveryRoles",
     }
 )
+REQUIRED_CONTROLLED_INPUT_IDS_V9 = frozenset(
+    {
+        *REQUIRED_CONTROLLED_INPUT_IDS_V8,
+        "QualityFinalizationWorkflow",
+        "PublicIntegrationQualityTaskClose",
+        "QualityFinalizationApi",
+        "IngestionQualityFinalizationRuntime",
+        "IngestionQualityFinalizationRoles",
+    }
+)
 # Backward-compatible public name: it remains the immutable V1 set.
 REQUIRED_CONTROLLED_INPUT_IDS = REQUIRED_CONTROLLED_INPUT_IDS_V1
 REQUIRED_LOCK_IDS = frozenset({"backend-lock", "frontend-lock", "toolchain-lock"})
@@ -138,6 +148,7 @@ INGESTION_QUALITY_RUNTIME_ID = "ingestion-quality-quality-worker-deployment"
 QUALITY_ELIGIBILITY_RUNTIME_ID = "ingestion-quality-eligibility-deployment"
 QUALITY_FUSE_RUNTIME_ID = "ingestion-quality-fuse-task-deployment"
 QUALITY_RECOVERY_RUNTIME_ID = "ingestion-quality-recovery-executable-closure"
+QUALITY_FINALIZATION_RUNTIME_ID = "ingestion-quality-finalization-executable-closure"
 MAX_HANDOFF_REVISION = (1 << 53) - 1
 PIC_SCENARIO_PATH = (
     PROJECT_ROOT
@@ -234,6 +245,29 @@ QUALITY_RECOVERY_INPUTS = {
         PROJECT_ROOT / "deploy/base/ingestion-quality-roles-5.0.0.json",
     ),
 }
+QUALITY_FINALIZATION_INPUTS = {
+    "QualityFinalizationWorkflow": (
+        "QUALITY-FINALIZATION-CONTRACT-LOCK-1.0.0",
+        PROJECT_ROOT / "contracts/ingestion-quality/quality-finalization/"
+        "quality-finalization-contract-lock-1.0.0.json",
+    ),
+    "PublicIntegrationQualityTaskClose": (
+        "PIC-1.2.0",
+        PROJECT_ROOT / "contracts/public-integration/pic-1.2.0.json",
+    ),
+    "QualityFinalizationApi": (
+        "QUALITY-RECOVERY-TASKS-API-1.2.0",
+        PROJECT_ROOT / "contracts/openapi/quality-recovery-tasks-1.2.openapi.json",
+    ),
+    "IngestionQualityFinalizationRuntime": (
+        "INGESTION-QUALITY-RUNTIME-6.0.0",
+        PROJECT_ROOT / "deploy/base/ingestion-quality-runtime-6.0.0.json",
+    ),
+    "IngestionQualityFinalizationRoles": (
+        "INGESTION-QUALITY-ROLES-6.0.0",
+        PROJECT_ROOT / "deploy/base/ingestion-quality-roles-6.0.0.json",
+    ),
+}
 
 
 def _ids(items: Any, code: str) -> tuple[set[str], list[str]]:
@@ -310,6 +344,7 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         "RELEASE-MANIFEST-3.0.0", "RELEASE-MANIFEST-4.0.0",
         "RELEASE-MANIFEST-5.0.0", "RELEASE-MANIFEST-6.0.0",
         "RELEASE-MANIFEST-7.0.0", "RELEASE-MANIFEST-8.0.0",
+        "RELEASE-MANIFEST-9.0.0",
     }:
         issues.append("RELEASE_MANIFEST_VERSION_INVALID")
     if not SEMVER.fullmatch(str(manifest.get("releaseVersion", ""))):
@@ -352,7 +387,9 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
 
     controlled_inputs = manifest.get("controlledInputs")
     required_controlled = (
-        REQUIRED_CONTROLLED_INPUT_IDS_V8
+        REQUIRED_CONTROLLED_INPUT_IDS_V9
+        if manifest_version == "RELEASE-MANIFEST-9.0.0"
+        else REQUIRED_CONTROLLED_INPUT_IDS_V8
         if manifest_version == "RELEASE-MANIFEST-8.0.0"
         else REQUIRED_CONTROLLED_INPUT_IDS_V7
         if manifest_version == "RELEASE-MANIFEST-7.0.0"
@@ -381,7 +418,7 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         "RELEASE-MANIFEST-2.0.0", "RELEASE-MANIFEST-3.0.0",
         "RELEASE-MANIFEST-4.0.0", "RELEASE-MANIFEST-5.0.0",
         "RELEASE-MANIFEST-6.0.0", "RELEASE-MANIFEST-7.0.0",
-        "RELEASE-MANIFEST-8.0.0",
+        "RELEASE-MANIFEST-8.0.0", "RELEASE-MANIFEST-9.0.0",
     }:
         public_integration = controlled_by_id.get("PublicIntegration", {})
         if (
@@ -393,6 +430,7 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         "RELEASE-MANIFEST-3.0.0", "RELEASE-MANIFEST-4.0.0",
         "RELEASE-MANIFEST-5.0.0", "RELEASE-MANIFEST-6.0.0",
         "RELEASE-MANIFEST-7.0.0", "RELEASE-MANIFEST-8.0.0",
+        "RELEASE-MANIFEST-9.0.0",
     }:
         expected_data_catalog_inputs = {
             "DataContractCatalog": ("DCC-1.0.0", DCC_CATALOG_PATH),
@@ -408,7 +446,7 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
     if manifest_version in {
         "RELEASE-MANIFEST-4.0.0", "RELEASE-MANIFEST-5.0.0",
         "RELEASE-MANIFEST-6.0.0", "RELEASE-MANIFEST-7.0.0",
-        "RELEASE-MANIFEST-8.0.0",
+        "RELEASE-MANIFEST-8.0.0", "RELEASE-MANIFEST-9.0.0",
     }:
         expected_subject_inputs = {
             "SubjectRegistry": (
@@ -427,7 +465,8 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
                 issues.append(f"RELEASE_SUBJECT_REGISTRY_INPUT_INVALID: {identity}")
     if manifest_version in {
         "RELEASE-MANIFEST-5.0.0", "RELEASE-MANIFEST-6.0.0",
-        "RELEASE-MANIFEST-7.0.0", "RELEASE-MANIFEST-8.0.0"
+        "RELEASE-MANIFEST-7.0.0", "RELEASE-MANIFEST-8.0.0",
+        "RELEASE-MANIFEST-9.0.0"
     }:
         for identity, (version, path) in INGESTION_QUALITY_INPUTS.items():
             reference = controlled_by_id.get(identity, {})
@@ -440,7 +479,7 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
                 )
     if manifest_version in {
         "RELEASE-MANIFEST-6.0.0", "RELEASE-MANIFEST-7.0.0",
-        "RELEASE-MANIFEST-8.0.0"
+        "RELEASE-MANIFEST-8.0.0", "RELEASE-MANIFEST-9.0.0"
     }:
         for identity, (version, path) in QUALITY_ELIGIBILITY_INPUTS.items():
             reference = controlled_by_id.get(identity, {})
@@ -451,7 +490,10 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
                 issues.append(
                     f"RELEASE_QUALITY_ELIGIBILITY_INPUT_INVALID: {identity}"
                 )
-    if manifest_version in {"RELEASE-MANIFEST-7.0.0", "RELEASE-MANIFEST-8.0.0"}:
+    if manifest_version in {
+        "RELEASE-MANIFEST-7.0.0", "RELEASE-MANIFEST-8.0.0",
+        "RELEASE-MANIFEST-9.0.0"
+    }:
         for identity, (version, path) in QUALITY_FUSE_INPUTS.items():
             reference = controlled_by_id.get(identity, {})
             if (
@@ -459,7 +501,9 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
                 or reference.get("binarySha256") != _file_sha256(path)
             ):
                 issues.append(f"RELEASE_QUALITY_FUSE_INPUT_INVALID: {identity}")
-    if manifest_version == "RELEASE-MANIFEST-8.0.0":
+    if manifest_version in {
+        "RELEASE-MANIFEST-8.0.0", "RELEASE-MANIFEST-9.0.0"
+    }:
         for identity, (version, path) in QUALITY_RECOVERY_INPUTS.items():
             reference = controlled_by_id.get(identity, {})
             if (
@@ -467,6 +511,16 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
                 or reference.get("binarySha256") != _file_sha256(path)
             ):
                 issues.append(f"RELEASE_QUALITY_RECOVERY_INPUT_INVALID: {identity}")
+    if manifest_version == "RELEASE-MANIFEST-9.0.0":
+        for identity, (version, path) in QUALITY_FINALIZATION_INPUTS.items():
+            reference = controlled_by_id.get(identity, {})
+            if (
+                reference.get("version") != version
+                or reference.get("binarySha256") != _file_sha256(path)
+            ):
+                issues.append(
+                    f"RELEASE_QUALITY_FINALIZATION_INPUT_INVALID: {identity}"
+                )
 
     locks = manifest.get("locks")
     issues.extend(_exact_ids(locks, REQUIRED_LOCK_IDS, "RELEASE_LOCK"))
@@ -548,6 +602,7 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         "RELEASE-MANIFEST-3.0.0", "RELEASE-MANIFEST-4.0.0",
         "RELEASE-MANIFEST-5.0.0", "RELEASE-MANIFEST-6.0.0",
         "RELEASE-MANIFEST-7.0.0", "RELEASE-MANIFEST-8.0.0",
+        "RELEASE-MANIFEST-9.0.0",
     }:
         if len(pic_nodes) != 1:
             issues.append("RELEASE_PUBLIC_INTEGRATION_TARGET_NODE_REQUIRED")
@@ -560,6 +615,18 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
 
     runtime = manifest.get("runtimeEvidence")
     required_runtime = (
+        frozenset({
+            *RUNTIME_IDS,
+            DCC_RUNTIME_ID,
+            SUBJECT_REGISTRY_RUNTIME_ID,
+            INGESTION_QUALITY_RUNTIME_ID,
+            QUALITY_ELIGIBILITY_RUNTIME_ID,
+            QUALITY_FUSE_RUNTIME_ID,
+            QUALITY_RECOVERY_RUNTIME_ID,
+            QUALITY_FINALIZATION_RUNTIME_ID,
+        })
+        if manifest_version == "RELEASE-MANIFEST-9.0.0"
+        else
         frozenset({
             *RUNTIME_IDS,
             DCC_RUNTIME_ID,
@@ -612,6 +679,7 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
         "RELEASE-MANIFEST-3.0.0", "RELEASE-MANIFEST-4.0.0",
         "RELEASE-MANIFEST-5.0.0", "RELEASE-MANIFEST-6.0.0",
         "RELEASE-MANIFEST-7.0.0", "RELEASE-MANIFEST-8.0.0",
+        "RELEASE-MANIFEST-9.0.0",
     }:
         blocking_runtime_ids.add(DCC_RUNTIME_ID)
     for identity in blocking_runtime_ids:
@@ -659,7 +727,7 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
     if manifest_version in {
         "RELEASE-MANIFEST-4.0.0", "RELEASE-MANIFEST-5.0.0",
         "RELEASE-MANIFEST-6.0.0", "RELEASE-MANIFEST-7.0.0",
-        "RELEASE-MANIFEST-8.0.0",
+        "RELEASE-MANIFEST-8.0.0", "RELEASE-MANIFEST-9.0.0",
     }:
         subject_runtime = runtime_by_id.get(SUBJECT_REGISTRY_RUNTIME_ID, {})
         if (
@@ -671,7 +739,8 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
             issues.append("RELEASE_SUBJECT_REGISTRY_RUNTIME_BOUNDARY_INVALID")
     if manifest_version in {
         "RELEASE-MANIFEST-5.0.0", "RELEASE-MANIFEST-6.0.0",
-        "RELEASE-MANIFEST-7.0.0", "RELEASE-MANIFEST-8.0.0"
+        "RELEASE-MANIFEST-7.0.0", "RELEASE-MANIFEST-8.0.0",
+        "RELEASE-MANIFEST-9.0.0"
     }:
         ingestion_runtime = runtime_by_id.get(INGESTION_QUALITY_RUNTIME_ID, {})
         if (
@@ -683,7 +752,7 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
             issues.append("RELEASE_INGESTION_QUALITY_RUNTIME_BOUNDARY_INVALID")
     if manifest_version in {
         "RELEASE-MANIFEST-6.0.0", "RELEASE-MANIFEST-7.0.0",
-        "RELEASE-MANIFEST-8.0.0"
+        "RELEASE-MANIFEST-8.0.0", "RELEASE-MANIFEST-9.0.0"
     }:
         eligibility_runtime = runtime_by_id.get(QUALITY_ELIGIBILITY_RUNTIME_ID, {})
         if (
@@ -693,7 +762,10 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
             or "evidenceIds" in eligibility_runtime
         ):
             issues.append("RELEASE_QUALITY_ELIGIBILITY_RUNTIME_BOUNDARY_INVALID")
-    if manifest_version in {"RELEASE-MANIFEST-7.0.0", "RELEASE-MANIFEST-8.0.0"}:
+    if manifest_version in {
+        "RELEASE-MANIFEST-7.0.0", "RELEASE-MANIFEST-8.0.0",
+        "RELEASE-MANIFEST-9.0.0"
+    }:
         fuse_runtime = runtime_by_id.get(QUALITY_FUSE_RUNTIME_ID, {})
         if (
             fuse_runtime.get("status") != "deployment-input-required"
@@ -702,7 +774,9 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
             or "evidenceIds" in fuse_runtime
         ):
             issues.append("RELEASE_QUALITY_FUSE_RUNTIME_BOUNDARY_INVALID")
-    if manifest_version == "RELEASE-MANIFEST-8.0.0":
+    if manifest_version in {
+        "RELEASE-MANIFEST-8.0.0", "RELEASE-MANIFEST-9.0.0"
+    }:
         recovery_runtime = runtime_by_id.get(QUALITY_RECOVERY_RUNTIME_ID, {})
         linked = recovery_runtime.get("evidenceIds")
         if (
@@ -715,6 +789,21 @@ def release_manifest_issues(manifest: Any, build_manifest: Any) -> list[str]:
             or any(value not in evidence_ids for value in linked)
         ):
             issues.append("RELEASE_QUALITY_RECOVERY_RUNTIME_BOUNDARY_INVALID")
+    if manifest_version == "RELEASE-MANIFEST-9.0.0":
+        finalization_runtime = runtime_by_id.get(
+            QUALITY_FINALIZATION_RUNTIME_ID, {}
+        )
+        linked = finalization_runtime.get("evidenceIds")
+        if (
+            finalization_runtime.get("status") != "passed"
+            or finalization_runtime.get("runtimeEvidenceClaim")
+            != "story-2.5c-observation-finalization-closure"
+            or finalization_runtime.get("ownerStory") != "2.5c"
+            or not isinstance(linked, list)
+            or set(linked) != {"backend-provenance", "frontend-formal-web-report"}
+            or any(value not in evidence_ids for value in linked)
+        ):
+            issues.append("RELEASE_QUALITY_FINALIZATION_RUNTIME_BOUNDARY_INVALID")
     return sorted(set(issues))
 
 
@@ -806,7 +895,9 @@ def create_evidence_index(
     signature_node = _index_node(manifest_signature, "manifest-signature", manifest_signature.get("dependsOn", []))
     index = {
         "version": (
-            "EVIDENCE-INDEX-8.0.0"
+            "EVIDENCE-INDEX-9.0.0"
+            if release_manifest.get("version") == "RELEASE-MANIFEST-9.0.0"
+            else "EVIDENCE-INDEX-8.0.0"
             if release_manifest.get("version") == "RELEASE-MANIFEST-8.0.0"
             else "EVIDENCE-INDEX-7.0.0"
             if release_manifest.get("version") == "RELEASE-MANIFEST-7.0.0"
@@ -844,7 +935,9 @@ def evidence_index_issues(index: Any, release_manifest: Any) -> list[str]:
     issues = release_document_issues(index)
     manifest_digest = canonical_sha256(release_manifest)
     expected_index_version = (
-        "EVIDENCE-INDEX-8.0.0"
+        "EVIDENCE-INDEX-9.0.0"
+        if release_manifest.get("version") == "RELEASE-MANIFEST-9.0.0"
+        else "EVIDENCE-INDEX-8.0.0"
         if release_manifest.get("version") == "RELEASE-MANIFEST-8.0.0"
         else "EVIDENCE-INDEX-7.0.0"
         if release_manifest.get("version") == "RELEASE-MANIFEST-7.0.0"
@@ -1002,6 +1095,9 @@ def _release_manifest_version(value: str) -> str:
         "8": "RELEASE-MANIFEST-8.0.0",
         "8.0.0": "RELEASE-MANIFEST-8.0.0",
         "RELEASE-MANIFEST-8.0.0": "RELEASE-MANIFEST-8.0.0",
+        "9": "RELEASE-MANIFEST-9.0.0",
+        "9.0.0": "RELEASE-MANIFEST-9.0.0",
+        "RELEASE-MANIFEST-9.0.0": "RELEASE-MANIFEST-9.0.0",
     }
     if value not in versions:
         raise ValueError("RELEASE_MANIFEST_VERSION_INVALID")

@@ -11,7 +11,10 @@ export type QualityRecoveryTask = Readonly<{
   ownerRef: string;
   priority: 'P0' | 'P1' | 'P2';
   dueAt: string;
-  status: 'open';
+  status: 'open' | 'closed';
+  closedAt: string | null;
+  closureReason: 'RECOVERY_FINALIZED' | null;
+  ownerResultDigest: string | null;
   watermark: string;
   trigger: Readonly<{ batchId: string; snapshotId: string; reasonCode: string }>;
   currentEvidence: Readonly<{
@@ -34,7 +37,7 @@ export type QualityRecoveryTaskPage = Readonly<{
 }>;
 export type QualityRecoveryTaskFilters = Readonly<{
   sourceId: string;
-  status?: 'open';
+  status?: 'open' | 'closed';
   afterOccurredAt?: string;
   afterTaskId?: string;
   size: number;
@@ -143,14 +146,14 @@ export function qualityRecoveryTaskDeliveryText(value: QualityTaskDeliveryStatus
     pending: '待投递（本地任务已建立）',
     retrying: '重试中（本地质量状态不受影响）',
     confirmed: '外部平台已确认投递',
-    failed: '投递失败（本地任务仍为 Open）',
+    failed: '投递失败（本地任务状态不受影响）',
   })[value];
 }
 
 function requireFilters(filters: QualityRecoveryTaskFilters): void {
   if (!integer(filters.size, 1) || filters.size > 100
       || !sourceId.test(filters.sourceId)
-      || filters.status !== undefined && filters.status !== 'open'
+      || filters.status !== undefined && !['open', 'closed'].includes(filters.status)
       || (filters.afterOccurredAt === undefined) !== (filters.afterTaskId === undefined)
       || filters.afterOccurredAt !== undefined && !validInstant(filters.afterOccurredAt)
       || filters.afterTaskId !== undefined && !uuidV7.test(filters.afterTaskId)) {
@@ -175,9 +178,10 @@ function isCursor(value: unknown): value is QualityRecoveryTaskCursor {
 
 function isTask(value: unknown): value is QualityRecoveryTask {
   return exact(value, [
-    'affectedRules', 'currentEvidence', 'dependencyId', 'dueAt', 'episodeGeneration',
-    'episodeId', 'ownerRef', 'priority', 'sourceId', 'status', 'taskDelivery', 'taskId',
-    'taskVersion', 'trigger', 'watermark',
+    'affectedRules', 'closedAt', 'closureReason', 'currentEvidence', 'dependencyId',
+    'dueAt', 'episodeGeneration', 'episodeId', 'ownerRef', 'ownerResultDigest',
+    'priority', 'sourceId', 'status', 'taskDelivery', 'taskId', 'taskVersion', 'trigger',
+    'watermark',
   ]) && uuidV7.test(value.taskId) && integer(value.taskVersion, 1)
     && uuidV7.test(value.episodeId)
     && integer(value.episodeGeneration, 1) && sourceId.test(value.sourceId)
@@ -187,9 +191,20 @@ function isTask(value: unknown): value is QualityRecoveryTask {
     && new Set(value.affectedRules.map((item) => `${item.ruleId}@${item.ruleVersion}`)).size
       === value.affectedRules.length
     && boundedText(value.ownerRef, 256) && ['P0', 'P1', 'P2'].includes(value.priority)
-    && validInstant(value.dueAt) && value.status === 'open' && boundedText(value.watermark, 512)
+    && validInstant(value.dueAt) && ['open', 'closed'].includes(value.status)
+    && validTerminalFields(value) && boundedText(value.watermark, 512)
     && isTrigger(value.trigger) && isCurrentEvidence(value.currentEvidence)
     && isDelivery(value.taskDelivery);
+}
+
+function validTerminalFields(value: Record<string, any>): boolean {
+  if (value.status === 'open') {
+    return value.closedAt === null && value.closureReason === null
+      && value.ownerResultDigest === null;
+  }
+  return validInstant(value.closedAt) && value.closureReason === 'RECOVERY_FINALIZED'
+    && typeof value.ownerResultDigest === 'string'
+    && /^sha256:[0-9a-f]{64}$/.test(value.ownerResultDigest);
 }
 
 function isRule(value: unknown): value is QualityRecoveryTask['affectedRules'][number] {

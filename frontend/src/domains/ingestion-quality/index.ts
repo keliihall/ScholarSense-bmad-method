@@ -61,6 +61,9 @@ export type {
   QualityFuseRecoveryExecution,
   QualityFuseRecoveryRequest,
   QualityFuseRecoveryStatus,
+  QualityRecoveryObservation,
+  QualityRecoveryFinalization,
+  QualityRecoveryFinalExecution,
 } from './internal/quality-fuse-recovery';
 export type {
   QualityRecoveryTask,

@@ -1,0 +1,17 @@
+{
+  "vectorVersion": "QOFV-1.0.0",
+  "cases": [
+    {"caseId": "streaming-two-batches-not-ready", "expected": "not-ready"},
+    {"caseId": "streaming-three-batches-at-sixty-minutes-ready", "expected": "ready"},
+    {"caseId": "streaming-four-batches-ready", "expected": "ready"},
+    {"caseId": "daily-one-batch-not-ready", "expected": "not-ready"},
+    {"caseId": "daily-two-batches-at-one-day-ready", "expected": "ready"},
+    {"caseId": "daily-three-batches-ready", "expected": "ready"},
+    {"caseId": "duration-minus-one-microsecond-not-ready", "expected": "not-ready"},
+    {"caseId": "duration-plus-one-microsecond-ready", "expected": "ready"},
+    {"caseId": "window-equality-handoff", "expected": "eligible-for-handoff"},
+    {"caseId": "window-plus-one-microsecond-history-only", "expected": "history-only"},
+    {"caseId": "same-key-same-digest-replay", "expected": "original-result"},
+    {"caseId": "closed-task-relapse-creates-next-generation", "expected": "new-generation"}
+  ]
+}

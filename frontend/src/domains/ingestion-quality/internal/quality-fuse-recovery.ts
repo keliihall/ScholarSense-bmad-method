@@ -52,6 +52,46 @@ export type QualityFuseRecoveryExecution = Readonly<{
   traceId: string;
 }>;
 
+export type QualityRecoveryObservation = Readonly<{
+  recoveryId: string; recoveryVersion: number; taskId: string; taskVersion: number;
+  generation: number;
+  sourceClass: 'streaming' | 'daily-batch'; policyVersion: 'QRP-1.0.0';
+  policyDigest: string;
+  status: 'observing' | 'ready' | 'relapsed' | 'policy-drift' | 'finalized';
+  finalizationState: 'not-requested' | 'approval-pending' | 'approval-approved'
+    | 'approval-rejected' | 'cancelled' | 'finalizing' | 'executed';
+  approvalId: string | null; approvalVersion: number | null;
+  consecutivePassedBatches: number; requiredPassedBatches: number;
+  observedDurationMicros: number; requiredDurationMicros: number;
+  observationDuration: 'PT60M' | 'P1D'; watermark: string | null;
+  recoveringStartedAt: string; lastObservedAt: string; latestActionableAt: string | null;
+  failedMembers: readonly string[]; failureReasonCode: string | null;
+  eligibilityStatus: 'fused' | 'recovering' | 'eligible';
+  taskStatus: 'open' | 'closed'; taskClosedAt: string | null;
+  ownerResultDigest: string | null;
+  deliveryStatus: 'pending' | 'retrying' | 'confirmed' | 'failed';
+  deliveryAttempt: number; deliveryNextAttemptAt: string | null;
+  eligibleForHandoffWindowCount: number; historyOnlyWindowCount: number;
+  traceId: string;
+}>;
+
+export type QualityRecoveryFinalization = Readonly<{
+  recoveryId: string; recoveryVersion: number; taskId: string; taskVersion: number;
+  observationStatus: 'ready' | 'finalized';
+  finalizationState: 'approval-pending' | 'approval-approved' | 'approval-rejected'
+    | 'cancelled' | 'executed';
+  approvalId: string; approvalVersion: number; policyVersion: 'QRP-1.0.0';
+  finalPreviewDigest: string; observationDecisionDigest: string;
+  finalObservationWatermark: string; traceId: string;
+}>;
+
+export type QualityRecoveryFinalExecution = Readonly<{
+  recoveryId: string; taskId: string; generation: number; eligibilityStatus: 'eligible';
+  episodeStatus: 'closed'; taskStatus: 'closed'; taskVersion: number;
+  recoveryCompletedAt: string; windowOutcomesDigest: string; ownerResultDigest: string;
+  deliveryStatus: 'pending' | 'retrying' | 'confirmed' | 'failed'; traceId: string;
+}>;
+
 export class QualityFuseRecoveryFailure extends Error {
   public constructor(
     public readonly code: string,
@@ -105,6 +145,46 @@ export class QualityFuseRecoveryClient {
     requireUuid(requestId);
     return this.command(`/api/v1/quality-recovery-requests/${requestId}/execute`, key,
       { expectedVersion }, isExecution, signal);
+  }
+
+  public async observation(
+    taskId: string, signal?: AbortSignal,
+  ): Promise<QualityRecoveryObservation> {
+    requireUuid(taskId);
+    return this.response(`/api/v1/quality-recovery-tasks/${taskId}/observation`, {
+      method: 'GET', signal,
+    }, isObservation);
+  }
+
+  public async requestFinalApproval(
+    requestId: string, expectedRecoveryVersion: number, expectedTaskVersion: number,
+    finalObservationWatermark: string, key: string, signal?: AbortSignal,
+  ): Promise<QualityRecoveryFinalization> {
+    requireUuid(requestId);
+    return this.command(
+      `/api/v1/quality-recovery-requests/${requestId}/final-approval-requests`, key,
+      { expectedRecoveryVersion, expectedTaskVersion, finalObservationWatermark },
+      isFinalization, signal);
+  }
+
+  public async decideFinalApproval(
+    requestId: string, expectedApprovalVersion: number,
+    decision: 'approve' | 'reject' | 'cancel', key: string, signal?: AbortSignal,
+  ): Promise<QualityRecoveryFinalization> {
+    requireUuid(requestId);
+    return this.command(
+      `/api/v1/quality-recovery-requests/${requestId}/final-approval-decisions`, key,
+      { expectedApprovalVersion, decision }, isFinalization, signal);
+  }
+
+  public async finalize(
+    requestId: string, expectedRecoveryVersion: number, expectedTaskVersion: number,
+    finalObservationWatermark: string, key: string, signal?: AbortSignal,
+  ): Promise<QualityRecoveryFinalExecution> {
+    requireUuid(requestId);
+    return this.command(`/api/v1/quality-recovery-requests/${requestId}/finalize`, key,
+      { expectedRecoveryVersion, expectedTaskVersion, finalObservationWatermark },
+      isFinalExecution, signal);
   }
 
   private async command<T>(
@@ -211,6 +291,81 @@ function isExecution(value: unknown): value is QualityFuseRecoveryExecution {
   ]) && uuid.test(value.recoveryRequestId) && uuid.test(value.taskId)
     && uuid.test(value.episodeId) && value.state === 'recovering'
     && value.transitionApplied === true && validInstant(value.ownerCommittedAt)
+    && trace.test(value.traceId);
+}
+
+function isObservation(value: unknown): value is QualityRecoveryObservation {
+  return exact(value, [
+    'consecutivePassedBatches', 'deliveryAttempt', 'deliveryNextAttemptAt',
+    'deliveryStatus', 'eligibilityStatus', 'eligibleForHandoffWindowCount',
+    'approvalId', 'approvalVersion',
+    'failureReasonCode', 'finalizationState', 'generation', 'historyOnlyWindowCount',
+    'failedMembers',
+    'lastObservedAt', 'latestActionableAt', 'observationDuration',
+    'observedDurationMicros', 'ownerResultDigest', 'policyDigest', 'policyVersion',
+    'recoveringStartedAt', 'recoveryId', 'recoveryVersion', 'requiredDurationMicros',
+    'requiredPassedBatches', 'sourceClass', 'status', 'taskClosedAt', 'taskId',
+    'taskStatus', 'taskVersion', 'traceId', 'watermark',
+  ]) && uuid.test(value.recoveryId) && integer(value.recoveryVersion, 1)
+    && uuid.test(value.taskId) && integer(value.taskVersion, 1) && integer(value.generation, 1)
+    && ['streaming', 'daily-batch'].includes(value.sourceClass)
+    && value.policyVersion === 'QRP-1.0.0' && digest.test(value.policyDigest)
+    && ['observing', 'ready', 'relapsed', 'policy-drift', 'finalized'].includes(value.status)
+    && ['not-requested', 'approval-pending', 'approval-approved', 'approval-rejected',
+      'cancelled', 'finalizing', 'executed']
+      .includes(value.finalizationState)
+    && nullableUuid(value.approvalId) && nullableInteger(value.approvalVersion)
+    && ((value.approvalId === null) === (value.approvalVersion === null))
+    && ((value.finalizationState === 'not-requested')
+      === (value.approvalId === null && value.approvalVersion === null))
+    && integer(value.consecutivePassedBatches, 0) && integer(value.requiredPassedBatches, 1)
+    && integer(value.observedDurationMicros, 0) && integer(value.requiredDurationMicros, 1)
+    && ['PT60M', 'P1D'].includes(value.observationDuration)
+    && nullableText(value.watermark) && validInstant(value.recoveringStartedAt)
+    && validInstant(value.lastObservedAt) && nullableInstant(value.latestActionableAt)
+    && Array.isArray(value.failedMembers) && value.failedMembers.length <= 128
+    && value.failedMembers.every((member) => typeof member === 'string'
+      && /^DEP-P[01]-[A-Z0-9-]+-[0-9]{3}$/.test(member))
+    && new Set(value.failedMembers).size === value.failedMembers.length
+    && nullableText(value.failureReasonCode)
+    && ['fused', 'recovering', 'eligible'].includes(value.eligibilityStatus)
+    && ['open', 'closed'].includes(value.taskStatus) && nullableInstant(value.taskClosedAt)
+    && nullableDigest(value.ownerResultDigest)
+    && ['pending', 'retrying', 'confirmed', 'failed'].includes(value.deliveryStatus)
+    && integer(value.deliveryAttempt, 0) && nullableInstant(value.deliveryNextAttemptAt)
+    && integer(value.eligibleForHandoffWindowCount, 0)
+    && integer(value.historyOnlyWindowCount, 0) && trace.test(value.traceId);
+}
+
+function isFinalization(value: unknown): value is QualityRecoveryFinalization {
+  return exact(value, [
+    'approvalId', 'approvalVersion', 'finalObservationWatermark', 'finalPreviewDigest',
+    'finalizationState', 'observationDecisionDigest', 'observationStatus',
+    'policyVersion', 'recoveryId', 'recoveryVersion', 'taskId', 'taskVersion', 'traceId',
+  ]) && uuid.test(value.recoveryId) && uuid.test(value.taskId)
+    && integer(value.recoveryVersion, 1) && integer(value.taskVersion, 1)
+    && ['ready', 'finalized'].includes(value.observationStatus)
+    && ['approval-pending', 'approval-approved', 'approval-rejected', 'cancelled',
+      'executed'].includes(value.finalizationState)
+    && uuid.test(value.approvalId) && integer(value.approvalVersion, 1)
+    && value.policyVersion === 'QRP-1.0.0' && digest.test(value.finalPreviewDigest)
+    && digest.test(value.observationDecisionDigest)
+    && typeof value.finalObservationWatermark === 'string'
+    && value.finalObservationWatermark.length > 0 && value.finalObservationWatermark.length <= 256
+    && trace.test(value.traceId);
+}
+
+function isFinalExecution(value: unknown): value is QualityRecoveryFinalExecution {
+  return exact(value, [
+    'deliveryStatus', 'eligibilityStatus', 'episodeStatus', 'generation',
+    'ownerResultDigest', 'recoveryCompletedAt', 'recoveryId', 'taskId', 'taskStatus',
+    'taskVersion', 'traceId', 'windowOutcomesDigest',
+  ]) && uuid.test(value.recoveryId) && uuid.test(value.taskId)
+    && integer(value.generation, 1) && value.eligibilityStatus === 'eligible'
+    && value.episodeStatus === 'closed' && value.taskStatus === 'closed'
+    && integer(value.taskVersion, 1) && validInstant(value.recoveryCompletedAt)
+    && digest.test(value.windowOutcomesDigest) && digest.test(value.ownerResultDigest)
+    && ['pending', 'retrying', 'confirmed', 'failed'].includes(value.deliveryStatus)
     && trace.test(value.traceId);
 }
 

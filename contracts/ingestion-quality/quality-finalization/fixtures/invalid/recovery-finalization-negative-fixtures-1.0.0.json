@@ -1,0 +1,20 @@
+{
+  "vectorVersion": "QOFN-1.0.0",
+  "cases": [
+    {"caseId": "no-data-is-not-pass", "expected": "not-ready"},
+    {"caseId": "business-sequence-gap", "expected": "deny"},
+    {"caseId": "poisoned-pair", "expected": "deny"},
+    {"caseId": "stale-slo", "expected": "deny"},
+    {"caseId": "unknown-provider", "expected": "deny"},
+    {"caseId": "provider-outage-is-not-business-relapse", "expected": "retry"},
+    {"caseId": "predecessor-token-reuse", "expected": "deny"},
+    {"caseId": "maker-equals-final-confirmer", "expected": "deny"},
+    {"caseId": "object-version-drift", "expected": "conflict"},
+    {"caseId": "member-set-drift", "expected": "conflict"},
+    {"caseId": "watermark-drift", "expected": "conflict"},
+    {"caseId": "policy-drift", "expected": "conflict"},
+    {"caseId": "same-key-different-digest", "expected": "conflict"},
+    {"caseId": "task-reopen", "expected": "deny"},
+    {"caseId": "partial-terminal-write", "expected": "rollback"}
+  ]
+}

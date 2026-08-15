@@ -4,6 +4,7 @@ import tempfile
 import unittest
 import re
 from pathlib import Path
+from unittest import mock
 
 from scripts import check_ingestion_quality_recovery_contracts as checker
 
@@ -259,6 +260,25 @@ class IngestionQualityRecoveryContractTest(unittest.TestCase):
             manifest["files"] = manifest["files"][:2]
             path.write_text(json.dumps(manifest), encoding="utf-8")
             self.assertIssue(checker.check(root), "complete Story 2.4/2.5a overlay manifest")
+
+    def test_overlay_candidate_materialization_is_optional_in_clean_clone(self) -> None:
+        with self.copy() as root:
+            (root / ".git").mkdir()
+            with mock.patch("subprocess.run", return_value=mock.Mock(returncode=1)):
+                self.assertEqual([], checker.check(root))
+
+    def test_materialized_overlay_candidate_is_still_verified(self) -> None:
+        with self.copy() as root:
+            (root / ".git").mkdir()
+            with mock.patch("subprocess.run", return_value=mock.Mock(returncode=0)), \
+                    mock.patch(
+                        "subprocess.check_output",
+                        side_effect=["incorrect-tree\n", b""],
+                    ):
+                self.assertIssue(
+                    checker.check(root),
+                    "complete Story 2.4/2.5a overlay manifest",
+                )
 
     def test_sample_provider_is_real_pii_free_and_fail_closed(self) -> None:
         with self.copy() as root:

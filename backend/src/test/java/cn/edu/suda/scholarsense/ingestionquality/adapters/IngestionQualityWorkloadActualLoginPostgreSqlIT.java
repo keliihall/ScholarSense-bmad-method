@@ -57,6 +57,8 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
                             "iq_append_quality_eligibility_read_audit",
                             "iq_find_quality_recovery_task_ids",
                             "iq_find_quality_recovery_task_page",
+                            "iq_find_quality_recovery_task_ids_v2",
+                            "iq_find_quality_recovery_task_page_v2",
                             "iq_find_quality_recovery_task_page_rules",
                             "iq_append_quality_recovery_task_read_audit",
                             "iq_submit_quality_recovery_request",
@@ -72,7 +74,13 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
                             "iq_execute_quality_recovery",
                             "iq_claim_quality_recovery_confirmations",
                             "iq_mark_quality_recovery_confirmation_delivered",
-                            "iq_release_quality_recovery_confirmation")),
+                            "iq_release_quality_recovery_confirmation",
+                            "iq_start_recovery_observation",
+                            "iq_load_recovery_observation_view",
+                            "iq_load_quality_finalization_context",
+                            "iq_bind_quality_finalization_approval",
+                            "iq_find_quality_finalization_replay",
+                            "iq_execute_quality_finalization")),
             new Workload(
                     Kind.QUALITY_WORKER,
                     "scholarsense_ingestion_quality_quality_worker",
@@ -109,7 +117,8 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
                             "iq_execute_quality_snapshot_retention",
                             "iq_cleanup_quality_eligibility_expired",
                             "iq_cleanup_quality_fuse_expired",
-                            "iq_cleanup_quality_recovery_expired")),
+                            "iq_cleanup_quality_recovery_expired",
+                            "iq_cleanup_quality_finalization_expired")),
             new Workload(
                     Kind.CONSUMER_REGISTRY_AUTHORITY,
                     "scholarsense_ingestion_quality_consumer_registry_authority",
@@ -151,7 +160,12 @@ class IngestionQualityWorkloadActualLoginPostgreSqlIT {
                             "iq_load_recovery_validation_execution_context",
                             "iq_execute_recovery_backfill",
                             "iq_execute_recovery_full_reconciliation",
-                            "iq_release_recovery_validation_job")));
+                            "iq_release_recovery_validation_job",
+                            "iq_find_claimable_recovery_observation_jobs",
+                            "iq_claim_recovery_observation_job",
+                            "iq_is_recovery_observation_lease_current",
+                            "iq_finalize_recovery_observation_job",
+                            "iq_release_recovery_observation_job")));
 
     @Test
     void cleanAndUpgradeExerciseEightExclusiveActualLoginsAndSecurityDefinerBoundaries() {

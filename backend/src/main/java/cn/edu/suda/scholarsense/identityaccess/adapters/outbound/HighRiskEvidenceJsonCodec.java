@@ -169,6 +169,13 @@ final class HighRiskEvidenceJsonCodec {
         out.put("requiredCheckerPrincipalDigests", value.requiredCheckerPrincipalDigests());
         out.put("authorizationGeneration", value.authorizationGeneration());
         out.put("traceId", value.traceId());
+        if (value.observationDecisionDigest() != null) {
+            out.put("observationDecisionDigest", value.observationDecisionDigest());
+            out.put("memberSetDigest", value.memberSetDigest());
+            out.put("watermarksDigest", value.watermarksDigest());
+            out.put("qualityRecoveryPolicyVersion", value.qualityRecoveryPolicyVersion());
+            out.put("qualityRecoveryPolicyDigest", value.qualityRecoveryPolicyDigest());
+        }
         return out;
     }
 
@@ -187,7 +194,11 @@ final class HighRiskEvidenceJsonCodec {
                 text(root, "policyDigest"), text(root, "roleFieldPolicyVersion"),
                 text(root, "roleFieldPolicyDigest"), text(root, "previewDigest"),
                 text(root, "checkerSetDigest"), strings(root, "requiredCheckerPrincipalDigests"),
-                number(root, "authorizationGeneration"), text(root, "traceId"));
+                number(root, "authorizationGeneration"), text(root, "traceId"),
+                optionalText(root, "observationDecisionDigest"),
+                optionalText(root, "memberSetDigest"), optionalText(root, "watermarksDigest"),
+                optionalText(root, "qualityRecoveryPolicyVersion"),
+                optionalText(root, "qualityRecoveryPolicyDigest"));
     }
 
     private String write(Object value) {
@@ -207,6 +218,11 @@ final class HighRiskEvidenceJsonCodec {
     private static String nullableText(JsonNode root, String name) {
         JsonNode node = root.required(name);
         return node.isNull() ? null : text(root, name);
+    }
+
+    private static String optionalText(JsonNode root, String name) {
+        JsonNode node = root.get(name);
+        return node == null || node.isNull() ? null : text(root, name);
     }
 
     private static long number(JsonNode root, String name) {

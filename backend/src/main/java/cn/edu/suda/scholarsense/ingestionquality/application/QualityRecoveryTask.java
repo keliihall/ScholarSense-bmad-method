@@ -25,6 +25,9 @@ public record QualityRecoveryTask(
         Map<String, String> currentEvidence,
         long aggregateVersion,
         Instant occurredAt,
+        Instant closedAt,
+        String closureReason,
+        String ownerResultDigest,
         QualityTaskDeliveryProjection taskDelivery,
         String traceId) {
     public QualityRecoveryTask {
@@ -39,7 +42,8 @@ public record QualityRecoveryTask(
                         .thenComparing(RuleVersionIdentity::ruleVersion)).toList();
         if (affectedRules.isEmpty()) throw invalid();
         ownerRef = text(ownerRef);
-        if (!List.of("P0", "P1", "P2").contains(priority) || !"open".equals(status)) {
+        if (!List.of("P0", "P1", "P2").contains(priority)
+                || !List.of("open", "closed").contains(status)) {
             throw invalid();
         }
         Objects.requireNonNull(dueAt);
@@ -47,8 +51,29 @@ public record QualityRecoveryTask(
         trigger = Map.copyOf(Objects.requireNonNull(trigger));
         currentEvidence = Map.copyOf(Objects.requireNonNull(currentEvidence));
         Objects.requireNonNull(occurredAt);
+        if (("open".equals(status)
+                    && (closedAt != null || closureReason != null || ownerResultDigest != null))
+                || ("closed".equals(status)
+                    && (closedAt == null || !"RECOVERY_FINALIZED".equals(closureReason)
+                        || ownerResultDigest == null
+                        || !ownerResultDigest.matches("^sha256:[0-9a-f]{64}$")))) {
+            throw invalid();
+        }
         Objects.requireNonNull(taskDelivery);
         if (traceId == null || !traceId.matches("^(?!0{32}$)[0-9a-f]{32}$")) throw invalid();
+    }
+
+    /** Predecessor open-task constructor retained for source compatibility. */
+    public QualityRecoveryTask(
+            UUID taskId, UUID episodeId, long episodeGeneration, String sourceId,
+            String dependencyId, List<RuleVersionIdentity> affectedRules, String ownerRef,
+            String priority, Instant dueAt, String status, String watermark,
+            Map<String, String> trigger, Map<String, String> currentEvidence,
+            long aggregateVersion, Instant occurredAt,
+            QualityTaskDeliveryProjection taskDelivery, String traceId) {
+        this(taskId, episodeId, episodeGeneration, sourceId, dependencyId, affectedRules,
+                ownerRef, priority, dueAt, status, watermark, trigger, currentEvidence,
+                aggregateVersion, occurredAt, null, null, null, taskDelivery, traceId);
     }
 
     private static UUID uuidV7(UUID value) {

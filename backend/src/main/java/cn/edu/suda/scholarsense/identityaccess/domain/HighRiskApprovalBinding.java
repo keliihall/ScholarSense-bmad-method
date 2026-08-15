@@ -31,7 +31,34 @@ public record HighRiskApprovalBinding(
         String checkerSetDigest,
         List<String> requiredCheckerPrincipalDigests,
         long authorizationGeneration,
-        String traceId) {
+        String traceId,
+        String observationDecisionDigest,
+        String memberSetDigest,
+        String watermarksDigest,
+        String qualityRecoveryPolicyVersion,
+        String qualityRecoveryPolicyDigest) {
+
+    /** Preserves the byte-compatible predecessor fused -> recovering binding shape. */
+    public HighRiskApprovalBinding(
+            UUID requestId, String requestDigest, String actionType,
+            String makerPrincipalDigest, String authorizationContextDigest,
+            String authenticationStateDigest, String objectType, String objectRefDigest,
+            long objectVersion, String scopeDigest, String impactScopeDigest,
+            DataSensitivity dataSensitivity, String currentState, String targetState,
+            String reasonCode, String matrixVersion, String matrixDigest,
+            String policyVersion, String policyDigest, String roleFieldPolicyVersion,
+            String roleFieldPolicyDigest, String previewDigest, String checkerSetDigest,
+            List<String> requiredCheckerPrincipalDigests, long authorizationGeneration,
+            String traceId) {
+        this(requestId, requestDigest, actionType, makerPrincipalDigest,
+                authorizationContextDigest, authenticationStateDigest, objectType,
+                objectRefDigest, objectVersion, scopeDigest, impactScopeDigest,
+                dataSensitivity, currentState, targetState, reasonCode, matrixVersion,
+                matrixDigest, policyVersion, policyDigest, roleFieldPolicyVersion,
+                roleFieldPolicyDigest, previewDigest, checkerSetDigest,
+                requiredCheckerPrincipalDigests, authorizationGeneration, traceId,
+                null, null, null, null, null);
+    }
 
     public HighRiskApprovalBinding {
         requireUuidV7(requestId);
@@ -40,11 +67,15 @@ public record HighRiskApprovalBinding(
                 authenticationStateDigest, objectRefDigest, scopeDigest, impactScopeDigest,
                 matrixDigest, policyDigest, roleFieldPolicyDigest, previewDigest,
                 checkerSetDigest)) requireDigest(digest);
+        boolean predecessorPair = "fused".equals(currentState)
+                && "recovering".equals(targetState);
+        boolean finalizationPair = "recovering".equals(currentState)
+                && "eligible".equals(targetState);
         if (!"quality-fuse.recover".equals(actionType)
                 || !"RECOVERY_TASK".equals(objectType)
                 || objectVersion < 1 || objectVersion > 9_007_199_254_740_991L
                 || dataSensitivity != DataSensitivity.HIGHLY_SENSITIVE_DEIDENTIFIED
-                || !"fused".equals(currentState) || !"recovering".equals(targetState)
+                || (!predecessorPair && !finalizationPair)
                 || reasonCode == null || !reasonCode.matches("[A-Z][A-Z0-9_]{2,63}")
                 || !"HRAM-1.0.0".equals(matrixVersion)
                 || !"HRAP-1.0.0".equals(policyVersion)
@@ -52,6 +83,17 @@ public record HighRiskApprovalBinding(
                 || authorizationGeneration < 0
                 || traceId == null || !traceId.matches("(?!0{32})[0-9a-f]{32}")) {
             throw invalid();
+        }
+        if (predecessorPair) {
+            if (observationDecisionDigest != null || memberSetDigest != null
+                    || watermarksDigest != null || qualityRecoveryPolicyVersion != null
+                    || qualityRecoveryPolicyDigest != null) throw invalid();
+        } else {
+            requireDigest(observationDecisionDigest);
+            requireDigest(memberSetDigest);
+            requireDigest(watermarksDigest);
+            if (!"QRP-1.0.0".equals(qualityRecoveryPolicyVersion)) throw invalid();
+            requireDigest(qualityRecoveryPolicyDigest);
         }
         requiredCheckerPrincipalDigests = List.copyOf(requiredCheckerPrincipalDigests).stream()
                 .sorted(Comparator.naturalOrder()).toList();

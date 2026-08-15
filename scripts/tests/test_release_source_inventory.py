@@ -118,6 +118,18 @@ class ReleaseSourceInventoryTest(unittest.TestCase):
         paths = {item["path"] for item in manifest["files"]}
         self.assertNotIn(INVENTORY_RELATIVE_PATH, paths)
         self.assertFalse(any(path.startswith("release/evidence/") for path in paths))
+        self.assertEqual([], source_scope_issues(manifest["files"]))
+        for required in (
+            "contracts/ingestion-quality/quality-finalization/quality-finalization-contract-lock-1.0.0.json",
+            "contracts/openapi/quality-recovery-tasks-1.2.openapi.json",
+            "contracts/public-integration/pic-1.2.0.json",
+            "contracts/release/release-manifest-9.schema.json",
+            "contracts/release/evidence-index-9.schema.json",
+            "deploy/base/ingestion-quality-runtime-6.0.0.json",
+            "deploy/base/ingestion-quality-roles-6.0.0.json",
+            "scripts/tests/test_release_v9.py",
+        ):
+            self.assertIn(required, paths)
 
 
 if __name__ == "__main__":

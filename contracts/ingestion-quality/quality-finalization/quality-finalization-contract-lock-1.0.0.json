@@ -1,0 +1,40 @@
+{
+  "lockVersion": "QUALITY-FINALIZATION-CONTRACT-LOCK-1.0.0",
+  "successorFiles": {
+    "contracts/authorization/high-risk/high-risk-quality-finalization-1.0.0.json": "sha256:ab01e813a47e8981c03d929ce85242372a062f762a952b33904856d2c8a4e79a",
+    "contracts/ingestion-quality/quality-finalization/fixtures/invalid/recovery-finalization-negative-fixtures-1.0.0.json": "sha256:a326efe05b7dae813478c1d3541bfe5aabc7b98a5d3672eee514b3333f0175ae",
+    "contracts/ingestion-quality/quality-finalization/fixtures/valid/recovery-finalization-state-vectors-1.0.0.json": "sha256:066978956a0548e735136616cb25536d377958516cc26d2018cafbffad537877",
+    "contracts/ingestion-quality/quality-finalization/quality-finalization-architecture-1.0.0.json": "sha256:e2f04f5f12550ae6334f93cbbab145a7ffb9c92789b94e71d9093d57d0a18f0d",
+    "contracts/ingestion-quality/quality-finalization/quality-finalization-event.schema.json": "sha256:2cda6a002987b58a9a502888462528e43fbe2fa2c4196126fe8ec1d691eb5d13",
+    "contracts/ingestion-quality/quality-finalization/quality-recovery-task-close-1.0.0.json": "sha256:4aa16501b3610415ceea521b5c681bbced2179504e912e224cbb67c6fcd4b404",
+    "contracts/ingestion-quality/quality-finalization/recovery-finalization-command.schema.json": "sha256:ec0b06133b6d29e408ef9f99ebe6fdb767be95d8f9c9662ce730f55638e0308b",
+    "contracts/ingestion-quality/quality-finalization/recovery-finalization-error-profile-1.0.0.json": "sha256:dc045a2b977ed5d8f9643d34d3560b975d261342f19592704175aa1623ade225",
+    "contracts/ingestion-quality/quality-finalization/recovery-finalization-result.schema.json": "sha256:5c3b00306038b228ad3428527da197fff219b2753596078e1a4be83c7525f29e",
+    "contracts/ingestion-quality/quality-finalization/recovery-finalization-retention-1.0.0.json": "sha256:f5191b44ba68028c8234da1ba464bfae73c550ae775e6368fd35d0593d0a91ae",
+    "contracts/ingestion-quality/quality-finalization/recovery-observation-decision.schema.json": "sha256:23ddefbd36f9d5bd5b8e90b666539ffcb93890e08b6691a283f11e1a57ad6559",
+    "contracts/ingestion-quality/quality-finalization/recovery-observation-fact.schema.json": "sha256:1fa1af014bbe97d1c13bdcb14e297a525bb086fc0bea3f8fcc86f5654cdccca0",
+    "contracts/ingestion-quality/quality-finalization/recovery-observation-policy-1.0.0.json": "sha256:313e5b6c6922a17244bf97600333ee0608f5d606f33e683b9767a8b2e6904478",
+    "contracts/ingestion-quality/quality-finalization/recovery-observation-query.schema.json": "sha256:60b0aacd3dc6ae615a011d2c8a5c01be91a6e81d4c4a06d22954f9ed096eabe3",
+    "contracts/openapi/quality-recovery-tasks-1.2.openapi.json": "sha256:8e5fe6f13ba1b1981aff937255743075521b4def857ffca13b0e2f9696a4f02f",
+    "contracts/public-integration/pic-1.2.0.json": "sha256:6f441ffad4aa895ea1ae50d065957774aebfc832257254eadeef158b1ce1e9c6"
+  },
+  "predecessors": {
+    "backend/src/main/resources/db/migration/ingestion-quality/V000015__ingestion-quality__quality_eligibility_v1.sql": "sha256:21a66478ce29bf71838f4375c7162f5bbd390d5db60661981c5acfa03c419edb",
+    "backend/src/main/resources/db/migration/ingestion-quality/V000016__ingestion-quality__quality_fuse_task_v1.sql": "sha256:a720f004d30962b4b7bff2e8e734e1ee211f06866e8c3e02ec5c5d36b6eb791c",
+    "backend/src/main/resources/db/migration/ingestion-quality/V000020__ingestion-quality__quality_recovery_v1.sql": "sha256:f24b6e516351eecdcdc036dc309afe57edc661b5b869b5186640c6ff29b4615e",
+    "contracts/authorization/high-risk/high-risk-action-policy-1.0.0.json": "sha256:1db5201136807c3bcf8fa62186414b7c79c062f595920012edd0001c77804900",
+    "contracts/authorization/high-risk/high-risk-runtime-policy-1.0.0.json": "sha256:b4b99e458b48014e65b0a1b829e04e84d78ad95d184a00ee99987555fe3b7213",
+    "contracts/ingestion-quality/quality-recovery/quality-recovery-contract-lock-1.2.0.json": "sha256:93db910242e8d89a2ddff147f086ea3f53b72ddcc11995e48b7c7feee95d176e",
+    "contracts/ingestion-quality/quality-recovery/quality-recovery-handoff-2.5c-1.0.0.json": "sha256:1fbae3be1d118d8bd3b0eab7872f6179c6b742a0b2105d64121be196a63af217",
+    "contracts/ingestion-quality/quality-recovery/quality-recovery-policy-1.0.0.json": "sha256:195a22553b13ac35da5923e704ef8385f85d17574b8a753cc1afc16c2055f366",
+    "contracts/public-integration/pic-1.0.0.json": "sha256:41eccf69ab2e510e681cf63d41607e02060dbb80d46a147e22c2349ac4e0ac0a",
+    "contracts/public-integration/pic-1.1.0.json": "sha256:82e070e3b355053f3750db3df927ba56863b2efc6f672b685d7373df064a8bc3"
+  },
+  "runtimeEvidence": {
+    "observationAndFinalization": "contract-only",
+    "story32Consumer": "none",
+    "story55PublicTaskApply": "none",
+    "story27cNfr8Final": "none",
+    "productionDuration": "none"
+  }
+}

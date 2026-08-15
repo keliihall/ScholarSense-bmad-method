@@ -465,13 +465,13 @@ jobs:
           export DATA_CATALOG_TARGET_TRUSTED_SIGNING_KEY="$trusted_key"
           "$RUNNER_TEMP/release-tools/oras" login ghcr.io --username "${{ github.actor }}" --password-stdin <<< "$ORAS_PASSWORD"
           python3 scripts/assemble-release-manifest-input.py \
-            "$RELEASE_VERSION" release-out/release-input.json --manifest-version 8
+            "$RELEASE_VERSION" release-out/release-input.json --manifest-version 9
           python3 release/generate_manifests.py release release-out/release-input.json release-out/release-manifest.json
       - name: Publish the frozen unsigned ReleaseManifest
         id: publish
         run: |
           target="${MANIFEST_REPOSITORY}:${RELEASE_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/release-manifest.json:application/vnd.scholarsense.release-manifest.v8+json --format go-template='{{.digest}}')"
+          digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/release-manifest.json:application/vnd.scholarsense.release-manifest.v9+json --format go-template='{{.digest}}')"
           printf 'manifest-uri=%s@%s\n' "$MANIFEST_REPOSITORY" "$digest" >> "$GITHUB_OUTPUT"
           printf 'manifest-sha256=%s\n' "$(sha256sum release-out/release-manifest.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - name: Bind releaseVersion globally to exactly one manifest digest
@@ -523,7 +523,7 @@ jobs:
         id: publish
         run: |
           target="${MANIFEST_REPOSITORY}:evidence-index-${RELEASE_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/evidence-index.json:application/vnd.scholarsense.evidence-index.v8+json --format go-template='{{.digest}}')"
+          digest="$("$RUNNER_TEMP/release-tools/oras" push "$target" release-out/evidence-index.json:application/vnd.scholarsense.evidence-index.v9+json --format go-template='{{.digest}}')"
           printf 'index-uri=%s@%s\n' "$MANIFEST_REPOSITORY" "$digest" >> "$GITHUB_OUTPUT"
           printf 'index-sha256=%s\n' "$(sha256sum release-out/evidence-index.json | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 

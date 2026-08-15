@@ -72,7 +72,7 @@ development_status:
   2-4-登记规则依赖并发布质量可用性事实: done
   2-5a-判定质量熔断并冻结新产出: done
   2-5b-执行证据化质量恢复: done
-  2-5c-执行恢复观察-回退与质量任务收敛: backlog
+  2-5c-执行恢复观察-回退与质量任务收敛: done
   2-6a-贯通全链路-traceid-与技术遥测: backlog
   2-6b-验收角色隔离运行面板-告警与隐私负例: backlog
   2-7a-呈现依赖降级与可执行能力边界: backlog

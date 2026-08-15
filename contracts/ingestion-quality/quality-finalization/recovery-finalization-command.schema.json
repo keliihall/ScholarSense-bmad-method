@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recovery-finalization-command.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["recoveryId", "expectedRecoveryVersion", "expectedTaskVersion", "finalObservationWatermark", "idempotencyKey"],
+  "properties": {
+    "recoveryId": {"type": "string", "format": "uuid"},
+    "expectedRecoveryVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "expectedTaskVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "finalObservationWatermark": {"type": "string", "minLength": 1, "maxLength": 256},
+    "idempotencyKey": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{16,128}$"}
+  },
+  "x-serverResolved": ["actor", "naturalPerson", "roles", "ownerBinding", "trustedNow", "policy", "members", "observationDecision", "approvalReceipt", "executionLease", "executionJti"]
+}

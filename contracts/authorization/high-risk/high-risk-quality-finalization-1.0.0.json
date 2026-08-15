@@ -1,0 +1,42 @@
+{
+  "bindingVersion": "HRAP-QUALITY-FINALIZATION-1.0.0",
+  "predecessor": {"path": "contracts/authorization/high-risk/high-risk-action-policy-1.0.0.json", "rawSha256": "sha256:1db5201136807c3bcf8fa62186414b7c79c062f595920012edd0001c77804900"},
+  "compatibility": "additive-exact-binding",
+  "owner": "identity-access",
+  "exactBinding": {
+    "actionType": "quality-fuse.recover",
+    "objectType": "RECOVERY_TASK",
+    "currentState": "recovering",
+    "targetState": "eligible"
+  },
+  "approval": {
+    "level": "D4",
+    "mechanism": "maker-checker-all-current-required-business-owners",
+    "pendingMinutes": 240,
+    "makerCheckerNaturalPersonSeparation": true,
+    "currentRuntimeBinding": "R6-owned-source-and-natural-person"
+  },
+  "freshBindings": [
+    "objectVersion",
+    "finalPreviewDigest",
+    "observationDecisionDigest",
+    "qualityRecoveryPolicyVersion",
+    "memberSetDigest",
+    "watermarksDigest",
+    "authorizationGeneration",
+    "currentActorNaturalPersonDigest"
+  ],
+  "executionConfirmation": {
+    "leaseMinutes": 15,
+    "singleUseJti": true,
+    "reserveBeforeOwnerCommand": true,
+    "ownerCommitMustBeStrictlyBeforeExpiry": true,
+    "lateConfirmationOfPreExpiryCommit": "executed",
+    "uncommittedExpiry": "terminal-never-reactivate",
+    "compensation": "outbox-reconcile-with-owner-committed-result"
+  },
+  "predecessorApprovalOrTokenReusable": false,
+  "clientSuppliedTrustedEvidence": "forbidden",
+  "drift": "deny-closed-and-require-new-preview-approval-and-execution-confirmation",
+  "unknownStatePair": "deny"
+}

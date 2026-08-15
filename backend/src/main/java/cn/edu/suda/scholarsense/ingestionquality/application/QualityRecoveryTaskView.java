@@ -23,15 +23,31 @@ public record QualityRecoveryTaskView(
         String watermark,
         Map<String, String> trigger,
         Map<String, String> currentEvidence,
+        Instant closedAt,
+        String closureReason,
+        String ownerResultDigest,
         @JsonIgnore long aggregateVersion,
         @JsonIgnore Instant occurredAt,
         Delivery taskDelivery) {
+    /** Predecessor open-task constructor retained for controller/service fixtures. */
+    public QualityRecoveryTaskView(
+            UUID taskId, long taskVersion, UUID episodeId, long episodeGeneration,
+            String sourceId, String dependencyId, List<RuleVersionIdentity> affectedRules,
+            String ownerRef, String priority, Instant dueAt, String status, String watermark,
+            Map<String, String> trigger, Map<String, String> currentEvidence,
+            long aggregateVersion, Instant occurredAt, Delivery taskDelivery) {
+        this(taskId, taskVersion, episodeId, episodeGeneration, sourceId, dependencyId,
+                affectedRules, ownerRef, priority, dueAt, status, watermark, trigger,
+                currentEvidence, null, null, null, aggregateVersion, occurredAt, taskDelivery);
+    }
+
     public static QualityRecoveryTaskView from(QualityRecoveryTask value) {
         return new QualityRecoveryTaskView(
                 value.taskId(), value.aggregateVersion(), value.episodeId(), value.episodeGeneration(),
                 value.sourceId(), value.dependencyId(), value.affectedRules(),
                 value.ownerRef(), value.priority(), value.dueAt(), value.status(),
                 value.watermark(), value.trigger(), value.currentEvidence(),
+                value.closedAt(), value.closureReason(), value.ownerResultDigest(),
                 value.aggregateVersion(), value.occurredAt(),
                 Delivery.from(value.taskDelivery()));
     }

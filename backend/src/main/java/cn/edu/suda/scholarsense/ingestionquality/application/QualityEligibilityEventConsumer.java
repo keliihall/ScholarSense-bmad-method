@@ -190,9 +190,39 @@ public final class QualityEligibilityEventConsumer {
                 .toList();
         QualityFuseTaskPlan fuseTaskPlan = planTask(
                 event, snapshot, dependency, decisions, state);
+        RecoveryObservationProgressState observationProgress = planObservationProgress(
+                event, state, dependencyId, status, lineageRevision);
         return new QualityEligibilityMutation(
                 QualityEligibilityProcessingOutcome.APPLIED, cursor, null, dependency,
-                decisions, null, null, snapshot, fuseTaskPlan);
+                decisions, null, null, snapshot, fuseTaskPlan, observationProgress);
+    }
+
+    private RecoveryObservationProgressState planObservationProgress(
+            UpstreamQualityEvent event,
+            QualityEligibilityProcessingState state,
+            String dependencyId,
+            QualityEligibilityStatus evaluatedStatus,
+            long lineageRevision) {
+        String key = QualityEligibilityProcessingState.episodeKey(
+                event.sourceId(), dependencyId);
+        RecoveryObservationProgressState progress = state.recoveryObservations().get(key);
+        if (progress == null) return null;
+        if (progress.status() != RecoveryObservationProgressStatus.OBSERVING
+                && progress.status() != RecoveryObservationProgressStatus.READY) {
+            return null;
+        }
+        QualityFuseEpisodeState episode = state.activeEpisodes().get(key);
+        if (episode == null || episode.generation() != progress.generation()) {
+            throw new IllegalArgumentException("RECOVERY_OBSERVATION_PROGRESS_FENCE_INVALID");
+        }
+        if (evaluatedStatus == QualityEligibilityStatus.FUSED) {
+            return progress.relapsed(
+                    event.sourceVersion(), lineageRevision,
+                    event.watermark(), event.occurredAt());
+        }
+        return progress.passed(
+                event.sourceVersion(), lineageRevision,
+                event.watermark(), event.occurredAt());
     }
 
     private RuleEligibilityDecision applyLatch(

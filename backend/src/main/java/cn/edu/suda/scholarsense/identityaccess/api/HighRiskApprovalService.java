@@ -26,7 +26,10 @@ public final class HighRiskApprovalService implements HighRiskApprovalPort {
                 value.policyVersion(), value.policyDigest(), value.roleFieldPolicyVersion(),
                 value.roleFieldPolicyDigest(), value.previewDigest(), value.checkerSetDigest(),
                 value.requiredCheckerPrincipalDigests(), value.authorizationGeneration(),
-                value.requestedAt(), value.traceId(), value.idempotencyKey())));
+                value.requestedAt(), value.traceId(), value.idempotencyKey(),
+                value.observationDecisionDigest(), value.memberSetDigest(),
+                value.watermarksDigest(), value.qualityRecoveryPolicyVersion(),
+                value.qualityRecoveryPolicyDigest())));
     }
 
     @Override

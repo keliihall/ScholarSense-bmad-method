@@ -167,6 +167,29 @@ CONTROLLED_INPUTS_V8 = {
         "deploy/base/ingestion-quality-roles-5.0.0.json",
     ),
 }
+CONTROLLED_INPUTS_V9 = {
+    **CONTROLLED_INPUTS_V8,
+    "QualityFinalizationWorkflow": (
+        "QUALITY-FINALIZATION-CONTRACT-LOCK-1.0.0",
+        "contracts/ingestion-quality/quality-finalization/"
+        "quality-finalization-contract-lock-1.0.0.json",
+    ),
+    "PublicIntegrationQualityTaskClose": (
+        "PIC-1.2.0", "contracts/public-integration/pic-1.2.0.json",
+    ),
+    "QualityFinalizationApi": (
+        "QUALITY-RECOVERY-TASKS-API-1.2.0",
+        "contracts/openapi/quality-recovery-tasks-1.2.openapi.json",
+    ),
+    "IngestionQualityFinalizationRuntime": (
+        "INGESTION-QUALITY-RUNTIME-6.0.0",
+        "deploy/base/ingestion-quality-runtime-6.0.0.json",
+    ),
+    "IngestionQualityFinalizationRoles": (
+        "INGESTION-QUALITY-ROLES-6.0.0",
+        "deploy/base/ingestion-quality-roles-6.0.0.json",
+    ),
+}
 # Backward-compatible public name: it remains the immutable V1 mapping.
 CONTROLLED_INPUTS = CONTROLLED_INPUTS_V1
 LOCKS = {
@@ -356,10 +379,11 @@ def assemble_release_manifest_input(
             _reference("frontend-brand-asset-manifest", "BRAND-ASSET-MANIFEST-1.0.0", artifact_uri, source_root / "contracts/release/brand-asset-manifest-1.0.0.json", kind="brand-asset-manifest", subject_sha256=subject_digests["frontend"]),
         ]
     )
-    if manifest_version not in {"1", "2", "3", "4", "5", "6", "7", "8"}:
+    if manifest_version not in {"1", "2", "3", "4", "5", "6", "7", "8", "9"}:
         raise ValueError("RELEASE_ASSEMBLY_MANIFEST_VERSION_INVALID")
     controlled_inputs = (
-        CONTROLLED_INPUTS_V8 if manifest_version == "8"
+        CONTROLLED_INPUTS_V9 if manifest_version == "9"
+        else CONTROLLED_INPUTS_V8 if manifest_version == "8"
         else CONTROLLED_INPUTS_V7 if manifest_version == "7"
         else CONTROLLED_INPUTS_V6 if manifest_version == "6"
         else CONTROLLED_INPUTS_V5 if manifest_version == "5"
@@ -368,7 +392,7 @@ def assemble_release_manifest_input(
         else CONTROLLED_INPUTS_V2 if manifest_version == "2"
         else CONTROLLED_INPUTS_V1
     )
-    if manifest_version in {"2", "3", "4", "5", "6", "7", "8"}:
+    if manifest_version in {"2", "3", "4", "5", "6", "7", "8", "9"}:
         if (
             public_integration_target_evidence_uri is None
             or public_integration_target_evidence_path is None
@@ -445,7 +469,7 @@ def assemble_release_manifest_input(
             "scenarioSetSha256": scenario_digest,
         })
         evidence.append(pic_reference)
-    if manifest_version in {"3", "4", "5", "6", "7", "8"}:
+    if manifest_version in {"3", "4", "5", "6", "7", "8", "9"}:
         if (
             data_catalog_target_evidence_uri is None
             or data_catalog_target_evidence_path is None
@@ -575,46 +599,57 @@ def assemble_release_manifest_input(
             "runtimeEvidenceClaim": "none",
         },
     ]
-    if manifest_version in {"3", "4", "5", "6", "7", "8"}:
+    if manifest_version in {"3", "4", "5", "6", "7", "8", "9"}:
         runtime_evidence.append({
             "id": "data-catalog-target-conformance",
             "status": "passed",
             "evidenceIds": ["DataCatalogTargetConformance"],
         })
-    if manifest_version in {"4", "5", "6", "7", "8"}:
+    if manifest_version in {"4", "5", "6", "7", "8", "9"}:
         runtime_evidence.append({
             "id": "subject-registry-production-kms",
             "status": "deployment-input-required",
             "ownerStory": "2.2",
             "runtimeEvidenceClaim": "none",
         })
-    if manifest_version in {"5", "6", "7", "8"}:
+    if manifest_version in {"5", "6", "7", "8", "9"}:
         runtime_evidence.append({
             "id": "ingestion-quality-quality-worker-deployment",
             "status": "deployment-input-required",
             "ownerStory": "2.3",
             "runtimeEvidenceClaim": "none",
         })
-    if manifest_version in {"6", "7", "8"}:
+    if manifest_version in {"6", "7", "8", "9"}:
         runtime_evidence.append({
             "id": "ingestion-quality-eligibility-deployment",
             "status": "deployment-input-required",
             "ownerStory": "2.4",
             "runtimeEvidenceClaim": "none",
         })
-    if manifest_version in {"7", "8"}:
+    if manifest_version in {"7", "8", "9"}:
         runtime_evidence.append({
             "id": "ingestion-quality-fuse-task-deployment",
             "status": "deployment-input-required",
             "ownerStory": "2.5a",
             "runtimeEvidenceClaim": "none",
         })
-    if manifest_version == "8":
+    if manifest_version in {"8", "9"}:
         runtime_evidence.append({
             "id": "ingestion-quality-recovery-executable-closure",
             "status": "passed",
             "ownerStory": "2.5b",
             "runtimeEvidenceClaim": "story-2.5b-executable-closure",
+            "evidenceIds": [
+                "backend-provenance",
+                "frontend-formal-web-report",
+            ],
+        })
+    if manifest_version == "9":
+        runtime_evidence.append({
+            "id": "ingestion-quality-finalization-executable-closure",
+            "status": "passed",
+            "ownerStory": "2.5c",
+            "runtimeEvidenceClaim": "story-2.5c-observation-finalization-closure",
             "evidenceIds": [
                 "backend-provenance",
                 "frontend-formal-web-report",

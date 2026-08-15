@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "quality-finalization-event.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventId", "eventType", "aggregateId", "aggregateVersion", "routeSequence", "recoveryId", "generation", "priorState", "targetState", "taskId", "taskStatus", "ownerResultDigest", "occurredAt", "traceId"],
+  "properties": {
+    "eventId": {"type": "string", "format": "uuid"},
+    "eventType": {"enum": ["quality-eligibility.eligible", "quality-eligibility.relapsed", "quality-recovery-task.closed"]},
+    "aggregateId": {"type": "string", "format": "uuid"},
+    "aggregateVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "routeSequence": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "recoveryId": {"type": "string", "format": "uuid"},
+    "generation": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+    "priorState": {"enum": ["recovering", "eligible"]},
+    "targetState": {"enum": ["eligible", "fused"]},
+    "taskId": {"type": "string", "format": "uuid"},
+    "taskStatus": {"enum": ["open", "closed"]},
+    "ownerResultDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "occurredAt": {"type": "string", "format": "date-time"},
+    "traceId": {"type": "string", "pattern": "^(?!0{32}$)[0-9a-f]{32}$"}
+  },
+  "x-selfContained": true,
+  "x-consumerLatestLookup": "forbidden",
+  "x-forbiddenBusinessObjects": ["RuleEvaluation", "Candidate", "Clue"]
+}

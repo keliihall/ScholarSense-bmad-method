@@ -23,6 +23,8 @@ import cn.edu.suda.scholarsense.identityaccess.api.CurrentNaturalPersonPrincipal
 import cn.edu.suda.scholarsense.ingestionquality.application.IngestionQualityApplicationException;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseRecoveryService;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryRequestState;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryFinalizationService;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityRecoveryFinalizationContext;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -46,11 +48,13 @@ class QualityFuseRecoveryControllerTest {
     private static final UUID ORG = uuid("019fe8a0-7000-7000-8000-000000000805");
     private static final String TRACE = "00112233445566778899aabbccddeeff";
     private QualityFuseRecoveryService recovery;
+    private QualityRecoveryFinalizationService finalization;
     private MockMvc mvc;
 
     @BeforeEach
     void setUp() {
         recovery = mock(QualityFuseRecoveryService.class);
+        finalization = mock(QualityRecoveryFinalizationService.class);
         InternalSessionIdentityPort sessions = mock(InternalSessionIdentityPort.class);
         AuthoritativeIdentityContextQueryPort identities =
                 mock(AuthoritativeIdentityContextQueryPort.class);
@@ -73,11 +77,55 @@ class QualityFuseRecoveryControllerTest {
                         digest('b'), 3, digest('c'), TRACE));
         mvc = MockMvcBuilders.standaloneSetup(
                         new QualityFuseRecoveryController(
-                                recovery, sessions, identities, naturalPersons))
+                                recovery, sessions, identities, naturalPersons, finalization))
                 .setMessageConverters(new JacksonJsonHttpMessageConverter(
                         JsonMapper.builder().enable(
                                 DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build()))
                 .setControllerAdvice(new DataSourceCatalogExceptionHandler()).build();
+    }
+
+    @Test
+    void finalApprovalCommandIsStrictAndNeverAcceptsTrustedLeaseOrReceipt() throws Exception {
+        QualityRecoveryFinalizationContext context =
+                mock(QualityRecoveryFinalizationContext.class);
+        when(context.recoveryId()).thenReturn(REQUEST);
+        when(context.recoveryVersion()).thenReturn(5L);
+        when(context.taskId()).thenReturn(TASK);
+        when(context.taskVersion()).thenReturn(2L);
+        when(context.observationStatus()).thenReturn("ready");
+        when(context.finalizationState()).thenReturn("approval-pending");
+        when(context.approvalId()).thenReturn(uuid(
+                "019fe8a0-7000-7000-8000-000000000811"));
+        when(context.approvalVersion()).thenReturn(1L);
+        when(context.policyVersion()).thenReturn("QRP-1.0.0");
+        when(context.finalPreviewDigest()).thenReturn(digest('d'));
+        when(context.observationDecisionDigest()).thenReturn(digest('e'));
+        when(context.finalObservationWatermark()).thenReturn("wm-final");
+        when(context.traceId()).thenReturn(TRACE);
+        when(finalization.requestApproval(any(), any(), anyString())).thenReturn(context);
+        String valid = """
+                {"expectedRecoveryVersion":5,"expectedTaskVersion":2,
+                 "finalObservationWatermark":"wm-final"}
+                """;
+
+        mvc.perform(post("/api/v1/quality-recovery-requests/{id}/final-approval-requests",
+                        REQUEST).session(session()).header("Traceparent", traceparent())
+                        .header("Idempotency-Key", "final-approval-one")
+                        .contentType(MediaType.APPLICATION_JSON).content(valid))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.finalizationState").value("approval-pending"))
+                .andExpect(jsonPath("$.approvalReceiptDigest").doesNotExist())
+                .andExpect(jsonPath("$.executionJti").doesNotExist());
+
+        mvc.perform(post("/api/v1/quality-recovery-requests/{id}/final-approval-requests",
+                        REQUEST).session(session()).header("Traceparent", traceparent())
+                        .header("Idempotency-Key", "final-approval-two")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(valid.substring(0, valid.lastIndexOf('}'))
+                                + ",\"leaseId\":\"secret\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INGESTION_QUALITY_REQUEST_INVALID"));
     }
 
     @Test

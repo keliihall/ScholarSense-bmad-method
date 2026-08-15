@@ -1,0 +1,15 @@
+{
+  "contractVersion": "QUALITY-RECOVERY-TASK-CLOSE-1.0.0",
+  "owner": "ingestion-quality",
+  "operation": "close",
+  "identity": "same-task-id-work-item-key-and-generation",
+  "requiredBindings": ["taskId", "episodeId", "generation", "workItemKey", "taskVersion", "ownerResultDigest"],
+  "closeFields": ["status", "closedAt", "closureReason", "ownerResultDigest", "aggregateVersion", "routeSequence"],
+  "closedState": "terminal-never-reopen",
+  "duplicateClose": "same-key-same-digest-return-original",
+  "differentDigest": "conflict",
+  "relapseWithinP1D": "generation-plus-one-new-episode-and-task",
+  "deliverySemantics": "independent-transport-sidecar-never-rolls-back-eligible-or-local-close",
+  "externalConfirmationMeaning": "transport-only-not-public-task-final-apply",
+  "runtimeEvidenceClaim": "owner-local-contract-only"
+}

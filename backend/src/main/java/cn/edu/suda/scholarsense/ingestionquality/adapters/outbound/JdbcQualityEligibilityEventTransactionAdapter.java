@@ -19,6 +19,8 @@ import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseFormulaB
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseMemberEvidence;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseTaskPlan;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseWorkloadAuthorizationGuard;
+import cn.edu.suda.scholarsense.ingestionquality.application.RecoveryObservationProgressState;
+import cn.edu.suda.scholarsense.ingestionquality.application.RecoveryObservationProgressStatus;
 import cn.edu.suda.scholarsense.ingestionquality.application.RuleEligibilityDecision;
 import cn.edu.suda.scholarsense.ingestionquality.application.UpstreamQualityEvent;
 import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchWorkloadAuthorizationEvidence;
@@ -238,9 +240,32 @@ public final class JdbcQualityEligibilityEventTransactionAdapter
                         || value.longValue() < 1) throw persistenceInvalid();
                 generations.put(entry.getKey(), value.longValue());
             });
+            LinkedHashMap<String, RecoveryObservationProgressState> observations =
+                    new LinkedHashMap<>();
+            JsonNode observationsNode = root.get("recoveryObservations");
+            if (observationsNode != null && !observationsNode.isNull()) {
+                if (!observationsNode.isObject()) throw persistenceInvalid();
+                observationsNode.properties().forEach(entry -> {
+                    JsonNode value = entry.getValue();
+                    RecoveryObservationProgressState progress =
+                            new RecoveryObservationProgressState(
+                                    uuid(value, "recoveryId"), number(value, "generation"),
+                                    text(value, "sourceId"), text(value, "dependencyId"),
+                                    instant(value, "recoveringStartedAt"),
+                                    number(value, "lastSourceVersionOrdinal"),
+                                    number(value, "lastLineageRevision"),
+                                    integer(value, "consecutivePassedBatches"),
+                                    optionalText(value, "watermark"),
+                                    instant(value, "lastObservedAt"),
+                                    observationStatus(text(value, "status")),
+                                    number(value, "aggregateVersion"));
+                    if (!entry.getKey().equals(progress.key())) throw persistenceInvalid();
+                    observations.put(entry.getKey(), progress);
+                });
+            }
             return new QualityEligibilityProcessingState(
                     entries, inbox, cursor, pair, dependencies,
-                    current, episodes, generations);
+                    current, episodes, generations, observations);
         } catch (RuntimeException exception) {
             if (exception instanceof IllegalStateException state
                     && "INGESTION_QUALITY_PERSISTED_EVIDENCE_INVALID".equals(
@@ -265,6 +290,8 @@ public final class JdbcQualityEligibilityEventTransactionAdapter
         root.put("snapshotEvidence", snapshot(mutation.snapshotEvidence()));
         root.put("fuseTaskPlan", fuseTaskPlan(
                 event, mutation, authorizationEvidence, revalidatedAt));
+        root.put("recoveryObservationProgress", observation(
+                mutation.recoveryObservationProgress()));
         root.put("occurredAt", event.occurredAt().toString());
         root.put("effectiveAt", event.effectiveAt().toString());
         root.put("traceId", event.traceId());
@@ -306,6 +333,25 @@ public final class JdbcQualityEligibilityEventTransactionAdapter
                 "dependencyVersion", value.dependencyVersion(),
                 "status", value.status().wireValue(),
                 "versionContinuous", value.versionContinuous(), "watermark", value.watermark());
+    }
+
+    private Map<String, Object> observation(RecoveryObservationProgressState value) {
+        if (value == null) return null;
+        return map(
+                "recoveryId", value.recoveryId(), "generation", value.generation(),
+                "sourceId", value.sourceId(), "dependencyId", value.dependencyId(),
+                "recoveringStartedAt", value.recoveringStartedAt().toString(),
+                "lastSourceVersionOrdinal", value.lastSourceVersionOrdinal(),
+                "lastLineageRevision", value.lastLineageRevision(),
+                "consecutivePassedBatches", value.consecutivePassedBatches(),
+                "watermark", value.watermark(),
+                "lastObservedAt", value.lastObservedAt().toString(),
+                "status", switch (value.status()) {
+                    case OBSERVING -> "observing";
+                    case RELAPSED -> "relapsed";
+                    default -> throw persistenceInvalid();
+                },
+                "aggregateVersion", value.aggregateVersion());
     }
 
     private Map<String, Object> decision(RuleEligibilityDecision value) {
@@ -492,6 +538,40 @@ public final class JdbcQualityEligibilityEventTransactionAdapter
             throw persistenceInvalid();
         }
         return value.longValue();
+    }
+
+    private static int integer(JsonNode parent, String field) {
+        try {
+            return Math.toIntExact(number(parent, field));
+        } catch (ArithmeticException exception) {
+            throw persistenceInvalid();
+        }
+    }
+
+    private static String optionalText(JsonNode parent, String field) {
+        JsonNode value = parent.get(field);
+        if (value == null || value.isNull()) return null;
+        if (!value.isTextual()) throw persistenceInvalid();
+        return value.stringValue();
+    }
+
+    private static Instant instant(JsonNode parent, String field) {
+        try {
+            return Instant.parse(text(parent, field));
+        } catch (RuntimeException exception) {
+            throw persistenceInvalid();
+        }
+    }
+
+    private static RecoveryObservationProgressStatus observationStatus(String value) {
+        return switch (value) {
+            case "observing" -> RecoveryObservationProgressStatus.OBSERVING;
+            case "ready" -> RecoveryObservationProgressStatus.READY;
+            case "relapsed" -> RecoveryObservationProgressStatus.RELAPSED;
+            case "policy-drift" -> RecoveryObservationProgressStatus.POLICY_DRIFT;
+            case "finalized" -> RecoveryObservationProgressStatus.FINALIZED;
+            default -> throw persistenceInvalid();
+        };
     }
 
     private static Long nullableNumber(JsonNode parent, String field) {

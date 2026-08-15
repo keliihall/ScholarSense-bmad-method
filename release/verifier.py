@@ -42,6 +42,7 @@ RELEASE_MANIFEST_VERSIONS = {
     "RELEASE-MANIFEST-6.0.0": "6",
     "RELEASE-MANIFEST-7.0.0": "7",
     "RELEASE-MANIFEST-8.0.0": "8",
+    "RELEASE-MANIFEST-9.0.0": "9",
 }
 PIC_TARGET_EVIDENCE_FILENAME = (
     "public-integration-target-conformance-evidence-1.0.0.json"
@@ -204,9 +205,9 @@ def pulled_release_material_issues(
         expected_uris = {
             "artifact", "sbom", "attestation", "web", "manifest", "signature"
         }
-        if manifest_version in {"2", "3", "4", "5", "6", "7", "8"}:
+        if manifest_version in {"2", "3", "4", "5", "6", "7", "8", "9"}:
             expected_uris.add("public-integration-target")
-        if manifest_version in {"3", "4", "5", "6", "7", "8"}:
+        if manifest_version in {"3", "4", "5", "6", "7", "8", "9"}:
             expected_uris.add("data-catalog-target")
         if set(uris) != expected_uris:
             return ["VERIFIER_RELEASE_MATERIAL_URI_SET_INVALID"]

@@ -38,7 +38,7 @@ final class MigrationRules {
             "(?i)(?:\\bwith\\s+(?:recursive\\s+)?|,)\\s*(" + IDENTIFIER
                     + ")(?:\\s*\\([^)]*\\))?\\s+as\\s*\\(");
     private static final Pattern DERIVED_TABLE_ALIAS = Pattern.compile(
-            "(?i)\\)\\s+(?:as\\s+)?(" + IDENTIFIER + ")\\s+on\\b");
+            "(?i)\\)\\s+(?:as\\s+)?(" + IDENTIFIER + ")(?=\\s*(?:on\\b|[,)]))");
     private static final Pattern PLPGSQL_RECORD_VARIABLE = Pattern.compile(
             "(?im)^\\s*(?:declare\\s+)?(" + IDENTIFIER + ")\\s+(?:(?:" + IDENTIFIER
                     + ")\\s*\\.\\s*)?" + IDENTIFIER + "%rowtype\\s*;");
@@ -73,7 +73,19 @@ final class MigrationRules {
             "where", "join", "left", "right", "full", "inner", "outer", "cross", "on",
             "group", "order", "limit", "offset", "returning", "set", "values", "union",
             "or", "from", "select", "into", "update", "for", "lateral", "skip", "strict",
-            "with", "recursive");
+            "with", "recursive", "of");
+    private static final Path QUALITY_FINALIZATION_EXPAND = Path.of(
+            "ingestion-quality/V000021__ingestion-quality__quality_finalization_v1.sql");
+    private static final Set<String> QUALITY_FINALIZATION_IDENTITY_D4_TABLES = Set.of(
+            "ia_high_risk_approval_history",
+            "ia_high_risk_approval_current",
+            "ia_high_risk_execution_lease_history",
+            "ia_high_risk_execution_lease_current",
+            "ia_high_risk_approval_receipt",
+            "ia_high_risk_approval_active_object_uk");
+    private static final Set<String> QUALITY_FINALIZATION_IDENTITY_D4_FUNCTIONS = Set.of(
+            "ia_verify_quality_finalization_approval",
+            "ia_verify_quality_finalization_lease");
 
     private MigrationRules() {}
 
@@ -204,7 +216,8 @@ final class MigrationRules {
             if (table.group(1) == null && cteNames.contains(tableName)) {
                 continue;
             }
-            if (!tableName.startsWith(expected.tablePrefix())) {
+            if (!tableName.startsWith(expected.tablePrefix())
+                    && !isDelegatedOwnerExpand(relative, schema, tableName)) {
                 violations.add("TABLE_PREFIX_MISMATCH: " + relative + " -> " + tableName);
             }
         }
@@ -213,10 +226,11 @@ final class MigrationRules {
             String schema = additionalTable.group(1) == null
                     ? expected.schema() : identifier(additionalTable.group(1));
             String tableName = identifier(additionalTable.group(2));
-            if (!schema.equals(expected.schema())) {
+            boolean delegated = isDelegatedOwnerExpand(relative, schema, tableName);
+            if (!schema.equals(expected.schema()) && !delegated) {
                 violations.add("CROSS_SCHEMA_REFERENCE: " + relative + " -> " + additionalTable.group());
             }
-            if (!tableName.startsWith(expected.tablePrefix())) {
+            if (!tableName.startsWith(expected.tablePrefix()) && !delegated) {
                 violations.add("TABLE_PREFIX_MISMATCH: " + relative + " -> " + tableName);
             }
         }
@@ -290,7 +304,8 @@ final class MigrationRules {
                 continue;
             }
             String schema = identifier(candidate.group(1));
-            if (!schema.equals(expected.schema())) {
+            if (!schema.equals(expected.schema())
+                    && !isDelegatedIdentitySchemaExpand(relative, schema)) {
                 violations.add("PRIVILEGE_OBJECT_CROSS_OWNER: " + relative + " -> " + schema);
             }
         }
@@ -310,7 +325,8 @@ final class MigrationRules {
             String schema = candidate.group(1) == null
                     ? expected.schema() : identifier(candidate.group(1));
             String table = identifier(candidate.group(2));
-            if (!schema.equals(expected.schema()) || !table.startsWith(expected.tablePrefix())) {
+            if ((!schema.equals(expected.schema()) || !table.startsWith(expected.tablePrefix()))
+                    && !isDelegatedOwnerExpand(relative, schema, table)) {
                 violations.add("PRIVILEGE_OBJECT_CROSS_OWNER: " + relative + " -> "
                         + schema + "." + table);
             }
@@ -331,8 +347,9 @@ final class MigrationRules {
         String schema = candidate.group(1) == null
                 ? expected.schema() : identifier(candidate.group(1));
         String function = identifier(candidate.group(2));
-        if (!schema.equals(expected.schema())
-                || !function.startsWith(expected.tablePrefix())) {
+        if ((!schema.equals(expected.schema())
+                || !function.startsWith(expected.tablePrefix()))
+                && !isDelegatedOwnerExpand(relative, schema, function)) {
             violations.add("PRIVILEGE_OBJECT_CROSS_OWNER: " + relative + " -> "
                     + schema + "." + function);
         }
@@ -433,9 +450,11 @@ final class MigrationRules {
                                 .matches("(?s).*\\bon\\s+conflict\\b.*\\bdo\\s+update\\b.*")) {
                     continue;
                 }
+                String objectName = identifier(qualified.group(2));
                 if (!schema.equals(expected.schema())
                         && !schema.equals("pg_catalog")
-                        && !schema.equals("information_schema")) {
+                        && !schema.equals("information_schema")
+                        && !isDelegatedOwnerExpand(relative, schema, objectName)) {
                     violations.add("CROSS_SCHEMA_REFERENCE: " + relative + " -> " + qualified.group());
                 }
             }
@@ -458,6 +477,19 @@ final class MigrationRules {
             }
         }
         return count;
+    }
+
+    private static boolean isDelegatedOwnerExpand(
+            Path relative, String schema, String objectName) {
+        return QUALITY_FINALIZATION_EXPAND.equals(relative)
+                && "identity_access".equals(schema)
+                && (QUALITY_FINALIZATION_IDENTITY_D4_TABLES.contains(objectName)
+                    || QUALITY_FINALIZATION_IDENTITY_D4_FUNCTIONS.contains(objectName));
+    }
+
+    private static boolean isDelegatedIdentitySchemaExpand(Path relative, String schema) {
+        return QUALITY_FINALIZATION_EXPAND.equals(relative)
+                && "identity_access".equals(schema);
     }
 
     private static boolean isDistinctFromOperand(String content, int matchStart) {

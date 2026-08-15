@@ -1,0 +1,163 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "ScholarSense quality recovery observation and finalization successor",
+    "version": "1.2.0",
+    "description": "Additive successor of quality-recovery-tasks-1.1. Observation is read under the owned task; final commands contain opaque IDs, optimistic versions, watermark and idempotency only."
+  },
+  "x-predecessor": {
+    "path": "contracts/openapi/quality-recovery-tasks-1.1.openapi.json",
+    "sha256": "659628eef04202936c00c0c131997547766447a5239ceb34d80766936299a1dc",
+    "compatibility": "additive-minor"
+  },
+  "servers": [{"url": "/api/v1"}],
+  "security": [{"sessionCookie": []}],
+  "paths": {
+    "/quality-recovery-tasks/{taskId}/observation": {
+      "get": {
+        "operationId": "getQualityRecoveryObservationV12",
+        "parameters": [{"$ref": "#/components/parameters/TaskId"}],
+        "responses": {
+          "200": {"description": "Privacy-minimized current observation", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Observation"}}}},
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "404": {"$ref": "#/components/responses/Concealed"},
+          "503": {"$ref": "#/components/responses/Unavailable"}
+        }
+      }
+    },
+    "/quality-recovery-requests/{requestId}/final-approval-requests": {
+      "post": {
+        "operationId": "requestQualityRecoveryFinalApprovalV12",
+        "security": [{"sessionCookie": [], "csrfHeader": []}],
+        "parameters": [{"$ref": "#/components/parameters/RequestId"}, {"$ref": "#/components/parameters/IdempotencyKey"}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FinalCommand"}}}},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Finalization"},
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "404": {"$ref": "#/components/responses/Concealed"},
+          "409": {"$ref": "#/components/responses/Conflict"},
+          "422": {"$ref": "#/components/responses/Unprocessable"},
+          "503": {"$ref": "#/components/responses/Unavailable"}
+        }
+      }
+    },
+    "/quality-recovery-requests/{requestId}/final-approval-decisions": {
+      "post": {
+        "operationId": "decideQualityRecoveryFinalApprovalV12",
+        "security": [{"sessionCookie": [], "csrfHeader": []}],
+        "parameters": [{"$ref": "#/components/parameters/RequestId"}, {"$ref": "#/components/parameters/IdempotencyKey"}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FinalDecision"}}}},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Finalization"},
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "404": {"$ref": "#/components/responses/Concealed"},
+          "409": {"$ref": "#/components/responses/Conflict"},
+          "422": {"$ref": "#/components/responses/Unprocessable"},
+          "503": {"$ref": "#/components/responses/Unavailable"}
+        }
+      }
+    },
+    "/quality-recovery-requests/{requestId}/finalize": {
+      "post": {
+        "operationId": "executeQualityRecoveryFinalizationV12",
+        "description": "Fresh D4 lease is resolved and consumed server-side. The response never returns approval receipts, leases or JTI values.",
+        "security": [{"sessionCookie": [], "csrfHeader": []}],
+        "parameters": [{"$ref": "#/components/parameters/RequestId"}, {"$ref": "#/components/parameters/IdempotencyKey"}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FinalCommand"}}}},
+        "responses": {
+          "200": {"description": "Owner-committed self-contained final result", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/FinalExecution"}}}},
+          "400": {"$ref": "#/components/responses/BadRequest"},
+          "404": {"$ref": "#/components/responses/Concealed"},
+          "409": {"$ref": "#/components/responses/Conflict"},
+          "422": {"$ref": "#/components/responses/Unprocessable"},
+          "503": {"$ref": "#/components/responses/Unavailable"}
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {"type": "apiKey", "in": "cookie", "name": "JSESSIONID"},
+      "csrfHeader": {"type": "apiKey", "in": "header", "name": "X-CSRF-TOKEN"}
+    },
+    "parameters": {
+      "TaskId": {"name": "taskId", "in": "path", "required": true, "schema": {"$ref": "#/components/schemas/UuidV7"}},
+      "RequestId": {"name": "requestId", "in": "path", "required": true, "schema": {"$ref": "#/components/schemas/UuidV7"}},
+      "IdempotencyKey": {"name": "Idempotency-Key", "in": "header", "required": true, "schema": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{16,128}$"}}
+    },
+    "schemas": {
+      "UuidV7": {"type": "string", "format": "uuid", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+      "Digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+      "FinalCommand": {
+        "type": "object", "additionalProperties": false,
+        "required": ["expectedRecoveryVersion", "expectedTaskVersion", "finalObservationWatermark"],
+        "properties": {
+          "expectedRecoveryVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+          "expectedTaskVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+          "finalObservationWatermark": {"type": "string", "minLength": 1, "maxLength": 256}
+        },
+        "x-server-resolved": ["actor", "naturalPerson", "roles", "trustedNow", "observationDecision", "approvalReceipt", "executionLease", "executionJti"]
+      },
+      "FinalDecision": {
+        "type": "object", "additionalProperties": false,
+        "required": ["expectedApprovalVersion", "decision"],
+        "properties": {
+          "expectedApprovalVersion": {"type": "integer", "minimum": 1, "maximum": 9007199254740991},
+          "decision": {"enum": ["approve", "reject", "cancel"]}
+        }
+      },
+      "Observation": {
+        "type": "object", "additionalProperties": false,
+        "required": ["recoveryId", "recoveryVersion", "taskId", "taskVersion", "generation", "sourceClass", "policyVersion", "policyDigest", "status", "finalizationState", "approvalId", "approvalVersion", "consecutivePassedBatches", "requiredPassedBatches", "observedDurationMicros", "requiredDurationMicros", "observationDuration", "watermark", "recoveringStartedAt", "lastObservedAt", "latestActionableAt", "failedMembers", "failureReasonCode", "eligibilityStatus", "taskStatus", "taskClosedAt", "ownerResultDigest", "deliveryStatus", "deliveryAttempt", "deliveryNextAttemptAt", "eligibleForHandoffWindowCount", "historyOnlyWindowCount", "traceId"],
+        "properties": {
+          "recoveryId": {"$ref": "#/components/schemas/UuidV7"}, "recoveryVersion": {"type": "integer", "minimum": 1},
+          "taskId": {"$ref": "#/components/schemas/UuidV7"}, "taskVersion": {"type": "integer", "minimum": 1}, "generation": {"type": "integer", "minimum": 1},
+          "sourceClass": {"enum": ["streaming", "daily-batch"]}, "policyVersion": {"const": "QRP-1.0.0"}, "policyDigest": {"$ref": "#/components/schemas/Digest"},
+          "status": {"enum": ["observing", "ready", "relapsed", "policy-drift", "finalized"]},
+          "finalizationState": {"enum": ["not-requested", "approval-pending", "approval-approved", "approval-rejected", "cancelled", "finalizing", "executed"]}, "approvalId": {"oneOf": [{"$ref": "#/components/schemas/UuidV7"}, {"type": "null"}]}, "approvalVersion": {"type": ["integer", "null"], "minimum": 1},
+          "consecutivePassedBatches": {"type": "integer", "minimum": 0}, "requiredPassedBatches": {"enum": [2, 3]},
+          "observedDurationMicros": {"type": "integer", "minimum": 0}, "requiredDurationMicros": {"type": "integer", "minimum": 1},
+          "observationDuration": {"enum": ["PT60M", "P1D"]}, "watermark": {"type": ["string", "null"], "maxLength": 256},
+          "recoveringStartedAt": {"type": "string", "format": "date-time"}, "lastObservedAt": {"type": "string", "format": "date-time"}, "latestActionableAt": {"type": ["string", "null"], "format": "date-time"},
+          "failedMembers": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "pattern": "^DEP-P[01]-[A-Z0-9-]+-[0-9]{3}$"}}, "failureReasonCode": {"type": ["string", "null"], "pattern": "^[A-Z0-9_]{3,64}$"}, "eligibilityStatus": {"enum": ["fused", "recovering", "eligible"]},
+          "taskStatus": {"enum": ["open", "closed"]}, "taskClosedAt": {"type": ["string", "null"], "format": "date-time"}, "ownerResultDigest": {"oneOf": [{"$ref": "#/components/schemas/Digest"}, {"type": "null"}]},
+          "deliveryStatus": {"enum": ["pending", "retrying", "confirmed", "failed"]}, "deliveryAttempt": {"type": "integer", "minimum": 0}, "deliveryNextAttemptAt": {"type": ["string", "null"], "format": "date-time"},
+          "eligibleForHandoffWindowCount": {"type": "integer", "minimum": 0}, "historyOnlyWindowCount": {"type": "integer", "minimum": 0}, "traceId": {"type": "string", "pattern": "^(?!0{32}$)[0-9a-f]{32}$"}
+        }
+      },
+      "Finalization": {
+        "type": "object", "additionalProperties": false,
+        "required": ["recoveryId", "recoveryVersion", "taskId", "taskVersion", "observationStatus", "finalizationState", "approvalId", "approvalVersion", "policyVersion", "finalPreviewDigest", "observationDecisionDigest", "finalObservationWatermark", "traceId"],
+        "properties": {
+          "recoveryId": {"$ref": "#/components/schemas/UuidV7"}, "recoveryVersion": {"type": "integer", "minimum": 1}, "taskId": {"$ref": "#/components/schemas/UuidV7"}, "taskVersion": {"type": "integer", "minimum": 1},
+          "observationStatus": {"enum": ["ready", "finalized"]}, "finalizationState": {"enum": ["approval-pending", "approval-approved", "approval-rejected", "cancelled", "executed"]},
+          "approvalId": {"$ref": "#/components/schemas/UuidV7"}, "approvalVersion": {"type": "integer", "minimum": 1}, "policyVersion": {"const": "QRP-1.0.0"},
+          "finalPreviewDigest": {"$ref": "#/components/schemas/Digest"}, "observationDecisionDigest": {"$ref": "#/components/schemas/Digest"}, "finalObservationWatermark": {"type": "string", "minLength": 1, "maxLength": 256}, "traceId": {"type": "string", "pattern": "^(?!0{32}$)[0-9a-f]{32}$"}
+        }
+      },
+      "FinalExecution": {
+        "type": "object", "additionalProperties": false,
+        "required": ["recoveryId", "taskId", "generation", "eligibilityStatus", "episodeStatus", "taskStatus", "taskVersion", "recoveryCompletedAt", "windowOutcomesDigest", "ownerResultDigest", "deliveryStatus", "traceId"],
+        "properties": {
+          "recoveryId": {"$ref": "#/components/schemas/UuidV7"}, "taskId": {"$ref": "#/components/schemas/UuidV7"}, "generation": {"type": "integer", "minimum": 1},
+          "eligibilityStatus": {"const": "eligible"}, "episodeStatus": {"const": "closed"}, "taskStatus": {"const": "closed"}, "taskVersion": {"type": "integer", "minimum": 1},
+          "recoveryCompletedAt": {"type": "string", "format": "date-time"}, "windowOutcomesDigest": {"$ref": "#/components/schemas/Digest"}, "ownerResultDigest": {"$ref": "#/components/schemas/Digest"},
+          "deliveryStatus": {"enum": ["pending", "retrying", "confirmed", "failed"]}, "traceId": {"type": "string", "pattern": "^(?!0{32}$)[0-9a-f]{32}$"}
+        }
+      },
+      "Error": {
+        "type": "object", "additionalProperties": false,
+        "required": ["code", "traceId", "currentVersion", "fieldErrors"],
+        "properties": {"code": {"type": "string"}, "traceId": {"type": "string"}, "currentVersion": {"type": ["integer", "null"]}, "fieldErrors": {"type": "array", "maxItems": 32, "items": {"type": "object"}}}
+      }
+    },
+    "responses": {
+      "Finalization": {"description": "Current final approval projection", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Finalization"}}}},
+      "BadRequest": {"description": "Strict request rejected", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Concealed": {"description": "Concealed authorization or existence", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Conflict": {"description": "Current fact or idempotency conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Unprocessable": {"description": "Observation or finalization is not actionable", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "Unavailable": {"description": "Closed dependency failure", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+    }
+  }
+}

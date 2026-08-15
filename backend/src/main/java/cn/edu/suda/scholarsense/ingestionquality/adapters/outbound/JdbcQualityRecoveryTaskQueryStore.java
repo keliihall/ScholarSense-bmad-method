@@ -34,7 +34,7 @@ public final class JdbcQualityRecoveryTaskQueryStore implements QualityRecoveryT
     public List<QualityRecoveryTask> findCurrent(QualityRecoveryTaskQueryCriteria criteria) {
         List<UUID> ids = jdbc.query("""
                 select task_id
-                  from ingestion_quality.iq_find_quality_recovery_task_ids(?,?,?,?,?)
+                  from ingestion_quality.iq_find_quality_recovery_task_ids_v2(?,?,?,?,?)
                 """, (row, ignored) -> row.getObject(1, UUID.class),
                 criteria.sourceId(), criteria.status(), timestamp(criteria.afterOccurredAt()),
                 criteria.afterTaskId(), criteria.limit());
@@ -54,7 +54,7 @@ public final class JdbcQualityRecoveryTaskQueryStore implements QualityRecoveryT
         UUID[] page = ids.toArray(UUID[]::new);
         List<TaskRow> rows = jdbc.query("""
                 select *
-                  from ingestion_quality.iq_find_quality_recovery_task_page(?::uuid[])
+                  from ingestion_quality.iq_find_quality_recovery_task_page_v2(?::uuid[])
                 """, this::taskRow, (Object) page);
         if (rows.size() != ids.size()
                 || !rows.stream().map(TaskRow::taskId).toList().equals(ids)) {
@@ -89,6 +89,8 @@ public final class JdbcQualityRecoveryTaskQueryStore implements QualityRecoveryT
                 stringMap(row.getString("trigger")),
                 stringMap(row.getString("current_evidence")),
                 row.getLong("aggregate_version"), instant(row, "occurred_at"),
+                nullableInstant(row, "closed_at"), row.getString("closure_reason"),
+                trim(row.getString("owner_result_digest")),
                 new QualityTaskDeliveryProjection(
                         row.getString("delivery_target"), row.getString("delivery_status"),
                         row.getLong("delivery_attempt"), next == null ? null : next.toInstant(),
@@ -124,6 +126,11 @@ public final class JdbcQualityRecoveryTaskQueryStore implements QualityRecoveryT
         return value.toInstant();
     }
 
+    private static Instant nullableInstant(ResultSet row, String column) throws SQLException {
+        Timestamp value = row.getTimestamp(column);
+        return value == null ? null : value.toInstant();
+    }
+
     private static String trim(String value) {
         return value == null ? null : value.trim();
     }
@@ -147,6 +154,9 @@ public final class JdbcQualityRecoveryTaskQueryStore implements QualityRecoveryT
             Map<String, String> currentEvidence,
             long aggregateVersion,
             Instant occurredAt,
+            Instant closedAt,
+            String closureReason,
+            String ownerResultDigest,
             QualityTaskDeliveryProjection delivery,
             String traceId) {
         QualityRecoveryTask toDomain(List<RuleVersionIdentity> affectedRules) {
@@ -154,7 +164,8 @@ public final class JdbcQualityRecoveryTaskQueryStore implements QualityRecoveryT
             return new QualityRecoveryTask(
                     taskId, episodeId, episodeGeneration, sourceId, dependencyId,
                     affectedRules, ownerRef, priority, dueAt, status, watermark, trigger,
-                    currentEvidence, aggregateVersion, occurredAt, delivery, traceId);
+                    currentEvidence, aggregateVersion, occurredAt, closedAt, closureReason,
+                    ownerResultDigest, delivery, traceId);
         }
     }
 }
