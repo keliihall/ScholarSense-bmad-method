@@ -6,6 +6,13 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODE="${1:-}"
 EXPECTED_REGISTRY="https://registry.npmjs.org/"
 
+verify_native_build_binding() {
+  node --input-type=module -e "await import('rolldown')" || {
+    echo "frontend native build binding is unavailable" >&2
+    exit 1
+  }
+}
+
 if [[ "$MODE" != "--prepare" && "$MODE" != "--offline" ]]; then
   echo "usage: $0 --prepare|--offline" >&2
   exit 2
@@ -36,7 +43,8 @@ if [[ "$MODE" == "--prepare" ]]; then
     exit 1
   }
   echo "[frontend] prewarm exact lock and fixed Playwright Chromium"
-  npm ci --prefer-offline --ignore-scripts
+  npm ci --prefer-offline --ignore-scripts --include=optional
+  verify_native_build_binding
   ./node_modules/.bin/playwright install chromium
   echo "[frontend] prepare PASS"
   exit 0
@@ -83,7 +91,8 @@ run_replay() {
   }
 
   echo "[frontend][$replay] isolated offline install without lifecycle scripts"
-  npm ci --offline --ignore-scripts
+  npm ci --offline --ignore-scripts --include=optional
+  verify_native_build_binding
 
   source_after_install="$(
     python3 "$ROOT_DIR/scripts/normalized_manifest.py" "$replay_root" --summary \
