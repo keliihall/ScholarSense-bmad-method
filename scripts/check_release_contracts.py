@@ -58,6 +58,7 @@ def validate(project_root: Path) -> list[str]:
 
     for instance_name, schema_name in (
         ("backend-lock-1.0.0.json", "backend-lock.schema.json"),
+        ("backend-lock-2.0.0.json", "backend-lock-2.schema.json"),
         ("toolchain-lock-1.0.0.json", "toolchain-lock.schema.json"),
         ("vulnerability-policy-1.0.0.json", "vulnerability-policy.schema.json"),
         ("license-policy-1.0.0.json", "license-policy.schema.json"),

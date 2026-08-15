@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:scholarsense:contract:data-batch-quality-trace-context:2.0.0",
+  "title": "DataBatch quality trace-context additive successor contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "owner",
+    "predecessor",
+    "successor",
+    "traceContext",
+    "processing",
+    "requiredScenarios",
+    "runtimeEvidenceClaim"
+  ],
+  "properties": {
+    "contractVersion": {"const": "DATA-BATCH-QUALITY-TRACE-2.0.0"},
+    "owner": {"const": "ingestion-quality"},
+    "predecessor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contractVersion", "fixtures", "mutationPolicy"],
+      "properties": {
+        "contractVersion": {"const": "DATA-BATCH-QUALITY-EVENT-1.0.0"},
+        "fixtures": {"const": "contracts/events/ingestion-quality/fixtures/valid/data-batch-*-v1.json"},
+        "mutationPolicy": {"const": "read-only"}
+      }
+    },
+    "successor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "qualityAssessedType", "qualityAssessedSchema", "publishedType",
+        "publishedSchema", "readerCutover", "producerCutover"
+      ],
+      "properties": {
+        "qualityAssessedType": {"const": "scholarsense.ingestion-quality.data-batch.quality-assessed.v2"},
+        "qualityAssessedSchema": {"const": "DATA-BATCH-QUALITY-ASSESSED-2.0.0"},
+        "publishedType": {"const": "scholarsense.ingestion-quality.data-batch.published.v2"},
+        "publishedSchema": {"const": "DATA-BATCH-PUBLISHED-2.0.0"},
+        "readerCutover": {"const": "dual-read-v1-v2-before-producer-cutover"},
+        "producerCutover": {"const": "single-v2-event-no-dual-publish"}
+      }
+    },
+    "traceContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wireField", "format", "producer", "reader", "invalid"],
+      "properties": {
+        "wireField": {"const": "traceparent"},
+        "format": {"const": "00-{persisted-trace-id}-{non-zero-producer-span-id}-{00|01}"},
+        "producer": {"const": "real-w3c-child-context"},
+        "reader": {"const": "same-trace-id-any-valid-non-zero-parent-span"},
+        "invalid": {"const": "reject-before-owner-transaction"}
+      }
+    },
+    "processing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "orderingKey", "versionField", "latestStateLookup", "ownerTransaction"],
+      "properties": {
+        "identity": {"const": "CloudEvent-source-plus-id"},
+        "orderingKey": {"const": "data.aggregateId"},
+        "versionField": {"const": "data.aggregateVersion"},
+        "latestStateLookup": {"const": "forbidden"},
+        "ownerTransaction": {"const": "inbox-cursor-business-state-and-derived-outbox-atomic"}
+      }
+    },
+    "requiredScenarios": {
+      "const": [
+        "producer",
+        "consumer",
+        "duplicate",
+        "gap",
+        "poison",
+        "replay",
+        "aggregateVersion-conflict"
+      ]
+    },
+    "runtimeEvidenceClaim": {"const": "local-conformance-only"}
+  }
+}

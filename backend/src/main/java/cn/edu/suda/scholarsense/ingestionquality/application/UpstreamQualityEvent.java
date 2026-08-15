@@ -35,7 +35,9 @@ public record UpstreamQualityEvent(
         String qualityGateVersion,
         String qualityGateDigest,
         Instant effectiveAt,
+        Instant snapshotEffectiveAt,
         Instant occurredAt,
+        String traceparent,
         String traceId,
         String payloadDigest) {
 
@@ -68,17 +70,147 @@ public record UpstreamQualityEvent(
         qualityGateVersion = text(qualityGateVersion, 128);
         qualityGateDigest = digest(qualityGateDigest);
         effectiveAt = microsecond(effectiveAt);
+        snapshotEffectiveAt = microsecond(snapshotEffectiveAt);
         occurredAt = microsecond(occurredAt);
         if (traceId == null || !traceId.matches("^(?!0{32}$)[0-9a-f]{32}$")) {
+            throw invalid();
+        }
+        if (traceparent == null || !traceparent.matches(
+                "^00-" + traceId + "-(?!0{16})[0-9a-f]{16}-0[01]$")) {
             throw invalid();
         }
         payloadDigest = digest(payloadDigest);
     }
 
+    /** Compatibility constructor for callers whose batch and snapshot times were historically equal. */
+    public UpstreamQualityEvent(
+            UUID eventId,
+            String eventSource,
+            String eventType,
+            String schemaVersion,
+            UUID batchId,
+            String sourceId,
+            long sourceVersion,
+            UUID lineageId,
+            UUID supersedesBatchId,
+            long batchAggregateVersion,
+            DataBatchStatus batchStatus,
+            UUID snapshotId,
+            String snapshotImmutableHash,
+            long snapshotAggregateVersion,
+            QualityOverallResult snapshotResult,
+            String manifestDigest,
+            String watermark,
+            BatchObservationWindow observationWindow,
+            Instant cutoffAt,
+            String sourceSchemaVersion,
+            String sourceSchemaDigest,
+            String qmdpVersion,
+            String qmdpDigest,
+            String qualityGateVersion,
+            String qualityGateDigest,
+            Instant effectiveAt,
+            Instant occurredAt,
+            String traceparent,
+            String traceId,
+            String payloadDigest) {
+        this(eventId, eventSource, eventType, schemaVersion, batchId, sourceId,
+                sourceVersion, lineageId, supersedesBatchId, batchAggregateVersion,
+                batchStatus, snapshotId, snapshotImmutableHash, snapshotAggregateVersion,
+                snapshotResult, manifestDigest, watermark, observationWindow, cutoffAt,
+                sourceSchemaVersion, sourceSchemaDigest, qmdpVersion, qmdpDigest,
+                qualityGateVersion, qualityGateDigest, effectiveAt, effectiveAt, occurredAt,
+                traceparent, traceId, payloadDigest);
+    }
+
+    /** Compatibility constructor for frozen 1.x fixtures with a deterministic parent span. */
+    public UpstreamQualityEvent(
+            UUID eventId,
+            String eventSource,
+            String eventType,
+            String schemaVersion,
+            UUID batchId,
+            String sourceId,
+            long sourceVersion,
+            UUID lineageId,
+            UUID supersedesBatchId,
+            long batchAggregateVersion,
+            DataBatchStatus batchStatus,
+            UUID snapshotId,
+            String snapshotImmutableHash,
+            long snapshotAggregateVersion,
+            QualityOverallResult snapshotResult,
+            String manifestDigest,
+            String watermark,
+            BatchObservationWindow observationWindow,
+            Instant cutoffAt,
+            String sourceSchemaVersion,
+            String sourceSchemaDigest,
+            String qmdpVersion,
+            String qmdpDigest,
+            String qualityGateVersion,
+            String qualityGateDigest,
+            Instant effectiveAt,
+            Instant snapshotEffectiveAt,
+            Instant occurredAt,
+            String traceId,
+            String payloadDigest) {
+        this(eventId, eventSource, eventType, schemaVersion, batchId, sourceId,
+                sourceVersion, lineageId, supersedesBatchId, batchAggregateVersion,
+                batchStatus, snapshotId, snapshotImmutableHash, snapshotAggregateVersion,
+                snapshotResult, manifestDigest, watermark, observationWindow, cutoffAt,
+                sourceSchemaVersion, sourceSchemaDigest, qmdpVersion, qmdpDigest,
+                qualityGateVersion, qualityGateDigest, effectiveAt, snapshotEffectiveAt,
+                occurredAt, legacyTraceparent(traceId), traceId, payloadDigest);
+    }
+
+    /** Compatibility constructor for frozen 1.x fixtures with equal batch/snapshot times. */
+    public UpstreamQualityEvent(
+            UUID eventId,
+            String eventSource,
+            String eventType,
+            String schemaVersion,
+            UUID batchId,
+            String sourceId,
+            long sourceVersion,
+            UUID lineageId,
+            UUID supersedesBatchId,
+            long batchAggregateVersion,
+            DataBatchStatus batchStatus,
+            UUID snapshotId,
+            String snapshotImmutableHash,
+            long snapshotAggregateVersion,
+            QualityOverallResult snapshotResult,
+            String manifestDigest,
+            String watermark,
+            BatchObservationWindow observationWindow,
+            Instant cutoffAt,
+            String sourceSchemaVersion,
+            String sourceSchemaDigest,
+            String qmdpVersion,
+            String qmdpDigest,
+            String qualityGateVersion,
+            String qualityGateDigest,
+            Instant effectiveAt,
+            Instant occurredAt,
+            String traceId,
+            String payloadDigest) {
+        this(eventId, eventSource, eventType, schemaVersion, batchId, sourceId,
+                sourceVersion, lineageId, supersedesBatchId, batchAggregateVersion,
+                batchStatus, snapshotId, snapshotImmutableHash, snapshotAggregateVersion,
+                snapshotResult, manifestDigest, watermark, observationWindow, cutoffAt,
+                sourceSchemaVersion, sourceSchemaDigest, qmdpVersion, qmdpDigest,
+                qualityGateVersion, qualityGateDigest, effectiveAt, effectiveAt, occurredAt,
+                legacyTraceparent(traceId), traceId, payloadDigest);
+    }
+
     public UpstreamQualityEvent asPublished(UUID newEventId, Instant at, String newDigest) {
+        boolean successor = eventType.endsWith(".v2");
         return copy(newEventId, batchId, supersedesBatchId, at, watermark,
-                UpstreamQualityEventKind.PUBLISHED.eventType(),
-                UpstreamQualityEventKind.PUBLISHED.schemaVersion(), 4,
+                successor ? "scholarsense.ingestion-quality.data-batch.published.v2"
+                        : UpstreamQualityEventKind.PUBLISHED.eventType(),
+                successor ? "DATA-BATCH-PUBLISHED-2.0.0"
+                        : UpstreamQualityEventKind.PUBLISHED.schemaVersion(), 4,
                 DataBatchStatus.PUBLISHED, newDigest);
     }
 
@@ -129,8 +261,20 @@ public record UpstreamQualityEvent(
                 snapshotId, snapshotImmutableHash, snapshotAggregateVersion, snapshotResult,
                 manifestDigest, newWatermark, observationWindow, cutoffAt,
                 sourceSchemaVersion, sourceSchemaDigest, qmdpVersion, qmdpDigest,
-                qualityGateVersion, qualityGateDigest, effectiveAt, newOccurredAt,
-                traceId, newPayloadDigest);
+                qualityGateVersion, qualityGateDigest, effectiveAt, snapshotEffectiveAt,
+                newOccurredAt,
+                traceparent, traceId, newPayloadDigest);
+    }
+
+    private static String legacyTraceparent(String traceId) {
+        if (traceId == null || !traceId.matches("(?!0{32})[0-9a-f]{32}")) {
+            throw invalid();
+        }
+        String spanId = traceId.substring(0, 16);
+        if (spanId.equals("0".repeat(16))) {
+            spanId = traceId.substring(16);
+        }
+        return "00-" + traceId + "-" + spanId + "-01";
     }
 
     private static UUID uuidV7(UUID value) {

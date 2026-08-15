@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
-import cn.edu.suda.scholarsense.shared.trace.W3cTraceId;
+import cn.edu.suda.scholarsense.shared.observability.HttpTraceContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -119,7 +119,6 @@ public final class OidcLoginSuccessHandler implements AuthenticationSuccessHandl
     }
 
     private static String traceId(HttpServletRequest request) {
-        return W3cTraceId.from(
-                request.getHeader("Traceparent"), request.getMethod() + ":" + request.getRequestURI());
+        return HttpTraceContext.traceId(request);
     }
 }

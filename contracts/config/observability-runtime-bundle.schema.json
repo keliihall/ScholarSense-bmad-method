@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.scholarsense.invalid/observability-runtime-bundle.schema.json",
+  "title": "ScholarSense observability runtime bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "version", "contract", "profiles", "supportedRoles", "exportPolicy"],
+  "properties": {
+    "$schema": {"const": "./observability-runtime-bundle.schema.json"},
+    "version": {"const": "OBSERVABILITY-RUNTIME-BUNDLE-1.0.0"},
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "path", "binarySha256"],
+      "properties": {
+        "version": {"const": "OBS-1.0.0"},
+        "path": {"const": "contracts/observability/observability-contract-1.0.0.json"},
+        "binarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["environment", "role", "version", "path", "binarySha256"],
+        "properties": {
+          "environment": {"enum": ["dev", "test", "stage", "prod"]},
+          "role": {"enum": ["web-api", "worker"]},
+          "version": {"const": "OBS-RUNTIME-1.0.0"},
+          "path": {"type": "string", "pattern": "^contracts/config/observability-runtime-(dev|test|stage|prod)-1\\.0\\.0\\.json$"},
+          "binarySha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "supportedRoles": {"const": ["web-api", "worker"]},
+    "exportPolicy": {
+      "const": {
+        "businessOutcomeAuthority": "forbidden",
+        "failureMode": "drop-telemetry-keep-business-truth",
+        "maxQueueSize": 2048,
+        "networkInsideOwnerTransaction": false
+      }
+    }
+  }
+}

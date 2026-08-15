@@ -43,6 +43,7 @@ RELEASE_MANIFEST_VERSIONS = {
     "RELEASE-MANIFEST-7.0.0": "7",
     "RELEASE-MANIFEST-8.0.0": "8",
     "RELEASE-MANIFEST-9.0.0": "9",
+    "RELEASE-MANIFEST-10.0.0": "10",
 }
 PIC_TARGET_EVIDENCE_FILENAME = (
     "public-integration-target-conformance-evidence-1.0.0.json"

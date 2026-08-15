@@ -18,7 +18,7 @@ from release_json import load_json  # noqa: E402
 def main(argv: list[str]) -> int:
     root = Path(argv[1]).resolve() if len(argv) == 2 else ROOT
     try:
-        lock = load_json(root / "contracts/release/backend-lock-1.0.0.json")
+        lock = load_json(root / "contracts/release/backend-lock-2.0.0.json")
         issues = validate_backend_lock(lock, root)
     except (OSError, ValueError) as error:
         print(error, file=sys.stderr)

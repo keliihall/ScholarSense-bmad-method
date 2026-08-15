@@ -5,7 +5,7 @@ import cn.edu.suda.scholarsense.identityaccess.domain.IdentityAccessException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.util.Map;
-import cn.edu.suda.scholarsense.shared.trace.W3cTraceId;
+import cn.edu.suda.scholarsense.shared.observability.HttpTraceContext;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,7 +41,6 @@ public final class HostInputRejectionController {
     }
 
     private static String traceId(HttpServletRequest request) {
-        return W3cTraceId.from(
-                request.getHeader("Traceparent"), request.getMethod() + ":" + request.getRequestURI());
+        return HttpTraceContext.traceId(request);
     }
 }

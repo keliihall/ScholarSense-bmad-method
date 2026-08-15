@@ -1,5 +1,5 @@
 # generated: 2026-07-17T20:58:14+0800
-# last_updated: 2026-08-13T21:15:16+0800
+# last_updated: 2026-08-16T03:02:20+0800
 # project: ScholarSense-bmad-method
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - 回顾产生的行动项追加到 action_items，sprint-status 会呈现未完成项
 
 generated: 2026-07-17T20:58:14+0800
-last_updated: 2026-08-13T21:15:16+0800
+last_updated: 2026-08-16T02:35:40+0800
 project: ScholarSense-bmad-method
 project_key: NOKEY
 tracking_system: file-system
@@ -73,7 +73,7 @@ development_status:
   2-5a-判定质量熔断并冻结新产出: done
   2-5b-执行证据化质量恢复: done
   2-5c-执行恢复观察-回退与质量任务收敛: done
-  2-6a-贯通全链路-traceid-与技术遥测: backlog
+  2-6a-贯通全链路-traceid-与技术遥测: done
   2-6b-验收角色隔离运行面板-告警与隐私负例: backlog
   2-7a-呈现依赖降级与可执行能力边界: backlog
   2-7b-执行持久重试-幂等与恢复筛选: backlog

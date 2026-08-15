@@ -2,11 +2,11 @@ package cn.edu.suda.scholarsense.identityaccess.adapters.outbound;
 
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncObservabilityPort;
 import cn.edu.suda.scholarsense.identityaccess.application.IdentitySyncObservation;
+import cn.edu.suda.scholarsense.shared.observability.GovernedMeter;
+import cn.edu.suda.scholarsense.shared.observability.SafeObservationAttributes;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.Locale;
+import java.util.Set;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 public final class MicrometerIdentitySyncObservabilityAdapter
@@ -259,9 +259,11 @@ public final class MicrometerIdentitySyncObservabilityAdapter
             """;
 
     private final MeterRegistry registry;
+    private final GovernedMeter governed;
 
     public MicrometerIdentitySyncObservabilityAdapter(MeterRegistry registry) {
         this.registry = registry;
+        this.governed = new GovernedMeter(registry);
     }
 
     public MicrometerIdentitySyncObservabilityAdapter(
@@ -403,11 +405,30 @@ public final class MicrometerIdentitySyncObservabilityAdapter
 
     @Override
     public void record(IdentitySyncObservation observation) {
-        List<Tag> tags = new ArrayList<>();
-        observation.labels().entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> tags.add(Tag.of(entry.getKey(), entry.getValue())));
-        registry.counter(observation.metric(), tags).increment(observation.value());
+        Set<String> allowed = Set.of(
+                "sourceId", "feedId", "consumerProjection",
+                "responsibilityContract", "outcome");
+        if (!allowed.containsAll(observation.labels().keySet())
+                || !observation.labels().containsKey("outcome")
+                || !observation.labels().containsKey("feedId")) {
+            throw new IllegalArgumentException("IDENTITY_METRIC_DIMENSION_INVALID");
+        }
+        SafeObservationAttributes dimensions = SafeObservationAttributes.create()
+                .low("service", "scholarsense")
+                .low("module", "identity-access")
+                .low("operation", canonical(observation.metric()))
+                .low("outcome", canonical(observation.labels().get("outcome")));
+        String projection = observation.labels().get("consumerProjection");
+        if (projection != null) dimensions.low("role", canonical(projection));
+        dimensions.low("dependency", canonical(observation.labels().get("feedId")));
+        String contract = observation.labels().get("responsibilityContract");
+        if (contract != null) dimensions.low("code", canonical(contract));
+        governed.increment(observation.metric(), observation.value(), dimensions);
+    }
+
+    private static String canonical(String value) {
+        if (value == null) throw new IllegalArgumentException("IDENTITY_METRIC_DIMENSION_INVALID");
+        return value.toLowerCase(Locale.ROOT).replace('_', '-');
     }
 
     private static double longValue(JdbcTemplate jdbc, String sql) {

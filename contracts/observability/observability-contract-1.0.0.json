@@ -1,0 +1,141 @@
+{
+  "$schema": "./observability-contract.schema.json",
+  "schemaVersion": "1.0.0",
+  "contractVersion": "OBS-1.0.0",
+  "owner": "platform-observability",
+  "performanceProfile": {
+    "path": "contracts/performance/performance-profile-pp-1.0.0.json",
+    "version": "PP-1.0.0",
+    "contentDigest": "sha256:fd66577ba59bdeb90df2dcb3fdbbc94292fa7fbc359893bdfcafcfa09c4f3529"
+  },
+  "signals": {
+    "log": {
+      "fixedFields": ["timestamp", "level", "service", "module", "traceId", "event", "code"],
+      "additionalFieldAllowlist": ["spanId", "role", "outcome", "reason", "dependency", "attempt"],
+      "additionalFields": [
+        {"name":"spanId","type":"string","semantics":"current operation W3C span id","source":"current-trace-context","owner":"platform-observability","required":false,"cardinality":"high","sensitivity":"internal-technical","allowedValues":[],"retention":"P30D","export":"allowed"},
+        {"name":"role","type":"string","semantics":"bounded runtime role","source":"versioned-runtime-profile","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"public-technical","allowedValues":["web-api","worker"],"retention":"P30D","export":"allowed"},
+        {"name":"outcome","type":"string","semantics":"bounded operation result","source":"instrumentation-result-enum","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"public-technical","allowedValues":["success","denied","conflict","duplicate","gap","poison","timeout","unavailable","failure"],"retention":"P30D","export":"allowed"},
+        {"name":"reason","type":"string","semantics":"bounded technical reason","source":"instrumentation-reason-enum","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"internal-technical","allowedValues":["missing","invalid","all-zero","untrusted","disabled","export-failed"],"retention":"P30D","export":"allowed"},
+        {"name":"dependency","type":"string","semantics":"approved dependency class","source":"versioned-runtime-authority-profile-or-exporter-config","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"internal-technical","allowedValues":["identity-authority","responsibility-authority","quality-worker","otlp-traces","otlp-metrics"],"retention":"P30D","export":"allowed"},
+        {"name":"attempt","type":"integer","semantics":"durable execution attempt ordinal","source":"durable-job-record","owner":"job-owner","required":false,"cardinality":"high","sensitivity":"internal-technical","allowedValues":[],"retention":"P30D","export":"allowed"}
+      ],
+      "fields": [
+        {"name":"timestamp","type":"timestamp","semantics":"UTC emission time","source":"logging-event-timestamp","owner":"platform-observability","required":true,"cardinality":"high","sensitivity":"public-technical","allowedValues":[],"retention":"P30D","export":"allowed"},
+        {"name":"level","type":"string","semantics":"stable severity","source":"logging-event-level","owner":"platform-observability","required":true,"cardinality":"low","sensitivity":"public-technical","allowedValues":["TRACE","DEBUG","INFO","WARN","ERROR"],"retention":"P30D","export":"allowed"},
+        {"name":"service","type":"string","semantics":"resource service name","source":"versioned-runtime-resource","owner":"platform-observability","required":true,"cardinality":"constant","sensitivity":"public-technical","allowedValues":["scholarsense"],"retention":"P30D","export":"allowed"},
+        {"name":"module","type":"string","semantics":"bounded module identifier","source":"versioned-runtime-resource","owner":"platform-observability","required":true,"cardinality":"low","sensitivity":"internal-technical","allowedValues":["shared","web-api","worker","identity-access","audit-operations","ingestion-quality","subject-registry","public-integration"],"retention":"P30D","export":"allowed"},
+        {"name":"traceId","type":"string","semantics":"current operation W3C trace id","source":"current-trace-context","owner":"platform-observability","required":true,"cardinality":"high","sensitivity":"internal-technical","allowedValues":[],"retention":"P30D","export":"allowed"},
+        {"name":"event","type":"string","semantics":"stable event name","source":"instrumentation-event-enum","owner":"platform-observability","required":true,"cardinality":"low","sensitivity":"public-technical","allowedValues":["runtime.lifecycle","http.request","job.attempt","batch.evaluate","outbox.publish","event.consume","external.call","audit.write"],"retention":"P30D","export":"allowed"},
+        {"name":"code","type":"string","semantics":"bounded result or reason code","source":"instrumentation-result-enum","owner":"platform-observability","required":true,"cardinality":"low","sensitivity":"public-technical","allowedValues":["ok","invalid","unauthorized","forbidden","conflict","duplicate","old","gap","poison","timeout","unavailable","error"],"retention":"P30D","export":"allowed"}
+      ]
+    },
+    "metric": {
+      "allowedLabels": ["service", "module", "role", "operation", "outcome", "code", "dependency", "error"],
+      "forbiddenLabels": ["traceId", "spanId", "studentId", "subjectId", "batchId", "aggregateId", "url", "query"],
+      "correlation": "exemplar-or-trace-link-only",
+      "labels": [
+        {"name":"service","type":"string","semantics":"resource service name","source":"versioned-runtime-resource","owner":"platform-observability","required":true,"cardinality":"constant","sensitivity":"public-technical","allowedValues":["scholarsense"],"retention":"P90D","export":"allowed"},
+        {"name":"module","type":"string","semantics":"bounded module identifier","source":"instrumentation-module-enum","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"internal-technical","allowedValues":["shared","web-api","worker","identity-access","audit-operations","ingestion-quality","subject-registry","public-integration"],"retention":"P90D","export":"allowed"},
+        {"name":"role","type":"string","semantics":"bounded execution or projection role","source":"versioned-runtime-or-contract-enum","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"internal-technical","allowedValues":["web-api","worker","identity-org","responsibility","incremental","full-chain"],"retention":"P90D","export":"allowed"},
+        {"name":"operation","type":"string","semantics":"approved operation name","source":"instrumentation-operation-enum","owner":"platform-observability","required":true,"cardinality":"low","sensitivity":"public-technical","allowedValues":["http.server","job.attempt","batch.evaluate","job.finalize","outbox.publish","event.consume","http.client","telemetry.export","scholarsense.operation","audit.ingestion.outcome","audit.availability.state","audit.alert.delivery","audit.verifier.result","identity-sync-applied-total","identity-sync-slo-probe-total","identity-sync-job-total","responsibility-sync-slo-probe-total","responsibility-sync-applied-total","responsibility-sync-job-total","responsibility-sync-slo-retry-total"],"retention":"P90D","export":"allowed"},
+        {"name":"outcome","type":"string","semantics":"bounded operation result","source":"instrumentation-result-enum","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"public-technical","allowedValues":["success","denied","conflict","duplicate","gap","poison","timeout","unavailable","failure","appended","collision","rejected","confirmed","retried","fenced","healthy","unhealthy","degraded","blocked","applied","compensation-failed","compensation-required","met","missed","no-change","queued","running","succeeded","failed","cancelled"],"retention":"P90D","export":"allowed"},
+        {"name":"code","type":"string","semantics":"bounded technical or contract code","source":"versioned-contract-enum","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"public-technical","allowedValues":["ok","invalid","unauthorized","forbidden","conflict","duplicate","old","gap","poison","timeout","unavailable","error","warning","critical","responsibility-authority-1.0.0","responsibility-authority-2.0.0"],"retention":"P90D","export":"allowed"},
+        {"name":"dependency","type":"string","semantics":"approved dependency or feed class","source":"versioned-runtime-authority-or-feed-profile","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"internal-technical","allowedValues":["identity-authority","responsibility-authority","quality-worker","otlp-traces","otlp-metrics","src-p0-responsibility-001"],"retention":"P90D","export":"allowed"},
+        {"name":"error","type":"string","semantics":"bounded error presence class","source":"instrumentation-failure-state","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"public-technical","allowedValues":["none","error","export"],"retention":"P90D","export":"allowed"}
+      ],
+      "fields": [
+        {"name":"name","type":"string","semantics":"approved metric name","source":"instrumentation-meter-name","owner":"platform-observability","required":true,"cardinality":"low","sensitivity":"public-technical","allowedValues":["scholarsense.operation.total","scholarsense.operation.duration","scholarsense.telemetry.export.failures"],"retention":"P90D","export":"allowed"},
+        {"name":"value","type":"number","semantics":"metric observation","source":"meter-observation","owner":"platform-observability","required":true,"cardinality":"high","sensitivity":"public-technical","allowedValues":[],"retention":"P90D","export":"allowed"},
+        {"name":"outcome","type":"string","semantics":"bounded operation result","source":"instrumentation-result-enum","owner":"platform-observability","required":true,"cardinality":"low","sensitivity":"public-technical","allowedValues":["success","denied","conflict","duplicate","gap","poison","timeout","unavailable","failure"],"retention":"P90D","export":"allowed"}
+      ]
+    },
+    "span": {
+      "lowCardinalityAttributes": ["service.name", "scholarsense.module", "scholarsense.role", "scholarsense.operation", "scholarsense.outcome", "error.type"],
+      "highCardinalityAttributes": ["scholarsense.aggregate.version"],
+      "attributes": [
+        {"name":"service.name","type":"string","semantics":"resource service name","source":"versioned-runtime-resource","owner":"platform-observability","required":true,"cardinality":"low","sensitivity":"public-technical","allowedValues":["scholarsense"],"retention":"P7D","export":"allowed"},
+        {"name":"scholarsense.module","type":"string","semantics":"bounded module identifier","source":"instrumentation-module-enum","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"internal-technical","allowedValues":[],"retention":"P7D","export":"allowed"},
+        {"name":"scholarsense.role","type":"string","semantics":"bounded runtime role","source":"versioned-runtime-or-contract-enum","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"internal-technical","allowedValues":[],"retention":"P7D","export":"allowed"},
+        {"name":"scholarsense.operation","type":"string","semantics":"approved operation name","source":"instrumentation-operation-enum","owner":"platform-observability","required":true,"cardinality":"low","sensitivity":"public-technical","allowedValues":[],"retention":"P7D","export":"allowed"},
+        {"name":"scholarsense.outcome","type":"string","semantics":"bounded operation result","source":"instrumentation-result-enum","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"public-technical","allowedValues":[],"retention":"P7D","export":"allowed"},
+        {"name":"error.type","type":"string","semantics":"privacy-safe failure class","source":"instrumentation-failure-state","owner":"platform-observability","required":false,"cardinality":"low","sensitivity":"public-technical","allowedValues":["operation.failure"],"retention":"P7D","export":"allowed"},
+        {"name":"scholarsense.aggregate.version","type":"integer","semantics":"monotonic aggregate version","source":"owner-aggregate-record","owner":"business-owner","required":false,"cardinality":"high","sensitivity":"internal-technical","allowedValues":[],"retention":"P7D","export":"allowed"}
+      ],
+      "fields": [
+        {"name":"traceId","type":"string","semantics":"current operation W3C trace id","source":"current-span-context","owner":"platform-observability","required":true,"cardinality":"high","sensitivity":"internal-technical","allowedValues":[],"retention":"P7D","export":"allowed"},
+        {"name":"spanId","type":"string","semantics":"unique non-zero W3C span id","source":"current-span-context","owner":"platform-observability","required":true,"cardinality":"high","sensitivity":"internal-technical","allowedValues":[],"retention":"P7D","export":"allowed"},
+        {"name":"parentSpanId","type":"string","semantics":"optional W3C parent span id","source":"parent-span-context","owner":"platform-observability","required":false,"cardinality":"high","sensitivity":"internal-technical","allowedValues":[],"retention":"P7D","export":"allowed"},
+        {"name":"name","type":"string","semantics":"approved span operation name","source":"instrumentation-operation-enum","owner":"platform-observability","required":true,"cardinality":"low","sensitivity":"public-technical","allowedValues":["http.server","job.attempt","batch.evaluate","job.finalize","outbox.publish","event.consume","http.client"],"retention":"P7D","export":"allowed"},
+        {"name":"kind","type":"string","semantics":"OpenTelemetry span kind","source":"instrumentation-span-kind","owner":"platform-observability","required":true,"cardinality":"low","sensitivity":"public-technical","allowedValues":["SERVER","INTERNAL","PRODUCER","CONSUMER","CLIENT"],"retention":"P7D","export":"allowed"},
+        {"name":"status","type":"string","semantics":"OpenTelemetry status","source":"span-completion-state","owner":"platform-observability","required":true,"cardinality":"low","sensitivity":"public-technical","allowedValues":["UNSET","OK","ERROR"],"retention":"P7D","export":"allowed"}
+      ]
+    },
+    "event": {
+      "envelopeVersion": "2.0.0",
+      "fields": [
+        {"name":"traceId","type":"string","semantics":"publishing operation trace id","source":"producer-current-trace-context","owner":"event-producer","required":true,"cardinality":"high","sensitivity":"internal-technical","allowedValues":[],"retention":"owner-policy","export":"allowed"},
+        {"name":"traceparent","type":"string","semantics":"real W3C producer context","source":"producer-span-context","owner":"event-producer","required":true,"cardinality":"high","sensitivity":"internal-technical","allowedValues":[],"retention":"owner-policy","export":"allowed"},
+        {"name":"objectCreationTraceId","type":"string","semantics":"immutable source object creation trace","source":"immutable-source-snapshot","owner":"business-owner","required":false,"cardinality":"high","sensitivity":"internal-technical","allowedValues":[],"retention":"owner-policy","export":"allowed"},
+        {"name":"aggregateVersion","type":"integer","semantics":"monotonic aggregate version","source":"owner-aggregate-record","owner":"business-owner","required":true,"cardinality":"high","sensitivity":"internal-technical","allowedValues":[],"retention":"owner-policy","export":"allowed"},
+        {"name":"code","type":"string","semantics":"bounded consumer result","source":"consumer-processing-result","owner":"event-consumer","required":false,"cardinality":"low","sensitivity":"public-technical","allowedValues":["accepted","duplicate","old","gap","poison","conflict"],"retention":"P30D","export":"allowed"}
+      ]
+    },
+    "privacy": {
+      "deniedFieldNames": ["requestBody", "query", "Authorization", "Cookie", "studentId", "studentName", "evidenceText", "token", "secret", "certificate", "baggage"],
+      "deniedValueCorpus": ["张三", "20260001", "证据正文-不可导出", "api-key-secret", "Bearer secret-token", "session=cookie-secret", "-----BEGIN CERTIFICATE-----"],
+      "scanScope": ["log", "span-export", "metric-export", "metric-scrape", "event-fixture"],
+      "failureMode": "fail-closed"
+    },
+    "trustBoundary": {
+      "ingress": {"profileVersion":"TRUSTED-INGRESS-1.0.0","decision":"exact-proxy-socket-and-injected-identity","proxyClearsPropagationHeaders":true,"directClientHeaders":"always-untrusted"},
+      "egress": {
+        "profileVersion": "APPROVED-AUTHORITY-EGRESS-1.0.0",
+        "source": "versioned-runtime-authority-profiles",
+        "decision": "exact-configured-origin",
+        "requiredEvidence": "approved-versioned-authority-profile",
+        "productionProtocol": "https-only",
+        "developmentSandbox": "explicit-loopback-origin-only",
+        "placeholderProductionEndpoint": "reject"
+      },
+      "unknownTarget": "do-not-propagate",
+      "baggage": "never-propagate"
+    }
+  },
+  "traceSemantics": {
+    "objectCreationTraceId": "immutable-creation-context",
+    "traceId": "current-operation-context",
+    "traceparent": "w3c-parent-context",
+    "spanLink": "causal-link-not-parent-rewrite",
+    "historyPolicy": "never-rewrite-hash-participating-snapshot"
+  },
+  "propagation": {
+    "format": "W3C-trace-context-00",
+    "validTraceId": "32-lowercase-hex-non-zero",
+    "validSpanId": "16-lowercase-hex-non-zero",
+    "invalidOrAllZero": "clean-root",
+    "untrustedIngress": "clean-root",
+    "trustedEgress": "allowlist-only",
+    "baggage": "forbidden",
+    "legacyHeader": "dual-write-through-OBS-1.x",
+    "legacyHeaderRemoval": "OBS-2.0.0-after-consumer-conformance"
+  },
+  "sampling": {
+    "production": "parent-based-ratio-from-versioned-config",
+    "conformance": "always-on",
+    "unsampled": "propagate-valid-context"
+  },
+  "compatibility": {
+    "matrix": "event-trace-context-compatibility-1.0.0.json",
+    "eventEvolution": "additive-successor"
+  },
+  "runtimeEvidence": {
+    "story26aFoundation": "contract-and-local-conformance",
+    "story26bRoleDashboardAndFinalPrivacy": "none",
+    "story27DegradationAndRetry": "none",
+    "story28NaturalMonthSliAndRecovery": "none",
+    "productionDuration": "none"
+  },
+  "unresolvedSemantics": [],
+  "selfDigest": "sha256:863f187951ca430b4ef35a9a7d6bcbfadd7aae05034f54f3ebb288bb0645813a"
+}

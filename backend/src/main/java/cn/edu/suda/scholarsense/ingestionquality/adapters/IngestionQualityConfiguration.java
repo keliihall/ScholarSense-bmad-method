@@ -54,6 +54,8 @@ import cn.edu.suda.scholarsense.ingestionquality.application.SubjectRecomputeJob
 import cn.edu.suda.scholarsense.ingestionquality.application.SubjectMappingCorrectionCoordinator;
 import cn.edu.suda.scholarsense.subjectregistry.api.SubjectMappingChangedConsumerPort;
 import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
+import cn.edu.suda.scholarsense.shared.observability.CurrentTraceSource;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import cn.edu.suda.scholarsense.shared.time.AuditAvailabilityPort;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
 import cn.edu.suda.scholarsense.subjectregistry.api.PendingSubjectRecomputeRequestPort;
@@ -430,8 +432,10 @@ public class IngestionQualityConfiguration {
     @Bean
     JdbcSubjectWindowRecomputeStore jdbcSubjectWindowRecomputeStore(
             JdbcTemplate jdbc, ObjectMapper json,
+            CurrentTraceSource currentTrace,
+            W3cTraceContextCodec traceCodec,
             PostgreSqlConnectionProfile ingestionQualityOnlinePostgreSqlConnectionProfile) {
-        return new JdbcSubjectWindowRecomputeStore(jdbc, json);
+        return new JdbcSubjectWindowRecomputeStore(jdbc, json, currentTrace, traceCodec);
     }
 
     @Bean

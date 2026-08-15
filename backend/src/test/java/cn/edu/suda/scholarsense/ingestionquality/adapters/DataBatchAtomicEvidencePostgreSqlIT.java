@@ -8,13 +8,52 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import cn.edu.suda.scholarsense.identityaccess.api.AuditTokenizedValue;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.FrozenRuleDependencyRegistryLoader;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcDataBatchAtomicCommandAdapter;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcDataBatchStore;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityEligibilityEventTransactionAdapter;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcQualityEligibilitySnapshotLookupStore;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcSubjectWindowRecomputeStore;
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.FrozenExecutableQualityPolicyLoader;
+import cn.edu.suda.scholarsense.ingestionquality.adapters.inbound.StrictDataBatchQualityEventDecoder;
+import cn.edu.suda.scholarsense.ingestionquality.application.CanonicalOutboxPayload;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchAtomicCommitContext;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchCanonicalOutboxFactory;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchCommandContext;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchCommandService;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchCommandType;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchIdempotencyScope;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchQualityEvaluationService;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchView;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchWorkloadAuthorizationEvidence;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchWorkloadAuthorizationGuard;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchWorkloadAuthorizationPort;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchWorkloadAuthorizationRequest;
+import cn.edu.suda.scholarsense.ingestionquality.application.DataBatchWorkloadAuthorizationResult;
+import cn.edu.suda.scholarsense.ingestionquality.application.EvaluateDataBatchCommand;
+import cn.edu.suda.scholarsense.ingestionquality.application.ExecutableQualityPolicyGuard;
+import cn.edu.suda.scholarsense.ingestionquality.application.MappingRecomputeCompletion;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualityContractAttestation;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityEligibilityEventConsumer;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityEligibilityProcessingOutcome;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseWorkItemIdentity;
+import cn.edu.suda.scholarsense.ingestionquality.application.QualityFuseWorkloadAuthorizationGuard;
 import cn.edu.suda.scholarsense.ingestionquality.application.QualitySnapshotRetentionScopeCanonicalizer;
+import cn.edu.suda.scholarsense.ingestionquality.application.SubjectWindowRecomputeCandidate;
+import cn.edu.suda.scholarsense.ingestionquality.application.SubjectWindowRecomputeProcessor;
+import cn.edu.suda.scholarsense.ingestionquality.application.SubjectWindowRecomputeWorkPort;
+import cn.edu.suda.scholarsense.ingestionquality.application.SubjectWindowRecomputeWorkerResult;
 import cn.edu.suda.scholarsense.ingestionquality.application.VerifiedQualityContract;
+import cn.edu.suda.scholarsense.ingestionquality.domain.BatchIdentity;
+import cn.edu.suda.scholarsense.ingestionquality.domain.BatchLineage;
+import cn.edu.suda.scholarsense.ingestionquality.domain.BatchManifest;
 import cn.edu.suda.scholarsense.ingestionquality.domain.BatchObservationWindow;
 import cn.edu.suda.scholarsense.ingestionquality.domain.DataBatchStatus;
 import cn.edu.suda.scholarsense.ingestionquality.domain.ExecutableQualityPolicy.MetricDefinition;
+import cn.edu.suda.scholarsense.ingestionquality.domain.HistoricalWindow;
+import cn.edu.suda.scholarsense.ingestionquality.domain.MappingRecomputeIdentity;
+import cn.edu.suda.scholarsense.ingestionquality.domain.MappingRecomputeJob;
 import cn.edu.suda.scholarsense.ingestionquality.domain.ExecutableQualityPolicy.SourcePolicy;
 import cn.edu.suda.scholarsense.ingestionquality.domain.MeasuredQualityInputs;
 import cn.edu.suda.scholarsense.ingestionquality.domain.QualityAssessment;
@@ -26,14 +65,46 @@ import cn.edu.suda.scholarsense.ingestionquality.domain.SealedQualityContractEvi
 import cn.edu.suda.scholarsense.shared.outbox.ActorType;
 import cn.edu.suda.scholarsense.shared.outbox.LocalAuditFact;
 import cn.edu.suda.scholarsense.shared.outbox.LocalAuditOutboxRecord;
+import cn.edu.suda.scholarsense.shared.observability.MicrometerCurrentTraceSource;
+import cn.edu.suda.scholarsense.shared.observability.MicrometerObservationPort;
+import cn.edu.suda.scholarsense.shared.observability.HttpTraceTrustBoundaryFilter;
+import cn.edu.suda.scholarsense.shared.observability.ObservationPort;
+import cn.edu.suda.scholarsense.shared.observability.SafeObservationAttributes;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClient;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClientFactory;
+import cn.edu.suda.scholarsense.shared.observability.TrustedIngressAllowlist;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContext;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import cn.edu.suda.scholarsense.shared.time.TimeSourceProfile;
+import cn.edu.suda.scholarsense.shared.time.TrustedTime;
+import cn.edu.suda.scholarsense.runtime.RuntimeEnvironment;
+import com.sun.net.httpserver.HttpServer;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.tracing.otel.bridge.OtelCurrentTraceContext;
+import io.micrometer.tracing.otel.bridge.OtelTracer;
+import io.opentelemetry.sdk.common.CompletableResultCode;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.data.SpanData;
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
+import io.opentelemetry.sdk.trace.samplers.Sampler;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -44,13 +115,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -60,6 +138,8 @@ import tools.jackson.databind.node.ObjectNode;
 /** Story 2.3 RED evidence for the application-to-PostgreSQL atomic command boundary. */
 class DataBatchAtomicEvidencePostgreSqlIT {
     private static final Path REPOSITORY = Path.of("..").toAbsolutePath().normalize();
+    private static final String TRACE_ID = "00112233445566778899aabbccddeeff";
+    private static final UUID FULL_TRACE_JOB = uuid(42_598);
     private static final Path MIGRATIONS = Path.of("src/main/resources/db/migration");
     private static final Pattern VERSION = Pattern.compile("^V(\\d{6})__.+\\.sql$");
     private static final String FEATURE_SUFFIX =
@@ -87,6 +167,8 @@ class DataBatchAtomicEvidencePostgreSqlIT {
             "scholarsense_ingestion_quality_quality_worker";
     private static final String WORKER_LOGIN =
             "scholarsense_iq_batch_atomic_evidence_login";
+    private static final String FULL_TRACE_CONSUMER_LOGIN =
+            "scholarsense_iq_full_trace_consumer_login";
     private static final String EVENT_TYPE =
             "scholarsense.ingestion-quality.data-batch.quality-assessed.v1";
     private static final String EVENT_SCHEMA = "DATA-BATCH-QUALITY-ASSESSED-1.0.0";
@@ -389,6 +471,143 @@ class DataBatchAtomicEvidencePostgreSqlIT {
     }
 
     @Test
+    void singleCausalChainTraversesTrustedIngressDurableJdbcCommandConsumerAndEgress()
+            throws Exception {
+        ensureWorkerLogin();
+        ensureFullTraceConsumerLogin();
+        DataSource adminSource = dataSource(required("scholarsense.audit.pg.user"));
+        DataSource workerSource = dataSource(WORKER_LOGIN);
+        DataSource consumerSource = dataSource(FULL_TRACE_CONSUMER_LOGIN);
+        JdbcTemplate jdbc = new JdbcTemplate(adminSource);
+        JdbcTemplate worker = new JdbcTemplate(workerSource);
+        JdbcTemplate consumerJdbc = new JdbcTemplate(consumerSource);
+        Scenario scenario = productionSealed(jdbc, worker, 425);
+        CollectingSpanExporter exporter = new CollectingSpanExporter();
+        AtomicReference<byte[]> persistedEvent = new AtomicReference<>();
+        AtomicReference<com.sun.net.httpserver.Headers> externalHeaders = new AtomicReference<>();
+        assertTrue(jdbc.queryForObject("""
+                select pg_get_constraintdef(constraint_value.oid) like '%v(1|2)%'
+                  from pg_catalog.pg_constraint constraint_value
+                  join pg_catalog.pg_class relation
+                    on relation.oid=constraint_value.conrelid
+                  join pg_catalog.pg_namespace namespace
+                    on namespace.oid=relation.relnamespace
+                 where namespace.nspname='ingestion_quality'
+                   and relation.relname='iq_batch_quality_outbox'
+                   and constraint_value.conname='iq_batch_quality_outbox_event_type_check'
+                """, Boolean.class));
+
+        HttpServer external = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        external.createContext("/quality-authority", exchange -> {
+            externalHeaders.set(exchange.getRequestHeaders());
+            exchange.sendResponseHeaders(204, -1);
+            exchange.close();
+        });
+        external.start();
+        try (SdkTracerProvider provider = SdkTracerProvider.builder()
+                .setSampler(Sampler.alwaysOn())
+                .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                .build()) {
+            OtelCurrentTraceContext traceContext = new OtelCurrentTraceContext();
+            OtelTracer tracer = new OtelTracer(
+                    provider.get("scholarsense-production-full-trace-evidence"),
+                    traceContext, ignored -> {});
+            MicrometerCurrentTraceSource current = new MicrometerCurrentTraceSource(tracer);
+            W3cTraceContextCodec codec = new W3cTraceContextCodec();
+            SimpleMeterRegistry meters = new SimpleMeterRegistry();
+            ObservationPort observations = new MicrometerObservationPort(
+                    meters, tracer, current, codec);
+            DataBatchCommandService commands = productionCommandService(
+                    scenario, worker, current, codec, observations);
+            JdbcSubjectWindowRecomputeStore durable = new JdbcSubjectWindowRecomputeStore(
+                    jdbc, JSON, current, codec);
+            SubjectWindowRecomputeWorkPort work = new EvaluatingJdbcWork(
+                    durable, commands, scenario, jdbc, persistedEvent);
+
+            URI endpoint = URI.create("http://127.0.0.1:"
+                    + external.getAddress().getPort() + "/quality-authority");
+            TrustedHttpClient trustedExternal = new TrustedHttpClientFactory(
+                    current, codec, RuntimeEnvironment.TEST, observations)
+                    .wrapSandboxQualityWorker(HttpClient.newBuilder()
+                            .followRedirects(HttpClient.Redirect.NEVER)
+                            .connectTimeout(Duration.ofSeconds(2)).build(), endpoint);
+
+            HttpTraceTrustBoundaryFilter boundary = new HttpTraceTrustBoundaryFilter(
+                    new TrustedIngressAllowlist(
+                            "TRUSTED-INGRESS-1.0.0",
+                            Map.of("10.10.0.10", "portal-proxy-test-v1")),
+                    codec);
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            request.setMethod("POST");
+            request.setRequestURI("/api/v1/ingestion-quality/full-trace");
+            request.setServerName("api.suda.edu.cn");
+            request.setRemoteAddr("10.10.0.10");
+            request.addHeader("X-ScholarSense-Proxy-Identity", "portal-proxy-test-v1");
+            request.addHeader("traceparent", "00-" + TRACE_ID
+                    + "-aaaaaaaaaaaaaaaa-01");
+            boundary.doFilter(request, new MockHttpServletResponse(), (wrapped, ignored) -> {
+                String inbound = ((HttpServletRequest) wrapped).getHeader("traceparent");
+                W3cTraceContext parent = codec.extract(inbound, true).context();
+                try (ObservationPort.ObservationScope server = observations.start(
+                        "http.server", ObservationPort.ObservationKind.SERVER,
+                        SafeObservationAttributes.create()
+                                .low("module", "web-api")
+                                .low("operation", "http.server")
+                                .low("outcome", "success"),
+                        parent)) {
+                    seedDurableJob(durable, scenario, TRACE_ID);
+                    assertEquals(
+                            new SubjectWindowRecomputeWorkerResult(1, 1, 0, 0),
+                            new SubjectWindowRecomputeProcessor(
+                                    work, () -> uuid(42_599),
+                                    Clock.fixed(scenario.evaluatedAt(), ZoneOffset.UTC),
+                                    observations, codec).runBatch());
+
+                    byte[] payload = persistedEvent.get();
+                    assertNotNull(payload);
+                    var decoded = new StrictDataBatchQualityEventDecoder().decode(payload);
+                    assertEquals(TRACE_ID, decoded.traceId());
+                    var snapshotStore = new JdbcQualityEligibilitySnapshotLookupStore(
+                            consumerJdbc, JSON);
+                    QualityEligibilityEventConsumer consumer = new QualityEligibilityEventConsumer(
+                            (batchId, snapshotId, immutableHash) -> {
+                                try {
+                                    HttpResponse<Void> response = trustedExternal.send(
+                                            HttpRequest.newBuilder(endpoint)
+                                                    .timeout(Duration.ofSeconds(2)).GET().build(),
+                                            HttpResponse.BodyHandlers.discarding(),
+                                            "ingestion-quality", decoded.traceId());
+                                    assertEquals(204, response.statusCode());
+                                } catch (Exception failure) {
+                                    throw new IllegalStateException(failure);
+                                }
+                                return snapshotStore.findExact(
+                                        batchId, snapshotId, immutableHash);
+                            },
+                            productionEligibilityTransaction(
+                                    consumerJdbc, consumerSource, scenario.evaluatedAt()),
+                            FrozenRuleDependencyRegistryLoader.load(
+                                    REPOSITORY.resolve("contracts"), JSON),
+                            (sourceId, dependencyId, generation) ->
+                                    new QualityFuseWorkItemIdentity(
+                                            "qf:" + "7".repeat(64), "k7"),
+                            observations, codec);
+                    assertEquals(QualityEligibilityProcessingOutcome.PENDING_PUBLICATION,
+                            consumer.consume(decoded).outcome());
+                }
+            });
+
+            CompletableResultCode flush = provider.forceFlush();
+            flush.join(10, java.util.concurrent.TimeUnit.SECONDS);
+            assertTrue(flush.isSuccess());
+            assertProductionFullTrace(exporter.spans, jdbc, scenario, externalHeaders.get());
+            writeProductionTraceBundle(exporter.spans);
+        } finally {
+            external.stop(0);
+        }
+    }
+
+    @Test
     void snapshotReadAuditRejectsNonExactFactsAndForgedObjectBindings() {
         ensureWorkerLogin();
         JdbcTemplate jdbc = admin();
@@ -412,6 +631,214 @@ class DataBatchAtomicEvidencePostgreSqlIT {
                         token("agt", "other-snapshot")));
 
         assertReadAuditAccepted(jdbc, scenario, occurredAt, 5);
+    }
+
+    private static DataBatchCommandService productionCommandService(
+            Scenario scenario,
+            JdbcTemplate worker,
+            MicrometerCurrentTraceSource current,
+            W3cTraceContextCodec codec,
+            ObservationPort observations) {
+        JdbcDataBatchStore store = new JdbcDataBatchStore(worker, JSON);
+        JdbcDataBatchAtomicCommandAdapter atomic = new JdbcDataBatchAtomicCommandAdapter(
+                worker, JSON, store,
+                (domain, value) -> new AuditTokenizedValue(
+                        domain.prefix() + "_v1_k1_" + sha256(bytes(value)),
+                        "AUDIT-TOKENIZATION-1.0.0", "k1"));
+        ExecutableQualityPolicyGuard guard = new ExecutableQualityPolicyGuard(() -> CONTRACT);
+        DataBatchQualityEvaluationService evaluation = new DataBatchQualityEvaluationService(
+                guard, store, store, store, ignored -> scenario.snapshotId());
+        DataBatchCanonicalOutboxFactory payloads = new DataBatchCanonicalOutboxFactory(
+                WORKER_LOGIN, current, codec, observations);
+        return new DataBatchCommandService(
+                store, store, store, atomic, evaluation, guard,
+                ignored -> cn.edu.suda.scholarsense.ingestionquality.application
+                        .DataBatchAuthorizationDecision.ALLOW,
+                new DataBatchWorkloadAuthorizationGuard(
+                        allowingWorkloadAuthorization(WORKER_LOGIN)),
+                payloads, () -> trustedAt(scenario.evaluatedAt()));
+    }
+
+    private static JdbcQualityEligibilityEventTransactionAdapter
+            productionEligibilityTransaction(
+                    JdbcTemplate jdbc, DataSource source, Instant now) {
+        return new JdbcQualityEligibilityEventTransactionAdapter(
+                jdbc,
+                new TransactionTemplate(new DataSourceTransactionManager(source)),
+                JSON,
+                new QualityFuseWorkloadAuthorizationGuard(
+                        allowingQualityFuseAuthorization(now), "test"),
+                () -> trustedAt(now));
+    }
+
+    private static DataBatchWorkloadAuthorizationPort allowingWorkloadAuthorization(
+            String principalRef) {
+        return new DataBatchWorkloadAuthorizationPort() {
+            @Override
+            public DataBatchWorkloadAuthorizationResult capture(
+                    DataBatchWorkloadAuthorizationRequest request) {
+                return DataBatchWorkloadAuthorizationResult.allow(
+                        commandEvidence(principalRef, request), 7);
+            }
+
+            @Override
+            public DataBatchWorkloadAuthorizationResult revalidate(
+                    DataBatchWorkloadAuthorizationEvidence captured,
+                    DataBatchWorkloadAuthorizationRequest request) {
+                return DataBatchWorkloadAuthorizationResult.allow(captured, 7);
+            }
+        };
+    }
+
+    private static DataBatchWorkloadAuthorizationEvidence commandEvidence(
+            String principalRef, DataBatchWorkloadAuthorizationRequest request) {
+        return new DataBatchWorkloadAuthorizationEvidence(
+                "test", principalRef,
+                "spiffe://scholarsense/ingestion-quality/quality-worker",
+                request.audience(), request.capabilities(), 7,
+                DataBatchWorkloadAuthorizationGuard.POLICY_VERSION,
+                "sha256:" + "d".repeat(64),
+                request.currentTime().minusSeconds(60),
+                request.currentTime().plusSeconds(600), null);
+    }
+
+    private static DataBatchWorkloadAuthorizationPort allowingQualityFuseAuthorization(
+            Instant now) {
+        DataBatchWorkloadAuthorizationEvidence evidence =
+                new DataBatchWorkloadAuthorizationEvidence(
+                        "test", "workload:eligibility-consumer",
+                        "spiffe://scholarsense/ingestion-quality/eligibility-consumer",
+                        QualityFuseWorkloadAuthorizationGuard.AUDIENCE,
+                        Set.of(QualityFuseWorkloadAuthorizationGuard.CAPABILITY), 7,
+                        QualityFuseWorkloadAuthorizationGuard.POLICY_VERSION,
+                        "sha256:" + "e".repeat(64), now.minusSeconds(60),
+                        now.plusSeconds(600), null);
+        return new DataBatchWorkloadAuthorizationPort() {
+            @Override
+            public DataBatchWorkloadAuthorizationResult capture(
+                    DataBatchWorkloadAuthorizationRequest request) {
+                return DataBatchWorkloadAuthorizationResult.allow(evidence, 7);
+            }
+
+            @Override
+            public DataBatchWorkloadAuthorizationResult revalidate(
+                    DataBatchWorkloadAuthorizationEvidence captured,
+                    DataBatchWorkloadAuthorizationRequest request) {
+                return DataBatchWorkloadAuthorizationResult.allow(captured, 7);
+            }
+        };
+    }
+
+    private static TrustedTime trustedAt(Instant now) {
+        return new TrustedTime(now, new TimeSourceProfile(
+                "postgres-full-trace", "AUDIT-CLOCK-BINDING-1.0.0", 0,
+                now.minusSeconds(60), now.plusSeconds(600),
+                "evidence://signed/production-full-trace-clock"));
+    }
+
+    private static void seedDurableJob(
+            JdbcSubjectWindowRecomputeStore store, Scenario scenario, String traceId) {
+        Instant now = scenario.evaluatedAt();
+        String subject = uuid(42_590).toString();
+        HistoricalWindow window = new HistoricalWindow(
+                subject, "production-full-trace-window",
+                now.minusSeconds(60), now.plusSeconds(600),
+                ZoneId.of("Asia/Shanghai"), Map.of(SOURCE.sourceId(), 1L),
+                Map.of(SOURCE.sourceId(), "wm-production-full-trace"), 1,
+                List.of("QG-1.0.0"), "ECON-012", "1.0.0",
+                "production-full-trace", uuid(42_591),
+                digest("production-full-trace-window"), now.plusSeconds(3_600));
+        assertTrue(store.recordWindow(window, now));
+        MappingRecomputeIdentity identity = new MappingRecomputeIdentity(
+                uuid(42_592), subject, window.ruleId(), window.ruleVersion(),
+                window.scenarioId(), window.windowId(), window.inputWatermarksDigest());
+        MappingRecomputeJob persisted = store.insertIfAbsent(MappingRecomputeJob.queued(
+                FULL_TRACE_JOB, SOURCE.sourceId(), identity,
+                window.latestActionableAt(), now, traceId));
+        assertEquals(FULL_TRACE_JOB, persisted.jobId());
+    }
+
+    private static void assertProductionFullTrace(
+            List<SpanData> spans,
+            JdbcTemplate jdbc,
+            Scenario scenario,
+            com.sun.net.httpserver.Headers externalHeaders) {
+        assertNotNull(externalHeaders);
+        assertEquals(Set.of(TRACE_ID), spans.stream()
+                .map(SpanData::getTraceId).collect(java.util.stream.Collectors.toSet()));
+        SpanData server = onlySpan(spans, "http.server");
+        SpanData attempt = onlySpan(spans, "job.attempt");
+        SpanData evaluation = onlySpan(spans, "batch.evaluate");
+        SpanData consumer = onlySpan(spans, "event.consume");
+        SpanData client = onlySpan(spans, "http.client");
+        SpanData dataProducer = spans.stream()
+                .filter(span -> span.getName().equals("outbox.publish"))
+                .filter(span -> span.getParentSpanId().equals(evaluation.getSpanId()))
+                .findFirst().orElseThrow();
+        assertEquals("PRODUCER", dataProducer.getKind().name());
+        assertEquals(server.getSpanId(), attempt.getParentSpanId());
+        assertEquals(attempt.getSpanId(), evaluation.getParentSpanId());
+        assertEquals(dataProducer.getSpanId(), consumer.getParentSpanId());
+        assertEquals(consumer.getSpanId(), client.getParentSpanId());
+        assertEquals("00-" + TRACE_ID + "-" + client.getSpanId() + "-01",
+                externalHeaders.getFirst("traceparent"));
+        assertEquals(TRACE_ID,
+                externalHeaders.getFirst(TrustedHttpClient.LEGACY_TRACE_HEADER));
+        String durableTraceparent = jdbc.queryForObject("""
+                select traceparent
+                  from ingestion_quality.iq_mapping_recompute_job
+                 where job_id=?
+                """, String.class, FULL_TRACE_JOB);
+        assertEquals(server.getSpanId(), durableTraceparent.substring(36, 52));
+        assertEquals(TRACE_ID, jdbc.queryForObject("""
+                select trace_id from ingestion_quality.iq_quality_snapshot
+                 where batch_id=?
+                """, String.class, scenario.batchId()).trim());
+        assertEquals(1, jdbc.queryForObject("""
+                select count(*)
+                  from ingestion_quality.iq_quality_event_inbox inbox
+                  join ingestion_quality.iq_batch_quality_outbox outbox
+                    on outbox.event_id=inbox.event_id
+                 where inbox.source_id=? and outbox.aggregate_id=?
+                """, Integer.class, SOURCE.sourceId(), scenario.batchId()));
+    }
+
+    private static SpanData onlySpan(List<SpanData> spans, String name) {
+        List<SpanData> matching = spans.stream()
+                .filter(span -> span.getName().equals(name)).toList();
+        assertEquals(1, matching.size(), name);
+        return matching.getFirst();
+    }
+
+    private static void writeProductionTraceBundle(List<SpanData> spans) throws Exception {
+        ObjectNode root = JSON.createObjectNode();
+        root.put("bundleVersion", "OBS-PRODUCTION-FULL-TRACE-BUNDLE-1.0.0");
+        root.put("traceId", TRACE_ID);
+        ArrayNode values = root.putArray("spans");
+        spans.stream()
+                .sorted(Comparator.comparing(SpanData::getName)
+                        .thenComparing(SpanData::getSpanId))
+                .forEach(span -> values.addObject()
+                        .put("name", span.getName())
+                        .put("traceId", span.getTraceId())
+                        .put("spanId", span.getSpanId())
+                        .put("parentSpanId", span.getParentSpanId())
+                        .put("kind", span.getKind().name().toLowerCase(java.util.Locale.ROOT)));
+        root.putArray("productionBoundaries")
+                .add("HttpTraceTrustBoundaryFilter")
+                .add("JdbcSubjectWindowRecomputeStore")
+                .add("DataBatchCommandService")
+                .add("JdbcDataBatchAtomicCommandAdapter")
+                .add("StrictDataBatchQualityEventDecoder")
+                .add("QualityEligibilityEventConsumer")
+                .add("JdbcQualityEligibilityEventTransactionAdapter")
+                .add("TrustedHttpClient");
+        Path output = Path.of(
+                "target", "observability", "production-full-trace-bundle-1.0.0.json");
+        Files.createDirectories(output.getParent());
+        Files.writeString(output,
+                JSON.writerWithDefaultPrettyPrinter().writeValueAsString(root)
+                        + System.lineSeparator());
     }
 
     private static void assertReceiveRejected(
@@ -564,6 +991,25 @@ class DataBatchAtomicEvidencePostgreSqlIT {
         return scenario;
     }
 
+    private static Scenario productionSealed(
+            JdbcTemplate jdbc, JdbcTemplate worker, int seed) {
+        Scenario original = receiving(jdbc, worker, seed);
+        UUID commandId = ownerId(
+                original.batchId(), DataBatchCommandType.SEAL, 2,
+                original.sealedAt(), "command");
+        AuditEnvelope audit = auditEnvelope(
+                commandId, commandId, original.batchId(), "data-batch.seal", 2,
+                original.sealTraceId(), original.sealRequestDigest(), original.sealedAt());
+        Scenario production = new Scenario(
+                original.receive(), original.plan(), commandId,
+                original.sealScopeDigest(), original.sealRequestDigest(), audit,
+                original.sealTraceId(), original.sealedAt(), original.snapshotId(),
+                original.businessEventId(), original.evaluatedAt(),
+                original.evaluationTraceId());
+        assertTrue(seal(worker, production, write(SEALED_EVIDENCE)));
+        return production;
+    }
+
     private static ReceiveSpec receiveSpec(JdbcTemplate jdbc, int seed) {
         Instant receivedAt = databaseNow(jdbc).truncatedTo(ChronoUnit.MICROS).minusSeconds(120);
         UUID commandId = uuid(seed * 100L + 10);
@@ -651,6 +1097,14 @@ class DataBatchAtomicEvidencePostgreSqlIT {
     }
 
     private static boolean evaluate(JdbcTemplate worker, EvaluationCall call) {
+        return evaluate(worker, call, EVENT_TYPE, EVENT_SCHEMA);
+    }
+
+    private static boolean evaluate(
+            JdbcTemplate worker,
+            EvaluationCall call,
+            String eventType,
+            String eventSchema) {
         return Boolean.TRUE.equals(worker.queryForObject("""
                 select ingestion_quality.iq_commit_batch_quality_evaluation(
                   ?, ?, 2, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?::jsonb, ?,
@@ -662,8 +1116,52 @@ class DataBatchAtomicEvidencePostgreSqlIT {
                 SOURCE.owner(), Timestamp.from(call.evaluatedAt()), call.traceId(),
                 call.immutableHash(), call.retentionScopeDigest(), call.metrics(),
                 call.scopeDigest(), call.requestDigest(), call.audit().payload(),
-                call.audit().digest(), call.businessEventId(), EVENT_TYPE, EVENT_SCHEMA,
+                call.audit().digest(), call.businessEventId(), eventType, eventSchema,
                 call.business().payload(), call.business().digest()));
+    }
+
+    private static DataBatchView evaluatedView(Scenario scenario) {
+        ReceiveSpec receive = scenario.receive();
+        Instant cutoff = receive.receivedAt().minusSeconds(10);
+        var sourceSchema = SOURCE.schemaBinding();
+        var catalog = CONTRACT.policy().controlledInputs().dataCatalog();
+        var gate = CONTRACT.policy().controlledInputs().qualityGate();
+        BatchManifest manifest = new BatchManifest(
+                1, 1, 0,
+                new BatchObservationWindow(
+                        cutoff.minusSeconds(720L * 3_600L), cutoff),
+                cutoff, "Asia/Shanghai", "src-p0-card-001@2026-08-10",
+                sourceSchema.version(), sourceSchema.canonicalDigest(),
+                catalog.version(), catalog.canonicalDigest(),
+                gate.version(), gate.canonicalDigest(),
+                CONTRACT.policy().profileVersion(),
+                CONTRACT.attestation().qmdpPolicyCanonicalDigest(),
+                receive.receivedAt().minusSeconds(20),
+                receive.receivedAt().plusSeconds(3_600), receive.receivedAt(),
+                SOURCE.freshnessLanes().getFirst().laneId(), receive.manifestDigest());
+        return new DataBatchView(
+                receive.batchId(),
+                new BatchIdentity(
+                        SOURCE.sourceId(),
+                        new String(receive.businessKeyUtf8(), StandardCharsets.UTF_8), 1),
+                BatchLineage.root(receive.lineageId(), receive.effectiveAt()),
+                receive.manifestDigest(), DataBatchStatus.QUALITY_PASSED, 3,
+                manifest, receive.receivedAt(), scenario.sealedAt(),
+                scenario.evaluatedAt(), null, receive.traceId());
+    }
+
+    private static DataBatchAtomicCommitContext commitContext(EvaluationCall call) {
+        TimeSourceProfile profile = new TimeSourceProfile(
+                "iq-db-clock", "AUDIT-CLOCK-BINDING-1.0.0", 0,
+                call.evaluatedAt().minusSeconds(1), call.evaluatedAt().plusSeconds(60),
+                "evidence://signed/ingestion-quality/db-clock");
+        return new DataBatchAtomicCommitContext(
+                call.commandId(),
+                new DataBatchIdempotencyScope(
+                        "test", "workload:quality-worker", DataBatchCommandType.EVALUATE,
+                        "postgres-owner-trace-evidence"),
+                call.scopeDigest(), call.requestDigest(), call.traceId(),
+                new TrustedTime(call.evaluatedAt(), profile));
     }
 
     private static EvaluationCall mutateBusiness(
@@ -1105,6 +1603,30 @@ class DataBatchAtomicEvidencePostgreSqlIT {
                 """);
     }
 
+    private static void ensureFullTraceConsumerLogin() {
+        admin().execute("""
+                do $role_test$
+                begin
+                    if not exists (select 1 from pg_catalog.pg_roles
+                                    where rolname='scholarsense_iq_full_trace_consumer_login') then
+                        create role scholarsense_iq_full_trace_consumer_login login inherit;
+                    end if;
+                end
+                $role_test$;
+                alter role scholarsense_iq_full_trace_consumer_login login inherit
+                    nosuperuser nocreatedb nocreaterole noreplication nobypassrls;
+                revoke scholarsense_ingestion_quality_online,
+                       scholarsense_ingestion_quality_quality_worker,
+                       scholarsense_ingestion_quality_relay,
+                       scholarsense_ingestion_quality_retention_executor,
+                       scholarsense_ingestion_quality_batch_owner
+                  from scholarsense_iq_full_trace_consumer_login;
+                grant scholarsense_ingestion_quality_eligibility_consumer
+                  to scholarsense_iq_full_trace_consumer_login
+                  with inherit true, set false;
+                """);
+    }
+
     private static JdbcTemplate admin() {
         return new JdbcTemplate(dataSource(required("scholarsense.audit.pg.user")));
     }
@@ -1212,6 +1734,34 @@ class DataBatchAtomicEvidencePostgreSqlIT {
 
     private static UUID uuid(long value) {
         return UUID.fromString("019fea10-0000-7000-8000-%012x".formatted(value));
+    }
+
+    private static UUID ownerId(
+            UUID batchId,
+            DataBatchCommandType type,
+            long aggregateVersion,
+            Instant occurredAt,
+            String kind) {
+        try {
+            MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+            sha256.update(batchId.toString().getBytes(StandardCharsets.UTF_8));
+            sha256.update((byte) 0);
+            sha256.update(type.name().getBytes(StandardCharsets.UTF_8));
+            sha256.update(ByteBuffer.allocate(Long.BYTES).putLong(aggregateVersion).array());
+            sha256.update(kind.getBytes(StandardCharsets.UTF_8));
+            byte[] bytes = sha256.digest();
+            long millis = occurredAt.toEpochMilli();
+            for (int index = 5; index >= 0; index--) {
+                bytes[index] = (byte) (millis & 0xff);
+                millis >>>= 8;
+            }
+            bytes[6] = (byte) ((bytes[6] & 0x0f) | 0x70);
+            bytes[8] = (byte) ((bytes[8] & 0x3f) | 0x80);
+            ByteBuffer value = ByteBuffer.wrap(bytes);
+            return new UUID(value.getLong(), value.getLong());
+        } catch (NoSuchAlgorithmException impossible) {
+            throw new IllegalStateException(impossible);
+        }
     }
 
     private static long id(UUID value) {
@@ -1363,4 +1913,83 @@ class DataBatchAtomicEvidencePostgreSqlIT {
             int auditOutboxes,
             int businessOutboxes,
             int claims) {}
+
+    private static final class EvaluatingJdbcWork implements SubjectWindowRecomputeWorkPort {
+        private final JdbcSubjectWindowRecomputeStore durable;
+        private final DataBatchCommandService commands;
+        private final Scenario scenario;
+        private final JdbcTemplate jdbc;
+        private final AtomicReference<byte[]> persistedEvent;
+
+        private EvaluatingJdbcWork(
+                JdbcSubjectWindowRecomputeStore durable,
+                DataBatchCommandService commands,
+                Scenario scenario,
+                JdbcTemplate jdbc,
+                AtomicReference<byte[]> persistedEvent) {
+            this.durable = durable;
+            this.commands = commands;
+            this.scenario = scenario;
+            this.jdbc = jdbc;
+            this.persistedEvent = persistedEvent;
+        }
+
+        @Override
+        public List<SubjectWindowRecomputeCandidate> findClaimable(
+                int batchSize, Instant now) {
+            return durable.findClaimable(batchSize, now);
+        }
+
+        @Override
+        public long claim(UUID jobId, String workerId, Instant now, Duration lease) {
+            return durable.claim(jobId, workerId, now, lease);
+        }
+
+        @Override
+        public boolean checkpoint(UUID jobId, long fence, long sequence, Instant now) {
+            DataBatchView evaluated = commands.evaluate(new EvaluateDataBatchCommand(
+                    scenario.batchId(), 2,
+                    new DataBatchCommandContext(
+                            "test", WORKER_LOGIN, "postgres-production-full-trace",
+                            TRACE_ID)));
+            assertEquals(DataBatchStatus.QUALITY_PASSED, evaluated.status());
+            persistedEvent.set(jdbc.queryForObject("""
+                    select payload_utf8
+                      from ingestion_quality.iq_batch_quality_outbox
+                     where aggregate_id=?
+                    """, byte[].class, scenario.batchId()));
+            return durable.checkpoint(jobId, fence, sequence, now);
+        }
+
+        @Override
+        public MappingRecomputeCompletion complete(
+                UUID jobId, long fence, Instant now, UUID eventId) {
+            return durable.complete(jobId, fence, now, eventId);
+        }
+
+        @Override
+        public boolean fail(UUID jobId, long fence, Instant now, String controlledCode) {
+            return durable.fail(jobId, fence, now, controlledCode);
+        }
+    }
+
+    private static final class CollectingSpanExporter implements SpanExporter {
+        private final List<SpanData> spans = new CopyOnWriteArrayList<>();
+
+        @Override
+        public CompletableResultCode export(java.util.Collection<SpanData> values) {
+            spans.addAll(values);
+            return CompletableResultCode.ofSuccess();
+        }
+
+        @Override
+        public CompletableResultCode flush() {
+            return CompletableResultCode.ofSuccess();
+        }
+
+        @Override
+        public CompletableResultCode shutdown() {
+            return CompletableResultCode.ofSuccess();
+        }
+    }
 }

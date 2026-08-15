@@ -17,6 +17,10 @@ import cn.edu.suda.scholarsense.ingestionquality.domain.ExecutableQualityPolicy.
 import cn.edu.suda.scholarsense.ingestionquality.domain.ExecutableQualityPolicy.SourcePolicy;
 import cn.edu.suda.scholarsense.ingestionquality.domain.MeasuredQualityInputs;
 import cn.edu.suda.scholarsense.ingestionquality.domain.QualitySnapshot;
+import cn.edu.suda.scholarsense.shared.observability.ObservationPort;
+import cn.edu.suda.scholarsense.shared.observability.SafeObservationAttributes;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContext;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import cn.edu.suda.scholarsense.shared.time.TimeSourceProfile;
 import cn.edu.suda.scholarsense.shared.time.TrustedTime;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
@@ -355,6 +359,66 @@ class DataBatchCommandServiceTest {
             assertTrue(ports.snapshots.byBatch.isEmpty());
             assertEquals(DataBatchStatus.SEALED, ports.byId.get(BATCH_ID).status());
         }
+    }
+
+    @Test
+    void outboxProducerSpanStaysOpenThroughRevalidationAndOwnerRollback() {
+        MemoryPorts deniedPorts = new MemoryPorts();
+        PublicationObservations deniedObservations = new PublicationObservations();
+        DataBatchCommandService deniedService = serviceWithFactory(
+                deniedPorts, deniedObservations);
+        deniedService.receive(receive(context("publication-denied-root")));
+        deniedService.seal(new SealDataBatchCommand(
+                BATCH_ID, 1, manifest(), context("publication-denied-seal")));
+        deniedPorts.authorizationDecisions.add(DataBatchAuthorizationDecision.ALLOW);
+        deniedPorts.authorizationDecisions.add(DataBatchAuthorizationDecision.ALLOW);
+        deniedPorts.authorizationDecisions.add(DataBatchAuthorizationDecision.DENY);
+
+        assertThrows(IngestionQualityApplicationException.class, () ->
+                deniedService.evaluate(new EvaluateDataBatchCommand(
+                        BATCH_ID, 2, context("publication-denied-evaluate"))));
+
+        assertEquals(List.of("denied"), deniedObservations.outcomes);
+        assertEquals(1, deniedObservations.errors.size());
+        assertEquals(1, deniedObservations.closed.get());
+
+        MemoryPorts rollbackPorts = new MemoryPorts();
+        PublicationObservations rollbackObservations = new PublicationObservations();
+        DataBatchCommandService rollbackService = serviceWithFactory(
+                rollbackPorts, rollbackObservations);
+        rollbackService.receive(receive(context("publication-rollback-root")));
+        rollbackService.seal(new SealDataBatchCommand(
+                BATCH_ID, 1, manifest(), context("publication-rollback-seal")));
+        rollbackPorts.failAppend = true;
+
+        assertThrows(IngestionQualityApplicationException.class, () ->
+                rollbackService.evaluate(new EvaluateDataBatchCommand(
+                        BATCH_ID, 2, context("publication-rollback-evaluate"))));
+
+        assertEquals(List.of("failure"), rollbackObservations.outcomes);
+        assertEquals(1, rollbackObservations.errors.size());
+        assertEquals(1, rollbackObservations.closed.get());
+    }
+
+    @Test
+    void outboxProducerSpanClassifiesOwnerAggregateVersionConflict() {
+        MemoryPorts ports = new MemoryPorts();
+        PublicationObservations observations = new PublicationObservations();
+        DataBatchCommandService service = serviceWithFactory(ports, observations);
+        service.receive(receive(context("publication-conflict-root")));
+        service.seal(new SealDataBatchCommand(
+                BATCH_ID, 1, manifest(), context("publication-conflict-seal")));
+        ports.failNextSaveWithConflict = true;
+
+        IngestionQualityApplicationException conflict = assertThrows(
+                IngestionQualityApplicationException.class, () ->
+                        service.evaluate(new EvaluateDataBatchCommand(
+                                BATCH_ID, 2, context("publication-conflict-evaluate"))));
+
+        assertEquals("INGESTION_QUALITY_VERSION_CONFLICT", conflict.code());
+        assertEquals(List.of("conflict"), observations.outcomes);
+        assertEquals(1, observations.errors.size());
+        assertEquals(1, observations.closed.get());
     }
 
     @Test
@@ -759,6 +823,29 @@ class DataBatchCommandServiceTest {
                 new DataBatchCanonicalOutboxFactory("scholarsense_iq_test_worker"), time);
     }
 
+    private static DataBatchCommandService serviceWithFactory(
+            MemoryPorts ports, PublicationObservations observations) {
+        ExecutableQualityPolicyGuard guard = new ExecutableQualityPolicyGuard(() -> CONTRACT);
+        MemorySnapshots snapshots = new MemorySnapshots();
+        AtomicInteger identifiers = new AtomicInteger();
+        QualitySnapshotIdPort ids = ignored -> uuid(String.format(
+                "019ff200-0000-7000-8000-%012d", identifiers.incrementAndGet() + 100));
+        DataBatchQualityEvaluationService evaluation = new DataBatchQualityEvaluationService(
+                guard,
+                (batch, definitions) -> new QualityMeasurement(
+                        QualityMeasurementAnchor.from(batch),
+                        measurements(definitions, false), List.of("student-status")),
+                ports, snapshots, ids);
+        ports.snapshots = snapshots;
+        DataBatchCanonicalOutboxFactory factory = new DataBatchCanonicalOutboxFactory(
+                "scholarsense_iq_test_worker", Optional::empty,
+                new W3cTraceContextCodec(), observations);
+        return new DataBatchCommandService(
+                ports, snapshots, ports, ports, evaluation, guard, ports,
+                DataBatchWorkloadAuthorizationTestFixture.guard("quality-worker-a"),
+                factory, TIME);
+    }
+
     private static DataBatchWorkloadAuthorizationGuard failingRevalidation(
             DataBatchWorkloadAuthorizationResult.Status status) {
         return new DataBatchWorkloadAuthorizationGuard(
@@ -899,6 +986,7 @@ class DataBatchCommandServiceTest {
         private boolean failAppend;
         private boolean hideNextPrecedenceInspection;
         private boolean failNextOwnerClaimWithMismatch;
+        private boolean failNextSaveWithConflict;
         private boolean denyAuthorizationAfterOwnerCommit;
         private DataBatch receiveWinnerAtOwner;
         private ReceiveDataBatchAtomicCommand lastReceiveCommand;
@@ -949,6 +1037,10 @@ class DataBatchCommandServiceTest {
 
         @Override
         public void save(DataBatch batch, long expectedVersion) {
+            if (failNextSaveWithConflict) {
+                failNextSaveWithConflict = false;
+                throw new DataBatchVersionConflictException(expectedVersion + 1);
+            }
             byId.compute(batch.batchId(), (ignored, current) -> {
                 if (current == null || current.aggregateVersion() != expectedVersion) {
                     throw new DataBatchVersionConflictException(
@@ -1122,6 +1214,30 @@ class DataBatchCommandServiceTest {
         public void append(DataBatchAuditEvent event) {
             if (failAppend) throw new IllegalStateException("audit append unavailable");
             audits.add(event);
+        }
+    }
+
+    private static final class PublicationObservations implements ObservationPort {
+        private final List<String> outcomes = new ArrayList<>();
+        private final List<Throwable> errors = new ArrayList<>();
+        private final AtomicInteger closed = new AtomicInteger();
+
+        @Override
+        public ObservationScope start(
+                String operation,
+                ObservationKind kind,
+                SafeObservationAttributes attributes,
+                W3cTraceContext parent) {
+            assertEquals("outbox.publish", operation);
+            assertEquals(ObservationKind.PRODUCER, kind);
+            W3cTraceContext producer = new W3cTraceContext(
+                    parent.traceId(), "3333333333333333", parent.sampled());
+            return new ObservationScope() {
+                @Override public W3cTraceContext context() { return producer; }
+                @Override public void outcome(String outcome) { outcomes.add(outcome); }
+                @Override public void error(Throwable error) { errors.add(error); }
+                @Override public void close() { closed.incrementAndGet(); }
+            };
         }
     }
 }

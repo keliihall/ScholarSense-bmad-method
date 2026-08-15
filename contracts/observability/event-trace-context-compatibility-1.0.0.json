@@ -1,0 +1,21 @@
+{
+  "matrixVersion": "OBS-EVENT-COMPAT-1.0.0",
+  "owner": "platform-observability",
+  "evolution": "additive-successor",
+  "predecessorFixtures": "read-only",
+  "legacyReader": "deterministic-span-compatible",
+  "successorProducer": "real-w3c-traceparent",
+  "successorReader": "same-trace-id-any-valid-parent-span",
+  "successorIdentity": {
+    "qualityAssessed": "scholarsense.ingestion-quality.data-batch.quality-assessed.v2|DATA-BATCH-QUALITY-ASSESSED-2.0.0",
+    "published": "scholarsense.ingestion-quality.data-batch.published.v2|DATA-BATCH-PUBLISHED-2.0.0"
+  },
+  "cutover": "reader-first-then-single-v2-publish",
+  "immutableSnapshot": "creation-trace-never-rewritten",
+  "rows": [
+    {"producer":"event-1.x","reader":"legacy","result":"accepted"},
+    {"producer":"event-1.x","reader":"successor","result":"accepted"},
+    {"producer":"event-2.0","reader":"successor","result":"accepted"},
+    {"producer":"event-2.0","reader":"legacy","result":"not-claimed"}
+  ]
+}

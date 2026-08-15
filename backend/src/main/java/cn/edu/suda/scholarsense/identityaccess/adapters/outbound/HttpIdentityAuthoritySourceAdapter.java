@@ -23,6 +23,7 @@ import cn.edu.suda.scholarsense.identityaccess.domain.OrganizationNode;
 import cn.edu.suda.scholarsense.identityaccess.domain.OrganizationType;
 import cn.edu.suda.scholarsense.identityaccess.domain.TargetRole;
 import cn.edu.suda.scholarsense.runtime.IdentityAuthorityRuntimeProfile;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClient;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,7 +63,7 @@ public final class HttpIdentityAuthoritySourceAdapter
             "eventId", "recordKind", "sourceVersion", "effectiveFrom",
             "effectiveTo", "payloadDigest", "payload");
 
-    private final HttpClient http;
+    private final TrustedHttpClient http;
     private final ObjectMapper json;
     private final IdentityAuthorityRuntimeProfile profile;
     private final WorkloadIdentityAuthenticationPort workloadIdentity;
@@ -103,6 +104,30 @@ public final class HttpIdentityAuthoritySourceAdapter
                 http, json, profile, workloadIdentity, signatures, encryption,
                 pseudonyms, time, ApprovedIdentityRoleMapping.from(profile, json),
                 references, false);
+    }
+
+    public HttpIdentityAuthoritySourceAdapter(
+            TrustedHttpClient http,
+            ObjectMapper json,
+            IdentityAuthorityRuntimeProfile profile,
+            WorkloadIdentityAuthenticationPort workloadIdentity,
+            IdentitySourceSignaturePort signatures,
+            EnvelopeEncryptionPort encryption,
+            PseudonymizationPort pseudonyms,
+            TrustedTimeSource time,
+            IdentityAuthorityReferencePort references) {
+        this.http = java.util.Objects.requireNonNull(http);
+        this.json = java.util.Objects.requireNonNull(json);
+        this.profile = java.util.Objects.requireNonNull(profile);
+        this.workloadIdentity = java.util.Objects.requireNonNull(workloadIdentity);
+        this.signatures = java.util.Objects.requireNonNull(signatures);
+        this.encryption = java.util.Objects.requireNonNull(encryption);
+        this.pseudonyms = java.util.Objects.requireNonNull(pseudonyms);
+        this.time = java.util.Objects.requireNonNull(time);
+        this.roleMapping = ApprovedIdentityRoleMapping.from(profile, json);
+        this.references = java.util.Objects.requireNonNull(references);
+        this.allowLoopbackHttpForTests = false;
+        requireSafeEndpoint(profile.endpoint(), false);
     }
 
     HttpIdentityAuthoritySourceAdapter(
@@ -158,7 +183,7 @@ public final class HttpIdentityAuthoritySourceAdapter
             ApprovedIdentityRoleMapping roleMapping,
             IdentityAuthorityReferencePort references,
             boolean allowLoopbackHttpForTests) {
-        this.http = java.util.Objects.requireNonNull(http);
+        this.http = TrustedHttpClient.unobserved(http);
         this.json = java.util.Objects.requireNonNull(json);
         this.profile = java.util.Objects.requireNonNull(profile);
         this.workloadIdentity = java.util.Objects.requireNonNull(workloadIdentity);
@@ -224,7 +249,9 @@ public final class HttpIdentityAuthoritySourceAdapter
                 .build();
         HttpResponse<InputStream> response;
         try {
-            response = http.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            response = http.send(
+                    request, HttpResponse.BodyHandlers.ofInputStream(),
+                    "identity-access", traceId);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             throw new IdentitySyncException("IDENTITY_SOURCE_DEPENDENCY_UNAVAILABLE");

@@ -3,6 +3,7 @@ package cn.edu.suda.scholarsense.identityaccess.adapters.outbound;
 import cn.edu.suda.scholarsense.identityaccess.application.RemoteIdentityProviderClient;
 import cn.edu.suda.scholarsense.identityaccess.application.RemoteRefreshTokens;
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCommandType;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClient;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -24,7 +25,7 @@ import tools.jackson.databind.ObjectMapper;
 /** Provider-neutral back-channel OAuth client. Sensitive response bodies are never logged. */
 public final class HttpRemoteIdentityProviderClient implements RemoteIdentityProviderClient {
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(10);
-    private final HttpClient http;
+    private final TrustedHttpClient http;
     private final ObjectMapper json;
     private final ClientRegistrationRepository registrations;
     private final URI revocationEndpoint;
@@ -46,6 +47,24 @@ public final class HttpRemoteIdentityProviderClient implements RemoteIdentityPro
                 postLogoutRedirectUri, clock, false);
     }
 
+    public HttpRemoteIdentityProviderClient(
+            TrustedHttpClient http,
+            ObjectMapper json,
+            ClientRegistrationRepository registrations,
+            URI revocationEndpoint,
+            URI endSessionEndpoint,
+            URI postLogoutRedirectUri,
+            Clock clock) {
+        this.http = java.util.Objects.requireNonNull(http);
+        this.json = java.util.Objects.requireNonNull(json);
+        this.registrations = java.util.Objects.requireNonNull(registrations);
+        this.allowLoopbackHttpForTests = false;
+        this.revocationEndpoint = safeEndpoint(revocationEndpoint, false);
+        this.endSessionEndpoint = safeEndpoint(endSessionEndpoint, false);
+        this.postLogoutRedirectUri = safeHttpsUri(postLogoutRedirectUri);
+        this.clock = java.util.Objects.requireNonNull(clock);
+    }
+
     HttpRemoteIdentityProviderClient(
             HttpClient http,
             ObjectMapper json,
@@ -55,7 +74,7 @@ public final class HttpRemoteIdentityProviderClient implements RemoteIdentityPro
             URI postLogoutRedirectUri,
             Clock clock,
             boolean allowLoopbackHttpForTests) {
-        this.http = java.util.Objects.requireNonNull(http);
+        this.http = TrustedHttpClient.unobserved(http);
         this.json = java.util.Objects.requireNonNull(json);
         this.registrations = java.util.Objects.requireNonNull(registrations);
         this.allowLoopbackHttpForTests = allowLoopbackHttpForTests;
@@ -144,7 +163,9 @@ public final class HttpRemoteIdentityProviderClient implements RemoteIdentityPro
                     .header("Authorization", "Basic " + Base64.getEncoder().encodeToString(credential))
                     .POST(HttpRequest.BodyPublishers.ofString(form, StandardCharsets.UTF_8))
                     .build();
-            return http.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            return http.send(
+                    request, HttpResponse.BodyHandlers.ofInputStream(),
+                    "identity-access", null);
         } catch (IOException failure) {
             throw unavailable();
         } catch (InterruptedException failure) {

@@ -8,6 +8,7 @@ import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityFullSna
 import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityFullSnapshotSourcePort;
 import cn.edu.suda.scholarsense.identityaccess.application.WorkloadIdentityAuthenticationPort;
 import cn.edu.suda.scholarsense.runtime.ResponsibilityAuthorityRuntimeProfile;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpClient;
@@ -25,7 +26,7 @@ public final class HttpResponsibilityFullSnapshotSourceAdapter
     private static final String CONTRACT_HEADER =
             "X-Responsibility-Authority-Contract-Version";
 
-    private final HttpClient http;
+    private final TrustedHttpClient http;
     private final ResponsibilityAuthorityRuntimeProfile profile;
     private final WorkloadIdentityAuthenticationPort workloadIdentity;
     private final IdentitySourceSignaturePort signatures;
@@ -33,6 +34,15 @@ public final class HttpResponsibilityFullSnapshotSourceAdapter
 
     public HttpResponsibilityFullSnapshotSourceAdapter(
             HttpClient http,
+            ObjectMapper json,
+            ResponsibilityAuthorityRuntimeProfile profile,
+            WorkloadIdentityAuthenticationPort workloadIdentity,
+            IdentitySourceSignaturePort signatures) {
+        this(TrustedHttpClient.unobserved(http), json, profile, workloadIdentity, signatures);
+    }
+
+    public HttpResponsibilityFullSnapshotSourceAdapter(
+            TrustedHttpClient http,
             ObjectMapper json,
             ResponsibilityAuthorityRuntimeProfile profile,
             WorkloadIdentityAuthenticationPort workloadIdentity,
@@ -88,7 +98,8 @@ public final class HttpResponsibilityFullSnapshotSourceAdapter
         HttpResponse<InputStream> response;
         try {
             response = http.send(
-                    request, HttpResponse.BodyHandlers.ofInputStream());
+                    request, HttpResponse.BodyHandlers.ofInputStream(),
+                    "identity-access", traceId);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             throw failure(

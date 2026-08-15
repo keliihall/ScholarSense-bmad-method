@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 class MicrometerAuditMetricSinkTest {
     @Test
-    void recordsIntoTheProductionMetricsRegistryWithOnlySuppliedLowCardinalityTags() {
+    void recordsIntoTheProductionMetricsRegistryWithGovernedLowCardinalityTags() {
         var registry = new SimpleMeterRegistry();
         var sink = new MicrometerAuditMetricSink(registry);
 
@@ -16,6 +16,11 @@ class MicrometerAuditMetricSinkTest {
 
         assertEquals(
                 1.0,
-                registry.counter("audit.alert.delivery", "outcome", "confirmed").count());
+                registry.counter(
+                        "scholarsense.operation.total",
+                        "service", "scholarsense",
+                        "module", "audit-operations",
+                        "operation", "audit.alert.delivery",
+                        "outcome", "confirmed").count());
     }
 }

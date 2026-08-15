@@ -1,7 +1,7 @@
 package cn.edu.suda.scholarsense.auditoperations.adapters.inbound;
 
 import cn.edu.suda.scholarsense.auditoperations.application.AuditSearchException;
-import cn.edu.suda.scholarsense.shared.trace.W3cTraceId;
+import cn.edu.suda.scholarsense.shared.observability.HttpTraceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.springframework.http.CacheControl;
@@ -32,8 +32,7 @@ public final class AuditSearchExceptionHandler {
 
     private static ResponseEntity<ErrorEnvelope> error(
             HttpStatus status, String code, HttpServletRequest request) {
-        String traceId = W3cTraceId.from(
-                request.getHeader("Traceparent"), request.getMethod() + ":" + request.getRequestURI());
+        String traceId = HttpTraceContext.traceId(request);
         return ResponseEntity.status(status)
                 .cacheControl(CacheControl.noStore())
                 .header("Referrer-Policy", "no-referrer")

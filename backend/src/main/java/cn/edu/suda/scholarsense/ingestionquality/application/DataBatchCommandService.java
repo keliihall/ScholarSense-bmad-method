@@ -224,22 +224,34 @@ public final class DataBatchCommandService {
         DataBatchAtomicCommitContext commit = commitContext(
                 DataBatchCommandType.EVALUATE, authorizedContext, requestDigest,
                 response.batchId(), response.aggregateVersion(), trusted);
-        CanonicalOutboxPayload outbox = payloads.create(
-                DataBatchCommandType.EVALUATE, response, prepared.snapshot().value(), commit);
-        qualityEvaluation.revalidate(prepared.contractEvidence());
-        DataBatch finalCurrent = requireBatch(command.batchId());
-        requireVersion(finalCurrent, command.expectedAggregateVersion());
-        authorize(finalCurrent, authorizedContext, DataBatchCommandType.EVALUATE);
-        TrustedTime finalCheck = trustedTime();
-        revalidateWorkload(
-                workloadEvidence, DataBatchCommandType.EVALUATE, finalCheck.instant());
-        invocation.start();
-        DataBatchAtomicCommandResult result = atomic.commitQualityEvaluation(
-                new CommitDataBatchQualityEvaluationCommand(
-                        command.expectedAggregateVersion(), prepared,
-                        QualitySnapshotRetentionScopeCanonicalizer.digest(
-                                prepared.snapshot().value()),
-                        commit, outbox));
+        DataBatchAtomicCommandResult result;
+        try (DataBatchCanonicalOutboxFactory.PublicationScope publication =
+                     payloads.startPublication(commit.traceId())) {
+            try {
+                CanonicalOutboxPayload outbox = payloads.create(
+                        DataBatchCommandType.EVALUATE, response,
+                        prepared.snapshot().value(), commit, publication);
+                qualityEvaluation.revalidate(prepared.contractEvidence());
+                DataBatch finalCurrent = requireBatch(command.batchId());
+                requireVersion(finalCurrent, command.expectedAggregateVersion());
+                authorize(finalCurrent, authorizedContext, DataBatchCommandType.EVALUATE);
+                TrustedTime finalCheck = trustedTime();
+                revalidateWorkload(
+                        workloadEvidence, DataBatchCommandType.EVALUATE, finalCheck.instant());
+                invocation.start();
+                result = atomic.commitQualityEvaluation(
+                        new CommitDataBatchQualityEvaluationCommand(
+                                command.expectedAggregateVersion(), prepared,
+                                QualitySnapshotRetentionScopeCanonicalizer.digest(
+                                        prepared.snapshot().value()),
+                                commit, outbox));
+                publication.complete(
+                        result.status() == DataBatchAtomicCommandResult.Status.REPLAY);
+            } catch (RuntimeException failure) {
+                publication.fail(publicationOutcome(failure), failure);
+                throw failure;
+            }
+        }
         if (result.status() == DataBatchAtomicCommandResult.Status.REPLAY) {
             authorize(
                     requireBatch(result.response().batchId()), authorizedContext,
@@ -264,17 +276,29 @@ public final class DataBatchCommandService {
         DataBatchAtomicCommitContext commit = commitContext(
                 DataBatchCommandType.PUBLISH, authorizedContext, requestDigest,
                 response.batchId(), response.aggregateVersion(), trusted);
-        CanonicalOutboxPayload outbox = payloads.create(
-                DataBatchCommandType.PUBLISH, response, qualitySnapshot, commit);
-        DataBatch finalCurrent = requireBatch(command.batchId());
-        requireVersion(finalCurrent, command.expectedAggregateVersion());
-        authorize(finalCurrent, authorizedContext, DataBatchCommandType.PUBLISH);
-        TrustedTime finalCheck = trustedTime();
-        revalidateWorkload(
-                workloadEvidence, DataBatchCommandType.PUBLISH, finalCheck.instant());
-        invocation.start();
-        DataBatchAtomicCommandResult result = atomic.publish(new PublishDataBatchAtomicCommand(
-                command.expectedAggregateVersion(), updated, commit, outbox));
+        DataBatchAtomicCommandResult result;
+        try (DataBatchCanonicalOutboxFactory.PublicationScope publication =
+                     payloads.startPublication(commit.traceId())) {
+            try {
+                CanonicalOutboxPayload outbox = payloads.create(
+                        DataBatchCommandType.PUBLISH, response, qualitySnapshot,
+                        commit, publication);
+                DataBatch finalCurrent = requireBatch(command.batchId());
+                requireVersion(finalCurrent, command.expectedAggregateVersion());
+                authorize(finalCurrent, authorizedContext, DataBatchCommandType.PUBLISH);
+                TrustedTime finalCheck = trustedTime();
+                revalidateWorkload(
+                        workloadEvidence, DataBatchCommandType.PUBLISH, finalCheck.instant());
+                invocation.start();
+                result = atomic.publish(new PublishDataBatchAtomicCommand(
+                        command.expectedAggregateVersion(), updated, commit, outbox));
+                publication.complete(
+                        result.status() == DataBatchAtomicCommandResult.Status.REPLAY);
+            } catch (RuntimeException failure) {
+                publication.fail(publicationOutcome(failure), failure);
+                throw failure;
+            }
+        }
         if (result.status() == DataBatchAtomicCommandResult.Status.REPLAY) {
             authorize(
                     requireBatch(result.response().batchId()), authorizedContext,
@@ -514,6 +538,19 @@ public final class DataBatchCommandService {
             DataBatchCommandType commandType,
             Instant currentTime) {
         workloadAuthorization.revalidate(captured, commandType, currentTime);
+    }
+
+    private static String publicationOutcome(RuntimeException failure) {
+        if (failure instanceof DataBatchVersionConflictException) return "conflict";
+        if (failure instanceof IngestionQualityApplicationException known) {
+            return switch (known.code()) {
+                case VERSION_CONFLICT, IDEMPOTENCY_MISMATCH -> "conflict";
+                case FORBIDDEN -> "denied";
+                case DEPENDENCY_UNAVAILABLE -> "unavailable";
+                default -> "failure";
+            };
+        }
+        return "failure";
     }
 
     @FunctionalInterface

@@ -11,7 +11,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import java.util.Map;
 import cn.edu.suda.scholarsense.identityaccess.application.SessionCookiePolicy;
-import cn.edu.suda.scholarsense.shared.trace.W3cTraceId;
+import cn.edu.suda.scholarsense.shared.observability.HttpTraceContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -83,8 +83,7 @@ public final class IdentityRefreshController {
     }
 
     private static String traceId(HttpServletRequest request) {
-        return W3cTraceId.from(
-                request.getHeader("Traceparent"), request.getMethod() + ":" + request.getRequestURI());
+        return HttpTraceContext.traceId(request);
     }
 
     public record RefreshRequest(@Min(1) long sessionVersion) {}

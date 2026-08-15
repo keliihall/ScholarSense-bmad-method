@@ -4,7 +4,7 @@ import cn.edu.suda.scholarsense.auditoperations.application.AuditSearchException
 import cn.edu.suda.scholarsense.auditoperations.application.RetentionExecutionEvidenceView;
 import cn.edu.suda.scholarsense.auditoperations.application.RetentionExecutionReadService;
 import cn.edu.suda.scholarsense.auditoperations.domain.AuditSearchView;
-import cn.edu.suda.scholarsense.shared.trace.W3cTraceId;
+import cn.edu.suda.scholarsense.shared.observability.HttpTraceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.UUID;
@@ -33,8 +33,7 @@ public final class AuditRetentionExecutionController {
             @RequestParam(defaultValue = "business") String view,
             Principal principal,
             HttpServletRequest request) {
-        String traceId = W3cTraceId.from(
-                request.getHeader("Traceparent"), request.getMethod() + ":" + request.getRequestURI());
+        String traceId = HttpTraceContext.traceId(request);
         if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
             throw new AuditSearchException("AUDIT_EVIDENCE_NOT_AVAILABLE");
         }

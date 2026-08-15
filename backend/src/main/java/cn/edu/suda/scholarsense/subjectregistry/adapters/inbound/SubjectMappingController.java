@@ -3,7 +3,7 @@ package cn.edu.suda.scholarsense.subjectregistry.adapters.inbound;
 import cn.edu.suda.scholarsense.identityaccess.api.InternalSessionIdentity;
 import cn.edu.suda.scholarsense.identityaccess.api.InternalSessionIdentityException;
 import cn.edu.suda.scholarsense.identityaccess.api.InternalSessionIdentityPort;
-import cn.edu.suda.scholarsense.shared.trace.W3cTraceId;
+import cn.edu.suda.scholarsense.shared.observability.HttpTraceContext;
 import cn.edu.suda.scholarsense.subjectregistry.application.ActorContext;
 import cn.edu.suda.scholarsense.subjectregistry.application.RepairSubjectMappingCommand;
 import cn.edu.suda.scholarsense.subjectregistry.application.RepairSubjectMappingResult;
@@ -50,7 +50,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(value = "/api/v1/subject-mapping-exceptions",
         produces = MediaType.APPLICATION_JSON_VALUE)
 public final class SubjectMappingController {
-    private static final String TRACE_ATTRIBUTE = SubjectMappingController.class.getName() + ".traceId";
     private final SubjectRegistryService service;
     private final InternalSessionIdentityPort identities;
     private final String tenantId;
@@ -182,14 +181,7 @@ public final class SubjectMappingController {
     }
 
     static String trace(HttpServletRequest request) {
-        Object existing = request.getAttribute(TRACE_ATTRIBUTE);
-        if (existing instanceof String traceId && traceId.matches("(?!0{32})[0-9a-f]{32}")) {
-            return traceId;
-        }
-        String traceId = W3cTraceId.from(
-                request.getHeader("Traceparent"), request.getMethod() + ":" + request.getRequestURI());
-        request.setAttribute(TRACE_ATTRIBUTE, traceId);
-        return traceId;
+        return HttpTraceContext.traceId(request);
     }
 
     private static ExceptionItem item(SubjectMappingExceptionView view) {

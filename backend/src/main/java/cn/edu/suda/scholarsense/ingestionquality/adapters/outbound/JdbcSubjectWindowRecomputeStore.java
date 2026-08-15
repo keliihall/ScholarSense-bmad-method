@@ -17,6 +17,9 @@ import cn.edu.suda.scholarsense.ingestionquality.domain.MappingRecomputeIdentity
 import cn.edu.suda.scholarsense.ingestionquality.domain.MappingRecomputeJob;
 import cn.edu.suda.scholarsense.ingestionquality.domain.MappingRecomputeJobStatus;
 import cn.edu.suda.scholarsense.ingestionquality.domain.MappingRecomputeResultCode;
+import cn.edu.suda.scholarsense.shared.observability.CurrentTraceSource;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContext;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -39,10 +42,22 @@ public final class JdbcSubjectWindowRecomputeStore implements
     private static final String CONSUMER_ID = "ingestion-quality-subject-window";
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
+    private final CurrentTraceSource currentTrace;
+    private final W3cTraceContextCodec traceCodec;
 
     public JdbcSubjectWindowRecomputeStore(JdbcTemplate jdbc, ObjectMapper json) {
+        this(jdbc, json, Optional::empty, new W3cTraceContextCodec());
+    }
+
+    public JdbcSubjectWindowRecomputeStore(
+            JdbcTemplate jdbc,
+            ObjectMapper json,
+            CurrentTraceSource currentTrace,
+            W3cTraceContextCodec traceCodec) {
         this.jdbc = java.util.Objects.requireNonNull(jdbc);
         this.json = java.util.Objects.requireNonNull(json);
+        this.currentTrace = java.util.Objects.requireNonNull(currentTrace);
+        this.traceCodec = java.util.Objects.requireNonNull(traceCodec);
     }
 
     public boolean recordWindow(HistoricalWindow window, Instant serverNow) {
@@ -96,15 +111,18 @@ public final class JdbcSubjectWindowRecomputeStore implements
 
     @Override
     public MappingRecomputeJob insertIfAbsent(MappingRecomputeJob job) {
+        W3cTraceContext enqueueContext = currentTrace.current()
+                .filter(context -> job.traceId().equals(context.traceId()))
+                .orElseGet(() -> traceCodec.resume(job.traceId(), false));
         UUID persisted = jdbc.queryForObject("""
-                select ingestion_quality.iq_enqueue_mapping_recompute(
-                  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                select ingestion_quality.iq_enqueue_mapping_recompute_v2(
+                  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, UUID.class, job.jobId(), job.identity().correctionLineageId(),
                 job.ownerSourceId(), UUID.fromString(job.identity().studentRef()), job.identity().ruleId(),
                 job.identity().ruleVersion(), job.identity().scenarioId(),
                 job.identity().windowId(), job.identity().inputWatermarksDigest(),
                 Timestamp.from(job.latestActionableAt()), Timestamp.from(job.queuedAt()),
-                job.traceId());
+                job.traceId(), traceCodec.format(enqueueContext));
         if (persisted == null) {
             throw new IllegalStateException("INGESTION_QUALITY_NO_ACTIONABLE_WINDOW");
         }
@@ -129,14 +147,15 @@ public final class JdbcSubjectWindowRecomputeStore implements
             throw new IllegalArgumentException("INGESTION_QUALITY_RECOMPUTE_POLICY_INVALID");
         }
         return jdbc.query("""
-                select job_id, checkpoint_sequence
+                select job_id, checkpoint_sequence, trace_id, traceparent
                   from ingestion_quality.iq_mapping_recompute_job
                  where status='queued'
                     or (status='running' and lease_until<=?)
                  order by queued_at,job_id
                  limit ?
                 """, (row, ignored) -> new SubjectWindowRecomputeCandidate(
-                        row.getObject(1, UUID.class), row.getLong(2)),
+                        row.getObject(1, UUID.class), row.getLong(2), row.getString(3),
+                        row.getString(4)),
                 Timestamp.from(serverNow), batchSize);
     }
 

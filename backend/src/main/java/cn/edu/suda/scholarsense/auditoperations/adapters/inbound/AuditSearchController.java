@@ -4,7 +4,7 @@ import cn.edu.suda.scholarsense.auditoperations.application.AuditSearchPage;
 import cn.edu.suda.scholarsense.auditoperations.application.AuditSearchService;
 import cn.edu.suda.scholarsense.auditoperations.domain.AuditSearchCriteria;
 import cn.edu.suda.scholarsense.auditoperations.domain.AuditSearchView;
-import cn.edu.suda.scholarsense.shared.trace.W3cTraceId;
+import cn.edu.suda.scholarsense.shared.observability.HttpTraceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -36,8 +36,7 @@ public final class AuditSearchController {
             @Valid @RequestBody SearchRequest body,
             Principal principal,
             HttpServletRequest request) {
-        String traceId = W3cTraceId.from(
-                request.getHeader("Traceparent"), request.getMethod() + ":" + request.getRequestURI());
+        String traceId = HttpTraceContext.traceId(request);
         if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
             throw new cn.edu.suda.scholarsense.auditoperations.application.AuditSearchException(
                     "AUDIT_SEARCH_FORBIDDEN");

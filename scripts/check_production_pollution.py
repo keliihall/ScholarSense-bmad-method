@@ -45,6 +45,24 @@ PERSISTENT_CACHE = re.compile(
     r"pinia-plugin-persistedstate|persist\s*:)")
 CREDENTIAL_KEYS = {"password", "passwd", "token", "private_key", "client_secret"}
 APPROVED_TEST_LOOPBACKS = {
+    "backend/src/main/java/cn/edu/suda/scholarsense/shared/observability/TrustedIngressAllowlist.java": (
+        '"127.0.0.1", "portal-proxy-dev-v1"',
+        '"127.0.0.1", "portal-proxy-test-v1"',
+    ),
+    "backend/src/main/java/cn/edu/suda/scholarsense/shared/observability/TrustedTargetPolicy.java": (
+        'host.equalsIgnoreCase("127.0.0.1")',
+        'host.equalsIgnoreCase("localhost")',
+    ),
+    "backend/src/main/java/cn/edu/suda/scholarsense/ingestionquality/adapters/outbound/QualityWorkerProviderAdapters.java": (
+        '"localhost".equalsIgnoreCase(value.getHost())',
+        '"127.0.0.1".equals(value.getHost())',
+    ),
+    "contracts/config/observability-runtime-dev-1.0.0.json": (
+        '"socketSources":["127.0.0.1","::1"]',
+    ),
+    "contracts/config/observability-runtime-test-1.0.0.json": (
+        '"socketSources":["127.0.0.1","::1"]',
+    ),
     "scripts/run_audit_postgresql_tests.sh": (
         's.bind(("127.0.0.1", 0))',
         "-h 127.0.0.1",

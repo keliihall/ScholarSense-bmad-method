@@ -12,6 +12,9 @@ import cn.edu.suda.scholarsense.ingestionquality.domain.QualityOverallResult;
 import cn.edu.suda.scholarsense.ingestionquality.domain.RuleDependencyDefinition;
 import cn.edu.suda.scholarsense.ingestionquality.domain.RuleDependencyMember;
 import cn.edu.suda.scholarsense.ingestionquality.domain.RuleDependencyRegistry;
+import cn.edu.suda.scholarsense.shared.observability.ObservationPort;
+import cn.edu.suda.scholarsense.shared.observability.SafeObservationAttributes;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -31,6 +34,8 @@ public final class QualityEligibilityEventConsumer {
     private final QualityEligibilityEventTransactionPort transaction;
     private final RuleDependencyRegistry registry;
     private final QualityFuseWorkItemKeyPort workItemKeys;
+    private final ObservationPort observations;
+    private final W3cTraceContextCodec traceCodec;
     private final QualityEligibilityEvaluator evaluator = new QualityEligibilityEvaluator();
     private final QualityFuseTransitionPolicy transitionPolicy =
             new QualityFuseTransitionPolicy();
@@ -40,15 +45,73 @@ public final class QualityEligibilityEventConsumer {
             QualityEligibilityEventTransactionPort transaction,
             RuleDependencyRegistry registry,
             QualityFuseWorkItemKeyPort workItemKeys) {
+        this(snapshotLookup, transaction, registry, workItemKeys, null, null);
+    }
+
+    public QualityEligibilityEventConsumer(
+            QualityEligibilitySnapshotLookupPort snapshotLookup,
+            QualityEligibilityEventTransactionPort transaction,
+            RuleDependencyRegistry registry,
+            QualityFuseWorkItemKeyPort workItemKeys,
+            ObservationPort observations,
+            W3cTraceContextCodec traceCodec) {
         this.snapshotLookup = Objects.requireNonNull(snapshotLookup);
         this.transaction = Objects.requireNonNull(transaction);
         this.registry = Objects.requireNonNull(registry);
         this.workItemKeys = Objects.requireNonNull(workItemKeys);
+        this.observations = observations;
+        this.traceCodec = traceCodec;
+        if ((observations == null) != (traceCodec == null)) {
+            throw new IllegalArgumentException("consumer observability must be configured atomically");
+        }
     }
 
     public QualityEligibilityMutation consume(UpstreamQualityEvent event) {
         Objects.requireNonNull(event);
-        return transaction.transact(event, state -> plan(event, state));
+        if (observations == null) {
+            return transaction.transact(event, state -> plan(event, state));
+        }
+        var parent = traceCodec.extract(event.traceparent(), true).context();
+        try (ObservationPort.ObservationScope scope = observations.start(
+                "event.consume",
+                ObservationPort.ObservationKind.CONSUMER,
+                SafeObservationAttributes.create()
+                        .low("module", "ingestion-quality")
+                        .low("operation", "event.consume")
+                        .low("outcome", "success"),
+                parent)) {
+            try {
+                QualityEligibilityMutation mutation =
+                        transaction.transact(event, state -> plan(event, state));
+                scope.outcome(outcome(mutation.outcome()));
+                return mutation;
+            } catch (RuntimeException failure) {
+                scope.outcome(failureOutcome(failure));
+                scope.error(failure);
+                throw failure;
+            }
+        }
+    }
+
+    private static String outcome(QualityEligibilityProcessingOutcome outcome) {
+        return switch (outcome) {
+            case DUPLICATE, OLD -> "duplicate";
+            case GAP -> "gap";
+            case POISONED -> "poison";
+            case APPLIED, PENDING_PUBLICATION -> "success";
+        };
+    }
+
+    private static String failureOutcome(RuntimeException failure) {
+        if (failure instanceof IngestionQualityApplicationException application) {
+            if ("INGESTION_QUALITY_IDEMPOTENCY_MISMATCH".equals(application.code())) {
+                return "conflict";
+            }
+            if (DEPENDENCY_UNAVAILABLE.equals(application.code())) {
+                return "unavailable";
+            }
+        }
+        return "failure";
     }
 
     private QualityEligibilityMutation plan(
@@ -412,18 +475,17 @@ public final class QualityEligibilityEventConsumer {
                 || !QG_VERSION.equals(event.qualityGateVersion())) {
             throw invalidBinding();
         }
-        if (UpstreamQualityEventKind.PUBLISHED.eventType().equals(event.eventType())) {
-            if (!UpstreamQualityEventKind.PUBLISHED.schemaVersion().equals(event.schemaVersion())
-                    || event.batchAggregateVersion() != 4
+        if (UpstreamQualityEventKind.PUBLISHED.matches(
+                event.eventType(), event.schemaVersion())) {
+            if (event.batchAggregateVersion() != 4
                     || event.batchStatus() != DataBatchStatus.PUBLISHED
                     || event.snapshotResult() != QualityOverallResult.QUALITY_PASSED) {
                 throw invalidBinding();
             }
             return UpstreamQualityEventKind.PUBLISHED;
         }
-        if (!UpstreamQualityEventKind.ASSESSED_FAILED.eventType().equals(event.eventType())
-                || !UpstreamQualityEventKind.ASSESSED_FAILED.schemaVersion().equals(
-                        event.schemaVersion())
+        if (!UpstreamQualityEventKind.ASSESSED_FAILED.matches(
+                    event.eventType(), event.schemaVersion())
                 || event.batchAggregateVersion() != 3) {
             throw invalidBinding();
         }
@@ -455,7 +517,7 @@ public final class QualityEligibilityEventConsumer {
                 || !snapshot.qualityGateVersion().equals(event.qualityGateVersion())
                 || !snapshot.qualityGateDigest().equals(event.qualityGateDigest())
                 || !snapshot.lineageId().equals(event.lineageId())
-                || !snapshot.effectiveAt().equals(event.effectiveAt())
+                || !snapshot.effectiveAt().equals(event.snapshotEffectiveAt())
                 || !snapshot.immutableHash().equals(event.snapshotImmutableHash())) {
             throw invalidBinding();
         }

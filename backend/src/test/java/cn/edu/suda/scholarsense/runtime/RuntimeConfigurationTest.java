@@ -258,17 +258,34 @@ public class RuntimeConfigurationTest {
     }
 
     public static Map<String, String> validEnvironment(String environment, String role) {
-        return Map.ofEntries(
-                Map.entry("SCHOLARSENSE_ENV", environment),
-                Map.entry("SCHOLARSENSE_ROLE", role),
-                Map.entry("SCHOLARSENSE_ACCOUNT_REF", "account://" + environment + "/scholarsense"),
-                Map.entry("SCHOLARSENSE_DATABASE_REF", "database://" + environment + "/scholarsense"),
-                Map.entry("SCHOLARSENSE_SECRET_REF", "secret://" + environment + "/scholarsense"),
-                Map.entry("SCHOLARSENSE_STORAGE_NAMESPACE", "scholarsense-" + environment),
-                Map.entry("SCHOLARSENSE_EXTERNAL_BASE_URI", "https://" + environment + ".invalid"),
-                Map.entry("SCHOLARSENSE_IDENTITY_ENABLED", "false"),
-                Map.entry("SCHOLARSENSE_IDENTITY_SYNC_ENABLED", "false"),
-                Map.entry("SCHOLARSENSE_AUDIT_LEDGER_ENABLED", "false"));
+        Map<String, String> values = new HashMap<>();
+        values.put("SCHOLARSENSE_ENV", environment);
+        values.put("SCHOLARSENSE_ROLE", role);
+        values.put("SCHOLARSENSE_ACCOUNT_REF", "account://" + environment + "/scholarsense");
+        values.put("SCHOLARSENSE_DATABASE_REF", "database://" + environment + "/scholarsense");
+        values.put("SCHOLARSENSE_SECRET_REF", "secret://" + environment + "/scholarsense");
+        values.put("SCHOLARSENSE_STORAGE_NAMESPACE", "scholarsense-" + environment);
+        values.put("SCHOLARSENSE_EXTERNAL_BASE_URI", "https://" + environment + ".invalid");
+        values.put("SCHOLARSENSE_IDENTITY_ENABLED", "false");
+        values.put("SCHOLARSENSE_IDENTITY_SYNC_ENABLED", "false");
+        values.put("SCHOLARSENSE_AUDIT_LEDGER_ENABLED", "false");
+        if ("stage".equals(environment) || "prod".equals(environment)) {
+            values.put(
+                    "SCHOLARSENSE_OBSERVABILITY_OTLP_ENDPOINT",
+                    "https://otel." + environment
+                            + ".scholarsense.suda.edu.cn/v1/traces");
+            values.put(
+                    "SCHOLARSENSE_OBSERVABILITY_OTLP_METRICS_ENDPOINT",
+                    "https://otel." + environment
+                            + ".scholarsense.suda.edu.cn/v1/metrics");
+            values.put("SCHOLARSENSE_OBSERVABILITY_OTLP_PROTOCOL", "http/protobuf");
+            values.put("SCHOLARSENSE_OBSERVABILITY_EXPORT_TIMEOUT_MS", "2000");
+            values.put("SCHOLARSENSE_OBSERVABILITY_MAX_QUEUE_SIZE", "2048");
+            values.put("SCHOLARSENSE_OBSERVABILITY_SAMPLING_PROBABILITY", "0.1");
+            values.put("SCHOLARSENSE_OBSERVABILITY_SERVICE_NAME", "scholarsense");
+            values.put("SCHOLARSENSE_OBSERVABILITY_MODULE_NAME", role);
+        }
+        return Map.copyOf(values);
     }
 
     public static void addAuditRuntimeReferences(Map<String, String> values, String environment) {

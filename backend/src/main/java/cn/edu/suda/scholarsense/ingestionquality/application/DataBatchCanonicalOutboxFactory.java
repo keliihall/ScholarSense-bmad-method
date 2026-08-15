@@ -1,5 +1,10 @@
 package cn.edu.suda.scholarsense.ingestionquality.application;
 
+import cn.edu.suda.scholarsense.shared.observability.CurrentTraceSource;
+import cn.edu.suda.scholarsense.shared.observability.ObservationPort;
+import cn.edu.suda.scholarsense.shared.observability.SafeObservationAttributes;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContext;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import cn.edu.suda.scholarsense.shared.outbox.ActorType;
 import cn.edu.suda.scholarsense.ingestionquality.domain.QualityMetricResult;
 import cn.edu.suda.scholarsense.ingestionquality.domain.QualitySnapshot;
@@ -27,22 +32,70 @@ public final class DataBatchCanonicalOutboxFactory {
     private static final String PUBLISHED_TYPE =
             "scholarsense.ingestion-quality.data-batch.published.v1";
     private static final String PUBLISHED_SCHEMA = "DATA-BATCH-PUBLISHED-1.0.0";
+    private static final String ASSESSED_TYPE_V2 =
+            "scholarsense.ingestion-quality.data-batch.quality-assessed.v2";
+    private static final String ASSESSED_SCHEMA_V2 = "DATA-BATCH-QUALITY-ASSESSED-2.0.0";
+    private static final String PUBLISHED_TYPE_V2 =
+            "scholarsense.ingestion-quality.data-batch.published.v2";
+    private static final String PUBLISHED_SCHEMA_V2 = "DATA-BATCH-PUBLISHED-2.0.0";
 
     private final String databaseWorkloadIdentity;
+    private final CurrentTraceSource currentTrace;
+    private final W3cTraceContextCodec traceCodec;
+    private final ObservationPort observations;
+    private final boolean successorTraceContext;
 
     public DataBatchCanonicalOutboxFactory(String databaseWorkloadIdentity) {
+        this(databaseWorkloadIdentity, java.util.Optional::empty,
+                new W3cTraceContextCodec(), null, false);
+    }
+
+    public DataBatchCanonicalOutboxFactory(
+            String databaseWorkloadIdentity,
+            CurrentTraceSource currentTrace,
+            W3cTraceContextCodec traceCodec) {
+        this(databaseWorkloadIdentity, currentTrace, traceCodec, true);
+    }
+
+    public DataBatchCanonicalOutboxFactory(
+            String databaseWorkloadIdentity,
+            CurrentTraceSource currentTrace,
+            W3cTraceContextCodec traceCodec,
+            ObservationPort observations) {
+        this(databaseWorkloadIdentity, currentTrace, traceCodec, observations, true);
+    }
+
+    private DataBatchCanonicalOutboxFactory(
+            String databaseWorkloadIdentity,
+            CurrentTraceSource currentTrace,
+            W3cTraceContextCodec traceCodec,
+            boolean successorTraceContext) {
+        this(databaseWorkloadIdentity, currentTrace, traceCodec, null,
+                successorTraceContext);
+    }
+
+    private DataBatchCanonicalOutboxFactory(
+            String databaseWorkloadIdentity,
+            CurrentTraceSource currentTrace,
+            W3cTraceContextCodec traceCodec,
+            ObservationPort observations,
+            boolean successorTraceContext) {
         if (databaseWorkloadIdentity == null
                 || !databaseWorkloadIdentity.matches("[a-z][a-z0-9_]{2,63}")) {
             throw new IllegalArgumentException("INGESTION_QUALITY_DATABASE_IDENTITY_MISMATCH");
         }
         this.databaseWorkloadIdentity = databaseWorkloadIdentity;
+        this.currentTrace = Objects.requireNonNull(currentTrace);
+        this.traceCodec = Objects.requireNonNull(traceCodec);
+        this.observations = observations;
+        this.successorTraceContext = successorTraceContext;
     }
 
     public CanonicalOutboxPayload create(
             DataBatchCommandType type,
             DataBatchView response,
             DataBatchAtomicCommitContext commit) {
-        return create(type, response, null, commit);
+        return create(type, response, null, commit, null);
     }
 
     public CanonicalOutboxPayload create(
@@ -50,6 +103,15 @@ public final class DataBatchCanonicalOutboxFactory {
             DataBatchView response,
             QualitySnapshot qualitySnapshot,
             DataBatchAtomicCommitContext commit) {
+        return create(type, response, qualitySnapshot, commit, null);
+    }
+
+    public CanonicalOutboxPayload create(
+            DataBatchCommandType type,
+            DataBatchView response,
+            QualitySnapshot qualitySnapshot,
+            DataBatchAtomicCommitContext commit,
+            PublicationScope publication) {
         Objects.requireNonNull(type);
         Objects.requireNonNull(response);
         Objects.requireNonNull(commit);
@@ -60,8 +122,14 @@ public final class DataBatchCanonicalOutboxFactory {
 
         DataBatchBusinessOutboxEvent business = business(
                 type, response, qualitySnapshot, commit);
+        String producerTraceparent = business == null
+                ? null
+                : publication == null
+                        ? traceparentFor(business.traceId())
+                        : publication.traceparentFor(business.traceId());
         byte[] businessBytes = business == null
-                ? null : DataBatchCanonicalJson.bytes(businessMaterial(business));
+                ? null : DataBatchCanonicalJson.bytes(
+                        businessMaterial(business, producerTraceparent));
         return new CanonicalOutboxPayload(
                 audit, auditBytes, auditDigest, business, businessBytes,
                 businessBytes == null ? null : sha256Hex(businessBytes));
@@ -93,7 +161,7 @@ public final class DataBatchCanonicalOutboxFactory {
         return LocalAuditOutboxRecord.forFact(commandId, fact, at);
     }
 
-    private static DataBatchBusinessOutboxEvent business(
+    private DataBatchBusinessOutboxEvent business(
             DataBatchCommandType type,
             DataBatchView response,
             QualitySnapshot qualitySnapshot,
@@ -107,14 +175,14 @@ public final class DataBatchCanonicalOutboxFactory {
             causeType = DataBatchCommandType.SEAL;
             causeVersion = 2;
             causeAt = response.sealedAt();
-            eventType = ASSESSED_TYPE;
-            schema = ASSESSED_SCHEMA;
+            eventType = eventTypeFor(type);
+            schema = schemaFor(type);
         } else if (type == DataBatchCommandType.PUBLISH) {
             causeType = DataBatchCommandType.EVALUATE;
             causeVersion = 3;
             causeAt = response.evaluatedAt();
-            eventType = PUBLISHED_TYPE;
-            schema = PUBLISHED_SCHEMA;
+            eventType = eventTypeFor(type);
+            schema = schemaFor(type);
         } else {
             return null;
         }
@@ -130,6 +198,24 @@ public final class DataBatchCanonicalOutboxFactory {
                 eventId, commit.commandId(), causationId, response.batchId(),
                 response.aggregateVersion(), eventType, schema, commit.traceId(),
                 commit.occurredAt().instant(), response, qualitySnapshot);
+    }
+
+    String eventTypeFor(DataBatchCommandType type) {
+        return switch (type) {
+            case EVALUATE -> successorTraceContext ? ASSESSED_TYPE_V2 : ASSESSED_TYPE;
+            case PUBLISH -> successorTraceContext ? PUBLISHED_TYPE_V2 : PUBLISHED_TYPE;
+            default -> throw new IllegalArgumentException(
+                    "INGESTION_QUALITY_CANONICAL_PAYLOAD_INVALID");
+        };
+    }
+
+    String schemaFor(DataBatchCommandType type) {
+        return switch (type) {
+            case EVALUATE -> successorTraceContext ? ASSESSED_SCHEMA_V2 : ASSESSED_SCHEMA;
+            case PUBLISH -> successorTraceContext ? PUBLISHED_SCHEMA_V2 : PUBLISHED_SCHEMA;
+            default -> throw new IllegalArgumentException(
+                    "INGESTION_QUALITY_CANONICAL_PAYLOAD_INVALID");
+        };
     }
 
     private static Map<String, Object> auditMaterial(LocalAuditOutboxRecord record) {
@@ -185,7 +271,8 @@ public final class DataBatchCanonicalOutboxFactory {
         return value;
     }
 
-    private static Map<String, Object> businessMaterial(DataBatchBusinessOutboxEvent event) {
+    private Map<String, Object> businessMaterial(
+            DataBatchBusinessOutboxEvent event, String producerTraceparent) {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("aggregateId", event.batchId().toString());
         data.put("aggregateType", "data-batch");
@@ -209,7 +296,7 @@ public final class DataBatchCanonicalOutboxFactory {
         envelope.put("specversion", "1.0");
         envelope.put("subject", "data-batch/" + event.batchId());
         envelope.put("time", event.occurredAt().toString());
-        envelope.put("traceparent", traceparent(event.traceId()));
+        envelope.put("traceparent", producerTraceparent);
         envelope.put("type", event.eventType());
         return envelope;
     }
@@ -222,6 +309,116 @@ public final class DataBatchCanonicalOutboxFactory {
         String spanId = traceId.substring(0, 16);
         if (spanId.matches("0{16}")) spanId = traceId.substring(16);
         return "00-" + traceId + "-" + spanId + "-01";
+    }
+
+    String traceparentFor(String traceId) {
+        if (!successorTraceContext) return traceparent(traceId);
+        return traceCodec.format(traceCodec.child(parent(traceId)));
+    }
+
+    public PublicationScope startPublication(String traceId) {
+        W3cTraceContext parent = parent(traceId);
+        W3cTraceContext producer = traceCodec.child(parent);
+        ObservationPort.ObservationScope observation = null;
+        if (observations != null) {
+            try {
+                observation = observations.start(
+                        "outbox.publish",
+                        ObservationPort.ObservationKind.PRODUCER,
+                        SafeObservationAttributes.create()
+                                .low("module", "ingestion-quality")
+                                .low("operation", "outbox.publish"),
+                        parent);
+                producer = observation.context();
+            } catch (RuntimeException telemetryUnavailable) {
+                observation = null;
+            }
+        }
+        return new PublicationScope(
+                producer.traceId(), traceCodec.format(producer), observation);
+    }
+
+    private W3cTraceContext parent(String traceId) {
+        if (traceId == null || !traceId.matches("(?!0{32})[0-9a-f]{32}")) {
+            throw new IllegalArgumentException("INGESTION_QUALITY_CANONICAL_PAYLOAD_INVALID");
+        }
+        return currentTrace.current()
+                .filter(context -> context.traceId().equals(traceId))
+                .orElseGet(() -> traceCodec.resume(traceId, false));
+    }
+
+    /** Keeps the real PRODUCER span open until revalidation and owner commit resolve. */
+    public static final class PublicationScope implements AutoCloseable {
+        private final String traceId;
+        private final String traceparent;
+        private final ObservationPort.ObservationScope observation;
+        private boolean completed;
+        private boolean closed;
+
+        private PublicationScope(
+                String traceId,
+                String traceparent,
+                ObservationPort.ObservationScope observation) {
+            this.traceId = traceId;
+            this.traceparent = traceparent;
+            this.observation = observation;
+        }
+
+        public String traceparent() {
+            return traceparent;
+        }
+
+        String traceparentFor(String expectedTraceId) {
+            if (!traceId.equals(expectedTraceId)) {
+                throw new IllegalArgumentException(
+                        "INGESTION_QUALITY_CANONICAL_PAYLOAD_INVALID");
+            }
+            return traceparent;
+        }
+
+        public void complete(boolean replay) {
+            if (completed) return;
+            completed = true;
+            outcome(replay ? "duplicate" : "success");
+        }
+
+        public void fail(String outcome, RuntimeException failure) {
+            Objects.requireNonNull(failure);
+            if (completed) return;
+            completed = true;
+            outcome(outcome);
+            if (observation != null) {
+                try {
+                    observation.error(failure);
+                } catch (RuntimeException ignoredTelemetryFailure) {
+                    // Telemetry cannot change owner transaction semantics.
+                }
+            }
+        }
+
+        private void outcome(String value) {
+            if (observation != null) {
+                try {
+                    observation.outcome(value);
+                } catch (RuntimeException ignoredTelemetryFailure) {
+                    // Telemetry cannot change owner transaction semantics.
+                }
+            }
+        }
+
+        @Override
+        public void close() {
+            if (closed) return;
+            closed = true;
+            if (!completed) outcome("failure");
+            if (observation != null) {
+                try {
+                    observation.close();
+                } catch (RuntimeException ignoredTelemetryFailure) {
+                    // A failed exporter cannot change the owner transaction result.
+                }
+            }
+        }
     }
 
     private static Map<String, Object> batchMaterial(DataBatchView batch) {

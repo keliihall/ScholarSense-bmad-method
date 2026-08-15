@@ -70,13 +70,19 @@ class SbomContractTest(unittest.TestCase):
 
     def test_backend_artifact_reconciles_lock_and_embedded_jarmode(self) -> None:
         components = backend_components(
-            load_json(CONTRACTS / "backend-lock-1.0.0.json"),
+            load_json(CONTRACTS / "backend-lock-2.0.0.json"),
             BUILT_BACKEND,
         )
-        self.assertEqual(74, len(components))
+        self.assertEqual(102, len(components))
         purls = {component["purl"] for component in components}
         self.assertIn("pkg:maven/org.springframework.boot/spring-boot-jarmode-tools@4.1.0", purls)
         self.assertIn("pkg:maven/org.postgresql/postgresql@42.7.12", purls)
+        self.assertIn(
+            "pkg:maven/io.opentelemetry/opentelemetry-exporter-otlp@1.62.0", purls
+        )
+        self.assertIn(
+            "pkg:maven/io.micrometer/micrometer-tracing-bridge-otel@1.7.0", purls
+        )
         self.assertNotIn("pkg:maven/org.postgresql/postgresql@42.7.11", purls)
         self.assertTrue(all(component["hashes"] for component in components))
         self.assertEqual("UNKNOWN", _backend_license("pkg:maven/example/unreviewed@1.0.0"))
@@ -132,7 +138,7 @@ class SbomContractTest(unittest.TestCase):
 
     def test_security_adjudication_covers_sensitive_inputs_and_blocked_scripts(self) -> None:
         npm = npm_components(load_json(PROJECT_ROOT / "frontend/package-lock.json"))
-        backend_lock = load_json(CONTRACTS / "backend-lock-1.0.0.json")
+        backend_lock = load_json(CONTRACTS / "backend-lock-2.0.0.json")
         evidence = security_adjudications(
             npm,
             backend_lock,
@@ -152,10 +158,10 @@ class SbomContractTest(unittest.TestCase):
     def test_aggregate_release_covers_artifacts_runtime_frontend_plugins_and_wrapper(self) -> None:
         manifest = load_json(CONTRACTS / "fixtures/valid/build-manifest.json")
         npm = npm_components(load_json(PROJECT_ROOT / "frontend/package-lock.json"))
-        backend_lock = load_json(CONTRACTS / "backend-lock-1.0.0.json")
+        backend_lock = load_json(CONTRACTS / "backend-lock-2.0.0.json")
         backend = backend_components(backend_lock, BUILT_BACKEND)
         aggregate = aggregate_components(manifest, backend, npm, backend_lock)
-        self.assertEqual(240, len(aggregate))
+        self.assertEqual(268, len(aggregate))
         kinds = {item["kind"] for item in aggregate}
         self.assertTrue(
             {"release-artifact", "maven-runtime", "maven-generated-runtime", "npm", "maven-plugin", "maven-wrapper"}

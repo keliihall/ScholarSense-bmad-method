@@ -35,7 +35,7 @@ public class ScholarSenseApplication {
         return application.run(args);
     }
 
-    private static Map<String, Object> controlledProperties(RuntimeConfiguration runtime) {
+    static Map<String, Object> controlledProperties(RuntimeConfiguration runtime) {
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("spring.application.name", "scholarsense");
         properties.put("spring.main.banner-mode", "off");
@@ -46,6 +46,68 @@ public class ScholarSenseApplication {
         properties.put("scholarsense.identity.enabled", runtime.identityEnabled());
         properties.put("scholarsense.identity-sync.enabled", runtime.identitySyncEnabled());
         properties.put("scholarsense.audit-ledger.enabled", runtime.auditLedgerEnabled());
+        properties.put(
+                "logging.structured.format.console",
+                "cn.edu.suda.scholarsense.shared.observability.ScholarSenseStructuredLogFormatter");
+        properties.put("logging.charset.console", "UTF-8");
+        properties.put("spring.jackson.time-zone", "UTC");
+        properties.put(
+                "management.tracing.export.otlp.enabled",
+                runtime.observability().exportEnabled());
+        properties.put(
+                "management.otlp.metrics.export.enabled",
+                runtime.observability().exportEnabled());
+        properties.put(
+                "management.opentelemetry.tracing.sampler",
+                runtime.observability().sampler());
+        properties.put(
+                "management.tracing.sampling.probability",
+                runtime.observability().samplingProbability());
+        properties.put(
+                "management.opentelemetry.tracing.export.max-queue-size",
+                runtime.observability().maxQueueSize());
+        properties.put(
+                "management.opentelemetry.tracing.export.max-batch-size",
+                Math.min(512, runtime.observability().maxQueueSize()));
+        properties.put("management.opentelemetry.tracing.export.include-unsampled", false);
+        properties.put("management.opentelemetry.tracing.limits.max-attributes", 32);
+        properties.put("management.opentelemetry.tracing.limits.max-attribute-value-length", 256);
+        properties.put(
+                "management.opentelemetry.resource-attributes[service.name]",
+                runtime.observability().serviceName());
+        properties.put(
+                "management.opentelemetry.resource-attributes[scholarsense.module]",
+                runtime.observability().moduleName());
+        properties.put("management.tracing.baggage.remote-fields", "");
+        properties.put("management.tracing.baggage.correlation.fields", "");
+        properties.put("spring.task.execution.pool.core-size", 2);
+        properties.put("spring.task.execution.pool.max-size", 8);
+        properties.put("spring.task.execution.pool.queue-capacity", 256);
+        properties.put("spring.task.execution.thread-name-prefix", "scholarsense-task-");
+        if (runtime.observability().exportEnabled()) {
+            properties.put(
+                    "management.opentelemetry.tracing.export.otlp.endpoint",
+                    runtime.observability().otlpEndpoint().toString());
+            properties.put("management.opentelemetry.tracing.export.otlp.transport", "http");
+            properties.put(
+                    "management.opentelemetry.tracing.export.otlp.connect-timeout",
+                    runtime.observability().exportTimeout().toMillis() + "ms");
+            properties.put(
+                    "management.opentelemetry.tracing.export.otlp.timeout",
+                    runtime.observability().exportTimeout().toMillis() + "ms");
+            properties.put(
+                    "management.opentelemetry.tracing.export.timeout",
+                    runtime.observability().exportTimeout().toMillis() + "ms");
+            properties.put(
+                    "management.otlp.metrics.export.url",
+                    runtime.observability().otlpMetricsEndpoint().toString());
+            properties.put(
+                    "management.otlp.metrics.export.connect-timeout",
+                    runtime.observability().exportTimeout().toMillis() + "ms");
+            properties.put(
+                    "management.otlp.metrics.export.read-timeout",
+                    runtime.observability().exportTimeout().toMillis() + "ms");
+        }
         if (runtime.identityAuthorityProfileReference() != null) {
             properties.put(
                     "scholarsense.identity-sync.profile-ref",

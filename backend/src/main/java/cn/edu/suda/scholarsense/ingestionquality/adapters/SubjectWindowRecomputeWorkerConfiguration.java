@@ -4,6 +4,8 @@ import cn.edu.suda.scholarsense.ingestionquality.adapters.inbound.SubjectWindowR
 import cn.edu.suda.scholarsense.ingestionquality.adapters.outbound.JdbcSubjectWindowRecomputeStore;
 import cn.edu.suda.scholarsense.ingestionquality.application.MappingRecomputeIdPort;
 import cn.edu.suda.scholarsense.ingestionquality.application.SubjectWindowRecomputeProcessor;
+import cn.edu.suda.scholarsense.shared.observability.ObservationPort;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -24,8 +26,11 @@ public class SubjectWindowRecomputeWorkerConfiguration {
     SubjectWindowRecomputeProcessor subjectWindowRecomputeProcessor(
             JdbcSubjectWindowRecomputeStore store,
             MappingRecomputeIdPort ids,
-            TrustedTimeSource time) {
-        return new SubjectWindowRecomputeProcessor(store, ids, new TrustedTimeClock(time));
+            TrustedTimeSource time,
+            ObservationPort observations,
+            W3cTraceContextCodec traceCodec) {
+        return new SubjectWindowRecomputeProcessor(
+                store, ids, new TrustedTimeClock(time), observations, traceCodec);
     }
 
     @Bean

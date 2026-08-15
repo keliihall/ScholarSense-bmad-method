@@ -1,0 +1,1 @@
+{"caseId":"high-cardinality-label","expectedIssue":"high cardinality metric label","candidate":{"signal":"metric","labels":{"batchId":"batch-123"}}}

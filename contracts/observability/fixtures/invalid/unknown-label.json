@@ -1,0 +1,1 @@
+{"caseId":"unknown-label","expectedIssue":"unknown metric label","candidate":{"signal":"metric","labels":{"newLabel":"value"}}}

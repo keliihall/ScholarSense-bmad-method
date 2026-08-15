@@ -3,6 +3,8 @@ package cn.edu.suda.scholarsense.identityaccess.adapters;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 
 import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.IdentitySyncScheduler;
 import cn.edu.suda.scholarsense.identityaccess.adapters.inbound.ResponsibilityReconciliationScheduler;
@@ -20,11 +22,16 @@ import cn.edu.suda.scholarsense.identityaccess.application.ResponsibilityV2Cutov
 import cn.edu.suda.scholarsense.identityaccess.application.WorkloadIdentityAuthenticationPort;
 import cn.edu.suda.scholarsense.runtime.RuntimeConfiguration;
 import cn.edu.suda.scholarsense.runtime.RuntimeConfigurationTest;
+import cn.edu.suda.scholarsense.runtime.IdentityAuthorityRuntimeProfile;
+import cn.edu.suda.scholarsense.runtime.ResponsibilityAuthorityRuntimeProfile;
 import cn.edu.suda.scholarsense.shared.time.TimeSourceProfile;
 import cn.edu.suda.scholarsense.shared.time.TrustedTime;
 import cn.edu.suda.scholarsense.shared.time.TrustedTimeSource;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClient;
+import cn.edu.suda.scholarsense.shared.observability.TrustedHttpClientFactory;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.nio.charset.StandardCharsets;
+import java.net.http.HttpClient;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -203,6 +210,18 @@ class IdentitySyncConfigurationTest {
             context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
             context.registerBean(
                     SimpleMeterRegistry.class, SimpleMeterRegistry::new);
+            context.registerBean(TrustedHttpClientFactory.class, () -> {
+                TrustedHttpClientFactory factory = mock(TrustedHttpClientFactory.class);
+                when(factory.wrap(
+                        any(HttpClient.class), any(IdentityAuthorityRuntimeProfile.class)))
+                        .thenAnswer(invocation ->
+                                TrustedHttpClient.unobserved(invocation.getArgument(0)));
+                when(factory.wrap(
+                        any(HttpClient.class), any(ResponsibilityAuthorityRuntimeProfile.class)))
+                        .thenAnswer(invocation ->
+                        TrustedHttpClient.unobserved(invocation.getArgument(0)));
+                return factory;
+            });
             context.registerBean(
                     TrustedTimeSource.class,
                     () -> IdentitySyncConfigurationTest::trustedTime);

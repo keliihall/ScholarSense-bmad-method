@@ -19,6 +19,10 @@ import cn.edu.suda.scholarsense.ingestionquality.domain.RuleDependencyDefinition
 import cn.edu.suda.scholarsense.ingestionquality.domain.RuleDependencyMember;
 import cn.edu.suda.scholarsense.ingestionquality.domain.RuleDependencyRegistry;
 import cn.edu.suda.scholarsense.ingestionquality.domain.RuleVersionIdentity;
+import cn.edu.suda.scholarsense.shared.observability.ObservationPort;
+import cn.edu.suda.scholarsense.shared.observability.SafeObservationAttributes;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContext;
+import cn.edu.suda.scholarsense.shared.observability.W3cTraceContextCodec;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -336,6 +340,40 @@ class QualityEligibilityEventConsumerTest {
         assertEquals("INGESTION_QUALITY_IDEMPOTENCY_MISMATCH", failure.code());
     }
 
+    @Test
+    void consumerSpanUsesTheExactPersistedProducerContextAsItsParent() {
+        RecordingObservationPort observations = new RecordingObservationPort();
+        Fixture fixture = new Fixture(observations, new W3cTraceContextCodec());
+        UpstreamQualityEvent event = fixture.event(
+                1, UpstreamQualityEventKind.ASSESSED_FAILED);
+
+        fixture.consumer.consume(event);
+
+        assertEquals("event.consume", observations.operation);
+        assertEquals(ObservationPort.ObservationKind.CONSUMER, observations.kind);
+        assertEquals(event.traceId(), observations.parent.traceId());
+        assertEquals(event.traceparent().substring(36, 52), observations.parent.spanId());
+        assertEquals("success", observations.outcome);
+        assertTrue(observations.closed);
+    }
+
+    @Test
+    void consumerSpanRecordsDuplicateAndConflictInsteadOfProvisionalSuccess() {
+        RecordingObservationPort observations = new RecordingObservationPort();
+        Fixture fixture = new Fixture(observations, new W3cTraceContextCodec());
+        UpstreamQualityEvent event = fixture.event(
+                1, UpstreamQualityEventKind.ASSESSED_FAILED);
+        fixture.consumer.consume(event);
+
+        fixture.consumer.consume(event);
+        assertEquals("duplicate", observations.outcome);
+
+        assertThrows(IngestionQualityApplicationException.class,
+                () -> fixture.consumer.consume(event.withPayloadDigest(
+                        "sha256:" + "f".repeat(64))));
+        assertEquals("conflict", observations.outcome);
+    }
+
     private static final class Fixture {
         private final InMemoryTransaction transaction = new InMemoryTransaction();
         private QualityEligibilitySnapshotEvidence snapshot;
@@ -343,12 +381,17 @@ class QualityEligibilityEventConsumerTest {
         private final QualityEligibilityEventConsumer consumer;
 
         private Fixture() {
+            this(null, null);
+        }
+
+        private Fixture(ObservationPort observations, W3cTraceContextCodec traceCodec) {
             UpstreamQualityEvent seed = event(1, UpstreamQualityEventKind.ASSESSED_FAILED);
             snapshot = snapshotFor(seed);
             consumer = new QualityEligibilityEventConsumer(
                     this::findSnapshot, transaction, registry(),
                     (sourceId, dependencyId, generation) -> new QualityFuseWorkItemIdentity(
-                            "qf:" + "7".repeat(64), "k7"));
+                            "qf:" + "7".repeat(64), "k7"),
+                    observations, traceCodec);
         }
 
         private Optional<QualityEligibilitySnapshotEvidence> findSnapshot(
@@ -397,6 +440,7 @@ class QualityEligibilityEventConsumerTest {
                     "QMDP-1.0.0", "sha256:" + "7".repeat(64),
                     "QG-1.0.0", "sha256:" + "8".repeat(64),
                     Instant.parse("2026-08-10T00:00:00Z"),
+                    Instant.parse("2026-08-09T02:02:22Z"),
                     Instant.parse("2026-08-10T00:01:00Z"),
                     "11111111111111111111111111111111",
                     "sha256:" + Integer.toHexString((int) sourceVersion).repeat(64).substring(0, 64));
@@ -421,7 +465,7 @@ class QualityEligibilityEventConsumerTest {
                     event.sourceSchemaDigest(), event.qmdpVersion(), event.qmdpDigest(),
                     event.qualityGateVersion(), event.qualityGateDigest(),
                     "QSHM-1.0.0", "sha256:" + "b".repeat(64), event.lineageId(),
-                    event.effectiveAt(), event.snapshotImmutableHash(), List.of(
+                    event.snapshotEffectiveAt(), event.snapshotImmutableHash(), List.of(
                             new QualityFuseFormulaBoundaryEvidence(
                                     "completeness", "QMDP-1.0.0/test/completeness", "1.0.0",
                                     event.snapshotResult() == QualityOverallResult.QUALITY_FAILED
@@ -433,6 +477,44 @@ class QualityEligibilityEventConsumerTest {
                                             ? 9700L : 10000L,
                                     "basis-point", ">=", 99, 100, "inclusive",
                                     event.snapshotResult() != QualityOverallResult.QUALITY_FAILED)));
+        }
+    }
+
+    private static final class RecordingObservationPort implements ObservationPort {
+        private String operation;
+        private ObservationKind kind;
+        private W3cTraceContext parent;
+        private String outcome;
+        private boolean closed;
+
+        @Override
+        public ObservationScope start(
+                String operation,
+                ObservationKind kind,
+                SafeObservationAttributes attributes,
+                W3cTraceContext parent) {
+            this.operation = operation;
+            this.kind = kind;
+            this.parent = parent;
+            return new ObservationScope() {
+                @Override
+                public W3cTraceContext context() {
+                    return new W3cTraceContext(parent.traceId(), "2".repeat(16), parent.sampled());
+                }
+
+                @Override
+                public void outcome(String value) {
+                    outcome = value;
+                }
+
+                @Override
+                public void error(Throwable error) {}
+
+                @Override
+                public void close() {
+                    closed = true;
+                }
+            };
         }
     }
 
